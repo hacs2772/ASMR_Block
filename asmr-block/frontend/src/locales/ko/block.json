@@ -1,0 +1,31 @@
+{
+  "title": "ASMR 블록",
+  "explore": "블록 탐색",
+  "preview": "미리듣기",
+  "duration": "재생 시간",
+  "category": "카테고리",
+  "tags": "태그",
+  "playCount": "재생 횟수",
+  "noResults": "검색 결과가 없습니다.",
+  "addToPlaylist": "조합에 추가",
+  "filter": {
+    "all": "전체",
+    "nature": "자연",
+    "object": "사물",
+    "body": "신체",
+    "food": "음식",
+    "environment": "환경"
+  },
+  "tag": {
+    "soft": "부드러운",
+    "sharp": "날카로운",
+    "crispy": "바삭한",
+    "dull": "둔탁한",
+    "wet": "습한",
+    "rhythmic": "리드미컬한"
+  },
+  "sort": {
+    "latest": "최신순",
+    "popular": "인기순"
+  }
+}

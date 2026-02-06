@@ -1,0 +1,30 @@
+{
+  "title": "My Playlists",
+  "create": "Create New Playlist",
+  "edit": "Edit Playlist",
+  "empty": "You haven't created any playlists yet.",
+  "emptyHint": "Combine blocks to create your own ASMR!",
+  "blockCount": "blocks",
+  "totalDuration": "Total Duration",
+  "addBlock": "Add Block",
+  "removeBlock": "Remove Block",
+  "saveSuccess": "Playlist saved successfully.",
+  "deleteSuccess": "Playlist deleted successfully.",
+  "deleteConfirm": "Delete this playlist?",
+  "placeholder": {
+    "title": "Enter playlist title",
+    "description": "Enter description (optional)"
+  },
+  "editor": {
+    "title": "Playlist Editor",
+    "blocks": "Block List",
+    "myBlocks": "My Playlist",
+    "dragHint": "Drag blocks to reorder",
+    "emptyBlocks": "Please add blocks",
+    "selectBlocks": "Select blocks from the left"
+  },
+  "visibility": {
+    "public": "Public",
+    "private": "Private"
+  }
+}

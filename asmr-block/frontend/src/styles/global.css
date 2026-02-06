@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 기본 스타일 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background-color: #0f0f0f;
+  color: #ffffff;
+  min-height: 100vh;
+}
+
+/* 스크롤바 스타일 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* 커스텀 클래스 */
+@layer components {
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+
+  .btn-outline {
+    @apply border border-gray-600 hover:bg-gray-800 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  }
+
+  .input-field {
+    @apply w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors duration-200;
+  }
+
+  .card {
+    @apply bg-gray-900 rounded-xl p-4 border border-gray-800;
+  }
+
+  /* 블록 아이템 스타일 */
+  .block-item {
+    @apply rounded-lg p-3 cursor-pointer transition-all duration-200 hover:scale-105;
+  }
+}
+
+/* 오디오 플레이어 스타일 */
+.audio-progress {
+  @apply h-1 bg-gray-700 rounded-full overflow-hidden;
+}
+
+.audio-progress-bar {
+  @apply h-full bg-primary transition-all duration-100;
+}
+
+/* 드래그 앤 드롭 스타일 */
+.dragging {
+  @apply opacity-50 scale-105;
+}
+
+.drag-over {
+  @apply border-2 border-dashed border-primary;
+}

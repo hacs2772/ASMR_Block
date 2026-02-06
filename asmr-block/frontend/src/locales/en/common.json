@@ -1,0 +1,43 @@
+{
+  "header": {
+    "home": "Home",
+    "explore": "Explore",
+    "myPlaylist": "My Playlists",
+    "profile": "Profile",
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout"
+  },
+  "button": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "play": "Play",
+    "pause": "Pause",
+    "stop": "Stop",
+    "add": "Add",
+    "remove": "Remove",
+    "create": "Create",
+    "close": "Close"
+  },
+  "message": {
+    "loading": "Loading...",
+    "error": "An error occurred.",
+    "success": "Successfully processed.",
+    "confirmDelete": "Are you sure you want to delete?",
+    "noData": "No data available.",
+    "loginRequired": "Login required."
+  },
+  "time": {
+    "minute": "min",
+    "second": "sec",
+    "total": "Total",
+    "hours": "hours"
+  },
+  "language": {
+    "ko": "한국어",
+    "en": "English"
+  }
+}

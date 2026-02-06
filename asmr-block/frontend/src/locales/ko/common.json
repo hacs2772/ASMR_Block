@@ -1,0 +1,43 @@
+{
+  "header": {
+    "home": "홈",
+    "explore": "탐색",
+    "myPlaylist": "내 조합",
+    "profile": "프로필",
+    "login": "로그인",
+    "signup": "회원가입",
+    "logout": "로그아웃"
+  },
+  "button": {
+    "save": "저장",
+    "cancel": "취소",
+    "delete": "삭제",
+    "edit": "수정",
+    "confirm": "확인",
+    "play": "재생",
+    "pause": "일시정지",
+    "stop": "정지",
+    "add": "추가",
+    "remove": "제거",
+    "create": "만들기",
+    "close": "닫기"
+  },
+  "message": {
+    "loading": "로딩 중...",
+    "error": "오류가 발생했습니다.",
+    "success": "성공적으로 처리되었습니다.",
+    "confirmDelete": "정말 삭제하시겠습니까?",
+    "noData": "데이터가 없습니다.",
+    "loginRequired": "로그인이 필요합니다."
+  },
+  "time": {
+    "minute": "분",
+    "second": "초",
+    "total": "총",
+    "hours": "시간"
+  },
+  "language": {
+    "ko": "한국어",
+    "en": "English"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "title": "내 조합",
+  "create": "새 조합 만들기",
+  "edit": "조합 수정",
+  "empty": "아직 만든 조합이 없습니다.",
+  "emptyHint": "블록을 조합해서 나만의 ASMR을 만들어보세요!",
+  "blockCount": "개 블록",
+  "totalDuration": "총 재생 시간",
+  "addBlock": "블록 추가",
+  "removeBlock": "블록 제거",
+  "saveSuccess": "조합이 저장되었습니다.",
+  "deleteSuccess": "조합이 삭제되었습니다.",
+  "deleteConfirm": "이 조합을 삭제하시겠습니까?",
+  "placeholder": {
+    "title": "조합 제목을 입력하세요",
+    "description": "설명을 입력하세요 (선택)"
+  },
+  "editor": {
+    "title": "조합 편집기",
+    "blocks": "블록 목록",
+    "myBlocks": "내 조합",
+    "dragHint": "블록을 드래그하여 순서를 변경하세요",
+    "emptyBlocks": "블록을 추가해주세요",
+    "selectBlocks": "왼쪽에서 블록을 선택하세요"
+  },
+  "visibility": {
+    "public": "공개",
+    "private": "비공개"
+  }
+}

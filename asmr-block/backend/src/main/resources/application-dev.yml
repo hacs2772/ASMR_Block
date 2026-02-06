@@ -1,0 +1,14 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/asmrblock
+    username: postgres
+    password: postgres
+
+logging:
+  level:
+    com.asmrblock: DEBUG
+    org.springframework.web: DEBUG

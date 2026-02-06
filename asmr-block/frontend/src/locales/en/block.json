@@ -1,0 +1,31 @@
+{
+  "title": "ASMR Blocks",
+  "explore": "Explore Blocks",
+  "preview": "Preview",
+  "duration": "Duration",
+  "category": "Category",
+  "tags": "Tags",
+  "playCount": "Play Count",
+  "noResults": "No results found.",
+  "addToPlaylist": "Add to Playlist",
+  "filter": {
+    "all": "All",
+    "nature": "Nature",
+    "object": "Object",
+    "body": "Body",
+    "food": "Food",
+    "environment": "Environment"
+  },
+  "tag": {
+    "soft": "Soft",
+    "sharp": "Sharp",
+    "crispy": "Crispy",
+    "dull": "Dull",
+    "wet": "Wet",
+    "rhythmic": "Rhythmic"
+  },
+  "sort": {
+    "latest": "Latest",
+    "popular": "Popular"
+  }
+}

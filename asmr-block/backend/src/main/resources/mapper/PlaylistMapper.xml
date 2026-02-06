@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.asmrblock.repository.PlaylistRepository">
+    
+    <resultMap id="PlaylistResultMap" type="Playlist">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="totalDuration" column="total_duration"/>
+        <result property="isPublic" column="is_public"/>
+        <result property="playCount" column="play_count"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+    
+    <resultMap id="PlaylistBlockResultMap" type="PlaylistBlock">
+        <id property="id" column="pb_id"/>
+        <result property="playlistId" column="playlist_id"/>
+        <result property="blockId" column="block_id"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="createdAt" column="pb_created_at"/>
+        <association property="block" javaType="Block">
+            <id property="id" column="block_id"/>
+            <result property="title" column="block_title"/>
+            <result property="fileUrl" column="file_url"/>
+            <result property="thumbnailUrl" column="thumbnail_url"/>
+            <result property="duration" column="duration"/>
+            <association property="category" javaType="SoundCategory">
+                <id property="id" column="cat_id"/>
+                <result property="name" column="cat_name"/>
+                <result property="color" column="cat_color"/>
+            </association>
+        </association>
+    </resultMap>
+    
+    <insert id="insert" parameterType="Playlist" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO playlist (user_id, title, description, total_duration, is_public)
+        VALUES (#{userId}, #{title}, #{description}, #{totalDuration}, #{isPublic})
+    </insert>
+    
+    <insert id="insertPlaylistBlock" parameterType="PlaylistBlock">
+        INSERT INTO playlist_block (playlist_id, block_id, sort_order)
+        VALUES (#{playlistId}, #{blockId}, #{sortOrder})
+    </insert>
+    
+    <select id="findById" resultMap="PlaylistResultMap">
+        SELECT * FROM playlist WHERE id = #{id}
+    </select>
+    
+    <select id="findByUserId" resultMap="PlaylistResultMap">
+        SELECT * FROM playlist 
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    
+    <select id="countByUserId" resultType="long">
+        SELECT COUNT(*) FROM playlist WHERE user_id = #{userId}
+    </select>
+    
+    <select id="findBlocksByPlaylistId" resultMap="PlaylistBlockResultMap">
+        SELECT pb.id as pb_id, pb.playlist_id, pb.block_id, pb.sort_order, 
+               pb.created_at as pb_created_at,
+               b.title as block_title, b.file_url, b.thumbnail_url, b.duration,
+               c.id as cat_id, c.name as cat_name, c.color as cat_color
+        FROM playlist_block pb
+        INNER JOIN block b ON pb.block_id = b.id
+        LEFT JOIN sound_category c ON b.category_id = c.id
+        WHERE pb.playlist_id = #{playlistId}
+        ORDER BY pb.sort_order
+    </select>
+    
+    <update id="update" parameterType="Playlist">
+        UPDATE playlist SET
+            title = #{title},
+            description = #{description},
+            total_duration = #{totalDuration},
+            is_public = #{isPublic},
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <delete id="deletePlaylistBlocks">
+        DELETE FROM playlist_block WHERE playlist_id = #{playlistId}
+    </delete>
+    
+    <delete id="delete">
+        DELETE FROM playlist WHERE id = #{id}
+    </delete>
+    
+    <update id="incrementPlayCount">
+        UPDATE playlist SET play_count = play_count + 1 WHERE id = #{id}
+    </update>
+    
+</mapper>
