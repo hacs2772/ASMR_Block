@@ -14,8 +14,9 @@ public interface PlaylistRepository {
     // 플레이리스트 등록
     void insert(Playlist playlist);
     
-    // 플레이리스트-블록 등록
-    void insertPlaylistBlock(PlaylistBlock playlistBlock);
+    // 플레이리스트-블록 일괄 등록 (blockIds 순서대로 sort_order 1, 2, 3...)
+    void insertPlaylistBlocks(@Param("playlistId") Long playlistId,
+                              @Param("blockIds") List<Long> blockIds);
     
     // ID로 조회
     Optional<Playlist> findById(Long id);

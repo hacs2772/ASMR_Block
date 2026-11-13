@@ -1,8 +1,9 @@
 # ASMR Block - API 명세서
 
-> 최종 수정일: 2026-01-12  
+> 최종 수정일: 2026-11-13  
 > 버전: MVP 1.0  
-> Base URL: `/api/v1`
+> Base URL: `/api/v1`  
+> 서버를 켜면 **http://localhost:8080/swagger-ui.html** 에서 모든 API를 직접 호출해볼 수 있습니다.
 
 ---
 
@@ -106,7 +107,7 @@
 **Request Body:**
 ```json
 {
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "refreshToken": "Yk3x9...(랜덤 문자열)"
 }
 ```
 
@@ -115,10 +116,19 @@
 {
   "success": true,
   "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "Qp7w2...(새 랜덤 문자열)"
   }
 }
 ```
+
+> ⚠️ **refreshToken도 매번 새로 바뀝니다.** 응답의 두 토큰을 모두 저장하세요.  
+> 한 번 쓴 refreshToken을 다시 보내면 탈취로 판단해 그 사용자의 모든 refreshToken이 폐기됩니다(→ 다시 로그인).
+
+**Error:**
+| 코드 | 상황 |
+|------|------|
+| 401 | 없는/만료된/이미 사용한 토큰 |
 
 ---
 
@@ -127,7 +137,16 @@
 | 항목 | 내용 |
 |------|------|
 | URL | `POST /api/v1/auth/logout` |
-| 인증 | 필요 |
+| 인증 | 불필요 (refreshToken으로 처리) |
+
+**Request Body:**
+```json
+{
+  "refreshToken": "Yk3x9..."
+}
+```
+
+서버에서 refreshToken을 폐기합니다. accessToken은 만료(30분)까지 유효하므로 앱/웹에서도 삭제하세요.
 
 **Response (200 OK):**
 ```json
@@ -404,14 +423,18 @@
 | 항목 | 내용 |
 |------|------|
 | URL | `POST /api/v1/blocks/{blockId}/play` |
-| 인증 | 불필요 |
+| 인증 | 필요 |
+
+같은 사용자가 30분 안에 같은 블록을 다시 재생하면 세지 않습니다 (`counted: false`).
+재생 기록(play_log)은 나중에 크리에이터 수익 배분의 근거 데이터로 씁니다.
 
 **Response (200 OK):**
 ```json
 {
   "success": true,
   "data": {
-    "playCount": 1501
+    "playCount": 1501,
+    "counted": true
   }
 }
 ```
@@ -565,6 +588,15 @@
 }
 ```
 
+> - 재생 순서는 **`blocks` 배열 순서대로** 저장됩니다 (`sortOrder`는 생략 가능).
+> - **승인된(APPROVED) 블록만** 넣을 수 있습니다. 같은 블록은 여러 번 넣어도 됩니다.
+> - 블록은 최대 100개까지.
+
+**Error:**
+| 코드 | 상황 |
+|------|------|
+| 400 | 제목/블록 누락, 승인되지 않았거나 없는 블록 |
+
 **Response (201 Created):**
 ```json
 {
@@ -646,14 +678,17 @@
 | 항목 | 내용 |
 |------|------|
 | URL | `POST /api/v1/playlists/{playlistId}/play` |
-| 인증 | 불필요 |
+| 인증 | 필요 (본인 것 또는 공개된 것) |
+
+블록 재생수와 같은 규칙(30분 내 중복 제외)을 따릅니다.
 
 **Response (200 OK):**
 ```json
 {
   "success": true,
   "data": {
-    "playCount": 51
+    "playCount": 51,
+    "counted": true
   }
 }
 ```
@@ -706,7 +741,9 @@
   ```
   Authorization: Bearer {accessToken}
   ```
-- Access Token 만료 시 Refresh Token으로 갱신
+- Access Token(JWT, 30분): 만료되면 보호된 API가 **401**을 돌려줌 → Refresh Token으로 갱신 후 재시도
+- Refresh Token(랜덤 문자열, 14일): DB에 해시로 저장, 사용할 때마다 새로 발급(rotation)
+- 블록 음원 `fileUrl`은 로그인 없이 재생 가능 (`/files/...`, 구간 탐색용 Range 요청 지원)
 
 ---
 

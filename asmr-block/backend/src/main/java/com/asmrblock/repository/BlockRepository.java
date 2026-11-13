@@ -19,6 +19,9 @@ public interface BlockRepository {
     // 블록 ID로 조회 (카테고리, 업로더 포함)
     Optional<Block> findById(Long id);
     
+    // 여러 블록을 한 번에 조회 (활성화된 것만)
+    List<Block> findAllByIds(@Param("ids") List<Long> ids);
+    
     // 블록 목록 조회 (페이징, 필터링)
     List<Block> findAll(
         @Param("categoryId") Long categoryId,

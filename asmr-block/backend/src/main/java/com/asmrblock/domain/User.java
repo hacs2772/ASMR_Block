@@ -21,6 +21,7 @@ public class User {
     private String nickname;
     private String profileImage;
     private String language;
+    private String role;             // USER, ADMIN
     private Boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

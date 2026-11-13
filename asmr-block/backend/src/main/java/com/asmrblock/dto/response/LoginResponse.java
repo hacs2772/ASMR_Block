@@ -26,6 +26,7 @@ public class LoginResponse {
         private String nickname;
         private String profileImage;
         private String language;
+        private String role;
     }
     
     public static LoginResponse of(String accessToken, String refreshToken, User user) {
@@ -38,6 +39,7 @@ public class LoginResponse {
                         .nickname(user.getNickname())
                         .profileImage(user.getProfileImage())
                         .language(user.getLanguage())
+                        .role(user.getRole())
                         .build())
                 .build();
     }

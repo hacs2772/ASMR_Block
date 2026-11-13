@@ -7,7 +7,7 @@ import com.asmrblock.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -21,8 +21,7 @@ public class UserController {
     
     // 내 정보 조회
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getMyInfo(Authentication auth) {
-        Long userId = (Long) auth.getPrincipal();
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getMyInfo(@AuthenticationPrincipal Long userId) {
         User user = userService.getMyInfo(userId);
         
         Map<String, Object> data = Map.of(
@@ -40,10 +39,9 @@ public class UserController {
     // 내 정보 수정
     @PutMapping("/me")
     public ResponseEntity<ApiResponse<Map<String, Object>>> updateMyInfo(
-            Authentication auth,
+            @AuthenticationPrincipal Long userId,
             @Valid @RequestBody UserUpdateRequest request) {
-        
-        Long userId = (Long) auth.getPrincipal();
+
         User user = userService.updateMyInfo(userId, request);
         
         Map<String, Object> data = Map.of(

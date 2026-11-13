@@ -8,12 +8,15 @@
         <id property="id" column="id"/>
         <result property="title" column="title"/>
         <result property="description" column="description"/>
-        <result property="fileUrl" column="file_url"/>
-        <result property="thumbnailUrl" column="thumbnail_url"/>
+        <result property="fileKey" column="file_key"/>
+        <result property="thumbnailKey" column="thumbnail_key"/>
         <result property="duration" column="duration"/>
         <result property="price" column="price"/>
         <result property="categoryId" column="category_id"/>
         <result property="uploaderId" column="uploader_id"/>
+        <result property="license" column="license"/>
+        <result property="sourceUrl" column="source_url"/>
+        <result property="attribution" column="attribution"/>
         <result property="playCount" column="play_count"/>
         <result property="status" column="status"/>
         <result property="isActive" column="is_active"/>
@@ -32,10 +35,10 @@
     </resultMap>
     
     <insert id="insert" parameterType="Block" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO block (title, description, file_url, thumbnail_url, duration, 
-                          price, category_id, uploader_id, status)
-        VALUES (#{title}, #{description}, #{fileUrl}, #{thumbnailUrl}, #{duration},
-                #{price}, #{categoryId}, #{uploaderId}, #{status})
+        INSERT INTO block (title, description, file_key, thumbnail_key, duration,
+                          price, category_id, uploader_id, license, source_url, attribution, status)
+        VALUES (#{title}, #{description}, #{fileKey}, #{thumbnailKey}, #{duration},
+                #{price}, #{categoryId}, #{uploaderId}, #{license}, #{sourceUrl}, #{attribution}, #{status})
     </insert>
     
     <insert id="insertBlockTag">
@@ -52,6 +55,18 @@
         WHERE b.id = #{id} AND b.is_active = true
     </select>
     
+    <!-- 여러 블록을 한 번에 조회 (플레이리스트 저장 시 검증용) -->
+    <select id="findAllByIds" resultMap="BlockResultMap">
+        SELECT b.*,
+               c.id as cat_id, c.name as cat_name, c.color as cat_color, c.icon as cat_icon,
+               u.nickname as uploader_nickname
+        FROM block b
+        LEFT JOIN sound_category c ON b.category_id = c.id
+        LEFT JOIN users u ON b.uploader_id = u.id
+        WHERE b.is_active = true AND b.id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
+
     <select id="findAll" resultMap="BlockResultMap">
         SELECT DISTINCT b.*,
                c.id as cat_id, c.name as cat_name, c.color as cat_color, c.icon as cat_icon,
@@ -82,10 +97,10 @@
         </where>
         <choose>
             <when test="sort == 'popular'">
-                ORDER BY b.play_count DESC, b.created_at DESC
+                ORDER BY b.play_count DESC, b.created_at DESC, b.id DESC
             </when>
             <otherwise>
-                ORDER BY b.created_at DESC
+                ORDER BY b.created_at DESC, b.id DESC
             </otherwise>
         </choose>
         LIMIT #{limit} OFFSET #{offset}
@@ -125,8 +140,8 @@
         UPDATE block SET
             title = #{title},
             description = #{description},
-            file_url = #{fileUrl},
-            thumbnail_url = #{thumbnailUrl},
+            file_key = #{fileKey},
+            thumbnail_key = #{thumbnailKey},
             duration = #{duration},
             price = #{price},
             category_id = #{categoryId},

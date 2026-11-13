@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { FiTrash2, FiMove, FiPlay, FiPause } from 'react-icons/fi';
 import useEditorStore from '../../store/editorStore';
 import { formatDuration } from '../../utils/formatTime';

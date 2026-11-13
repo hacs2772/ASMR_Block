@@ -13,11 +13,9 @@ export const authApi = {
     return response.data;
   },
 
-  // 로그아웃
-  logout: async () => {
-    const response = await axiosInstance.post('/auth/logout');
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+  // 로그아웃 (서버에서 refreshToken 폐기)
+  logout: async (refreshToken) => {
+    const response = await axiosInstance.post('/auth/logout', { refreshToken });
     return response.data;
   },
 

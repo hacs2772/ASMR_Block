@@ -3,7 +3,7 @@
 > 나만의 ASMR을 블록처럼 조합하세요
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-1.0.0--MVP-green.svg)
+![Version](https://img.shields.io/badge/version-0.1.0-green.svg)
 
 ---
 
@@ -45,12 +45,15 @@
 ### Backend
 | 기술 | 설명 |
 |------|------|
-| Java 17 | 메인 언어 |
-| Spring Boot 3.x | 프레임워크 |
+| Java 21 | 메인 언어 |
+| Spring Boot 4.1 | 프레임워크 |
 | Spring Security | 인증/인가 |
 | JWT | 토큰 기반 인증 |
-| MyBatis | ORM |
-| PostgreSQL | 데이터베이스 |
+| MyBatis | SQL 매퍼 |
+| PostgreSQL 16 | 데이터베이스 |
+| Flyway | DB 테이블 버전 관리 (`db/migration`) |
+| Swagger (springdoc) | API 문서 / 테스트 화면 |
+| Testcontainers | 실제 DB로 API 통합 테스트 |
 | AWS S3 | 파일 저장소 |
 
 ### Frontend
@@ -69,8 +72,8 @@
 | AWS EC2 | 서버 |
 | AWS RDS | DB |
 | AWS S3 | 파일 저장 |
-| Docker | 컨테이너 |
-| GitHub Actions | CI/CD |
+| Docker Compose | 로컬 개발 환경 (✅ 완료) |
+| GitHub Actions | 자동 테스트 (✅ 완료) / 배포 (예정) |
 
 ---
 
@@ -78,8 +81,9 @@
 
 ```
 asmr-block/
+├── docker-compose.yml             # 전체 실행 (DB + 백엔드 + 웹)
 ├── docs/                          # 문서
-│   ├── database_schema.md         # DB 설계서
+│   ├── database_schema.md         # DB 설계서 (실제 정의: backend/.../db/migration)
 │   ├── api_specification.md       # API 명세서
 │   └── project_structure.md       # 폴더 구조
 │
@@ -132,24 +136,54 @@ asmr-block/
 
 ---
 
-## 🚀 시작하기
+## 🚀 시작하기 (Docker로 한 번에 실행)
 
-### 사전 요구사항
-- Java 17+
-- Node.js 18+
-- PostgreSQL 15+
+### 1. 준비물 (한 번만 설치)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) — 설치 후 **실행해 두기**
+- [Git](https://git-scm.com/downloads)
+- 에디터: VS Code (선택: Claude Code 확장)
 
-### Backend 실행
+### 2. 실행
 ```bash
-cd backend
-./gradlew bootRun
+git clone https://github.com/hacs2772/ASMR_Block.git
+cd ASMR_Block/asmr-block
+docker compose up --build
 ```
 
-### Frontend 실행
+첫 실행은 이미지 빌드 + 샘플 음원 생성 때문에 **5~10분** 걸립니다.
+로그에 `Started AsmrBlockApplication` 이 보이면 준비 완료!
+
+| 주소 | 내용 |
+|------|------|
+| http://localhost:3000 | 웹 화면 — 로그인: `test@asmrblock.com` / `password123` |
+| http://localhost:8080/swagger-ui.html | API 문서 + 화면에서 바로 호출 (로그인 후 받은 accessToken을 **Authorize**에 붙여넣기) |
+| localhost:5432 | PostgreSQL — `postgres` / `postgres`, DB `asmrblock` |
+
+> 샘플 음원 12개(빗소리, 파도, 싱잉볼, 심장박동 등)는 ffmpeg로 **합성한 테스트용 음원**입니다.
+> 실제 녹음/무료 라이선스 음원이 생기면 교체하세요. (`backend/scripts/generate-sample-audio.sh`)
+
+### 3. 끄기 / 다시 켜기 / 초기화
+| 하고 싶은 것 | 명령어 |
+|------|------|
+| 끄기 | `Ctrl+C` 또는 `docker compose down` |
+| 코드 수정 후 다시 실행 | `docker compose up --build` |
+| DB·음원까지 완전 초기화 | `docker compose down -v` |
+
+### 4. 테스트
 ```bash
-cd frontend
-npm install
-npm start
+cd backend
+./gradlew test        # Windows: gradlew.bat test
+```
+Docker Desktop이 켜져 있으면 테스트용 PostgreSQL을 자동으로 띄워서 API 전체를 검사합니다.
+GitHub에 올리면 Actions에서도 자동으로 실행됩니다.
+
+### (선택) Docker 없이 개발 모드로 실행
+Java 21, Node 22, ffmpeg 가 필요합니다.
+```bash
+docker compose up -d db                                   # DB만 Docker로
+cd backend && ./scripts/generate-sample-audio.sh ./media  # 샘플 음원 (처음 한 번)
+./gradlew bootRun                                         # 백엔드 :8080
+cd ../frontend && npm install && npm start                # 웹 :3000
 ```
 
 ---
@@ -191,10 +225,11 @@ users
 - [x] 기획 및 설계
 - [x] DB 테이블 설계
 - [x] API 명세서 작성
-- [ ] Backend 개발
-- [ ] Frontend 개발
-- [ ] 테스트 및 배포
-- [ ] v2.0 기능 추가
+- [x] **0단계: 기반 정리** — 인증/보안 버그 수정, Spring Boot 4 · Java 21, Flyway, Docker Compose, 샘플 데이터·음원, 자동 테스트
+- [ ] 1단계: 백엔드 확장 — 동(레이어) 구조, ffmpeg 블록 합치기·음량 맞추기, 파일 저장소(R2/S3)
+- [ ] 2단계: 모바일 앱 MVP (React Native + Expo) — 쌍둥이 빌딩 편집기, 백그라운드 재생, 수면 타이머
+- [ ] 3단계: 비공개 베타 출시 (TestFlight / Play 내부 테스트)
+- [ ] 4단계: 수익화 — 구독, 크리에이터 업로드·수익 배분
 
 ---
 

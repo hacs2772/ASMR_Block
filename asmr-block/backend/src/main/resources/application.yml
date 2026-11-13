@@ -1,24 +1,26 @@
+# =====================================================
+# 공통 설정 (모든 환경)
+# 환경마다 다른 값은 환경변수로 덮어씁니다. 예) DB_URL, JWT_SECRET
+# 개발용 값은 application-dev.yml 에 있습니다.
+# =====================================================
 spring:
   application:
     name: asmr-block
-  
-  profiles:
-    active: dev
-  
-  # Database
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/asmrblock
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/asmrblock}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
-  
-  # File Upload
+
+  # DB 테이블은 Flyway가 db/migration 폴더의 SQL로 자동 생성/변경
+  flyway:
+    locations: classpath:db/migration
+
   servlet:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
 
-# MyBatis
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml
   type-aliases-package: com.asmrblock.domain
@@ -27,18 +29,38 @@ mybatis:
     default-fetch-size: 100
     default-statement-timeout: 30
 
-# JWT
-jwt:
-  secret: ${JWT_SECRET:asmrblock-secret-key-for-jwt-token-generation-minimum-256-bits}
-  access-token-validity: 3600000      # 1시간 (ms)
-  refresh-token-validity: 604800000   # 7일 (ms)
+app:
+  jwt:
+    # 운영에서는 반드시 JWT_SECRET 환경변수로 32자 이상 랜덤 문자열을 넣으세요.
+    # 비어 있으면 서버가 시작되지 않습니다 (실수로 기본키를 쓰는 사고 방지).
+    secret: ${JWT_SECRET:}
+    access-token-validity: 30m
+  auth:
+    refresh-token-validity: 14d
+  storage:
+    # 음원 파일 저장 위치 (나중에 S3/R2로 교체 예정)
+    local-dir: ${APP_STORAGE_LOCAL_DIR:./media}
+    public-base-url: ${APP_STORAGE_PUBLIC_BASE_URL:http://localhost:8080/files}
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  play-count:
+    # 같은 사람이 이 시간 안에 다시 재생하면 재생수를 올리지 않음
+    dedupe-window: 30m
 
-# Server
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
 server:
   port: 8080
 
-# Logging
 logging:
   level:
-    com.asmrblock: DEBUG
-    org.mybatis: DEBUG
+    com.asmrblock: INFO

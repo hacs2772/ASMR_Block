@@ -25,8 +25,8 @@
         <association property="block" javaType="Block">
             <id property="id" column="block_id"/>
             <result property="title" column="block_title"/>
-            <result property="fileUrl" column="file_url"/>
-            <result property="thumbnailUrl" column="thumbnail_url"/>
+            <result property="fileKey" column="file_key"/>
+            <result property="thumbnailKey" column="thumbnail_key"/>
             <result property="duration" column="duration"/>
             <association property="category" javaType="SoundCategory">
                 <id property="id" column="cat_id"/>
@@ -41,9 +41,12 @@
         VALUES (#{userId}, #{title}, #{description}, #{totalDuration}, #{isPublic})
     </insert>
     
-    <insert id="insertPlaylistBlock" parameterType="PlaylistBlock">
-        INSERT INTO playlist_block (playlist_id, block_id, sort_order)
-        VALUES (#{playlistId}, #{blockId}, #{sortOrder})
+    <!-- 블록 목록을 한 번에 저장 (배열 순서 = 재생 순서) -->
+    <insert id="insertPlaylistBlocks">
+        INSERT INTO playlist_block (playlist_id, block_id, sort_order) VALUES
+        <foreach collection="blockIds" item="blockId" index="i" separator=",">
+            (#{playlistId}, #{blockId}, #{i} + 1)
+        </foreach>
     </insert>
     
     <select id="findById" resultMap="PlaylistResultMap">
@@ -64,7 +67,7 @@
     <select id="findBlocksByPlaylistId" resultMap="PlaylistBlockResultMap">
         SELECT pb.id as pb_id, pb.playlist_id, pb.block_id, pb.sort_order, 
                pb.created_at as pb_created_at,
-               b.title as block_title, b.file_url, b.thumbnail_url, b.duration,
+               b.title as block_title, b.file_key, b.thumbnail_key, b.duration,
                c.id as cat_id, c.name as cat_name, c.color as cat_color
         FROM playlist_block pb
         INNER JOIN block b ON pb.block_id = b.id

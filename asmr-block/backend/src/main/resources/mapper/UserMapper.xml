@@ -11,6 +11,7 @@
         <result property="nickname" column="nickname"/>
         <result property="profileImage" column="profile_image"/>
         <result property="language" column="language"/>
+        <result property="role" column="role"/>
         <result property="isActive" column="is_active"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>

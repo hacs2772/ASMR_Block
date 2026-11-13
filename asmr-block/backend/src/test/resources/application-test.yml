@@ -1,0 +1,11 @@
+spring:
+  flyway:
+    # 테스트도 개발용 샘플 데이터를 넣고 시작 → 샘플 데이터 SQL 자체도 검증됨
+    locations: classpath:db/migration,classpath:db/seed
+
+app:
+  jwt:
+    secret: test-only-secret-0123456789abcdef0123456789abcdef
+  storage:
+    local-dir: build/test-media
+    public-base-url: http://localhost:8080/files

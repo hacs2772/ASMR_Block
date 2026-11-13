@@ -5,12 +5,14 @@ import com.asmrblock.domain.PlaylistBlock;
 import com.asmrblock.dto.request.PlaylistCreateRequest;
 import com.asmrblock.dto.response.ApiResponse;
 import com.asmrblock.dto.response.PageResponse;
+import com.asmrblock.service.BlockService;
 import com.asmrblock.service.PlaylistService;
+import com.asmrblock.storage.StorageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -24,15 +26,17 @@ import java.util.stream.Collectors;
 public class PlaylistController {
     
     private final PlaylistService playlistService;
+    private final StorageService storageService;
     
     // 내 플레이리스트 목록 조회
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<Map<String, Object>>>> getMyPlaylists(
-            Authentication auth,
+            @AuthenticationPrincipal Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         
-        Long userId = (Long) auth.getPrincipal();
+        page = Paging.page(page);
+        size = Paging.size(size);
         List<Playlist> playlists = playlistService.getMyPlaylists(userId, page, size);
         long totalElements = playlistService.countMyPlaylists(userId);
         
@@ -44,13 +48,12 @@ public class PlaylistController {
             PageResponse.of(content, page, size, totalElements)));
     }
     
-    // 플레이리스트 상세 조회
+    // 플레이리스트 상세 조회 (공개 플레이리스트는 로그인 없이도 가능 → userId가 null일 수 있음)
     @GetMapping("/{playlistId}")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getPlaylist(
-            Authentication auth,
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long playlistId) {
-        
-        Long userId = auth != null ? (Long) auth.getPrincipal() : null;
+
         Playlist playlist = playlistService.getPlaylist(playlistId, userId);
         
         return ResponseEntity.ok(ApiResponse.success(toPlaylistDetail(playlist)));
@@ -59,10 +62,9 @@ public class PlaylistController {
     // 플레이리스트 생성
     @PostMapping
     public ResponseEntity<ApiResponse<Map<String, Object>>> createPlaylist(
-            Authentication auth,
+            @AuthenticationPrincipal Long userId,
             @Valid @RequestBody PlaylistCreateRequest request) {
-        
-        Long userId = (Long) auth.getPrincipal();
+
         Playlist playlist = playlistService.createPlaylist(userId, request);
         
         Map<String, Object> data = Map.of(
@@ -80,11 +82,10 @@ public class PlaylistController {
     // 플레이리스트 수정
     @PutMapping("/{playlistId}")
     public ResponseEntity<ApiResponse<Map<String, Object>>> updatePlaylist(
-            Authentication auth,
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long playlistId,
             @Valid @RequestBody PlaylistCreateRequest request) {
-        
-        Long userId = (Long) auth.getPrincipal();
+
         Playlist playlist = playlistService.updatePlaylist(playlistId, userId, request);
         
         Map<String, Object> data = Map.of(
@@ -100,21 +101,20 @@ public class PlaylistController {
     // 플레이리스트 삭제
     @DeleteMapping("/{playlistId}")
     public ResponseEntity<ApiResponse<Void>> deletePlaylist(
-            Authentication auth,
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long playlistId) {
         
-        Long userId = (Long) auth.getPrincipal();
         playlistService.deletePlaylist(playlistId, userId);
         
         return ResponseEntity.ok(ApiResponse.success("플레이리스트가 삭제되었습니다."));
     }
     
-    // 재생 횟수 증가
+    // 재생 기록 (로그인 필요)
     @PostMapping("/{playlistId}/play")
-    public ResponseEntity<ApiResponse<Map<String, Integer>>> incrementPlayCount(
+    public ResponseEntity<ApiResponse<BlockService.PlayResult>> recordPlay(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long playlistId) {
-        int playCount = playlistService.incrementPlayCount(playlistId);
-        return ResponseEntity.ok(ApiResponse.success(Map.of("playCount", playCount)));
+        return ResponseEntity.ok(ApiResponse.success(playlistService.recordPlay(playlistId, userId)));
     }
     
     // 플레이리스트 요약 정보 변환
@@ -181,7 +181,7 @@ public class PlaylistController {
             Map<String, Object> block = new HashMap<>();
             block.put("id", pb.getBlock().getId());
             block.put("title", pb.getBlock().getTitle());
-            block.put("fileUrl", pb.getBlock().getFileUrl());
+            block.put("fileUrl", storageService.publicUrl(pb.getBlock().getFileKey()));
             block.put("duration", pb.getBlock().getDuration());
             
             if (pb.getBlock().getCategory() != null) {

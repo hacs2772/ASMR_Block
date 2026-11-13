@@ -48,8 +48,16 @@ const useAuthStore = create(
         }
       },
 
-      // 로그아웃
-      logout: () => {
+      // 로그아웃 (서버 요청이 실패해도 화면에서는 로그아웃 처리)
+      logout: async () => {
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (refreshToken) {
+          try {
+            await authApi.logout(refreshToken);
+          } catch (e) {
+            // 무시 - 이미 만료된 토큰 등
+          }
+        }
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         set({

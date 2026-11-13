@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.asmrblock.repository.RefreshTokenRepository">
+
+    <insert id="insert" parameterType="RefreshToken" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO refresh_token (user_id, token_hash, expires_at)
+        VALUES (#{userId}, #{tokenHash}, #{expiresAt})
+    </insert>
+
+    <select id="findByTokenHash" resultType="RefreshToken">
+        SELECT * FROM refresh_token WHERE token_hash = #{tokenHash}
+    </select>
+
+    <update id="revoke">
+        UPDATE refresh_token SET revoked_at = NOW()
+        WHERE id = #{id} AND revoked_at IS NULL
+    </update>
+
+    <update id="revokeAllByUserId">
+        UPDATE refresh_token SET revoked_at = NOW()
+        WHERE user_id = #{userId} AND revoked_at IS NULL
+    </update>
+
+</mapper>

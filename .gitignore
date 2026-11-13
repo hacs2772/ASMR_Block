@@ -1,0 +1,15 @@
+# Backend
+asmr-block/backend/.gradle/
+asmr-block/backend/build/
+asmr-block/backend/media/
+
+# Frontend
+node_modules/
+asmr-block/frontend/build/
+.env.local
+
+# 개발 도구
+.idea/
+*.iml
+.DS_Store
+*.log

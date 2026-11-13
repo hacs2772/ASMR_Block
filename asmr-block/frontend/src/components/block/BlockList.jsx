@@ -3,7 +3,14 @@ import { useTranslation } from 'react-i18next';
 import BlockCard from './BlockCard';
 import Loading from '../common/Loading';
 
-function BlockList({ blocks, loading, onAddBlock, showAddButton = true }) {
+// gridClassName: 놓이는 자리 너비에 맞게 열 개수 조정 (에디터처럼 좁은 곳은 2열)
+function BlockList({
+  blocks,
+  loading,
+  onAddBlock,
+  showAddButton = true,
+  gridClassName = 'grid gap-4 md:grid-cols-2 lg:grid-cols-3',
+}) {
   const { t } = useTranslation('block');
 
   if (loading) {
@@ -19,7 +26,7 @@ function BlockList({ blocks, loading, onAddBlock, showAddButton = true }) {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className={gridClassName}>
       {blocks.map((block) => (
         <BlockCard
           key={block.id}

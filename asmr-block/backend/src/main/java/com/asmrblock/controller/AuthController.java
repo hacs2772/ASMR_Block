@@ -2,9 +2,11 @@ package com.asmrblock.controller;
 
 import com.asmrblock.domain.User;
 import com.asmrblock.dto.request.LoginRequest;
+import com.asmrblock.dto.request.RefreshTokenRequest;
 import com.asmrblock.dto.request.SignupRequest;
 import com.asmrblock.dto.response.ApiResponse;
 import com.asmrblock.dto.response.LoginResponse;
+import com.asmrblock.dto.response.TokenResponse;
 import com.asmrblock.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -49,20 +51,21 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("로그인 성공", response));
     }
     
-    // 토큰 갱신
+    // 토큰 갱신 (refreshToken도 새로 바뀜 - 둘 다 저장할 것)
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse<Map<String, String>>> refresh(
-            @RequestBody Map<String, String> request) {
+    public ResponseEntity<ApiResponse<TokenResponse>> refresh(
+            @Valid @RequestBody RefreshTokenRequest request) {
         
-        String refreshToken = request.get("refreshToken");
-        String accessToken = authService.refreshAccessToken(refreshToken);
-        
-        return ResponseEntity.ok(ApiResponse.success(Map.of("accessToken", accessToken)));
+        TokenResponse tokens = authService.refresh(request.getRefreshToken());
+        return ResponseEntity.ok(ApiResponse.success(tokens));
     }
     
-    // 로그아웃 (클라이언트에서 토큰 삭제)
+    // 로그아웃 (서버에서 refreshToken 폐기)
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout() {
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @Valid @RequestBody RefreshTokenRequest request) {
+        
+        authService.logout(request.getRefreshToken());
         return ResponseEntity.ok(ApiResponse.success("로그아웃 되었습니다."));
     }
 }

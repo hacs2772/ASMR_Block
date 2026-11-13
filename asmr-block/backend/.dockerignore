@@ -1,0 +1,6 @@
+.gradle
+build
+media
+*.log
+.idea
+.vscode

@@ -19,12 +19,15 @@ public class Block {
     private Long id;
     private String title;
     private String description;
-    private String fileUrl;
-    private String thumbnailUrl;
+    private String fileKey;          // 저장소 안의 파일 경로 (예: samples/rain.mp3)
+    private String thumbnailKey;
     private Integer duration;        // 재생 시간 (초)
     private Integer price;           // 가격 (0이면 무료)
     private Long categoryId;
     private Long uploaderId;
+    private String license;          // CC0, CC-BY, OWN, CREATOR
+    private String sourceUrl;
+    private String attribution;
     private Integer playCount;
     private String status;           // PENDING, APPROVED, REJECTED
     private Boolean isActive;

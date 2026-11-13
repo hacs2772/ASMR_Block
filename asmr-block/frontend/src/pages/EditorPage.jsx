@@ -91,7 +91,7 @@ function EditorPage() {
   if (loading) return <Loading />;
 
   return (
-    <div className="pb-32">
+    <div className="pb-48">
       {/* 헤더 */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
@@ -150,7 +150,12 @@ function EditorPage() {
         {/* 블록 선택 */}
         <div>
           <h2 className="text-lg font-medium text-white mb-4">{t('editor.blocks')}</h2>
-          <BlockList blocks={availableBlocks} onAddBlock={handleAddBlock} showAddButton={true} />
+          <BlockList
+            blocks={availableBlocks}
+            onAddBlock={handleAddBlock}
+            showAddButton={true}
+            gridClassName="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2"
+          />
         </div>
 
         {/* 내 조합 */}

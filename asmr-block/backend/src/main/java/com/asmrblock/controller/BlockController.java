@@ -3,23 +3,23 @@ package com.asmrblock.controller;
 import com.asmrblock.dto.response.ApiResponse;
 import com.asmrblock.dto.response.BlockResponse;
 import com.asmrblock.dto.response.PageResponse;
+import com.asmrblock.exception.CustomException;
 import com.asmrblock.service.BlockService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/blocks")
 @RequiredArgsConstructor
 public class BlockController {
-    
+
     private final BlockService blockService;
-    
+
     // 블록 목록 조회
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<BlockResponse>>> getBlocks(
@@ -29,34 +29,39 @@ public class BlockController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "latest") String sort) {
-        
-        // tagIds 문자열을 List<Long>으로 변환
-        List<Long> tagIdList = null;
-        if (tagIds != null && !tagIds.isEmpty()) {
-            tagIdList = Arrays.stream(tagIds.split(","))
-                    .map(String::trim)
-                    .map(Long::parseLong)
-                    .collect(Collectors.toList());
-        }
-        
+
         PageResponse<BlockResponse> response = blockService.getBlocks(
-            categoryId, tagIdList, keyword, page, size, sort);
-        
+                categoryId, parseTagIds(tagIds), keyword, Paging.page(page), Paging.size(size), sort);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
-    
+
     // 블록 상세 조회
     @GetMapping("/{blockId}")
     public ResponseEntity<ApiResponse<BlockResponse>> getBlock(@PathVariable Long blockId) {
-        BlockResponse response = blockService.getBlock(blockId);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(blockService.getBlock(blockId)));
     }
-    
-    // 재생 횟수 증가
+
+    // 재생 기록 (로그인 필요)
     @PostMapping("/{blockId}/play")
-    public ResponseEntity<ApiResponse<Map<String, Integer>>> incrementPlayCount(
-            @PathVariable Long blockId) {
-        int playCount = blockService.incrementPlayCount(blockId);
-        return ResponseEntity.ok(ApiResponse.success(Map.of("playCount", playCount)));
+    public ResponseEntity<ApiResponse<BlockService.PlayResult>> recordPlay(
+            @PathVariable Long blockId,
+            @AuthenticationPrincipal Long userId) {
+        return ResponseEntity.ok(ApiResponse.success(blockService.recordPlay(blockId, userId)));
+    }
+
+    // "1,2,3" → [1, 2, 3]
+    private static List<Long> parseTagIds(String tagIds) {
+        if (tagIds == null || tagIds.isBlank()) {
+            return null;
+        }
+        try {
+            return Arrays.stream(tagIds.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(Long::parseLong)
+                    .toList();
+        } catch (NumberFormatException e) {
+            throw CustomException.badRequest("tagIds는 숫자를 쉼표로 구분해서 보내주세요. 예) 1,2,3");
+        }
     }
 }

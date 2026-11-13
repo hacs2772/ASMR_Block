@@ -1,6 +1,7 @@
 package com.asmrblock.dto.response;
 
 import com.asmrblock.domain.Block;
+import com.asmrblock.storage.StorageService;
 import com.asmrblock.domain.SoundCategory;
 import com.asmrblock.domain.SoundTag;
 import lombok.AllArgsConstructor;
@@ -25,6 +26,9 @@ public class BlockResponse {
     private String thumbnailUrl;
     private Integer duration;
     private Integer price;
+    private String license;
+    private String sourceUrl;
+    private String attribution;
     private CategoryInfo category;
     private List<TagInfo> tags;
     private UploaderInfo uploader;
@@ -59,15 +63,18 @@ public class BlockResponse {
         private String nickname;
     }
     
-    public static BlockResponse from(Block block) {
+    public static BlockResponse from(Block block, StorageService storage) {
         BlockResponseBuilder builder = BlockResponse.builder()
                 .id(block.getId())
                 .title(block.getTitle())
                 .description(block.getDescription())
-                .fileUrl(block.getFileUrl())
-                .thumbnailUrl(block.getThumbnailUrl())
+                .fileUrl(storage.publicUrl(block.getFileKey()))
+                .thumbnailUrl(storage.publicUrl(block.getThumbnailKey()))
                 .duration(block.getDuration())
                 .price(block.getPrice())
+                .license(block.getLicense())
+                .sourceUrl(block.getSourceUrl())
+                .attribution(block.getAttribution())
                 .playCount(block.getPlayCount())
                 .createdAt(block.getCreatedAt());
         
