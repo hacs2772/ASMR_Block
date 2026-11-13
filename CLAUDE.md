@@ -12,7 +12,10 @@
 - `asmr-block/backend` — Spring Boot 4.1 / Java 21 / MyBatis / PostgreSQL 16 / ffmpeg
   - 기능별 패키지: `auth`, `user`, `category`, `block`, `playlist`, `render`, `play`, `audio`(ffmpeg), `storage`, `common`, `config`, `security`
   - MyBatis XML: `src/main/resources/mapper/*Mapper.xml` (타입은 전체 클래스 이름으로 씀)
-- `asmr-block/frontend` — React 18 (CRA) 웹. 확인용이며, 메인 클라이언트는 이후 React Native(Expo) 앱으로 만든다
+- `asmr-block/mobile` — **메인 클라이언트**. Expo SDK 58 / React Native 0.88 / TypeScript / Expo Router
+  - 작업 전 `asmr-block/mobile/AGENTS.md`(Expo 규칙)를 따른다: 패키지는 `npx expo install`, 화면은 `src/app/`
+  - 서버 상태는 TanStack Query, 앱 상태는 zustand(`src/store`), 재생은 `src/audio/PlayerProvider`(전역 1개)
+- `asmr-block/frontend` — React 18 (CRA) 웹. 확인/관리용
 - `asmr-block/docker-compose.yml` — DB + 백엔드 + 웹 한 번에 실행
 - `asmr-block/docs` — API 명세(`api_specification.md`), DB 명세, i18n 가이드
 
@@ -21,6 +24,8 @@
 cd asmr-block && docker compose up --build   # 전체 실행 (웹 :3000, API :8080, Swagger /swagger-ui.html)
 cd asmr-block/backend && ./gradlew test      # 백엔드 통합 테스트 (Docker 필요)
 cd asmr-block/frontend && npm run build      # 웹 빌드 확인
+cd asmr-block/mobile && npx expo start       # 앱 (휴대폰 Expo Go로 QR 스캔, 같은 와이파이)
+cd asmr-block/mobile && npm run typecheck && npm run lint && npm test
 ```
 테스트 계정: `test@asmrblock.com` / `password123` (관리자: `admin@asmrblock.com`)
 
@@ -40,6 +45,12 @@ cd asmr-block/frontend && npm run build      # 웹 빌드 확인
 - 기능을 추가/수정하면 `src/test/java/com/asmrblock` 에 통합 테스트를 추가하고 `./gradlew test` 가 통과해야 한다.
 - API를 바꾸면 `docs/api_specification.md` 도 같이 고친다.
 
+## 모바일 규칙
+- Expo API는 SDK마다 바뀐다. 기억 말고 `node_modules/<패키지>/build/*.d.ts` 타입 정의로 확인하고 쓴다.
+- API 주소는 `src/lib/config.ts`가 자동으로 정한다 (Expo Go: `npx expo start`한 PC의 IP:8080). 서버의 음원 URL도 요청한 주소 기준이라 휴대폰에서 재생된다.
+- expo-audio 플레이어의 볼륨/반복 대입은 `src/audio/playerControls.ts`에서만 (lint 규칙 때문).
+- 로직은 `__tests__`에 jest 테스트를 추가한다. 화면 흐름은 웹 미리보기(`npx expo export -p web`) + Playwright로 확인.
+
 ## 인증 흐름
 - Access Token: JWT, 30분. 만료/위조 시 보호된 API는 **401** → 클라이언트가 refresh 후 재시도.
 - Refresh Token: 랜덤 문자열, DB에 SHA-256 해시 저장, 14일. 사용할 때마다 새로 발급(rotation), 재사용 감지 시 전부 폐기.
@@ -47,6 +58,7 @@ cd asmr-block/frontend && npm run build      # 웹 빌드 확인
 ## 다음 단계 (로드맵)
 - [x] 0단계: 보안 버그 수정, Docker, 샘플 데이터, 테스트
 - [x] 1단계: 기능별 패키지 재구성, 쌍둥이 빌딩(동), 완성본(ffmpeg), 음원 업로드·관리자 승인, 회원 탈퇴
-- [ ] 2단계: React Native(Expo) 앱 — 쌍둥이 빌딩 편집기, 완성본 백그라운드 재생, 수면 타이머, 오프라인 다운로드
+- [x] 2단계: React Native(Expo) 앱 — 쌍둥이 빌딩 편집기, 완성본 백그라운드 재생·잠금화면, 수면 타이머, 오프라인 저장, 미니 플레이어
+- [ ] 실기기 확인 → EAS Build(TestFlight / Play 내부 테스트), 앱 아이콘·스플래시
 - [ ] 파일 저장소 S3/R2 (`StorageService` 구현 추가), 오래된 완성본 정리
 - [ ] 베타 출시 → 구독/수익화

@@ -37,7 +37,8 @@ public record AppProperties(
     public record Auth(@NotNull Duration refreshTokenValidity) {
     }
 
-    public record Storage(@NotBlank String localDir, @NotBlank String publicBaseUrl) {
+    /** publicBaseUrl이 비어 있으면 요청 주소 기준으로 파일 URL을 만듦 (휴대폰 개발용) */
+    public record Storage(@NotBlank String localDir, String publicBaseUrl) {
     }
 
     public record Cors(List<String> allowedOrigins) {

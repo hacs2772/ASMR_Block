@@ -37,8 +37,8 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       APP_STORAGE_LOCAL_DIR: /data/media
-      APP_STORAGE_PUBLIC_BASE_URL: http://localhost:8080/files
       APP_GENERATE_SAMPLE_AUDIO: "true"   # 첫 실행 때 샘플 음원 12개 생성 (1~2분)
+      # 휴대폰 앱(Expo)도 같은 와이파이에서 http://<PC IP>:8080 으로 접속 가능
     ports:
       - "8080:8080"
     volumes:

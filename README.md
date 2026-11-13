@@ -58,7 +58,15 @@
 | ffmpeg | 음원 변환·음량 정규화·완성본 믹싱 |
 | AWS S3 / Cloudflare R2 | 파일 저장소 (예정, 지금은 서버 디스크) |
 
-### Frontend
+### Mobile (메인 앱)
+| 기술 | 설명 |
+|------|------|
+| Expo SDK 58 / React Native 0.88 | iOS·안드로이드 앱 |
+| TypeScript, Expo Router | 언어, 화면 이동 |
+| expo-audio | 백그라운드 재생, 잠금화면 컨트롤 |
+| TanStack Query, zustand | 서버 데이터, 앱 상태 |
+
+### Frontend (웹, 확인/관리용)
 | 기술 | 설명 |
 |------|------|
 | React 18 | UI 라이브러리 |
@@ -84,6 +92,7 @@
 ```
 asmr-block/
 ├── docker-compose.yml             # 전체 실행 (DB + 백엔드 + 웹)
+├── mobile/                        # 📱 Expo 앱 (메인 클라이언트)
 ├── docs/                          # 문서
 │   ├── database_schema.md         # DB 설계서 (실제 정의: backend/.../db/migration)
 │   ├── api_specification.md       # API 명세서
@@ -185,6 +194,16 @@ cd backend
 Docker Desktop이 켜져 있으면 테스트용 PostgreSQL을 자동으로 띄워서 API 전체를 검사합니다.
 GitHub에 올리면 Actions에서도 자동으로 실행됩니다.
 
+### 5. 휴대폰 앱으로 보기 📱
+휴대폰에 **Expo Go** 앱을 설치하고, 서버를 켠 상태에서:
+```bash
+cd ASMR_Block/asmr-block/mobile
+npm install
+npx expo start
+```
+나오는 QR 코드를 휴대폰으로 찍으면 앱이 열립니다 (휴대폰과 PC가 같은 와이파이).
+자세한 내용과 문제 해결: [mobile/README.md](./asmr-block/mobile/README.md)
+
 ### (선택) Docker 없이 개발 모드로 실행
 Java 21, Node 22, ffmpeg 가 필요합니다.
 ```bash
@@ -236,7 +255,7 @@ users
 - [x] **0단계: 기반 정리** — 인증/보안 버그 수정, Spring Boot 4 · Java 21, Flyway, Docker Compose, 샘플 데이터·음원, 자동 테스트
 - [x] **1단계: 백엔드 확장** — 기능별 패키지 재구성, 쌍둥이 빌딩(동), ffmpeg 완성본, 음원 업로드·관리자 승인, 회원 탈퇴, 웹 편집기
 - [ ] 파일 저장소(R2/S3 + CDN), 오래된 완성본 정리
-- [ ] 2단계: 모바일 앱 MVP (React Native + Expo) — 쌍둥이 빌딩 편집기, 백그라운드 재생, 수면 타이머
+- [x] **2단계: 모바일 앱 MVP** (Expo) — 쌍둥이 빌딩 편집기, 완성본 백그라운드 재생·잠금화면, 수면 타이머, 오프라인 저장
 - [ ] 3단계: 비공개 베타 출시 (TestFlight / Play 내부 테스트)
 - [ ] 4단계: 수익화 — 구독, 크리에이터 업로드·수익 배분
 

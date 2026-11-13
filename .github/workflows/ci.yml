@@ -32,6 +32,31 @@ jobs:
           name: backend-test-report
           path: asmr-block/backend/build/reports/tests/test
 
+  mobile:
+    name: 모바일 앱 검사
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: asmr-block/mobile
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: asmr-block/mobile/package-lock.json
+      - run: npm ci
+      - name: 타입 검사
+        run: npx tsc --noEmit
+      - name: 코드 규칙 검사
+        run: npx eslint .
+      - name: 단위 테스트
+        run: npx jest --ci
+      - name: Expo 호환성 검사
+        run: npx expo-doctor
+      - name: 안드로이드/iOS 번들 만들기
+        run: npx expo export --platform android --platform ios --output-dir /tmp/mobile-export
+
   web:
     name: 웹 빌드
     runs-on: ubuntu-latest
