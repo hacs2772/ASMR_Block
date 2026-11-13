@@ -159,14 +159,14 @@ export default function EditorScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: space.md, paddingBottom: space.xl, gap: space.md },
+  content: { padding: space.md, paddingBottom: space.lg, gap: space.sm },
   headerSave: { minHeight: 34, paddingVertical: 4, paddingHorizontal: 14 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   titleInput: {
-    color: colors.text, fontSize: 18, fontWeight: '700', paddingVertical: space.sm, paddingHorizontal: space.md,
+    color: colors.text, fontSize: 17, fontWeight: '700', paddingVertical: 6, paddingHorizontal: space.md,
     backgroundColor: colors.card, borderRadius: radius.md,
   },
-  meta: { color: colors.muted, fontSize: 12, marginTop: 4, marginLeft: 4, fontVariant: ['tabular-nums'] },
+  meta: { color: colors.muted, fontSize: 12, marginTop: 2, marginLeft: 4, fontVariant: ['tabular-nums'] },
   publicBox: { alignItems: 'center' },
   publicLabel: { color: colors.muted, fontSize: 11 },
 });

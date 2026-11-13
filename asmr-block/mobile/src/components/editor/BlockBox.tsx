@@ -144,7 +144,7 @@ function Tile({ block }: { block: Block }) {
 
 const styles = StyleSheet.create({
   box: {
-    height: 250, backgroundColor: colors.card, borderTopLeftRadius: 22, borderTopRightRadius: 22,
+    height: 220, backgroundColor: colors.card, borderTopLeftRadius: 22, borderTopRightRadius: 22,
     borderWidth: 1, borderBottomWidth: 0, borderColor: colors.border, paddingTop: space.md,
   },
   head: { flexDirection: 'row', alignItems: 'baseline', gap: space.sm, paddingHorizontal: space.lg },

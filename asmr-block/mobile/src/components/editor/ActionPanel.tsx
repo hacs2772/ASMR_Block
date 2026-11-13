@@ -19,7 +19,7 @@ export function ActionPanel() {
 
   if (!selected || !block) {
     return (
-      <View style={styles.panel}>
+      <View style={[styles.panel, styles.hintPanel]}>
         <Text style={styles.hint}>블록을 누르면 <Text style={styles.hintStrong}>복제·빼기</Text> · 꾹 눌러 끌면 <Text style={styles.hintStrong}>옮기기</Text></Text>
       </View>
     );
@@ -78,7 +78,8 @@ function Action({ icon, label, onPress, primary, danger, disabled, testID }: {
 
 const styles = StyleSheet.create({
   panel: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.md, gap: space.sm },
-  hint: { color: colors.muted, fontSize: 13, textAlign: 'center' },
+  hintPanel: { paddingVertical: space.sm },
+  hint: { color: colors.muted, fontSize: 12, textAlign: 'center' },
   hintStrong: { color: colors.text, fontWeight: '600' },
   head: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   dot: { width: 10, height: 10, borderRadius: 3 },

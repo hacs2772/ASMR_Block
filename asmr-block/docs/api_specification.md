@@ -154,8 +154,10 @@
 |------|------|------|------|
 | GET | `/blocks` | - (로그인하면 `owned` 표시) | 목록 (승인된 블록만) |
 | GET | `/blocks/trending` | - | **요즘 뜨는 소리**: 최근 `days`(기본 7)일 재생 수 순, `size` 기본 10 → `recentPlays` 포함 |
+| GET | `/blocks/upload-policy` | - | **업로드 규칙**: `{ "maxPrice": 100, "maxFileMb": 50, "minSeconds": 10, "maxSeconds": 1200, "extensions": [...] }` |
 | GET | `/blocks/{id}` | - | 상세 (승인 전이면 404) |
-| POST | `/blocks` | 필요 | **음원 업로드** (multipart) → 검수 대기 |
+| POST | `/blocks` | 필요 | **음원 업로드 (판매자)** (multipart) → 검수 대기 |
+| GET | `/me/uploads` | 필요 | **내가 올린 블록** (검수 상태 무관, 최신순, 페이지) |
 | POST | `/blocks/{id}/play` | 필요 | 재생 기록 |
 
 **목록 쿼리**: `categoryId` (대분류면 그 아래 소분류까지), `free=true|false` (무료만 / 유료만), `tagIds=1,2` (하나라도 달린 블록), `keyword` (제목), `sort=latest|popular`, `page`, `size`
@@ -203,9 +205,18 @@
 | `license` | ✅ | `CC0` / `CC_BY`(출처 표기 필요) / `OWN`(직접 녹음) / `CREATOR` |
 | `sourceUrl` | | 원본 출처 |
 | `attribution` | `CC_BY`면 ✅ | 출처 표기 문구 |
+| `price` | | 판매 가격(코인). 생략/0 = 무료, **최대 `maxPrice`**(설정 `app.shop.seller-max-price`, 기본 100) 넘으면 400 |
 
 서버 처리: 원본 보관 → **44.1kHz 스테레오 MP3, 음량 -24 LUFS로 변환** → `status: PENDING` 으로 등록 (관리자 승인 후 공개).
 승인되면 **올린 사람의 블록함에 자동으로** 들어갑니다.
+
+**내가 올린 블록 (MyUploadResponse)** - `GET /me/uploads`
+```json
+{ "id": 31, "title": "희귀한 교토 왁스 부수기", "fileUrl": "http://.../blocks/....mp3", "duration": 15, "price": 30,
+  "status": "PENDING", "category": { "id": 23, "name": "왁스·슬라임", ... }, "collectedCount": 0, "playCount": 0, "createdAt": "..." }
+```
+- `status`: `PENDING`(검수 중) / `APPROVED`(판매 중) / `REJECTED`(거절)
+- `collectedCount`: 이 블록을 담은 사람 수 (올린 사람 본인 제외)
 
 ### 5.2 재생 기록 `POST /blocks/{id}/play`
 같은 사용자가 30분 안에 다시 재생하면 세지 않습니다.
@@ -246,6 +257,7 @@
 |------|------|------|------|
 | GET | `/playlists` | 필요 | 내 플레이리스트 |
 | GET | `/playlists/public` | - | 공개 플레이리스트 (`sort=latest|popular`) |
+| GET | `/playlists/trending` | - | **요즘 뜨는 조합**: 최근 `days`(기본 7)일 재생 수 순, `size` 기본 10 → `recentPlays` 포함 |
 | GET | `/playlists/{id}` | 공개면 - / 비공개면 본인 | 상세 |
 | POST | `/playlists` | 필요 | 생성 → 201 |
 | PUT | `/playlists/{id}` | 본인 | 수정 (트랙을 통째로 교체) |
@@ -311,7 +323,7 @@
 {
   "id": 3, "title": "...", "isPublic": true, "playCount": 12, "totalDuration": 540, "listenMinutes": 60,
   "owner": { "id": 2, "nickname": "테스트유저" },
-  "blockCount": 3, "hasMix": true, "previewColors": ["#22C55E"], "createdAt": "..."
+  "blockCount": 3, "hasMix": true, "previewColors": ["#22C55E"], "recentPlays": null, "createdAt": "..."
 }
 ```
 
