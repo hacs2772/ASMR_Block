@@ -12,7 +12,7 @@ import { formatMinutes } from '@/lib/format';
 import { useAuth } from '@/store/auth';
 import { colors, radius, space } from '@/theme';
 
-/** 내 조합 + 휴대폰에 저장한 완성본(오프라인) */
+/** ASMR 편집: 새로 만들기 + 내 조합 + 휴대폰에 저장한 완성본(오프라인) */
 export default function LibraryScreen() {
   const status = useAuth((s) => s.status);
   const mine = useQuery({ queryKey: ['playlists', 'mine'], queryFn: playlistApi.mine, enabled: status === 'signedIn' });
@@ -26,7 +26,7 @@ export default function LibraryScreen() {
   if (status !== 'signedIn') {
     return (
       <View style={styles.screen}>
-        <EmptyState icon="albums-outline" title="로그인하면 나만의 조합을 만들 수 있어요" message="블록을 쌍둥이 빌딩처럼 쌓아서 나만의 ASMR을 만들어보세요.">
+        <EmptyState icon="albums-outline" title="로그인하면 나만의 조합을 만들 수 있어요" message="담은 블록을 레고처럼 이어 붙여서 나만의 ASMR을 만들어보세요.">
           <Button title="로그인" onPress={() => router.push('/login')} style={{ marginTop: space.md, alignSelf: 'stretch' }} />
         </EmptyState>
       </View>
@@ -44,7 +44,7 @@ export default function LibraryScreen() {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={mine.isRefetching} onRefresh={() => void mine.refetch()} tintColor={colors.muted} />}
     >
-      <Button title="새 조합 만들기" icon="add" onPress={() => router.push({ pathname: '/editor/[id]', params: { id: 'new' } })} testID="new-playlist" />
+      <Button title="새로 만들기" icon="add" onPress={() => router.push({ pathname: '/editor/[id]', params: { id: 'new' } })} testID="new-playlist" />
 
       {canDownload && saved.length > 0 && (
         <View style={styles.section}>

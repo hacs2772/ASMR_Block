@@ -1,6 +1,6 @@
 import type { PlaylistDetail, TrackItem } from '@/api/types';
 import {
-  brickWidth, compressRuns, cycleLength, findFreeStart, insertIndexAtX, itemsFromDetail, listenNote, mainLayout,
+  autoTitle, brickWidth, compressRuns, cycleLength, findFreeStart, insertIndexAtX, itemsFromDetail, listenNote, mainLayout, previewAt, xAtTime,
   snapMixStart, toSaveRequest, useEditor, type EditorBlock, type MainItem, type MixItem,
 } from '@/store/editor';
 
@@ -138,5 +138,36 @@ describe('편집 동작', () => {
     expect(listenNote(600, 0)).toBe('한 바퀴(10분) 듣고 끝나요');
     expect(listenNote(2040, 480)).toBe('한 바퀴(34분)를 이어서 8시간 동안 들려줘요 · 약 15바퀴');
     expect(listenNote(4000, 60)).toBe('1시간 뒤에 스르르 작아지며 꺼져요');
+  });
+});
+
+describe('전체 듣기와 자동 이름', () => {
+  it('t초에 틀 블록과 위치: 첫째 줄은 이어서, 둘째 줄은 놓인 시간에만', () => {
+    const a = block(1, 100);
+    const b = block(2, 50);
+    const s = {
+      main: { volume: 1, items: [main('a', a), main('b', b)] },
+      mix: { enabled: true, volume: 0.5, items: [mix('m', block(3, 30), 120)] },
+    };
+    expect(previewAt(s, 10)).toEqual({ main: { key: 'a', block: a, offset: 10 }, mix: null });
+    const at = previewAt(s, 130);
+    expect(at.main).toEqual({ key: 'b', block: b, offset: 30 });
+    expect(at.mix?.key).toBe('m');
+    expect(at.mix?.offset).toBe(10);
+    expect(previewAt(s, 200)).toEqual({ main: null, mix: null });
+    expect(previewAt({ ...s, mix: { ...s.mix, enabled: false } }, 130).mix).toBeNull();
+  });
+
+  it('재생 위치 선의 px: 블록 폭 비례', () => {
+    const items = [main('a', block(1, 180)), main('b', block(2, 600))];
+    expect(xAtTime(items, 90)).toBe(27);
+    expect(xAtTime(items, 180 + 300)).toBe(54 + 90);
+  });
+
+  it('이름을 안 적으면 자동으로', () => {
+    expect(autoTitle({ main: { volume: 1, items: [] } })).toBe('새 조합');
+    expect(autoTitle({ main: { volume: 1, items: [main('a', block(1, 60)), main('b', block(1, 60))] } })).toBe('블록1 조합');
+    expect(autoTitle({ main: { volume: 1, items: [main('a', block(1, 60)), main('b', block(2, 60)), main('c', block(3, 60))] } }))
+      .toBe('블록1 외 2개');
   });
 });

@@ -57,7 +57,9 @@ function refreshOnce(): Promise<boolean> {
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, retryOnUnauthorized = true } = options;
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  // 파일 업로드(FormData)는 경계값이 붙은 Content-Type을 fetch가 직접 정함
+  const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+  if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
   const tokens = session.get();
   if (tokens) headers.Authorization = `Bearer ${tokens.accessToken}`;
 
@@ -66,7 +68,7 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
     res = await fetch(`${API_URL}${path}`, {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
     });
   } catch {
     throw new ApiError(0, 'NETWORK_ERROR', '서버에 연결할 수 없어요. PC에서 서버가 켜져 있는지, 같은 와이파이인지 확인해주세요.');

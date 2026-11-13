@@ -346,3 +346,33 @@ export const useEditor = create<Store>((set, get) => ({
 
   markSaved: (playlistId) => set({ playlistId, isModified: false }),
 }));
+
+// ===================== 전체 듣기 (편집 중 바로 듣기) =====================
+
+/** t초에 첫째 줄·둘째 줄에서 각각 어느 블록을 몇 초부터 틀어야 하는지 (없으면 null = 조용) */
+export function previewAt(state: Pick<EditorState, 'main' | 'mix'>, t: number) {
+  const layout = mainLayout(state.main.items);
+  const i = layout.findIndex((l) => t >= l.start && t < l.start + l.length);
+  const main = i >= 0 ? { key: layout[i].key, block: state.main.items[i].block, offset: t - layout[i].start } : null;
+  const m = state.mix.enabled ? state.mix.items.find((x) => t >= x.start && t < x.start + x.block.duration) : undefined;
+  const mix = m ? { key: m.key, block: m.block, offset: t - m.start } : null;
+  return { main, mix };
+}
+
+/** t초가 바닥판에서 몇 px인지 (첫째 줄 블록 폭 기준 - 아주 짧은 블록은 폭이 넓혀져 있어서) */
+export function xAtTime(items: MainItem[], t: number): number {
+  const layout = mainLayout(items);
+  for (const l of layout) {
+    if (t < l.start + l.length) return l.x + ((t - l.start) / l.length) * l.width;
+  }
+  const last = layout[layout.length - 1];
+  return last ? last.x + last.width + (t - (last.start + last.length)) * PX_PER_SECOND : t * PX_PER_SECOND;
+}
+
+/** 조합 이름을 안 적었을 때 자동 이름: "숲속 바람 외 3개" */
+export function autoTitle(state: Pick<EditorState, 'main'>): string {
+  const first = state.main.items[0]?.block.title;
+  if (!first) return '새 조합';
+  const others = new Set(state.main.items.map((i) => i.block.id)).size - 1;
+  return others > 0 ? `${first} 외 ${others}개` : `${first} 조합`;
+}

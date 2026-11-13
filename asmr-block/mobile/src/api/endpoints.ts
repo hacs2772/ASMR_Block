@@ -3,11 +3,13 @@ import type {
   Block,
   CategoryGroup,
   LoginResponse,
+  MyUpload,
   Page,
   PlaylistDetail,
   PlaylistSaveRequest,
   PlaylistSummary,
   Render,
+  UploadPolicy,
   User,
 } from './types';
 
@@ -41,6 +43,14 @@ export const catalogApi = {
     api<Page<Block>>('/blocks' + query({ size: 50, ...params })),
 };
 
+/** 판매자: ASMR 업로드 */
+export const sellerApi = {
+  policy: () => api<UploadPolicy>('/blocks/upload-policy'),
+  /** form: file, title, categoryId, license(OWN), price */
+  upload: (form: FormData) => api<Block>('/blocks', { method: 'POST', body: form }),
+  mine: () => api<Page<MyUpload>>('/me/uploads?size=100'),
+};
+
 /** 내 블록함: 상점에서 담은 블록 (편집기에는 이것만 보임) */
 export const libraryApi = {
   mine: () => api<Block[]>('/me/blocks'),
@@ -53,6 +63,8 @@ export const playlistApi = {
   mine: () => api<Page<PlaylistSummary>>('/playlists?size=100'),
   public: (sort: 'latest' | 'popular' = 'latest') =>
     api<Page<PlaylistSummary>>('/playlists/public' + query({ sort, size: 50 })),
+  /** 요즘 뜨는 조합 (최근 7일 재생 많은 순) */
+  trending: (size = 5) => api<PlaylistSummary[]>('/playlists/trending' + query({ size })),
   get: (id: number) => api<PlaylistDetail>(`/playlists/${id}`),
   create: (data: PlaylistSaveRequest) => api<PlaylistDetail>('/playlists', { method: 'POST', body: data }),
   update: (id: number, data: PlaylistSaveRequest) =>

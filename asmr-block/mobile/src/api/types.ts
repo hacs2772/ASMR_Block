@@ -102,6 +102,26 @@ export type PlaylistSummary = {
   blockCount: number;
   hasMix: boolean;
   previewColors: string[];
+  /** 요즘 뜨는 조합에서만: 최근 재생 수 */
+  recentPlays: number | null;
+  createdAt: string;
+};
+
+/** 업로드 규칙 (판매 최대 가격 등) */
+export type UploadPolicy = { maxPrice: number; maxFileMb: number; minSeconds: number; maxSeconds: number; extensions: string[] };
+
+/** 판매자: 내가 올린 블록 */
+export type MyUpload = {
+  id: number;
+  title: string;
+  fileUrl: string | null;
+  duration: number;
+  price: number;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  category: Category | null;
+  /** 담은 사람 수 (나 제외) */
+  collectedCount: number;
+  playCount: number;
   createdAt: string;
 };
 
