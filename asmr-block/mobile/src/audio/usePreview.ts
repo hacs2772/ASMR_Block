@@ -13,15 +13,18 @@ export function usePreview() {
   const [previewId, setPreviewId] = useState<number | null>(null);
   const main = usePlayer();
 
+  /** 무료·내 블록은 전체, 유료는 previewUrl(앞 30초) */
   const toggle = useCallback(
-    (block: { id: number; fileUrl: string }) => {
+    (block: { id: number; fileUrl?: string | null; previewUrl?: string | null }) => {
       if (previewId === block.id && !status.didJustFinish) {
         player.pause();
         setPreviewId(null);
         return;
       }
+      const url = block.fileUrl ?? block.previewUrl;
+      if (!url) return;
       main.pause();
-      player.replace(block.fileUrl);
+      player.replace(url);
       player.play();
       setPreviewId(block.id);
     },

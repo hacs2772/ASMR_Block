@@ -24,6 +24,7 @@ public class Playlist {
     private String description;
     private Integer totalDuration;   // 총 재생 시간 (초)
     private Boolean isPublic;
+    private Integer listenMinutes;   // 얼마나 들을까요? (0 = 한 바퀴만, 그 외 분)
     private Integer playCount;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

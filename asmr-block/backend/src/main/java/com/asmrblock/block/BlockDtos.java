@@ -3,6 +3,8 @@ package com.asmrblock.block;
 import com.asmrblock.category.CategoryDtos.CategoryResponse;
 import com.asmrblock.category.CategoryDtos.TagResponse;
 import com.asmrblock.storage.StorageService;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -16,14 +18,23 @@ public final class BlockDtos {
     private BlockDtos() {
     }
 
+    /**
+     * 블록.
+     * price: 코인 (0이면 무료)
+     * owned: 내 블록함에 있는지 (비로그인이면 false)
+     * fileUrl: 전체 음원 - 무료이거나 내 블록함에 있을 때만, 아니면 null
+     * previewUrl: 미리듣기 - 무료는 전체, 유료는 앞 30초 맛보기 (아직 못 만들었으면 null)
+     */
     public record BlockResponse(
             Long id,
             String title,
             String description,
             String fileUrl,
+            String previewUrl,
             String thumbnailUrl,
             Integer duration,
             Integer price,
+            boolean owned,
             License license,
             String sourceUrl,
             String attribution,
@@ -35,11 +46,16 @@ public final class BlockDtos {
             Integer recentPlays,
             LocalDateTime createdAt) {
 
-        public static BlockResponse from(Block block, List<TagResponse> tags, StorageService storage) {
+        /** canHear: 전체 음원 주소를 보여줘도 되는지 (무료 / 내 블록함 / 관리자 검수) */
+        public static BlockResponse from(Block block, List<TagResponse> tags, StorageService storage,
+                                         boolean owned, boolean canHear) {
+            String fullUrl = storage.publicUrl(block.getFileKey());
             return new BlockResponse(
                     block.getId(), block.getTitle(), block.getDescription(),
-                    storage.publicUrl(block.getFileKey()), storage.publicUrl(block.getThumbnailKey()),
-                    block.getDuration(), block.getPrice(),
+                    canHear || !block.isPaid() ? fullUrl : null,
+                    block.isPaid() ? storage.publicUrl(block.getPreviewKey()) : fullUrl,
+                    storage.publicUrl(block.getThumbnailKey()),
+                    block.getDuration(), block.getPrice(), owned,
                     block.getLicense(), block.getSourceUrl(), block.getAttribution(), block.getStatus(),
                     CategoryResponse.from(block.getCategory()),
                     tags == null ? List.of() : tags,
@@ -82,5 +98,13 @@ public final class BlockDtos {
     public record BlockStatusRequest(
             @NotNull(message = "status는 필수입니다. (APPROVED, REJECTED, PENDING)")
             BlockStatus status) {
+    }
+
+    /** 관리자: 가격(코인) 정하기. 0이면 무료 */
+    public record BlockPriceRequest(
+            @NotNull(message = "price는 필수입니다.")
+            @Min(value = 0, message = "가격은 0 이상이어야 합니다.")
+            @Max(value = 10000, message = "가격은 10000코인 이하여야 합니다.")
+            Integer price) {
     }
 }

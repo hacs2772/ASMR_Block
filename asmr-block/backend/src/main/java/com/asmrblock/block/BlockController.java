@@ -23,29 +23,32 @@ public class BlockController {
     private final BlockService blockService;
     private final BlockUploadService blockUploadService;
 
-    // 블록 목록 (승인된 블록만). tagIds=1,2 → 둘 중 하나라도 달린 블록
+    // 블록 상점 목록 (승인된 블록만). tagIds=1,2 → 둘 중 하나라도 달린 블록, free=true → 무료만
     @GetMapping
     public ApiResponse<PageResponse<BlockResponse>> search(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) List<Long> tagIds,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Boolean free,
             @RequestParam(defaultValue = "latest") String sort,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @AuthenticationPrincipal Long userId) {
         return ApiResponse.ok(blockService.search(
-                categoryId, tagIds, keyword, BlockStatus.APPROVED, sort, PageQuery.of(page, size)));
+                categoryId, tagIds, keyword, free, sort, PageQuery.of(page, size), userId));
     }
 
     // 요즘 뜨는 소리 (최근 7일 재생이 많은 순)
     @GetMapping("/trending")
     public ApiResponse<List<BlockResponse>> trending(@RequestParam(defaultValue = "7") int days,
-                                                     @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.ok(blockService.trending(days, size));
+                                                     @RequestParam(defaultValue = "10") int size,
+                                                     @AuthenticationPrincipal Long userId) {
+        return ApiResponse.ok(blockService.trending(days, size, userId));
     }
 
     @GetMapping("/{blockId}")
-    public ApiResponse<BlockResponse> get(@PathVariable Long blockId) {
-        return ApiResponse.ok(blockService.getPlayable(blockId));
+    public ApiResponse<BlockResponse> get(@PathVariable Long blockId, @AuthenticationPrincipal Long userId) {
+        return ApiResponse.ok(blockService.getPlayable(blockId, userId));
     }
 
     // 음원 업로드 (로그인 필요, 관리자 승인 후 공개)

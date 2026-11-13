@@ -3,18 +3,19 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { playlistApi } from '@/api/endpoints';
-import { DragGhost } from '@/components/timeline/DragGhost';
-import { useDrag } from '@/components/timeline/dragStore';
-import { Palette } from '@/components/timeline/Palette';
-import { SelectionPanel } from '@/components/timeline/SelectionPanel';
-import { Timeline } from '@/components/timeline/Timeline';
+import { ActionPanel } from '@/components/editor/ActionPanel';
+import { BlockBox } from '@/components/editor/BlockBox';
+import { Board } from '@/components/editor/Board';
+import { useDrag } from '@/components/editor/drag';
+import { DragGhost } from '@/components/editor/DragGhost';
+import { ListenCard, RowTwoCard } from '@/components/editor/EditorCards';
 import { Button, EmptyState } from '@/components/ui';
 import { confirm, notify } from '@/lib/dialog';
 import { useAuth } from '@/store/auth';
-import { durationsOf, MAX_TOTAL_SECONDS, toSaveRequest, useEditor } from '@/store/editor';
+import { cycleLength, formatLength, LISTEN_OPTIONS, MAX_TOTAL_SECONDS, toSaveRequest, useEditor } from '@/store/editor';
 import { colors, radius, space } from '@/theme';
 
-/** 레고 타임라인 편집기. id가 "new"면 새로 만들기 */
+/** 블록 편집기. id가 "new"면 새로 만들기 */
 export default function EditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const playlistId = id && id !== 'new' ? Number(id) : null;
@@ -57,8 +58,10 @@ export default function EditorScreen() {
   const handleSave = () => {
     const state = useEditor.getState();
     if (!state.title.trim()) return notify('제목을 입력해주세요.');
-    if (state.main.items.length === 0) return notify('메인 트랙에 블록을 1개 이상 놓아주세요.');
-    if (durationsOf(state).total > MAX_TOTAL_SECONDS) return notify('전체 길이는 최대 10시간이에요.');
+    if (state.main.items.length === 0) return notify('첫째 줄에 블록을 1개 이상 놓아주세요.');
+    if (cycleLength(state) > MAX_TOTAL_SECONDS) return notify('한 바퀴는 최대 10시간이에요.');
+    const notOwned = [...state.main.items, ...(state.mix.enabled ? state.mix.items : [])].some((i) => !i.block.owned);
+    if (notOwned) return notify('내 블록함에 없는 블록이 있어요', '블록 상점에서 담거나, 그 블록을 빼고 저장해주세요.');
     save.mutate();
   };
 
@@ -82,6 +85,10 @@ export default function EditorScreen() {
       : <ActivityIndicator color={colors.primary} style={{ marginTop: 60 }} />;
   }
 
+  const cycle = cycleLength(editor);
+  const listen = LISTEN_OPTIONS.find((o) => o.minutes === editor.listenMinutes);
+  const blockCount = editor.main.items.length + (editor.mix.enabled ? editor.mix.items.length : 0);
+
   return (
     <View
       ref={rootRef}
@@ -97,16 +104,21 @@ export default function EditorScreen() {
       />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" scrollEnabled={!dragging}>
         <View style={styles.titleRow}>
-          <TextInput
-            style={styles.titleInput}
-            value={editor.title}
-            onChangeText={editor.setTitle}
-            placeholder="조합 이름 (예: 비 오는 밤)"
-            placeholderTextColor={colors.faint}
-            maxLength={100}
-            accessibilityLabel="조합 이름"
-            testID="title-input"
-          />
+          <View style={{ flex: 1 }}>
+            <TextInput
+              style={styles.titleInput}
+              value={editor.title}
+              onChangeText={editor.setTitle}
+              placeholder="조합 이름 (예: 비 오는 밤)"
+              placeholderTextColor={colors.faint}
+              maxLength={100}
+              accessibilityLabel="조합 이름"
+              testID="title-input"
+            />
+            <Text style={styles.meta} numberOfLines={1} testID="editor-meta">
+              한 바퀴 {formatLength(cycle)} · 블록 {blockCount}개 · {listen && listen.minutes > 0 ? `${listen.label} 재생` : '한 바퀴만'}
+            </Text>
+          </View>
           <View style={styles.publicBox}>
             <Text style={styles.publicLabel}>공개</Text>
             <Switch value={editor.isPublic} onValueChange={editor.setIsPublic}
@@ -114,16 +126,16 @@ export default function EditorScreen() {
           </View>
         </View>
 
-        <Timeline />
-        <View style={{ marginTop: space.md }}>
-          <SelectionPanel />
-        </View>
+        <Board />
+        <ActionPanel />
+        <RowTwoCard />
+        <ListenCard />
 
         {playlistId !== null && (
-          <Button title="이 조합 삭제" variant="danger" onPress={handleDelete} style={{ marginTop: space.xl }} />
+          <Button title="이 조합 삭제" variant="danger" onPress={handleDelete} style={{ marginTop: space.md }} />
         )}
       </ScrollView>
-      <Palette />
+      <BlockBox />
       <DragGhost origin={origin} />
     </View>
   );
@@ -131,13 +143,14 @@ export default function EditorScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: space.md, paddingBottom: space.xl },
+  content: { padding: space.md, paddingBottom: space.xl, gap: space.md },
   headerSave: { minHeight: 34, paddingVertical: 4, paddingHorizontal: 14 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.md },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
   titleInput: {
-    flex: 1, color: colors.text, fontSize: 18, fontWeight: '700', paddingVertical: space.sm, paddingHorizontal: space.md,
+    color: colors.text, fontSize: 18, fontWeight: '700', paddingVertical: space.sm, paddingHorizontal: space.md,
     backgroundColor: colors.card, borderRadius: radius.md,
   },
+  meta: { color: colors.muted, fontSize: 12, marginTop: 4, marginLeft: 4, fontVariant: ['tabular-nums'] },
   publicBox: { alignItems: 'center' },
   publicLabel: { color: colors.muted, fontSize: 11 },
 });

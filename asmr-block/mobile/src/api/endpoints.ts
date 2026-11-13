@@ -11,7 +11,7 @@ import type {
   User,
 } from './types';
 
-const query = (params: Record<string, string | number | undefined | null>) => {
+const query = (params: Record<string, string | number | boolean | undefined | null>) => {
   const entries = Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '');
   return entries.length ? '?' + entries.map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&') : '';
 };
@@ -37,8 +37,16 @@ export const catalogApi = {
   categories: () => api<CategoryGroup[]>('/categories'),
   /** 요즘 뜨는 소리 (최근 7일 재생 많은 순) */
   trending: (size = 10) => api<Block[]>('/blocks/trending' + query({ size })),
-  blocks: (params: { categoryId?: number | null; keyword?: string; sort?: 'latest' | 'popular'; page?: number; size?: number } = {}) =>
+  blocks: (params: { categoryId?: number | null; free?: boolean; keyword?: string; sort?: 'latest' | 'popular'; page?: number; size?: number } = {}) =>
     api<Page<Block>>('/blocks' + query({ size: 50, ...params })),
+};
+
+/** 내 블록함: 상점에서 담은 블록 (편집기에는 이것만 보임) */
+export const libraryApi = {
+  mine: () => api<Block[]>('/me/blocks'),
+  /** 무료 블록 담기 (유료는 402 PURCHASE_REQUIRED - 구매 준비 중) */
+  add: (blockId: number) => api<Block>(`/me/blocks/${blockId}`, { method: 'POST' }),
+  remove: (blockId: number) => api<void>(`/me/blocks/${blockId}`, { method: 'DELETE' }),
 };
 
 export const playlistApi = {

@@ -58,6 +58,7 @@ class RenderApiTest extends IntegrationTest {
 
         // 다른 사람이 같은 구성으로 만들면 바로 DONE (다시 만들지 않음)
         Tokens other = newUser();
+        collect(other.accessToken(), a, b, c);
         long copy = idOf(postJson("/api/v1/playlists", playlist.replace("믹스 테스트", "복사본"), other.accessToken()));
         postJson("/api/v1/playlists/" + copy + "/render", "", other.accessToken())
                 .andExpect(jsonPath("$.data.status").value("DONE"))

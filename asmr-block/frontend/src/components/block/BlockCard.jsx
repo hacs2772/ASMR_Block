@@ -11,7 +11,8 @@ function BlockCard({ block, onAdd, showAddButton = true }) {
 
   const handlePlayPause = () => {
     if (!audioRef.current) {
-      audioRef.current = new Audio(block.fileUrl);
+      // 유료 블록은 사기 전엔 앞 30초 맛보기만
+      audioRef.current = new Audio(block.fileUrl || block.previewUrl);
       audioRef.current.addEventListener('timeupdate', () => {
         const prog = (audioRef.current.currentTime / audioRef.current.duration) * 100;
         setProgress(prog);

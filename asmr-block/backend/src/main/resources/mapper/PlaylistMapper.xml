@@ -21,6 +21,7 @@
                 <result property="title" column="block_title"/>
                 <result property="fileKey" column="file_key"/>
                 <result property="duration" column="block_duration"/>
+                <result property="price" column="block_price"/>
                 <result property="status" column="block_status"/>
                 <result property="isActive" column="block_active"/>
                 <association property="category" javaType="com.asmrblock.category.SoundCategory">
@@ -42,13 +43,14 @@
     </sql>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO playlist (user_id, title, description, total_duration, is_public)
-        VALUES (#{userId}, #{title}, #{description}, #{totalDuration}, #{isPublic})
+        INSERT INTO playlist (user_id, title, description, total_duration, is_public, listen_minutes)
+        VALUES (#{userId}, #{title}, #{description}, #{totalDuration}, #{isPublic}, #{listenMinutes})
     </insert>
 
     <update id="update">
         UPDATE playlist SET title = #{title}, description = #{description},
-                            total_duration = #{totalDuration}, is_public = #{isPublic}
+                            total_duration = #{totalDuration}, is_public = #{isPublic},
+                            listen_minutes = #{listenMinutes}
         WHERE id = #{id}
     </update>
 
@@ -109,7 +111,7 @@
     <select id="findLayers" resultMap="LayerMap">
         SELECT l.id AS layer_id, l.playlist_id, l.role, l.volume,
                pb.id AS pb_id, pb.block_id, pb.sort_order, pb.repeat_count, pb.start_seconds,
-               b.title AS block_title, b.file_key, b.duration AS block_duration,
+               b.title AS block_title, b.file_key, b.duration AS block_duration, b.price AS block_price,
                b.status AS block_status, b.is_active AS block_active,
                c.id AS cat_id, c.name AS cat_name, c.color AS cat_color, c.icon AS cat_icon,
                c.parent_id AS cat_parent_id, pc.name AS cat_parent_name

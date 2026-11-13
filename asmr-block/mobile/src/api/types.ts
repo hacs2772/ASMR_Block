@@ -17,11 +17,18 @@ export type User = {
 
 export type LoginResponse = { accessToken: string; refreshToken: string; user: User };
 
+/**
+ * 블록. price = 코인 (0 무료). owned = 내 블록함에 있음.
+ * fileUrl은 무료이거나 내 것일 때만 (유료 원본 보호), previewUrl은 무료=전체 / 유료=앞 30초
+ */
 export type Block = {
   id: number;
   title: string;
   description: string | null;
-  fileUrl: string;
+  fileUrl: string | null;
+  previewUrl: string | null;
+  price: number;
+  owned: boolean;
   duration: number;
   license: 'CC0' | 'CC_BY' | 'OWN' | 'CREATOR';
   attribution: string | null;
@@ -45,7 +52,9 @@ export type TrackItem = {
   position: number;
   blockId: number;
   title: string;
-  fileUrl: string;
+  fileUrl: string | null;
+  owned: boolean;
+  price: number | null;
   duration: number;
   repeat: number;
   startSeconds: number | null;
@@ -71,6 +80,8 @@ export type PlaylistDetail = {
   isPublic: boolean;
   playCount: number;
   totalDuration: number;
+  /** 얼마나 들을까요? 0 = 한 바퀴만, 그 외 분 */
+  listenMinutes: number;
   owner: { id: number; nickname: string };
   main: Track | null;
   mix: Track | null;
@@ -86,6 +97,7 @@ export type PlaylistSummary = {
   isPublic: boolean;
   playCount: number;
   totalDuration: number;
+  listenMinutes: number;
   owner: { id: number; nickname: string };
   blockCount: number;
   hasMix: boolean;
@@ -101,4 +113,5 @@ export type PlaylistSaveRequest = {
   isPublic: boolean;
   main: TrackRequest;
   mix: TrackRequest | null;
+  listenMinutes: number;
 };

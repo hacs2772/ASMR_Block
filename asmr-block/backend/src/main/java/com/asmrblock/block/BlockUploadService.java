@@ -92,7 +92,7 @@ public class BlockUploadService {
                     blockMapper.insertTags(block.getId(), Set.copyOf(request.tagIds()));
                 }
             });
-            return blockService.toResponse(blockMapper.findById(block.getId()).orElseThrow());
+            return blockService.toResponse(blockMapper.findById(block.getId()).orElseThrow(), uploaderId);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } finally {

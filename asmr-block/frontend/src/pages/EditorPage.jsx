@@ -37,10 +37,10 @@ function EditorPage() {
       setLoading(true);
       try {
         const [blockRes, playlistRes] = await Promise.all([
-          blockApi.getBlocks({ size: 100 }),
+          blockApi.getLibrary(),
           playlistId ? playlistApi.getPlaylist(playlistId) : Promise.resolve(null),
         ]);
-        setAvailableBlocks(blockRes.data?.content || []);
+        setAvailableBlocks(blockRes.data || []);
         if (playlistRes) {
           loadPlaylist(playlistRes.data);
           setRender(playlistRes.data.render);

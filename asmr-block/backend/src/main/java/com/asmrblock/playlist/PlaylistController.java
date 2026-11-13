@@ -46,14 +46,14 @@ public class PlaylistController {
     @GetMapping("/{playlistId}")
     public ApiResponse<PlaylistDetailResponse> get(@AuthenticationPrincipal Long userId,
                                                    @PathVariable Long playlistId) {
-        return ApiResponse.ok(detail(playlistService.getViewable(playlistId, userId)));
+        return ApiResponse.ok(detail(playlistService.getViewable(playlistId, userId), userId));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<PlaylistDetailResponse> create(@AuthenticationPrincipal Long userId,
                                                       @Valid @RequestBody PlaylistSaveRequest request) {
-        return ApiResponse.ok("플레이리스트가 생성되었습니다.", detail(playlistService.create(userId, request)));
+        return ApiResponse.ok("플레이리스트가 생성되었습니다.", detail(playlistService.create(userId, request), userId));
     }
 
     @PutMapping("/{playlistId}")
@@ -61,7 +61,7 @@ public class PlaylistController {
                                                       @PathVariable Long playlistId,
                                                       @Valid @RequestBody PlaylistSaveRequest request) {
         return ApiResponse.ok("플레이리스트가 수정되었습니다.",
-                detail(playlistService.update(playlistId, userId, request)));
+                detail(playlistService.update(playlistId, userId, request), userId));
     }
 
     @DeleteMapping("/{playlistId}")
@@ -77,7 +77,8 @@ public class PlaylistController {
         return ApiResponse.ok(playlistService.recordPlay(playlistId, userId));
     }
 
-    private PlaylistDetailResponse detail(Playlist playlist) {
-        return PlaylistDetailResponse.from(playlist, renderService.statusOf(playlist), storageService);
+    private PlaylistDetailResponse detail(Playlist playlist, Long viewerId) {
+        return PlaylistDetailResponse.from(playlist, renderService.statusOf(playlist), storageService,
+                playlistService.ownedBlockIds(playlist, viewerId));
     }
 }

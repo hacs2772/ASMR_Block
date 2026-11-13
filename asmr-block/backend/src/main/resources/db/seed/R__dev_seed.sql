@@ -20,11 +20,12 @@ ON CONFLICT (id) DO UPDATE SET
     nickname = EXCLUDED.nickname, role = EXCLUDED.role, is_active = TRUE;
 
 -- 2) 블록 (소분류에 연결 - V2 카테고리 트리)
---    category_id는 소분류 이름으로 찾음
-INSERT INTO block (id, title, description, file_key, duration, category_id, uploader_id, license, status, play_count)
+--    category_id는 소분류 이름으로 찾음. price = 코인 (0 무료). 유료 샘플: 왁스 30, 신호등 20, 비누 30
+INSERT INTO block (id, title, description, file_key, duration, category_id, uploader_id, license, status, play_count, price)
 SELECT v.id, v.title, v.description, v.file_key, v.duration,
        (SELECT c.id FROM sound_category c WHERE c.name = v.category AND c.parent_id IS NOT NULL),
-       v.uploader_id, v.license, v.status, v.play_count
+       v.uploader_id, v.license, v.status, v.play_count,
+       CASE v.id WHEN 14 THEN 30 WHEN 15 THEN 20 WHEN 16 THEN 30 ELSE 0 END
 FROM (VALUES
     (1,  '잔잔한 빗소리',       '[테스트용 합성 음원] 창밖에 고르게 내리는 비',          'samples/rain.mp3',           180, '비·물',        1, 'OWN', 'APPROVED', 310),
     (2,  '밤바다 파도',         '[테스트용 합성 음원] 8초마다 밀려오는 파도',            'samples/waves.mp3',          240, '바다·파도',    1, 'OWN', 'APPROVED', 220),
@@ -46,7 +47,8 @@ FROM (VALUES
 ON CONFLICT (id) DO UPDATE SET
     title = EXCLUDED.title, description = EXCLUDED.description, file_key = EXCLUDED.file_key,
     duration = EXCLUDED.duration, category_id = EXCLUDED.category_id, uploader_id = EXCLUDED.uploader_id,
-    license = EXCLUDED.license, status = EXCLUDED.status, play_count = EXCLUDED.play_count, is_active = TRUE;
+    license = EXCLUDED.license, status = EXCLUDED.status, play_count = EXCLUDED.play_count,
+    price = EXCLUDED.price, is_active = TRUE;
 
 -- 3) 블록-태그 (태그 id: 1 부드러운, 2 날카로운, 3 바삭한, 4 둔탁한, 5 습한, 6 리드미컬한)
 INSERT INTO block_tag (block_id, tag_id) VALUES
@@ -69,14 +71,15 @@ INSERT INTO block_tag (block_id, tag_id) VALUES
 ON CONFLICT DO NOTHING;
 
 -- 4) 샘플 플레이리스트 (test 계정) - 레고 타임라인: 메인 트랙 + (선택) 믹스 트랙
-INSERT INTO playlist (id, user_id, title, description, is_public) VALUES
-    (1, 2, '비 오는 밤 작업용',         '빗소리 사이에 키보드 (메인 트랙만, 공개)', TRUE),
-    (2, 2, '잠들기 전 루틴',            '숨소리 → 심장박동 → 싱잉볼 → 파도, 내내 잔잔한 빗소리 (비공개)', FALSE),
-    (3, 2, '산에서 빗물 떨어지는 소리', '숲속 바람에 중간중간 빗소리가 섞이는 조합 (공개)', TRUE),
-    (4, 2, '왁뿌 팅글 모음',            '요즘 뜨는 왁스 부수기 + 비누 깎기 (공개)', TRUE)
+-- listen_minutes: 얼마나 들을까요? (0 = 한 바퀴만)
+INSERT INTO playlist (id, user_id, title, description, is_public, listen_minutes) VALUES
+    (1, 2, '비 오는 밤 작업용',         '빗소리 사이에 키보드 (메인 트랙만, 공개)', TRUE, 0),
+    (2, 2, '잠들기 전 루틴',            '숨소리 → 심장박동 → 싱잉볼 → 파도, 내내 잔잔한 빗소리 (비공개)', FALSE, 480),
+    (3, 2, '산에서 빗물 떨어지는 소리', '숲속 바람에 중간중간 빗소리가 섞이는 조합 (공개)', TRUE, 60),
+    (4, 2, '왁뿌 팅글 모음',            '요즘 뜨는 왁스 부수기 + 비누 깎기 (공개)', TRUE, 30)
 ON CONFLICT (id) DO UPDATE SET
     user_id = EXCLUDED.user_id, title = EXCLUDED.title,
-    description = EXCLUDED.description, is_public = EXCLUDED.is_public;
+    description = EXCLUDED.description, is_public = EXCLUDED.is_public, listen_minutes = EXCLUDED.listen_minutes;
 
 -- 트랙은 지우고 다시 만듦 (playlist_block은 ON DELETE CASCADE로 같이 지워짐)
 DELETE FROM playlist_layer WHERE playlist_id IN (1, 2, 3, 4);
@@ -106,6 +109,17 @@ UPDATE playlist p SET total_duration = GREATEST(
               JOIN playlist_block pb ON pb.layer_id = l.id JOIN block b ON b.id = pb.block_id
               WHERE l.playlist_id = p.id AND l.role = 'MIX'), 0)
 ) WHERE p.id IN (1, 2, 3, 4);
+
+-- 4-1) 내 블록함
+--   관리자: 직접 올린 블록 전부 / test 계정: 샘플 조합에 쓴 블록 + 핑크 노이즈 (유료 왁스·비누는 운영자 지급)
+--   새로 가입한 사람은 빈 블록함으로 시작
+INSERT INTO user_block (user_id, block_id, source)
+SELECT uploader_id, id, 'CREATOR' FROM block WHERE status = 'APPROVED'
+ON CONFLICT DO NOTHING;
+INSERT INTO user_block (user_id, block_id, source) VALUES
+    (2, 1, 'FREE'), (2, 2, 'FREE'), (2, 3, 'FREE'), (2, 5, 'FREE'), (2, 6, 'FREE'),
+    (2, 7, 'FREE'), (2, 8, 'FREE'), (2, 11, 'FREE'), (2, 14, 'GRANT'), (2, 16, 'GRANT')
+ON CONFLICT DO NOTHING;
 
 -- 5) 요즘 뜨는 소리 데모용 최근 재생 기록 (최근 7일)
 DELETE FROM play_log WHERE user_id IN (1, 2) AND target_type = 'BLOCK';

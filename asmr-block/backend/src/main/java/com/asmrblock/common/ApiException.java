@@ -24,6 +24,11 @@ public class ApiException extends RuntimeException {
         return new ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", message);
     }
 
+    /** 유료 블록처럼 구매가 필요한 경우 (402) */
+    public static ApiException paymentRequired(String message) {
+        return new ApiException(HttpStatus.PAYMENT_REQUIRED, "PURCHASE_REQUIRED", message);
+    }
+
     public static ApiException forbidden(String message) {
         return new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", message);
     }

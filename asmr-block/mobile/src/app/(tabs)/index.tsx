@@ -42,7 +42,7 @@ export default function HomeScreen() {
                       onPress={() => preview.toggle(b)} style={[styles.trend, { borderColor: color }]}>
                       <Text style={[styles.trendRank, { color }]}>{i + 1}</Text>
                       <Text style={styles.trendTitle} numberOfLines={1}>{b.title}</Text>
-                      <Text style={styles.trendMeta} numberOfLines={1}>{b.category?.name} · 🔥{b.recentPlays ?? 0}</Text>
+                      <Text style={styles.trendMeta} numberOfLines={1}>{b.category?.name} · 🔥{b.recentPlays ?? 0}{b.price > 0 ? ` · 🪙${b.price}` : ''}</Text>
                       <Ionicons name={playing ? 'pause-circle' : 'play-circle'} size={24} color={color} style={{ marginTop: 4 }} />
                     </Pressable>
                   );

@@ -83,6 +83,13 @@ public abstract class IntegrationTest {
         return login(email, "password123");
     }
 
+    /** 무료 블록들을 내 블록함에 담기 (편집기·플레이리스트에는 담은 블록만 쓸 수 있음) */
+    protected void collect(String token, long... blockIds) throws Exception {
+        for (long blockId : blockIds) {
+            mvc.perform(bearer(post("/api/v1/me/blocks/" + blockId), token)).andExpect(status().isOk());
+        }
+    }
+
     /** 첫 번째 소분류 id (자연 > 비·물) - 블록은 소분류에만 달 수 있음 */
     protected long leafCategoryId() throws Exception {
         return ((Number) JsonPath.read(json(mvc.perform(get("/api/v1/categories"))), "$.data[0].children[0].id")).longValue();

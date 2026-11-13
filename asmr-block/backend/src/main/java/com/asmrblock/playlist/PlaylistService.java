@@ -5,6 +5,7 @@ import com.asmrblock.block.BlockService;
 import com.asmrblock.common.ApiException;
 import com.asmrblock.common.PageQuery;
 import com.asmrblock.common.PageResponse;
+import com.asmrblock.library.LibraryService;
 import com.asmrblock.play.PlayCountService;
 import com.asmrblock.play.PlayResult;
 import com.asmrblock.play.PlayTarget;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -32,6 +34,7 @@ public class PlaylistService {
     private final PlaylistMapper playlistMapper;
     private final BlockService blockService;
     private final PlayCountService playCountService;
+    private final LibraryService libraryService;
 
     // ===================== 조회 =====================
 
@@ -64,7 +67,7 @@ public class PlaylistService {
     @Transactional
     public Playlist create(Long userId, PlaylistSaveRequest request) {
         Playlist playlist = Playlist.builder().userId(userId).playCount(0).build();
-        applyFields(playlist, request);
+        applyFields(userId, playlist, request);
         playlistMapper.insert(playlist);
         saveLayers(playlist.getId(), request);
         return getViewable(playlist.getId(), userId);
@@ -73,7 +76,7 @@ public class PlaylistService {
     @Transactional
     public Playlist update(Long id, Long userId, PlaylistSaveRequest request) {
         Playlist playlist = findOwn(id, userId, "수정 권한이 없습니다.");
-        applyFields(playlist, request);
+        applyFields(userId, playlist, request);
         playlistMapper.update(playlist);
         playlistMapper.deleteLayers(id);
         saveLayers(id, request);
@@ -107,12 +110,28 @@ public class PlaylistService {
 
     // ===================== 내부 =====================
 
+    /** 보는 사람의 블록함에 있는 블록 id (유료 블록 원본 주소를 보여줄지 판단) */
+    @Transactional(readOnly = true)
+    public Set<Long> ownedBlockIds(Playlist playlist, Long viewerId) {
+        return libraryService.ownedIds(viewerId, playlist.getLayers().stream()
+                .flatMap(layer -> layer.getBlocks().stream())
+                .map(pb -> pb.getBlock().getId())
+                .collect(Collectors.toSet()));
+    }
+
     /** 제목 등 기본 정보 + 총 재생 시간 계산 (블록 검증 포함) */
-    private void applyFields(Playlist playlist, PlaylistSaveRequest request) {
-        Map<Long, Block> blocks = blockService.findPlayableByIds(Stream.concat(
+    private void applyFields(Long userId, Playlist playlist, PlaylistSaveRequest request) {
+        Set<Long> blockIds = Stream.concat(
                 request.main().items().stream(),
                 request.mix() == null ? Stream.empty() : request.mix().items().stream()
-        ).map(ItemRequest::blockId).collect(Collectors.toSet()));
+        ).map(ItemRequest::blockId).collect(Collectors.toSet());
+        Map<Long, Block> blocks = blockService.findPlayableByIds(blockIds);
+
+        // 편집기에서는 내 블록함에 담은 블록만 쓸 수 있음
+        Set<Long> owned = libraryService.ownedIds(userId, blocks.keySet());
+        if (blocks.keySet().stream().anyMatch(id -> !owned.contains(id))) {
+            throw ApiException.badRequest("내 블록함에 없는 블록이 있어요. 블록 상점에서 먼저 담아주세요.");
+        }
 
         int mainDuration = 0;
         for (ItemRequest item : request.main().items()) {
@@ -128,6 +147,7 @@ public class PlaylistService {
         playlist.setTitle(request.title().trim());
         playlist.setDescription(request.description());
         playlist.setIsPublic(Boolean.TRUE.equals(request.isPublic()));
+        playlist.setListenMinutes(request.listenMinutes() == null ? 0 : request.listenMinutes());
         playlist.setTotalDuration(total);
     }
 

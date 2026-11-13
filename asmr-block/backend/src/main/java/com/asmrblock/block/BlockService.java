@@ -6,6 +6,8 @@ import com.asmrblock.category.CategoryService;
 import com.asmrblock.common.ApiException;
 import com.asmrblock.common.PageQuery;
 import com.asmrblock.common.PageResponse;
+import com.asmrblock.library.LibraryMapper;
+import com.asmrblock.library.LibrarySource;
 import com.asmrblock.play.PlayCountService;
 import com.asmrblock.play.PlayResult;
 import com.asmrblock.play.PlayTarget;
@@ -15,8 +17,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -28,35 +32,37 @@ public class BlockService {
     private final CategoryService categoryService;
     private final StorageService storageService;
     private final PlayCountService playCountService;
+    private final LibraryMapper libraryMapper;
+    private final BlockPreviewService previewService;
 
-    /** 블록 목록 (public: 승인된 것만 / admin: status 지정) */
+    /** 블록 상점 목록 (승인된 것만). viewerId: 로그인 사용자 (owned 표시용, 비로그인 null) */
     @Transactional(readOnly = true)
-    public PageResponse<BlockResponse> search(Long categoryId, List<Long> tagIds, String keyword,
-                                              BlockStatus status, String sort, PageQuery page) {
-        BlockSearchCondition condition = BlockSearchCondition.builder()
-                .categoryId(categoryId)
-                .tagIds(tagIds == null || tagIds.isEmpty() ? null : tagIds)
-                .keyword(keyword == null || keyword.isBlank() ? null : keyword.trim())
-                .status(status)
-                .sort("popular".equals(sort) ? "popular" : "latest")
-                .offset(page.offset())
-                .limit(page.size())
-                .build();
-
+    public PageResponse<BlockResponse> search(Long categoryId, List<Long> tagIds, String keyword, Boolean free,
+                                              String sort, PageQuery page, Long viewerId) {
+        BlockSearchCondition condition = condition(categoryId, tagIds, keyword, free, BlockStatus.APPROVED, sort, page);
         List<Block> blocks = blockMapper.search(condition);
-        return PageResponse.of(toResponses(blocks), page, blockMapper.count(condition));
+        return PageResponse.of(toResponses(blocks, viewerId, false), page, blockMapper.count(condition));
+    }
+
+    /** 관리자 검수 목록: 상태별, 전체 음원 주소까지 */
+    @Transactional(readOnly = true)
+    public PageResponse<BlockResponse> searchForAdmin(BlockStatus status, PageQuery page) {
+        BlockSearchCondition condition = condition(null, null, null, null, status, "latest", page);
+        List<Block> blocks = blockMapper.search(condition);
+        return PageResponse.of(toResponses(blocks, null, true), page, blockMapper.count(condition));
     }
 
     /** 요즘 뜨는 소리 (최근 days일 재생 수 기준) */
     @Transactional(readOnly = true)
-    public List<BlockResponse> trending(int days, int size) {
-        return toResponses(blockMapper.findTrending(Math.min(Math.max(days, 1), 30), Math.min(Math.max(size, 1), 50)));
+    public List<BlockResponse> trending(int days, int size, Long viewerId) {
+        return toResponses(blockMapper.findTrending(Math.min(Math.max(days, 1), 30), Math.min(Math.max(size, 1), 50)),
+                viewerId, false);
     }
 
     /** 공개 상세: 승인 전 블록은 없는 것처럼 처리 */
     @Transactional(readOnly = true)
-    public BlockResponse getPlayable(Long id) {
-        return toResponse(findPlayable(id));
+    public BlockResponse getPlayable(Long id, Long viewerId) {
+        return toResponse(findPlayable(id), viewerId);
     }
 
     /** 플레이리스트에 넣을 수 있는(승인된) 블록만 id → 블록으로 */
@@ -81,29 +87,78 @@ public class BlockService {
         return new PlayResult(block.getPlayCount() + (counted ? 1 : 0), counted);
     }
 
-    // 관리자: 검수 상태 변경
+    // 관리자: 검수 상태 변경. 승인되면 올린 사람의 블록함에 들어가고, 유료면 맛보기를 만듦
     @Transactional
     public BlockResponse updateStatus(Long blockId, BlockStatus status) {
-        blockMapper.findById(blockId).orElseThrow(() -> ApiException.notFound("블록을 찾을 수 없습니다."));
+        findAny(blockId);
         blockMapper.updateStatus(blockId, status);
-        return toResponse(blockMapper.findById(blockId).orElseThrow());
+        Block block = findAny(blockId);
+        if (status == BlockStatus.APPROVED) {
+            libraryMapper.insert(block.getUploaderId(), blockId, LibrarySource.CREATOR);
+            previewService.ensurePreview(block);
+        }
+        return toAdminResponse(block);
     }
 
-    BlockResponse toResponse(Block block) {
-        return toResponses(List.of(block)).getFirst();
+    // 관리자: 가격(코인) 정하기. 유료가 되면 맛보기를 만듦
+    @Transactional
+    public BlockResponse updatePrice(Long blockId, int price) {
+        findAny(blockId);
+        blockMapper.updatePrice(blockId, price);
+        Block block = findAny(blockId);
+        previewService.ensurePreview(block);
+        return toAdminResponse(block);
     }
 
-    private List<BlockResponse> toResponses(List<Block> blocks) {
-        Map<Long, List<TagResponse>> tags = categoryService.tagsByBlockIds(
-                blocks.stream().map(Block::getId).toList());
-        return blocks.stream()
-                .map(block -> BlockResponse.from(block, tags.get(block.getId()), storageService))
-                .toList();
-    }
-
-    private Block findPlayable(Long id) {
+    public Block findPlayable(Long id) {
         return blockMapper.findById(id)
                 .filter(Block::isPlayable)
                 .orElseThrow(() -> ApiException.notFound("블록을 찾을 수 없습니다."));
+    }
+
+    public BlockResponse toResponse(Block block, Long viewerId) {
+        return toResponses(List.of(block), viewerId, false).getFirst();
+    }
+
+    /** 내 블록함 목록용: 모두 내 것 */
+    public List<BlockResponse> toLibraryResponses(List<Block> blocks) {
+        Map<Long, List<TagResponse>> tags = categoryService.tagsByBlockIds(blocks.stream().map(Block::getId).toList());
+        return blocks.stream()
+                .map(block -> BlockResponse.from(block, tags.get(block.getId()), storageService, true, true))
+                .toList();
+    }
+
+    private BlockResponse toAdminResponse(Block block) {
+        return toResponses(List.of(block), null, true).getFirst();
+    }
+
+    private List<BlockResponse> toResponses(List<Block> blocks, Long viewerId, boolean revealAll) {
+        List<Long> ids = blocks.stream().map(Block::getId).toList();
+        Map<Long, List<TagResponse>> tags = categoryService.tagsByBlockIds(ids);
+        Set<Long> owned = viewerId == null || ids.isEmpty() ? Set.of() : new HashSet<>(libraryMapper.findOwnedIds(viewerId, ids));
+        return blocks.stream()
+                .map(block -> {
+                    boolean mine = owned.contains(block.getId());
+                    return BlockResponse.from(block, tags.get(block.getId()), storageService, mine, mine || revealAll);
+                })
+                .toList();
+    }
+
+    private Block findAny(Long id) {
+        return blockMapper.findById(id).orElseThrow(() -> ApiException.notFound("블록을 찾을 수 없습니다."));
+    }
+
+    private static BlockSearchCondition condition(Long categoryId, List<Long> tagIds, String keyword, Boolean free,
+                                                  BlockStatus status, String sort, PageQuery page) {
+        return BlockSearchCondition.builder()
+                .categoryId(categoryId)
+                .tagIds(tagIds == null || tagIds.isEmpty() ? null : tagIds)
+                .keyword(keyword == null || keyword.isBlank() ? null : keyword.trim())
+                .free(free)
+                .status(status)
+                .sort("popular".equals(sort) ? "popular" : "latest")
+                .offset(page.offset())
+                .limit(page.size())
+                .build();
     }
 }

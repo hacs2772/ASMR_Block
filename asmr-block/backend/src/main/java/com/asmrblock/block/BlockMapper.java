@@ -30,4 +30,11 @@ public interface BlockMapper {
     void updateStatus(@Param("id") Long id, @Param("status") BlockStatus status);
 
     void incrementPlayCount(Long id);
+
+    void updatePrice(@Param("id") Long id, @Param("price") int price);
+
+    void updatePreviewKey(@Param("id") Long id, @Param("previewKey") String previewKey);
+
+    /** 맛보기 파일이 아직 없는 유료 블록 (승인·활성) */
+    List<Block> findPaidWithoutPreview();
 }

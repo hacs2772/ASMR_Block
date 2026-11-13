@@ -33,7 +33,7 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: '홈', headerTitle: 'ASMR Block', tabBarIcon: tabIcon('home') }} />
-      <Tabs.Screen name="explore" options={{ title: '블록', headerTitle: '블록 둘러보기', tabBarIcon: tabIcon('grid') }} />
+      <Tabs.Screen name="explore" options={{ title: '블록 상점', headerTitle: '블록 상점', tabBarIcon: tabIcon('storefront') }} />
       <Tabs.Screen name="library" options={{ title: '내 조합', tabBarIcon: tabIcon('albums') }} />
       <Tabs.Screen name="profile" options={{ title: '내 정보', tabBarIcon: tabIcon('person') }} />
     </Tabs>

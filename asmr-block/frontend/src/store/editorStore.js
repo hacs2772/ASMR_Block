@@ -16,6 +16,7 @@ const emptyState = () => ({
   title: '',
   description: '',
   isPublic: false,
+  listenMinutes: 0, // 얼마나 들을까요? (앱에서 정함, 웹에서는 그대로 유지)
   main: { volume: 1.0, blocks: [] },
   background: { enabled: false, volume: 0.5, loop: true, blocks: [] },
   activeTower: 'main',
@@ -45,6 +46,7 @@ const useEditorStore = create((set, get) => ({
     title: playlist.title,
     description: playlist.description || '',
     isPublic: playlist.isPublic,
+    listenMinutes: playlist.listenMinutes ?? 0,
     main: { volume: playlist.main?.volume ?? 1.0, blocks: toItems(playlist.main) },
     background: playlist.mix
       ? { enabled: true, volume: playlist.mix.volume, loop: false, blocks: toItems(playlist.mix) }
@@ -114,7 +116,7 @@ const useEditorStore = create((set, get) => ({
   // 서버 저장 요청 형식: 메인은 순서대로, 배경(믹스)은 0초부터 차례로 놓음.
   // "짧으면 반복"이 켜져 있으면 배경 묶음을 메인 길이만큼 되풀이
   toRequest: () => {
-    const { title, description, isPublic, main, background } = get();
+    const { title, description, isPublic, listenMinutes, main, background } = get();
     const hasBackground = background.enabled && background.blocks.length > 0;
     let mix = null;
     if (hasBackground) {
@@ -133,6 +135,7 @@ const useEditorStore = create((set, get) => ({
       title: title.trim(),
       description,
       isPublic,
+      listenMinutes,
       main: { volume: main.volume, items: main.blocks.map((item) => ({ blockId: item.block.id, repeat: 1 })) },
       mix,
     };

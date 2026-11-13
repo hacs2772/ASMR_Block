@@ -29,6 +29,18 @@ export const blockApi = {
     return response.data;
   },
 
+  // 내 블록함 (편집기에서는 담은 블록만 쓸 수 있음)
+  getLibrary: async () => {
+    const response = await axiosInstance.get('/me/blocks');
+    return response.data;
+  },
+
+  // 담기 (무료 블록만, 유료는 구매 준비 중)
+  collect: async (blockId) => {
+    const response = await axiosInstance.post(`/me/blocks/${blockId}`);
+    return response.data;
+  },
+
   // 카테고리 목록 조회
   getCategories: async () => {
     const response = await axiosInstance.get('/categories');

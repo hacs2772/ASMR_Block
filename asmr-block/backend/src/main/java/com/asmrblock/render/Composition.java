@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public record Composition(Layer main, Layer mix) {
 
     /** 믹싱 방식(크로스페이드, 리미터 등)을 바꾸면 올려서 기존 완성본을 무효화 */
-    static final String MIX_VERSION = "mix-v2";
+    static final String MIX_VERSION = "mix-v3";
 
     /** start: 믹스 트랙의 시작 시각(초), 메인 트랙은 null */
     public record Clip(String fileKey, int duration, int repeat, Integer start) {

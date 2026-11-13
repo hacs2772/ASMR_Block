@@ -32,6 +32,7 @@ class UserApiTest extends IntegrationTest {
     @DisplayName("회원 탈퇴하면 로그인/토큰 갱신이 안 되고, 내 플레이리스트도 지워진다")
     void deleteAccount() throws Exception {
         Tokens user = newUser();
+        collect(user.accessToken(), 1);
         long playlistId = idOf(postJson("/api/v1/playlists",
                 "{\"title\":\"탈퇴 전\",\"isPublic\":true,\"main\":{\"items\":[{\"blockId\":1}]}}", user.accessToken())
                 .andExpect(status().isCreated()));

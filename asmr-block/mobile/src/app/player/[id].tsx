@@ -66,10 +66,23 @@ export default function PlayerScreen() {
     };
   };
 
+  /** "얼마나 들을까요?" 시간이 정해져 있으면 한 바퀴를 반복하고, 그 시간에 맞춰 수면 타이머(끝에 서서히 작아짐) */
+  const applyListenTime = () => {
+    const minutes = p?.listenMinutes ?? 0;
+    if (minutes <= 0) return;
+    player.setLoop(true);
+    player.startSleepTimer(minutes);
+  };
+
   const playOrToggle = () => {
     if (isCurrent) return player.toggle();
-    if (r?.status === 'DONE' && r.fileUrl) player.play(trackFor(r.fileUrl, r.duration ?? 0));
-    else if (saved) player.play({ ...saved, uri: localUriOfSaved(saved), isLocal: true });
+    if (r?.status === 'DONE' && r.fileUrl) {
+      player.play(trackFor(r.fileUrl, r.duration ?? 0));
+      applyListenTime();
+    } else if (saved) {
+      player.play({ ...saved, uri: localUriOfSaved(saved), isLocal: true });
+      applyListenTime();
+    }
   };
 
   const download = useMutation({
@@ -117,7 +130,9 @@ export default function PlayerScreen() {
 
       <Text style={styles.title} testID="player-title">{title}</Text>
       <Text style={styles.subtitle}>
-        {p ? `${p.owner.nickname} · ${formatMinutes(p.totalDuration)}${p.mix ? ' · 믹스 트랙 포함' : ''}` : '휴대폰에 저장된 완성본'}
+        {p
+          ? `${p.owner.nickname} · 한 바퀴 ${formatMinutes(p.totalDuration)}${p.listenMinutes > 0 ? ` · ${sleepOptionLabel(p.listenMinutes)} 반복 재생` : ''}${p.mix ? ' · 두 줄' : ''}`
+          : '휴대폰에 저장된 완성본'}
       </Text>
 
       {/* 완성본 상태 */}

@@ -41,6 +41,8 @@
                 <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">#{tagId}</foreach>)
             </if>
             <if test="keyword != null">AND b.title ILIKE '%' || #{keyword} || '%'</if>
+            <if test="free != null and free">AND b.price = 0</if>
+            <if test="free != null and !free">AND b.price &gt; 0</if>
         </where>
     </sql>
 
@@ -105,5 +107,19 @@
     <update id="incrementPlayCount">
         UPDATE block SET play_count = play_count + 1 WHERE id = #{id}
     </update>
+
+    <update id="updatePrice">
+        UPDATE block SET price = #{price} WHERE id = #{id}
+    </update>
+
+    <update id="updatePreviewKey">
+        UPDATE block SET preview_key = #{previewKey} WHERE id = #{id}
+    </update>
+
+    <select id="findPaidWithoutPreview" resultMap="BlockMap">
+        <include refid="selectBlock"/>
+        WHERE b.is_active = true AND b.status = 'APPROVED' AND b.price > 0 AND b.preview_key IS NULL
+        ORDER BY b.id
+    </select>
 
 </mapper>

@@ -25,13 +25,15 @@ class BlockApiTest extends IntegrationTest {
     private static final int PENDING_BLOCK_ID = 13;
 
     @Test
-    @DisplayName("블록 목록에는 승인된 블록만, 음원 URL과 태그가 함께 나온다")
+    @DisplayName("블록 목록에는 승인된 블록만, 무료 블록은 음원 URL과 태그가 함께 나온다")
     void listShowsOnlyApproved() throws Exception {
         mvc.perform(get("/api/v1/blocks?size=100"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[*].id", not(hasItem(PENDING_BLOCK_ID))))
-                .andExpect(jsonPath("$.data.content[*].status", everyItem(org.hamcrest.Matchers.is("APPROVED"))))
-                .andExpect(jsonPath("$.data.content[*].fileUrl", everyItem(startsWith("http://localhost:8080/files/"))));
+                .andExpect(jsonPath("$.data.content[*].status", everyItem(org.hamcrest.Matchers.is("APPROVED"))));
+        mvc.perform(get("/api/v1/blocks?size=100&free=true"))
+                .andExpect(jsonPath("$.data.content[*].fileUrl", everyItem(startsWith("http://localhost:8080/files/"))))
+                .andExpect(jsonPath("$.data.content[*].previewUrl", everyItem(startsWith("http://localhost:8080/files/"))));
 
         mvc.perform(get("/api/v1/blocks/1"))
                 .andExpect(jsonPath("$.data.title").value("잔잔한 빗소리"))

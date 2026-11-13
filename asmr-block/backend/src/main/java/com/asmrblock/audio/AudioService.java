@@ -55,6 +55,20 @@ public class AudioService {
         return duration(plan.output());
     }
 
+    /**
+     * 맛보기 파일: 앞 seconds초만 잘라 끝 3초를 서서히 줄임 (128kbps).
+     */
+    public void preview(Path input, Path output, int seconds) {
+        int length = Math.max(1, Math.min(seconds, duration(input)));
+        double fade = Math.min(3.0, length / 3.0);
+        ffmpeg.ffmpeg(List.of(
+                "-i", input.toString(),
+                "-t", String.valueOf(length),
+                "-af", String.format(Locale.ROOT, "afade=t=out:st=%.2f:d=%.2f", length - fade, fade),
+                "-ac", "2", "-c:a", "libmp3lame", "-b:a", "128k",
+                output.toString()), audio.processTimeout());
+    }
+
     public int duration(Path file) {
         return ffmpeg.probeDurationSeconds(file);
     }

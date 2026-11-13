@@ -15,6 +15,7 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 public final class PlaylistDtos {
@@ -25,6 +26,7 @@ public final class PlaylistDtos {
     /** 최대 길이: 10시간 (밤새 자는 사람 고려) */
     public static final int MAX_TOTAL_SECONDS = 10 * 60 * 60;
     public static final int MAX_REPEAT = 200;
+    public static final int MAX_LISTEN_MINUTES = 600;
 
     // ===================== 요청 =====================
 
@@ -32,6 +34,8 @@ public final class PlaylistDtos {
      * 플레이리스트 저장 (생성/수정 동일) = 레고 타임라인.
      * main: 메인 트랙 (필수) - 순서대로 이어 재생
      * mix:  믹스 트랙 (선택) - startSeconds 위치에만 블록을 놓아 겹쳐 재생, 사이사이 빈칸 가능
+     * listenMinutes: 얼마나 들을까요? 0(또는 생략) = 한 바퀴만, 그 외 = 그 시간 동안 이어서 반복 재생
+     * 블록은 내 블록함에 있는 것만 쓸 수 있음 (같은 블록 여러 번은 자유)
      */
     public record PlaylistSaveRequest(
             @NotBlank(message = "제목은 필수입니다.")
@@ -48,7 +52,11 @@ public final class PlaylistDtos {
             TrackRequest main,
 
             @Valid
-            TrackRequest mix) {
+            TrackRequest mix,
+
+            @Min(value = 0, message = "재생 시간은 0분 이상이어야 합니다.")
+            @Max(value = MAX_LISTEN_MINUTES, message = "재생 시간은 최대 10시간까지 고를 수 있습니다.")
+            Integer listenMinutes) {
     }
 
     /** 트랙 하나. volume 0.0~1.0 (생략 시 메인 1.0 / 믹스 0.5) */
@@ -88,7 +96,10 @@ public final class PlaylistDtos {
     public record OwnerResponse(Long id, String nickname) {
     }
 
-    /** 트랙에 놓인 블록. duration은 블록 1번 길이, totalDuration = duration x repeat */
+    /**
+     * 트랙에 놓인 블록. duration은 블록 1번 길이, totalDuration = duration x repeat.
+     * owned: 보는 사람의 블록함에 있는지. fileUrl은 무료이거나 owned일 때만 (유료 원본 보호)
+     */
     public record TrackItemResponse(
             int position,
             Long blockId,
@@ -99,6 +110,8 @@ public final class PlaylistDtos {
             Integer startSeconds,
             int totalDuration,
             boolean playable,
+            boolean owned,
+            Integer price,
             CategoryResponse category) {
     }
 
@@ -108,16 +121,19 @@ public final class PlaylistDtos {
             int duration,
             List<TrackItemResponse> items) {
 
-        static TrackResponse from(PlaylistLayer layer, StorageService storage) {
+        static TrackResponse from(PlaylistLayer layer, StorageService storage, Set<Long> ownedBlockIds) {
             List<PlaylistBlock> blocks = layer.getBlocks();
             return new TrackResponse(layer.getRole(), layer.getVolume(), layer.duration(),
                     IntStream.range(0, blocks.size()).mapToObj(i -> {
                         PlaylistBlock pb = blocks.get(i);
                         var block = pb.getBlock();
+                        boolean owned = ownedBlockIds.contains(block.getId());
                         return new TrackItemResponse(i + 1, block.getId(), block.getTitle(),
-                                storage.publicUrl(block.getFileKey()), block.getDuration(),
+                                owned || !block.isPaid() ? storage.publicUrl(block.getFileKey()) : null,
+                                block.getDuration(),
                                 pb.getRepeatCount(), layer.getRole() == LayerRole.MIX ? pb.getStartSeconds() : null,
-                                pb.totalSeconds(), block.isPlayable(), CategoryResponse.from(block.getCategory()));
+                                pb.totalSeconds(), block.isPlayable(), owned, block.getPrice(),
+                                CategoryResponse.from(block.getCategory()));
                     }).toList());
         }
     }
@@ -129,6 +145,7 @@ public final class PlaylistDtos {
             Boolean isPublic,
             Integer playCount,
             Integer totalDuration,
+            Integer listenMinutes,
             OwnerResponse owner,
             TrackResponse main,
             TrackResponse mix,
@@ -136,13 +153,14 @@ public final class PlaylistDtos {
             LocalDateTime createdAt,
             LocalDateTime updatedAt) {
 
-        public static PlaylistDetailResponse from(Playlist playlist, RenderResponse render, StorageService storage) {
+        public static PlaylistDetailResponse from(Playlist playlist, RenderResponse render, StorageService storage,
+                                                  Set<Long> ownedBlockIds) {
             return new PlaylistDetailResponse(
                     playlist.getId(), playlist.getTitle(), playlist.getDescription(), playlist.getIsPublic(),
-                    playlist.getPlayCount(), playlist.getTotalDuration(),
+                    playlist.getPlayCount(), playlist.getTotalDuration(), playlist.getListenMinutes(),
                     new OwnerResponse(playlist.getUserId(), playlist.getOwnerNickname()),
-                    playlist.layer(LayerRole.MAIN).map(l -> TrackResponse.from(l, storage)).orElse(null),
-                    playlist.layer(LayerRole.MIX).map(l -> TrackResponse.from(l, storage)).orElse(null),
+                    playlist.layer(LayerRole.MAIN).map(l -> TrackResponse.from(l, storage, ownedBlockIds)).orElse(null),
+                    playlist.layer(LayerRole.MIX).map(l -> TrackResponse.from(l, storage, ownedBlockIds)).orElse(null),
                     render, playlist.getCreatedAt(), playlist.getUpdatedAt());
         }
     }
@@ -155,6 +173,7 @@ public final class PlaylistDtos {
             Boolean isPublic,
             Integer playCount,
             Integer totalDuration,
+            Integer listenMinutes,
             OwnerResponse owner,
             int blockCount,
             boolean hasMix,
@@ -166,7 +185,7 @@ public final class PlaylistDtos {
                     .map(PlaylistLayer::getBlocks).orElse(List.of());
             return new PlaylistSummaryResponse(
                     playlist.getId(), playlist.getTitle(), playlist.getDescription(), playlist.getIsPublic(),
-                    playlist.getPlayCount(), playlist.getTotalDuration(),
+                    playlist.getPlayCount(), playlist.getTotalDuration(), playlist.getListenMinutes(),
                     new OwnerResponse(playlist.getUserId(), playlist.getOwnerNickname()),
                     playlist.getLayers().stream().mapToInt(l -> l.getBlocks().size()).sum(),
                     playlist.layer(LayerRole.MIX).isPresent(),

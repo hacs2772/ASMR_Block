@@ -1,19 +1,48 @@
 import { create } from 'zustand';
-import type { Category, PlaylistDetail, PlaylistSaveRequest, TrackItem } from '@/api/types';
+import type { Category, ItemRequest, PlaylistDetail, PlaylistSaveRequest, TrackItem } from '@/api/types';
 
 /**
- * 레고 타임라인 편집 상태 (왼쪽 → 오른쪽으로 흐름)
- * - main: 메인 트랙. 블록이 빈틈없이 이어짐 (대부분은 이것만 씀)
- * - mix: 믹스 트랙(선택). 원하는 시각(start)에만 블록을 놓음 → 사이사이 빈칸
- * - 블록마다 반복(repeat): "빗소리 ×20" 처럼 긴 조합도 조각 하나로
+ * 블록 편집기 상태 — 옆으로 누운 레고 블록이 왼쪽 → 오른쪽으로 흐름
+ * - 첫째 줄(main): 블록이 빈틈없이 딸깍 이어짐. 같은 블록을 몇 번 복제해도 추가 비용 없음
+ * - 둘째 줄(mix, 선택): 첫째 줄과 따로 흐름. 원하는 시각(start, 5초 단위)에 놓고 사이사이는 빈칸
+ * - 얼마나 들을까요(listenMinutes): 한 바퀴(두 줄 전체)를 그 시간 동안 이어서 반복 재생
+ * - 블록 길이 = 소리 길이 (1분 = PX_PER_MINUTE)
+ * - 편집기에는 내 블록함에 담은 블록만 나옴
  */
-export type TrackKey = 'main' | 'mix';
+export type RowKey = 'main' | 'mix';
 
 export const MAX_TOTAL_SECONDS = 10 * 60 * 60;
+export const MAX_ITEMS = 200;
 export const MAX_REPEAT = 200;
+export const PX_PER_MINUTE = 18;
+export const PX_PER_SECOND = PX_PER_MINUTE / 60;
+/** 아주 짧은 블록도 손가락으로 누를 수 있게 */
+export const MIN_BRICK_WIDTH = 30;
+/** 둘째 줄은 5초 단위로 놓임 */
+export const SNAP_SECONDS = 5;
+/** 첫째 줄 블록 경계·옆 블록 끝에서 이만큼(px) 가까우면 착 붙음 */
+export const MAGNET_PX = 8;
+export const NUDGE_SECONDS = 10;
+export const LISTEN_OPTIONS = [
+  { minutes: 0, label: '한 바퀴' },
+  { minutes: 30, label: '30분' },
+  { minutes: 60, label: '1시간' },
+  { minutes: 180, label: '3시간' },
+  { minutes: 480, label: '8시간' },
+] as const;
 
-export type EditorBlock = { id: number; title: string; duration: number; fileUrl: string; category: Category | null };
-export type TimelineItem = { key: string; block: EditorBlock; repeat: number; start?: number };
+export type EditorBlock = {
+  id: number;
+  title: string;
+  duration: number;
+  fileUrl: string | null;
+  category: Category | null;
+  /** 내 블록함에 있는지 (없는 블록이 있으면 저장할 수 없음) */
+  owned: boolean;
+};
+export type MainItem = { key: string; block: EditorBlock };
+export type MixItem = { key: string; block: EditorBlock; start: number };
+export type Selection = { row: RowKey; key: string } | null;
 
 export type EditorState = {
   /** 지금 불러온 편집 대상 ("new" 또는 플레이리스트 id 문자열) */
@@ -22,63 +51,89 @@ export type EditorState = {
   title: string;
   description: string;
   isPublic: boolean;
-  main: { volume: number; items: TimelineItem[] };
-  mix: { enabled: boolean; volume: number; items: TimelineItem[] };
-  selected: { track: TrackKey; key: string } | null;
-  /** 확대/축소: 1초당 픽셀 */
-  pxPerSecond: number;
+  listenMinutes: number;
+  main: { volume: number; items: MainItem[] };
+  mix: { enabled: boolean; volume: number; items: MixItem[] };
+  selected: Selection;
+  /** 둘째 줄 빈 곳을 눌러 정한 "여기에 넣기" 시각(초) */
+  mixTarget: number | null;
   isModified: boolean;
 };
 
 // ===================== 순수 계산 (테스트 대상) =====================
 
-export const lengthOf = (item: TimelineItem) => item.block.duration * item.repeat;
+/** 블록 길이(초) → 화면 폭(px) */
+export const brickWidth = (seconds: number) => Math.max(MIN_BRICK_WIDTH, Math.round(seconds * PX_PER_SECOND));
 
-/** 메인 트랙 각 조각의 시작/길이 */
-export function mainLayout(items: TimelineItem[]) {
-  let cursor = 0;
+/** 첫째 줄 각 블록의 시작 시각(초)과 화면 위치(px) */
+export function mainLayout(items: MainItem[]) {
+  let time = 0;
+  let x = 0;
   return items.map((item) => {
-    const start = cursor;
-    cursor += lengthOf(item);
-    return { key: item.key, start, length: lengthOf(item) };
+    const entry = { key: item.key, start: time, length: item.block.duration, x, width: brickWidth(item.block.duration) };
+    time += entry.length;
+    x += entry.width;
+    return entry;
   });
 }
 
-export function durationsOf(state: Pick<EditorState, 'main' | 'mix'>) {
-  const main = state.main.items.reduce((total, item) => total + lengthOf(item), 0);
-  const mixEnd = state.mix.items.reduce((end, item) => Math.max(end, (item.start ?? 0) + lengthOf(item)), 0);
-  return { main, mixEnd, total: Math.max(main, mixEnd) };
+export const mainLength = (items: MainItem[]) => items.reduce((t, i) => t + i.block.duration, 0);
+
+export const mixEnd = (items: MixItem[], excludeKey?: string) =>
+  items.reduce((end, i) => (i.key === excludeKey ? end : Math.max(end, i.start + i.block.duration)), 0);
+
+/** 한 바퀴 길이 = max(첫째 줄 길이, 둘째 줄 마지막 블록이 끝나는 시각) */
+export function cycleLength(state: Pick<EditorState, 'main' | 'mix'>) {
+  return Math.max(mainLength(state.main.items), state.mix.enabled ? mixEnd(state.mix.items) : 0);
 }
 
-/**
- * 믹스 트랙에서 length 길이 조각을 desired 근처의 빈자리에 놓을 시작 시각.
- * 다른 조각과 겹치지 않는 가장 가까운 위치를 찾음 (0초 이상)
- */
-export function findFreeStart(items: TimelineItem[], length: number, desired: number, excludeKey?: string): number {
-  const others = items
-    .filter((i) => i.key !== excludeKey)
-    .map((i) => ({ start: i.start ?? 0, end: (i.start ?? 0) + lengthOf(i) }))
-    .sort((a, b) => a.start - b.start);
-  const fits = (s: number) => s >= 0 && others.every((o) => s + length <= o.start || s >= o.end);
+/** 둘째 줄에서 start에 length 길이 블록을 놓을 수 있는지 (다른 블록과 안 겹침) */
+export function fitsAt(items: MixItem[], start: number, length: number, excludeKey?: string) {
+  return start >= 0 && items.every((i) => i.key === excludeKey || start + length <= i.start || start >= i.start + i.block.duration);
+}
+
+/** 원하는 자리가 막혀 있으면 가장 가까운 빈자리 */
+export function findFreeStart(items: MixItem[], length: number, desired: number, excludeKey?: string): number {
   const target = Math.max(0, Math.round(desired));
-  if (fits(target)) return target;
-  const candidates = others.flatMap((o) => [o.end, o.start - length]).filter(fits);
-  if (candidates.length === 0) return others.length ? others[others.length - 1].end : 0;
+  if (fitsAt(items, target, length, excludeKey)) return target;
+  const candidates = items
+    .filter((i) => i.key !== excludeKey)
+    .flatMap((i) => [i.start + i.block.duration, i.start - length])
+    .filter((c) => fitsAt(items, c, length, excludeKey));
+  if (candidates.length === 0) return mixEnd(items, excludeKey);
   return candidates.reduce((best, c) => (Math.abs(c - target) < Math.abs(best - target) ? c : best));
 }
 
-/** 메인 트랙에서 시각 t에 놓으면 몇 번째 자리에 들어갈지 (조각 가운데보다 오른쪽이면 그 뒤) */
-export function insertIndexAt(items: TimelineItem[], t: number, excludeKey?: string): number {
-  const layout = mainLayout(items.filter((i) => i.key !== excludeKey));
-  return layout.filter((l) => l.start + l.length / 2 < t).length;
+/**
+ * 둘째 줄에 놓을 시각: 첫째 줄 블록 경계나 옆 블록 끝 근처면 거기에 착, 아니면 5초 단위.
+ * 그다음 겹치지 않는 가장 가까운 빈자리로.
+ */
+export function snapMixStart(raw: number, length: number, mainItems: MainItem[], mixItems: MixItem[], excludeKey?: string): number {
+  const magnet = MAGNET_PX / PX_PER_SECOND;
+  const edges = [...mainLayout(mainItems).map((l) => l.start), mainLength(mainItems)];
+  mixItems.forEach((i) => {
+    if (i.key !== excludeKey) edges.push(i.start + i.block.duration, i.start - length);
+  });
+  const nearest = edges.reduce<number | null>(
+    (best, e) => (Math.abs(e - raw) <= magnet && (best === null || Math.abs(e - raw) < Math.abs(best - raw)) ? e : best), null);
+  const snapped = nearest ?? Math.round(raw / SNAP_SECONDS) * SNAP_SECONDS;
+  return findFreeStart(mixItems, length, Math.max(0, snapped), excludeKey);
 }
 
-/** 믹스 블록을 놓을 때: 메인 조각 경계 근처(snapSeconds 이내)면 경계에 딱 붙이고, 아니면 5초 단위 */
-export function snapTime(t: number, mainItems: TimelineItem[], snapSeconds: number): number {
-  const edges = [0, ...mainLayout(mainItems).map((l) => l.start + l.length)];
-  const nearest = edges.reduce((best, e) => (Math.abs(e - t) < Math.abs(best - t) ? e : best), edges[0]);
-  if (Math.abs(nearest - t) <= snapSeconds) return nearest;
-  return Math.max(0, Math.round(t / 5) * 5);
+/** 첫째 줄 x(px) 위치에 놓으면 몇 번째 자리에 들어갈지 (블록 가운데보다 오른쪽이면 그 뒤) */
+export function insertIndexAtX(items: MainItem[], x: number, excludeKey?: string): number {
+  return mainLayout(items.filter((i) => i.key !== excludeKey)).filter((l) => l.x + l.width / 2 < x).length;
+}
+
+/** 이어진 같은 블록은 반복 1개로 묶어서 보냄 (복제를 많이 해도 200개 제한에 덜 걸리게) */
+export function compressRuns(items: MainItem[]): ItemRequest[] {
+  const runs: ItemRequest[] = [];
+  for (const item of items) {
+    const last = runs[runs.length - 1];
+    if (last && last.blockId === item.block.id && last.repeat < MAX_REPEAT) last.repeat += 1;
+    else runs.push({ blockId: item.block.id, repeat: 1 });
+  }
+  return runs;
 }
 
 export function toSaveRequest(state: EditorState): PlaylistSaveRequest {
@@ -87,22 +142,41 @@ export function toSaveRequest(state: EditorState): PlaylistSaveRequest {
     title: state.title.trim(),
     description: state.description.trim() || null,
     isPublic: state.isPublic,
-    main: { volume: state.main.volume, items: state.main.items.map((i) => ({ blockId: i.block.id, repeat: i.repeat })) },
+    listenMinutes: state.listenMinutes,
+    main: { volume: state.main.volume, items: compressRuns(state.main.items) },
     mix: hasMix
       ? {
           volume: state.mix.volume,
-          items: [...state.mix.items]
-            .sort((a, b) => (a.start ?? 0) - (b.start ?? 0))
-            .map((i) => ({ blockId: i.block.id, repeat: i.repeat, startSeconds: i.start ?? 0 })),
+          items: [...state.mix.items].sort((a, b) => a.start - b.start)
+            .map((i) => ({ blockId: i.block.id, repeat: 1, startSeconds: i.start })),
         }
       : null,
   };
 }
 
+/** "얼마나 들을까요?" 설명 문구 */
+export function listenNote(cycleSeconds: number, listenMinutes: number): string {
+  if (cycleSeconds <= 0) return '블록 상자에서 블록을 눌러 시작해요';
+  const cycle = formatLength(cycleSeconds);
+  if (listenMinutes <= 0) return `한 바퀴(${cycle}) 듣고 끝나요`;
+  const listen = formatLength(listenMinutes * 60);
+  if (cycleSeconds >= listenMinutes * 60) return `${listen} 뒤에 스르르 작아지며 꺼져요`;
+  return `한 바퀴(${cycle})를 이어서 ${listen} 동안 들려줘요 · 약 ${Math.ceil((listenMinutes * 60) / cycleSeconds)}바퀴`;
+}
+
+/** 초 → "34분", "1시간 5분", "2분 30초" */
+export function formatLength(seconds: number): string {
+  const s = Math.round(seconds);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return [h ? `${h}시간` : '', m ? `${m}분` : '', sec ? `${sec}초` : ''].filter(Boolean).join(' ') || '0분';
+}
+
 // ===================== 스토어 =====================
 
 let counter = 0;
-const newKey = () => `t${Date.now().toString(36)}${(counter++).toString(36)}`;
+const newKey = () => `b${Date.now().toString(36)}${(counter++).toString(36)}`;
 
 const initialState = (): EditorState => ({
   sessionKey: null,
@@ -110,62 +184,56 @@ const initialState = (): EditorState => ({
   title: '',
   description: '',
   isPublic: false,
+  listenMinutes: 0,
   main: { volume: 1, items: [] },
   mix: { enabled: false, volume: 0.5, items: [] },
   selected: null,
-  pxPerSecond: 0.35,
+  mixTarget: null,
   isModified: false,
 });
 
-const fromResponse = (items: TrackItem[] = []): TimelineItem[] =>
-  items.map((i) => ({
-    key: newKey(),
-    block: { id: i.blockId, title: i.title, duration: i.duration, fileUrl: i.fileUrl, category: i.category },
-    repeat: i.repeat,
-    start: i.startSeconds ?? undefined,
-  }));
+const toBlock = (i: TrackItem): EditorBlock => ({
+  id: i.blockId, title: i.title, duration: i.duration, fileUrl: i.fileUrl, category: i.category, owned: i.owned,
+});
+
+/** 저장된 반복(repeat)은 편집기에서는 블록 여러 개로 펼쳐서 보여줌 */
+export function itemsFromDetail(p: Pick<PlaylistDetail, 'main' | 'mix'>): { main: MainItem[]; mix: MixItem[] } {
+  const main = (p.main?.items ?? []).flatMap((i) =>
+    Array.from({ length: i.repeat }, () => ({ key: newKey(), block: toBlock(i) })));
+  const mix = (p.mix?.items ?? []).flatMap((i) =>
+    Array.from({ length: i.repeat }, (_, n) => ({ key: newKey(), block: toBlock(i), start: (i.startSeconds ?? 0) + n * i.duration })));
+  return { main, mix };
+}
 
 type Actions = {
   initNew: () => void;
   load: (playlist: PlaylistDetail) => void;
   setTitle: (title: string) => void;
   setIsPublic: (isPublic: boolean) => void;
-  /** 메인 트랙 index 자리에 추가 (없으면 맨 끝) */
-  addToMain: (block: EditorBlock, index?: number) => string;
-  /** 믹스 트랙 start 근처 빈자리에 추가 */
-  addToMix: (block: EditorBlock, start: number) => string;
-  /** 어느 트랙에 있든 메인 트랙 index 자리로 */
-  moveToMain: (key: string, index: number) => void;
-  /** 어느 트랙에 있든 믹스 트랙 start 근처 빈자리로 */
-  moveToMix: (key: string, start: number) => void;
+  setListenMinutes: (minutes: number) => void;
+  /** 첫째 줄 index 자리에 (없으면 맨 끝) */
+  addMain: (block: EditorBlock, index?: number) => string;
+  /** 둘째 줄 start 근처 빈자리에 */
+  addMix: (block: EditorBlock, start: number) => string;
+  moveMain: (key: string, index: number) => void;
+  moveMix: (key: string, start: number) => void;
+  /** 복제: 첫째 줄은 바로 옆에, 둘째 줄은 바로 뒤 빈자리에 */
   duplicate: (key: string) => void;
-  setRepeat: (key: string, repeat: number) => void;
-  /** 믹스 조각을 메인 트랙 끝까지 반복으로 채움 */
-  fillToEnd: (key: string) => void;
+  /** 둘째 줄 블록을 delta초 옮김. 막히면 false */
+  nudge: (key: string, delta: number) => boolean;
   remove: (key: string) => void;
-  select: (selection: EditorState['selected']) => void;
-  setVolume: (track: TrackKey, volume: number) => void;
-  enableMix: () => void;
-  removeMix: () => void;
-  setZoom: (pxPerSecond: number) => void;
+  select: (selection: Selection) => void;
+  setMixTarget: (seconds: number | null) => void;
+  setMixVolume: (volume: number) => void;
+  showMix: () => void;
+  /** 둘째 줄 숨기기 (블록은 남겨 두어 다시 보이면 그대로) */
+  hideMix: () => void;
   markSaved: (playlistId: number) => void;
 };
 
 type Store = EditorState & Actions;
 
-const findItem = (s: EditorState, key: string): { track: TrackKey; item: TimelineItem } | null => {
-  const main = s.main.items.find((i) => i.key === key);
-  if (main) return { track: 'main', item: main };
-  const mix = s.mix.items.find((i) => i.key === key);
-  return mix ? { track: 'mix', item: mix } : null;
-};
-
-const withoutItem = (s: EditorState, key: string) => ({
-  main: { ...s.main, items: s.main.items.filter((i) => i.key !== key) },
-  mix: { ...s.mix, items: s.mix.items.filter((i) => i.key !== key) },
-});
-
-const sortMix = (items: TimelineItem[]) => [...items].sort((a, b) => (a.start ?? 0) - (b.start ?? 0));
+const sortMix = (items: MixItem[]) => [...items].sort((a, b) => a.start - b.start);
 
 export const useEditor = create<Store>((set, get) => ({
   ...initialState(),
@@ -173,7 +241,7 @@ export const useEditor = create<Store>((set, get) => ({
   initNew: () => set({ ...initialState(), sessionKey: 'new' }),
 
   load: (p) => {
-    const mixItems = fromResponse(p.mix?.items);
+    const { main, mix } = itemsFromDetail(p);
     set({
       ...initialState(),
       sessionKey: String(p.id),
@@ -181,128 +249,100 @@ export const useEditor = create<Store>((set, get) => ({
       title: p.title,
       description: p.description ?? '',
       isPublic: p.isPublic,
-      main: { volume: p.main?.volume ?? 1, items: fromResponse(p.main?.items) },
-      mix: { enabled: mixItems.length > 0, volume: p.mix?.volume ?? 0.5, items: mixItems },
-      pxPerSecond: fitZoom(p.totalDuration),
+      listenMinutes: p.listenMinutes ?? 0,
+      main: { volume: p.main?.volume ?? 1, items: main },
+      mix: { enabled: mix.length > 0, volume: p.mix?.volume ?? 0.5, items: mix },
     });
   },
 
   setTitle: (title) => set({ title, isModified: true }),
   setIsPublic: (isPublic) => set({ isPublic, isModified: true }),
+  setListenMinutes: (listenMinutes) => set({ listenMinutes, isModified: true }),
 
-  addToMain: (block, index) => {
+  addMain: (block, index) => {
     const key = newKey();
     set((s) => {
       const items = [...s.main.items];
-      items.splice(index ?? items.length, 0, { key, block, repeat: 1 });
-      return { main: { ...s.main, items }, selected: { track: 'main', key }, isModified: true };
+      items.splice(index ?? items.length, 0, { key, block });
+      return { main: { ...s.main, items }, isModified: true };
     });
     return key;
   },
 
-  addToMix: (block, start) => {
+  addMix: (block, start) => {
     const key = newKey();
-    set((s) => {
-      const placed = findFreeStart(s.mix.items, block.duration, start);
-      return {
-        mix: { ...s.mix, enabled: true, items: sortMix([...s.mix.items, { key, block, repeat: 1, start: placed }]) },
-        selected: { track: 'mix', key },
-        isModified: true,
-      };
-    });
+    set((s) => ({
+      mix: { ...s.mix, enabled: true, items: sortMix([...s.mix.items, { key, block, start: findFreeStart(s.mix.items, block.duration, start) }]) },
+      mixTarget: null,
+      isModified: true,
+    }));
     return key;
   },
 
-  moveToMain: (key, index) =>
+  moveMain: (key, index) =>
     set((s) => {
-      const found = findItem(s, key);
-      if (!found) return {};
-      const rest = withoutItem(s, key);
-      const items = [...rest.main.items];
-      items.splice(Math.min(index, items.length), 0, { ...found.item, start: undefined });
-      return { ...rest, main: { ...rest.main, items }, selected: { track: 'main', key }, isModified: true };
+      const from = s.main.items.findIndex((i) => i.key === key);
+      if (from < 0) return {};
+      const items = [...s.main.items];
+      const [item] = items.splice(from, 1);
+      items.splice(Math.max(0, Math.min(index, items.length)), 0, item);
+      return { main: { ...s.main, items }, isModified: true };
     }),
 
-  moveToMix: (key, start) =>
+  moveMix: (key, start) =>
     set((s) => {
-      const found = findItem(s, key);
-      if (!found) return {};
-      const rest = withoutItem(s, key);
-      const placed = findFreeStart(rest.mix.items, lengthOf(found.item), start);
-      return {
-        ...rest,
-        mix: { ...rest.mix, enabled: true, items: sortMix([...rest.mix.items, { ...found.item, start: placed }]) },
-        selected: { track: 'mix', key },
-        isModified: true,
-      };
+      const item = s.mix.items.find((i) => i.key === key);
+      if (!item) return {};
+      const placed = findFreeStart(s.mix.items, item.block.duration, start, key);
+      return { mix: { ...s.mix, items: sortMix(s.mix.items.map((i) => (i.key === key ? { ...i, start: placed } : i))) }, isModified: true };
     }),
 
   duplicate: (key) =>
     set((s) => {
-      const found = findItem(s, key);
-      if (!found) return {};
-      const copy = { ...found.item, key: newKey() };
-      if (found.track === 'main') {
+      const index = s.main.items.findIndex((i) => i.key === key);
+      if (index >= 0) {
+        const copy = { ...s.main.items[index], key: newKey() };
         const items = [...s.main.items];
-        items.splice(items.findIndex((i) => i.key === key) + 1, 0, copy);
-        return { main: { ...s.main, items }, selected: { track: 'main', key: copy.key }, isModified: true };
+        items.splice(index + 1, 0, copy);
+        return { main: { ...s.main, items }, selected: { row: 'main', key: copy.key }, isModified: true };
       }
-      const after = (found.item.start ?? 0) + lengthOf(found.item);
-      copy.start = findFreeStart(s.mix.items, lengthOf(copy), after);
-      return { mix: { ...s.mix, items: sortMix([...s.mix.items, copy]) }, selected: { track: 'mix', key: copy.key }, isModified: true };
+      const item = s.mix.items.find((i) => i.key === key);
+      if (!item) return {};
+      const copy = { ...item, key: newKey(), start: findFreeStart(s.mix.items, item.block.duration, item.start + item.block.duration) };
+      return { mix: { ...s.mix, items: sortMix([...s.mix.items, copy]) }, selected: { row: 'mix', key: copy.key }, isModified: true };
     }),
 
-  setRepeat: (key, repeat) =>
-    set((s) => {
-      const found = findItem(s, key);
-      if (!found) return {};
-      const value = Math.min(MAX_REPEAT, Math.max(1, Math.round(repeat)));
-      if (found.track === 'main') {
-        return { main: { ...s.main, items: s.main.items.map((i) => (i.key === key ? { ...i, repeat: value } : i)) }, isModified: true };
-      }
-      // 믹스: 늘리다가 다음 조각과 겹치면 겹치기 직전까지만
-      const start = found.item.start ?? 0;
-      const next = s.mix.items.filter((i) => i.key !== key && (i.start ?? 0) >= start).sort((a, b) => (a.start ?? 0) - (b.start ?? 0))[0];
-      const maxRepeat = next ? Math.max(1, Math.floor(((next.start ?? 0) - start) / found.item.block.duration)) : MAX_REPEAT;
-      const repeatValue = Math.min(value, maxRepeat);
-      return { mix: { ...s.mix, items: s.mix.items.map((i) => (i.key === key ? { ...i, repeat: repeatValue } : i)) }, isModified: true };
-    }),
-
-  fillToEnd: (key) => {
+  nudge: (key, delta) => {
     const s = get();
-    const found = findItem(s, key);
-    if (!found || found.track !== 'mix') return;
-    const { main } = durationsOf(s);
-    const remaining = main - (found.item.start ?? 0);
-    get().setRepeat(key, Math.max(1, Math.ceil(remaining / found.item.block.duration)));
+    const item = s.mix.items.find((i) => i.key === key);
+    if (!item) return false;
+    const next = Math.max(0, item.start + delta);
+    if (next === item.start || !fitsAt(s.mix.items, next, item.block.duration, key)) return false;
+    set({ mix: { ...s.mix, items: sortMix(s.mix.items.map((i) => (i.key === key ? { ...i, start: next } : i))) }, isModified: true });
+    return true;
   },
 
-  remove: (key) => set((s) => ({ ...withoutItem(s, key), selected: null, isModified: true })),
-
-  select: (selected) => set({ selected }),
-
-  setVolume: (track, volume) =>
-    set((s) => ({ [track]: { ...s[track], volume: Math.round(Math.min(1, Math.max(0, volume)) * 100) / 100 }, isModified: true })),
-
-  enableMix: () => set((s) => ({ mix: { ...s.mix, enabled: true } })),
-
-  removeMix: () =>
+  remove: (key) =>
     set((s) => ({
-      mix: initialState().mix,
-      selected: s.selected?.track === 'mix' ? null : s.selected,
+      main: { ...s.main, items: s.main.items.filter((i) => i.key !== key) },
+      mix: { ...s.mix, items: s.mix.items.filter((i) => i.key !== key) },
+      selected: s.selected?.key === key ? null : s.selected,
+      isModified: true,
+    })),
+
+  select: (selected) => set({ selected, mixTarget: null }),
+  setMixTarget: (mixTarget) => set({ mixTarget, selected: null }),
+  setMixVolume: (volume) =>
+    set((s) => ({ mix: { ...s.mix, volume: Math.round(Math.min(1, Math.max(0, volume)) * 100) / 100 }, isModified: true })),
+
+  showMix: () => set((s) => ({ mix: { ...s.mix, enabled: true }, isModified: s.isModified || s.mix.items.length > 0 })),
+  hideMix: () =>
+    set((s) => ({
+      mix: { ...s.mix, enabled: false },
+      selected: s.selected?.row === 'mix' ? null : s.selected,
+      mixTarget: null,
       isModified: s.isModified || s.mix.items.length > 0,
     })),
 
-  setZoom: (pxPerSecond) => set({ pxPerSecond }),
-
   markSaved: (playlistId) => set({ playlistId, isModified: false }),
 }));
-
-/** 확대/축소 단계 (1초당 픽셀): 3분 블록이 3.6px ~ 108px */
-export const ZOOM_LEVELS = [0.02, 0.05, 0.1, 0.2, 0.35, 0.6];
-
-/** 전체 길이가 화면 2~3장 안에 들어오는 확대 단계 */
-export function fitZoom(totalSeconds: number, viewWidth = 320): number {
-  const fitting = ZOOM_LEVELS.filter((z) => totalSeconds * z <= viewWidth * 2.5);
-  return fitting.length ? fitting[fitting.length - 1] : ZOOM_LEVELS[0];
-}
