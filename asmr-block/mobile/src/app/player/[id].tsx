@@ -3,7 +3,7 @@ import Slider from '@react-native-community/slider';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { playlistApi } from '@/api/endpoints';
 import type { PlaylistDetail, Render, Track } from '@/api/types';
@@ -23,7 +23,7 @@ const colorsOf = (track: Track | null) =>
 
 /** 전체 화면 플레이어: 완성본 만들기 → 재생, 수면 타이머, 오프라인 저장 */
 export default function PlayerScreen() {
-  const { id, offline } = useLocalSearchParams<{ id: string; offline?: string }>();
+  const { id, offline, autoplay } = useLocalSearchParams<{ id: string; offline?: string; autoplay?: string }>();
   const playlistId = Number(id);
   const queryClient = useQueryClient();
   const { status: authStatus, user } = useAuth();
@@ -84,6 +84,17 @@ export default function PlayerScreen() {
       applyListenTime();
     }
   };
+
+  // 편집기에서 저장하고 왔으면: 완성본이 다 되는 대로 자동 재생 (한 번만)
+  const autoplayed = useRef(false);
+  const playLatest = useRef(playOrToggle);
+  useEffect(() => { playLatest.current = playOrToggle; });
+  const ready = r?.status === 'DONE' && !!r.fileUrl;
+  useEffect(() => {
+    if (autoplay !== '1' || !ready || autoplayed.current || isCurrent) return;
+    autoplayed.current = true;
+    playLatest.current();
+  }, [autoplay, ready, isCurrent]);
 
   const download = useMutation({
     mutationFn: async () => {

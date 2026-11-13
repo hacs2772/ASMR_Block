@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useRef, type ComponentRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
@@ -5,7 +6,7 @@ import {
 } from 'react-native-gesture-handler';
 import { formatDuration } from '@/lib/format';
 import {
-  brickWidth, cycleLength, mainLayout, mixEnd, PX_PER_MINUTE, PX_PER_SECOND, SNAP_SECONDS, useEditor,
+  brickWidth, cycleLength, mainLayout, mixEnd, xAtTime, PX_PER_MINUTE, PX_PER_SECOND, SNAP_SECONDS, useEditor,
   type EditorBlock, type RowKey,
 } from '@/store/editor';
 import { categoryFallbackColor, colors, radius, space } from '@/theme';
@@ -15,6 +16,8 @@ import {
   useDragHandlers,
 } from './drag';
 import { useCategoryIcon } from './useCategoryIcon';
+import { RowTwoVolume } from './EditorCards';
+import { usePreviewClock } from '@/audio/useMixPreview';
 
 const LONG_PRESS_MS = 260;
 
@@ -33,7 +36,7 @@ const GHOST_SLOT = 46;
  * 레고 바닥판: 시간 눈금 + 첫째 줄(빈틈없이 이어짐) + (선택) 둘째 줄(원하는 시간에) + 전체 보기 슬라이더.
  * 블록 길이 = 소리 길이 (1분 = 18px)
  */
-export function Board() {
+export function Board({ playing, onTogglePlay }: { playing: boolean; onTogglePlay: () => void }) {
   const main = useEditor((s) => s.main);
   const mix = useEditor((s) => s.mix);
   const mixTarget = useEditor((s) => s.mixTarget);
@@ -92,7 +95,12 @@ export function Board() {
   return (
     <View style={styles.plate}>
       <View style={styles.header}>
-        <Text style={styles.caption}>왼쪽부터 차례로 재생 · 1칸 = 1분</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={playing ? '멈춤' : '전체 듣기'} onPress={onTogglePlay}
+          hitSlop={6} style={[styles.play, playing && styles.playOn]} testID="play-all">
+          <Ionicons name={playing ? 'stop' : 'play'} size={12} color={playing ? '#fff' : '#C7C8FF'} />
+          <Text style={[styles.playText, playing && { color: '#fff' }]}>{playing ? '멈춤' : '전체 듣기'}</Text>
+        </Pressable>
+        <Text style={styles.caption}>1칸 = 1분</Text>
         {!mix.enabled && (
           <Pressable accessibilityRole="button" accessibilityLabel="둘째 줄 추가 (소리 겹치기)" onPress={showMix}
             hitSlop={8} style={styles.addRow} testID="add-row">
@@ -167,6 +175,8 @@ export function Board() {
               </>
             )}
 
+            <Playhead />
+
             {/* 둘째 줄에 놓을 때 세로 안내선 */}
             {preview?.row === 'mix' && (
               <View pointerEvents="none" style={[styles.guide, { left: BOARD_PAD + preview.start * PX_PER_SECOND }]} />
@@ -174,6 +184,7 @@ export function Board() {
           </View>
         </ScrollView>
       </View>
+      <RowTwoVolume />
       <Minimap />
     </View>
   );
@@ -217,6 +228,20 @@ function DraggableBrick({ row, itemKey, block, hole, z, left, top, width, height
       </View>
     </GestureDetector>
   );
+}
+
+/** 전체 듣기 위치 선 (이것만 다시 그려서 블록들은 그대로) + 화면 밖으로 나가면 따라가기 */
+function Playhead() {
+  const t = usePreviewClock((s) => s.t);
+  const items = useEditor((s) => s.main.items);
+  const x = t === null ? null : BOARD_PAD + xAtTime(items, t);
+  useEffect(() => {
+    if (x === null) return;
+    const width = board.viewport.width;
+    if (x - board.scrollX > width - 60 || x < board.scrollX + 10) board.scrollTo(Math.max(0, x - 60));
+  }, [x]);
+  if (x === null) return null;
+  return <View pointerEvents="none" style={[styles.playhead, { left: x }]} testID="playhead" />;
 }
 
 /** 시간 말풍선 (블록이 좁아도 한 줄로) */
@@ -281,8 +306,15 @@ function Minimap() {
 
 const styles = StyleSheet.create({
   plate: { backgroundColor: '#11111D', borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: space.md, paddingTop: space.sm },
-  caption: { color: colors.faint, fontSize: 11 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.md, paddingTop: space.sm },
+  caption: { color: colors.faint, fontSize: 11, flex: 1 },
+  play: {
+    flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9, paddingVertical: 3, borderRadius: radius.pill,
+    borderWidth: 1, borderColor: '#3A3A66', backgroundColor: 'rgba(99,102,241,0.15)', marginRight: space.sm,
+  },
+  playOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  playText: { color: '#C7C8FF', fontSize: 11, fontWeight: '700' },
+  playhead: { position: 'absolute', top: 0, bottom: 0, width: 2, marginLeft: -1, backgroundColor: '#FFFFFF', zIndex: 900 },
   addRow: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 1 },
   addRowText: { color: colors.faint, fontSize: 11, fontWeight: '600' },
   abs: { position: 'absolute' },

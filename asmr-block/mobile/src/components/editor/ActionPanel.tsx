@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { usePreview } from '@/audio/usePreview';
+import { usePreviewClock } from '@/audio/useMixPreview';
 import type { IconName } from '@/components/ui';
 import { formatDuration } from '@/lib/format';
 import { mainLayout, NUDGE_SECONDS, useEditor } from '@/store/editor';
@@ -41,7 +42,7 @@ export function ActionPanel() {
       <View style={styles.row}>
         <Action icon="copy-outline" label="복제" primary onPress={() => editor.duplicate(selected.key)} testID="action-duplicate" />
         <Action icon={preview.previewId === block.id ? 'pause' : 'play'} label="듣기" disabled={!block.fileUrl}
-          onPress={() => preview.toggle(block)} />
+          onPress={() => { usePreviewClock.getState().stop(); preview.toggle(block); }} />
         {mainIndex >= 0 ? (
           <>
             <Action icon="chevron-back" label="왼쪽" disabled={mainIndex === 0} onPress={() => editor.moveMain(selected.key, mainIndex - 1)} />

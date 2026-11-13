@@ -8,11 +8,14 @@ import { BlockBox } from '@/components/editor/BlockBox';
 import { Board } from '@/components/editor/Board';
 import { useDrag } from '@/components/editor/drag';
 import { DragGhost } from '@/components/editor/DragGhost';
-import { ListenCard, RowTwoCard } from '@/components/editor/EditorCards';
+import { ListenRow } from '@/components/editor/EditorCards';
+import { useMixPreview } from '@/audio/useMixPreview';
 import { Button, EmptyState } from '@/components/ui';
 import { confirm, notify } from '@/lib/dialog';
 import { useAuth } from '@/store/auth';
-import { cycleLength, formatLength, LISTEN_OPTIONS, MAX_TOTAL_SECONDS, toSaveRequest, useEditor } from '@/store/editor';
+import {
+  autoTitle, cycleLength, formatLength, LISTEN_OPTIONS, mainLayout, MAX_TOTAL_SECONDS, toSaveRequest, useEditor,
+} from '@/store/editor';
 import { colors, radius, space } from '@/theme';
 
 /** 블록 편집기. id가 "new"면 새로 만들기 */
@@ -25,6 +28,7 @@ export default function EditorScreen() {
   const dragging = useDrag((s) => s.source !== null);
   const rootRef = useRef<ComponentRef<typeof View>>(null);
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
+  const mixPreview = useMixPreview();
 
   const detail = useQuery({
     queryKey: ['playlist', playlistId],
@@ -46,18 +50,22 @@ export default function EditorScreen() {
       const request = toSaveRequest(useEditor.getState());
       return playlistId ? playlistApi.update(playlistId, request) : playlistApi.create(request);
     },
-    onSuccess: (saved) => {
+    onSuccess: async (saved) => {
       useEditor.getState().markSaved(saved.id);
       queryClient.setQueryData(['playlist', saved.id], saved);
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
-      router.replace({ pathname: '/player/[id]', params: { id: String(saved.id) } });
+      // 저장하면 완성본도 바로 만들기 시작 → 플레이어에서 다 되면 자동 재생
+      const render = await playlistApi.requestRender(saved.id).catch(() => null);
+      if (render) queryClient.setQueryData(['render', saved.id], render);
+      router.replace({ pathname: '/player/[id]', params: { id: String(saved.id), autoplay: '1' } });
     },
     onError: (e) => notify('저장하지 못했어요', (e as Error).message),
   });
 
   const handleSave = () => {
+    mixPreview.stop();
     const state = useEditor.getState();
-    if (!state.title.trim()) return notify('제목을 입력해주세요.');
+    if (!state.title.trim()) state.setTitle(autoTitle(state));
     if (state.main.items.length === 0) return notify('첫째 줄에 블록을 1개 이상 놓아주세요.');
     if (cycleLength(state) > MAX_TOTAL_SECONDS) return notify('한 바퀴는 최대 10시간이에요.');
     const notOwned = [...state.main.items, ...(state.mix.enabled ? state.mix.items : [])].some((i) => !i.block.owned);
@@ -85,6 +93,15 @@ export default function EditorScreen() {
       : <ActivityIndicator color={colors.primary} style={{ marginTop: 60 }} />;
   }
 
+  /** 전체 듣기 시작 위치: 고른 블록이 있으면 거기서부터 */
+  const startFrom = () => {
+    const state = useEditor.getState();
+    const sel = state.selected;
+    if (!sel) return 0;
+    if (sel.row === 'mix') return state.mix.items.find((i) => i.key === sel.key)?.start ?? 0;
+    return mainLayout(state.main.items).find((l) => l.key === sel.key)?.start ?? 0;
+  };
+
   const cycle = cycleLength(editor);
   const listen = LISTEN_OPTIONS.find((o) => o.minutes === editor.listenMinutes);
   const blockCount = editor.main.items.length + (editor.mix.enabled ? editor.mix.items.length : 0);
@@ -109,14 +126,14 @@ export default function EditorScreen() {
               style={styles.titleInput}
               value={editor.title}
               onChangeText={editor.setTitle}
-              placeholder="조합 이름 (예: 비 오는 밤)"
+              placeholder="이름 (안 적으면 자동으로)"
               placeholderTextColor={colors.faint}
               maxLength={100}
               accessibilityLabel="조합 이름"
               testID="title-input"
             />
             <Text style={styles.meta} numberOfLines={1} testID="editor-meta">
-              한 바퀴 {formatLength(cycle)} · 블록 {blockCount}개 · {listen && listen.minutes > 0 ? `${listen.label} 재생` : '한 바퀴만'}
+              한 바퀴 {formatLength(cycle)} · 블록 {blockCount}개 · {listen && listen.minutes > 0 ? `${listen.label} 반복` : '한 바퀴만'}
             </Text>
           </View>
           <View style={styles.publicBox}>
@@ -126,10 +143,9 @@ export default function EditorScreen() {
           </View>
         </View>
 
-        <Board />
+        <ListenRow />
+        <Board playing={mixPreview.playing} onTogglePlay={() => mixPreview.toggle(startFrom())} />
         <ActionPanel />
-        <RowTwoCard />
-        <ListenCard />
 
         {playlistId !== null && (
           <Button title="이 조합 삭제" variant="danger" onPress={handleDelete} style={{ marginTop: space.md }} />
