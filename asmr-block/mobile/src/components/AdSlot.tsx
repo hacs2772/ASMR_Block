@@ -9,8 +9,8 @@ import { colors, radius, space } from '@/theme';
  * 출시 빌드(EAS)에서 광고 SDK(AdMob 등) 배너로 바꿔 끼움.
  */
 const HOUSE_ADS: { icon: IconName; title: string; body: string; href: Href; color: string }[] = [
-  { icon: 'mic', title: '내가 녹음한 ASMR을 팔아보세요', body: '희귀하고 특이한 소리일수록 많이 찾아요', href: '/upload', color: '#EC4899' },
-  { icon: 'gift', title: '무료 블록 담고 바로 만들어보기', body: '빗소리·파도·노이즈 무료 블록', href: '/explore', color: '#22C55E' },
+  { icon: 'mic', title: '내 트리거를 블록으로 팔아 보세요', body: '탭핑·바스락·귓속말, 직접 녹음한 소리면 돼요', href: '/upload', color: colors.primary },
+  { icon: 'gift', title: '무료 블록으로 첫 팅글 쌓기', body: '탭핑·빗소리·노이즈 무료 블록', href: '/explore', color: colors.success },
 ];
 
 export function AdSlot({ index = 0 }: { index?: number }) {
@@ -25,7 +25,7 @@ export function AdSlot({ index = 0 }: { index?: number }) {
         <Text style={styles.title} numberOfLines={1}>{ad.title}</Text>
         <Text style={styles.body} numberOfLines={1}>{ad.body}</Text>
       </View>
-      <Text style={styles.label}>AD</Text>
+      <Text style={styles.label}>광고</Text>
     </Pressable>
   );
 }
@@ -38,5 +38,5 @@ const styles = StyleSheet.create({
   icon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   title: { color: colors.text, fontSize: 14, fontWeight: '700' },
   body: { color: colors.muted, fontSize: 12, marginTop: 2 },
-  label: { position: 'absolute', top: 6, right: 8, color: colors.faint, fontSize: 9, fontWeight: '800' },
+  label: { position: 'absolute', top: 6, right: 8, color: colors.faint, fontSize: 9, fontWeight: '700' },
 });

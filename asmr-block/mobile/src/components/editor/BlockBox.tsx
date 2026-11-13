@@ -7,16 +7,14 @@ import { libraryApi } from '@/api/endpoints';
 import type { Block } from '@/api/types';
 import { Button, Chip } from '@/components/ui';
 import { formatDuration } from '@/lib/format';
-import { brickWidth, useEditor, type EditorBlock } from '@/store/editor';
+import { brickWidth, editorBlockOf, useEditor } from '@/store/editor';
 import { categoryFallbackColor, colors, radius, space } from '@/theme';
 import { Brick } from './Brick';
 import { board, useDrag, useDragHandlers } from './drag';
 import { useCategoryIcon } from './useCategoryIcon';
 
 const TILE_HEIGHT = 38;
-const toEditorBlock = (b: Block): EditorBlock => ({
-  id: b.id, title: b.title, duration: b.duration, fileUrl: b.fileUrl, category: b.category, owned: true,
-});
+const toEditorBlock = editorBlockOf;
 
 /**
  * 블록 상자 = 내 블록함 (블록 상점에서 담은 블록만).
@@ -151,7 +149,7 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: 17, fontWeight: '800' },
   hint: { color: colors.faint, fontSize: 12, flexShrink: 1 },
   headLink: { marginLeft: 'auto' },
-  linkText: { color: '#C7C8FF', fontSize: 13, fontWeight: '700' },
+  linkText: { color: colors.primaryText, fontSize: 13, fontWeight: '700' },
   chipBar: { flexGrow: 0, flexShrink: 0 },
   chips: { gap: 6, paddingHorizontal: space.lg, paddingVertical: space.sm },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingHorizontal: space.lg, paddingBottom: space.xl, paddingTop: 4 },

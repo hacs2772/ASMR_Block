@@ -9,6 +9,7 @@ import type {
   PlaylistSaveRequest,
   PlaylistSummary,
   Render,
+  TalkType,
   UploadPolicy,
   User,
 } from './types';
@@ -39,14 +40,22 @@ export const catalogApi = {
   categories: () => api<CategoryGroup[]>('/categories'),
   /** 요즘 뜨는 소리 (최근 7일 재생 많은 순) */
   trending: (size = 10) => api<Block[]>('/blocks/trending' + query({ size })),
-  blocks: (params: { categoryId?: number | null; free?: boolean; keyword?: string; sort?: 'latest' | 'popular'; page?: number; size?: number } = {}) =>
+  blocks: (params: {
+    categoryId?: number | null;
+    free?: boolean;
+    talkType?: TalkType | null;
+    keyword?: string;
+    sort?: 'latest' | 'popular';
+    page?: number;
+    size?: number;
+  } = {}) =>
     api<Page<Block>>('/blocks' + query({ size: 50, ...params })),
 };
 
 /** 판매자: ASMR 업로드 */
 export const sellerApi = {
   policy: () => api<UploadPolicy>('/blocks/upload-policy'),
-  /** form: file, title, categoryId, license(OWN), price */
+  /** form: file, title, categoryId, license(OWN), price, talkType, recordedPlace, description */
   upload: (form: FormData) => api<Block>('/blocks', { method: 'POST', body: form }),
   mine: () => api<Page<MyUpload>>('/me/uploads?size=100'),
 };

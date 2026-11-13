@@ -14,12 +14,12 @@ import { Button, Chip, EmptyState, IconButton } from '@/components/ui';
 import { notify } from '@/lib/dialog';
 import { formatDuration, formatMinutes } from '@/lib/format';
 import { useAuth } from '@/store/auth';
-import { colors, radius, space } from '@/theme';
+import { categoryFallbackColor, colors, radius, space } from '@/theme';
 
 const isWorking = (r?: Render) => r?.status === 'PENDING' || r?.status === 'PROCESSING';
 /** 트랙 블록 색 (반복은 최대 3개까지 펼쳐서) */
 const colorsOf = (track: Track | null) =>
-  (track?.items ?? []).flatMap((i) => Array.from({ length: Math.min(3, i.repeat) }, () => i.category?.color ?? '#6B7280'));
+  (track?.items ?? []).flatMap((i) => Array.from({ length: Math.min(3, i.repeat) }, () => i.category?.color ?? categoryFallbackColor));
 
 /** 전체 화면 플레이어: 완성본 만들기 → 재생, 수면 타이머, 오프라인 저장 */
 export default function PlayerScreen() {
@@ -142,7 +142,7 @@ export default function PlayerScreen() {
       <Text style={styles.title} testID="player-title">{title}</Text>
       <Text style={styles.subtitle}>
         {p
-          ? `${p.owner.nickname} · 한 바퀴 ${formatMinutes(p.totalDuration)}${p.listenMinutes > 0 ? ` · ${sleepOptionLabel(p.listenMinutes)} 반복 재생` : ''}${p.mix ? ' · 두 줄' : ''}`
+          ? `${p.owner.nickname} · 한 바퀴 ${formatMinutes(p.totalDuration)}${p.listenMinutes > 0 ? ` · ${sleepOptionLabel(p.listenMinutes)} 반복 재생` : ''}${p.mix ? ' · 레이어드' : ''}`
           : '휴대폰에 저장된 완성본'}
       </Text>
 
@@ -242,15 +242,15 @@ function TimelineArt({ main, mix, total, fallbackColors }: { main: Track | null;
   const scale = total > 0 ? width / total : 0;
   let cursor = 0;
   const mainBricks = main
-    ? main.items.map((i) => { const left = cursor; cursor += i.totalDuration; return { left, length: i.totalDuration, color: i.category?.color ?? '#6B7280' }; })
+    ? main.items.map((i) => { const left = cursor; cursor += i.totalDuration; return { left, length: i.totalDuration, color: i.category?.color ?? categoryFallbackColor }; })
     : fallbackColors.map((color, i) => ({ left: (i * total) / Math.max(1, fallbackColors.length), length: total / Math.max(1, fallbackColors.length), color }));
   return (
-    <LinearGradient colors={['#1B1B3A', colors.bg]} style={styles.art}>
+    <LinearGradient colors={[colors.cardActive, colors.bg]} style={styles.art}>
       <View style={{ width, alignSelf: 'center', gap: 10 }}>
         {mix && (
           <View style={styles.artLane}>
             {mix.items.map((i, k) => (
-              <View key={k} style={[styles.artBrick, { left: (i.startSeconds ?? 0) * scale, width: Math.max(4, i.totalDuration * scale - 2), backgroundColor: i.category?.color ?? '#6B7280', opacity: 0.8 }]} />
+              <View key={k} style={[styles.artBrick, { left: (i.startSeconds ?? 0) * scale, width: Math.max(4, i.totalDuration * scale - 2), backgroundColor: i.category?.color ?? categoryFallbackColor, opacity: 0.8 }]} />
             ))}
           </View>
         )}
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   artBrick: { position: 'absolute', top: 0, height: 28, borderRadius: 5, borderBottomWidth: 3, borderBottomColor: 'rgba(0,0,0,0.3)' },
   progressTrack: { width: '100%', height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden' },
   progressBar: { height: 6, backgroundColor: colors.primary },
-  artGround: { height: 10, backgroundColor: colors.ground, marginTop: 4 },
+  artGround: { height: 2, backgroundColor: colors.primary, opacity: 0.5, marginTop: 4 },
   title: { color: colors.text, fontSize: 24, fontWeight: '800' },
   subtitle: { color: colors.muted, fontSize: 14, marginTop: 4, marginBottom: space.lg },
   renderBox: { backgroundColor: colors.card, borderRadius: radius.lg, padding: space.lg, gap: space.md, alignItems: 'center' },

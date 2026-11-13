@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
-import { playlistApi } from '@/api/endpoints';
+import { libraryApi, playlistApi } from '@/api/endpoints';
 import { ActionPanel } from '@/components/editor/ActionPanel';
 import { BlockBox } from '@/components/editor/BlockBox';
 import { Board } from '@/components/editor/Board';
@@ -14,13 +14,14 @@ import { Button, EmptyState } from '@/components/ui';
 import { confirm, notify } from '@/lib/dialog';
 import { useAuth } from '@/store/auth';
 import {
-  autoTitle, cycleLength, formatLength, LISTEN_OPTIONS, mainLayout, MAX_TOTAL_SECONDS, toSaveRequest, useEditor,
+  autoTitle, cycleLength, editorBlockOf, formatLength, LISTEN_OPTIONS, mainLayout, MAX_TOTAL_SECONDS, toSaveRequest, useEditor,
 } from '@/store/editor';
 import { colors, radius, space } from '@/theme';
 
 /** 블록 편집기. id가 "new"면 새로 만들기 */
 export default function EditorScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // start=17,19,20: 홈의 트리거 고르기에서 넘어오면 그 블록들로 첫째 줄을 채워 시작
+  const { id, start } = useLocalSearchParams<{ id: string; start?: string }>();
   const playlistId = id && id !== 'new' ? Number(id) : null;
   const status = useAuth((s) => s.status);
   const queryClient = useQueryClient();
@@ -38,12 +39,23 @@ export default function EditorScreen() {
 
   // 처음 열 때 한 번만 불러옴 (편집 중인 내용을 덮어쓰지 않도록)
   const sessionKey = editor.sessionKey;
-  const routeKey = playlistId === null ? 'new' : String(playlistId);
+  const routeKey = playlistId === null ? (start ? `new:${start}` : 'new') : String(playlistId);
   useEffect(() => {
     if (sessionKey === routeKey) return;
-    if (playlistId === null) useEditor.getState().initNew();
-    else if (detail.data) useEditor.getState().load(detail.data);
-  }, [sessionKey, routeKey, playlistId, detail.data]);
+    if (playlistId === null) {
+      useEditor.getState().initNew();
+      if (!start) return;
+      useEditor.setState({ sessionKey: routeKey });
+      queryClient.fetchQuery({ queryKey: ['library'], queryFn: libraryApi.mine })
+        .then((library) => {
+          for (const blockId of start.split(',').map(Number)) {
+            const block = library.find((b) => b.id === blockId);
+            if (block) useEditor.getState().addMain(editorBlockOf(block));
+          }
+        })
+        .catch(() => notify('내 블록함을 불러오지 못했어요'));
+    } else if (detail.data) useEditor.getState().load(detail.data);
+  }, [sessionKey, routeKey, playlistId, detail.data, start, queryClient]);
 
   const save = useMutation({
     mutationFn: () => {

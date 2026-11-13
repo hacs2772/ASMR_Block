@@ -64,15 +64,20 @@ export function IconButton({ icon, onPress, label, size = 22, color = colors.tex
   );
 }
 
-export function Chip({ label, active, onPress, color }: { label: string; active?: boolean; onPress: () => void; color?: string }) {
+/** 고르는 칩. color가 있으면 앞에 작은 색 점 (트리거 색), 고르면 분홍빛 */
+export function Chip({ label, active, onPress, color, small, testID }: {
+  label: string; active?: boolean; onPress: () => void; color?: string; small?: boolean; testID?: string;
+}) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: !!active }}
       onPress={onPress}
-      style={[styles.chip, active && { backgroundColor: color ?? colors.primary, borderColor: color ?? colors.primary }]}
+      testID={testID}
+      style={[styles.chip, small && styles.chipSmall, active && styles.chipActive]}
     >
-      <Text style={[styles.chipText, active && { color: '#fff' }]}>{label}</Text>
+      {color ? <View style={[styles.chipDot, { backgroundColor: color }]} /> : null}
+      <Text style={[styles.chipText, small && { fontSize: 12 }, active && { color: colors.primaryText }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -107,9 +112,13 @@ const styles = StyleSheet.create({
   buttonText: { fontSize: 15, fontWeight: '600' },
   iconButton: { padding: 6, alignItems: 'center', justifyContent: 'center' },
   chip: {
-    paddingVertical: 7, paddingHorizontal: 14, borderRadius: radius.pill,
-    borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingVertical: 7, paddingHorizontal: 13, borderRadius: radius.pill,
+    borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.card,
   },
+  chipSmall: { paddingVertical: 4, paddingHorizontal: 10 },
+  chipActive: { backgroundColor: colors.primarySoft, borderColor: 'rgba(247, 96, 154, 0.55)' },
+  chipDot: { width: 8, height: 8, borderRadius: 2.5 },
   chipText: { color: colors.muted, fontSize: 13, fontWeight: '600' },
   empty: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: space.xl, gap: space.sm },
   emptyTitle: { color: colors.text, fontSize: 16, fontWeight: '600', textAlign: 'center' },

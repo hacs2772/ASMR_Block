@@ -3,6 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { IconName } from '@/components/ui';
 import { shade } from './colors';
+import { colors } from '@/theme';
 
 export const BRICK_HEIGHT = 46;
 export const MIX_BRICK_HEIGHT = 34;
@@ -74,5 +75,5 @@ const styles = StyleSheet.create({
   content: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8 },
   iconOnly: { justifyContent: 'center', paddingHorizontal: 2 },
   name: { color: '#fff', fontSize: 13, fontWeight: '800', flexShrink: 1, textShadowColor: 'rgba(0,0,0,0.25)', textShadowRadius: 1, textShadowOffset: { width: 0, height: 1 } },
-  hole: { borderRadius: 9, borderWidth: 2, borderStyle: 'dashed', borderColor: '#C7C8FF', backgroundColor: 'rgba(99,102,241,0.18)' },
+  hole: { borderRadius: 9, borderWidth: 2, borderStyle: 'dashed', borderColor: colors.primaryText, backgroundColor: colors.primarySoft },
 });

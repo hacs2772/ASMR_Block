@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Category, ItemRequest, PlaylistDetail, PlaylistSaveRequest, TrackItem } from '@/api/types';
+import type { Block, Category, ItemRequest, PlaylistDetail, PlaylistSaveRequest, TrackItem } from '@/api/types';
 
 /**
  * 블록 편집기 상태 — 옆으로 누운 레고 블록이 왼쪽 → 오른쪽으로 흐름
@@ -40,6 +40,11 @@ export type EditorBlock = {
   /** 내 블록함에 있는지 (없는 블록이 있으면 저장할 수 없음) */
   owned: boolean;
 };
+
+/** 내 블록함의 블록 → 편집기 블록 */
+export const editorBlockOf = (b: Block): EditorBlock => ({
+  id: b.id, title: b.title, duration: b.duration, fileUrl: b.fileUrl, category: b.category, owned: true,
+});
 export type MainItem = { key: string; block: EditorBlock };
 export type MixItem = { key: string; block: EditorBlock; start: number };
 export type Selection = { row: RowKey; key: string } | null;

@@ -1,16 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { catalogApi, playlistApi } from '@/api/endpoints';
 import { usePreview } from '@/audio/usePreview';
-import { PlaylistCard } from '@/components/PlaylistCard';
 import { AdSlot } from '@/components/AdSlot';
-import { EmptyState } from '@/components/ui';
+import { BlockCard } from '@/components/BlockCard';
+import { PlaylistCard } from '@/components/PlaylistCard';
+import { Glossary, TingleWord, WhatIsTingle } from '@/components/tingle/Tingle';
+import { TriggerPicker } from '@/components/tingle/TriggerPicker';
+import { Button, EmptyState } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { colors, space } from '@/theme';
 
-/** 홈: 요즘 뜨는 소리 · 요즘 뜨는 조합 · 새로 올라온 조합, 사이사이 광고 자리 */
+/**
+ * 홈: "나만의 팅글을 쌓아 보세요" + 팅글이 뭐예요? + 단어장 → 트리거 고르기(첫 조합) →
+ * 요즘 팅글 많이 오는 소리 · 요즘 뜨는 레이어드 조합 · 새로 올라온 조합 (사이사이 광고 자리)
+ */
 export default function HomeScreen() {
   const user = useAuth((s) => s.user);
   const query = useQuery({ queryKey: ['playlists', 'public', 'latest'], queryFn: () => playlistApi.public('latest') });
@@ -31,27 +36,33 @@ export default function HomeScreen() {
       }
       ListHeaderComponent={
         <View>
-          <Text style={styles.greeting}>{user ? `${user.nickname}님,` : '안녕하세요,'}</Text>
-          <Text style={styles.headline}>오늘은 어떤 소리로{'\n'}쉬어볼까요?</Text>
+          <View style={styles.hero}>
+            {user ? <Text style={styles.greeting}>{user.nickname}님,</Text> : null}
+            <Text style={styles.headline}>나만의 <TingleWord size={30} />을{'\n'}쌓아 보세요</Text>
+            <Text style={styles.lead}>탭핑 3분, 바스락 3분, 귓속말 3분. 좋아하는 트리거만 골라 블록처럼 이어 붙이면 나한테 딱 맞는 ASMR이 돼요.</Text>
+            <WhatIsTingle />
+          </View>
+          <Glossary />
+
+          <View style={styles.section}>
+            <Text style={styles.eyebrow}>트리거 고르기</Text>
+            <Text style={styles.sectionTitle}>어떤 소리에 팅글이 오세요?</Text>
+            <Text style={styles.sectionSub}>끌리는 트리거를 고르면 첫 조합을 바로 쌓아 드려요.</Text>
+            <TriggerPicker />
+          </View>
 
           {(trending.data?.length ?? 0) > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>🔥 요즘 뜨는 소리</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.sm }}>
-                {trending.data!.map((b, i) => {
-                  const color = b.category?.color ?? colors.faint;
-                  const playing = preview.previewId === b.id;
-                  return (
-                    <Pressable key={b.id} accessibilityRole="button" accessibilityLabel={`${b.title} ${playing ? '멈춤' : '미리듣기'}`}
-                      onPress={() => preview.toggle(b)} style={[styles.trend, { borderColor: color }]}>
-                      <Text style={[styles.trendRank, { color }]}>{i + 1}</Text>
-                      <Text style={styles.trendTitle} numberOfLines={1}>{b.title}</Text>
-                      <Text style={styles.trendMeta} numberOfLines={1}>{b.category?.name} · 🔥{b.recentPlays ?? 0}{b.price > 0 ? ` · 🪙${b.price}` : ''}</Text>
-                      <Ionicons name={playing ? 'pause-circle' : 'play-circle'} size={24} color={color} style={{ marginTop: 4 }} />
-                    </Pressable>
-                  );
-                })}
+              <Text style={styles.eyebrow}>최근 7일</Text>
+              <Text style={[styles.sectionTitle, { marginBottom: space.md }]}>요즘 팅글 많이 오는 소리</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+                {trending.data!.map((b, i) => (
+                  <BlockCard key={b.id} block={b} rank={i + 1} style={styles.trendCard}
+                    previewing={preview.previewId === b.id} onPreview={() => preview.toggle(b)} />
+                ))}
               </ScrollView>
+              <Button title="블록 상점에서 더 보기" variant="secondary" icon="storefront-outline" onPress={() => router.push('/explore')}
+                style={{ marginTop: space.md }} />
             </View>
           )}
 
@@ -59,10 +70,11 @@ export default function HomeScreen() {
 
           {(trendingMixes.data?.length ?? 0) > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>🔥 요즘 뜨는 조합</Text>
+              <Text style={styles.eyebrow}>레이어드 조합</Text>
+              <Text style={[styles.sectionTitle, { marginBottom: space.md }]}>다른 사람들은 이렇게 쌓았어요</Text>
               {trendingMixes.data!.map((p, i) => (
                 <View key={p.id} style={styles.rankRow}>
-                  <Text style={[styles.rank, i < 3 && { color: '#EC4899' }]}>{i + 1}</Text>
+                  <Text style={[styles.rank, i < 3 && { color: colors.primaryText }]}>{i + 1}</Text>
                   <View style={{ flex: 1 }}>
                     <PlaylistCard playlist={p} showOwner onPress={() => openPlayer(p.id)} />
                   </View>
@@ -72,7 +84,7 @@ export default function HomeScreen() {
           )}
 
           <AdSlot index={1} />
-          <Text style={styles.sectionTitle}>새로 올라온 조합</Text>
+          <Text style={[styles.sectionTitle, { marginTop: space.md, marginBottom: space.md }]}>새로 올라온 조합</Text>
         </View>
       }
       renderItem={({ item }) => <PlaylistCard playlist={item} showOwner onPress={() => openPlayer(item.id)} />}
@@ -88,14 +100,15 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space.lg, paddingBottom: space.xl },
-  greeting: { color: colors.muted, fontSize: 15 },
-  headline: { color: colors.text, fontSize: 24, fontWeight: '800', marginTop: 4, lineHeight: 32 },
-  section: { marginTop: space.lg },
+  hero: { gap: space.md, paddingTop: space.sm, paddingBottom: space.xl },
+  greeting: { color: colors.muted, fontSize: 14 },
+  headline: { color: colors.text, fontSize: 30, fontWeight: '800', lineHeight: 38, letterSpacing: -0.5 },
+  lead: { color: colors.muted, fontSize: 14, lineHeight: 21 },
+  section: { marginTop: 36 },
+  eyebrow: { color: colors.primaryText, fontSize: 12, fontWeight: '700', marginBottom: 4 },
+  sectionTitle: { color: colors.text, fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
+  sectionSub: { color: colors.muted, fontSize: 13, marginTop: 4, marginBottom: space.md },
   rankRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  rank: { color: colors.muted, fontSize: 18, fontWeight: '800', width: 22, textAlign: 'center' },
-  sectionTitle: { color: colors.text, fontSize: 17, fontWeight: '700', marginBottom: space.sm },
-  trend: { width: 132, padding: space.md, borderRadius: 12, backgroundColor: colors.card, borderWidth: 1 },
-  trendRank: { fontSize: 20, fontWeight: '900' },
-  trendTitle: { color: colors.text, fontSize: 14, fontWeight: '700', marginTop: 2 },
-  trendMeta: { color: colors.muted, fontSize: 11, marginTop: 2 },
+  rank: { color: colors.faint, fontSize: 16, fontWeight: '800', width: 20, textAlign: 'center' },
+  trendCard: { width: 172 },
 });

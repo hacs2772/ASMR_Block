@@ -36,7 +36,7 @@ export function PlaylistCard({ playlist, onPress, onEdit, showOwner }: Props) {
         <Text style={styles.title} numberOfLines={1}>{playlist.title}</Text>
         <Text style={styles.meta} numberOfLines={1}>
           {formatMinutes(playlist.totalDuration)} · 블록 {playlist.blockCount}개
-          {playlist.hasMix ? ' · 두 줄' : ''}
+          {playlist.hasMix ? ' · 레이어드' : ''}
           {playlist.listenMinutes >= 60 ? ` · ${playlist.listenMinutes / 60}시간` : playlist.listenMinutes > 0 ? ` · ${playlist.listenMinutes}분` : ''}
           {showOwner ? ` · ${playlist.owner.nickname}` : playlist.isPublic ? ' · 공개' : ' · 비공개'}
         </Text>

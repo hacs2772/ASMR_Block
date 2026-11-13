@@ -97,14 +97,14 @@ export function Board({ playing, onTogglePlay }: { playing: boolean; onTogglePla
       <View style={styles.header}>
         <Pressable accessibilityRole="button" accessibilityLabel={playing ? '멈춤' : '전체 듣기'} onPress={onTogglePlay}
           hitSlop={6} style={[styles.play, playing && styles.playOn]} testID="play-all">
-          <Ionicons name={playing ? 'stop' : 'play'} size={12} color={playing ? '#fff' : '#C7C8FF'} />
+          <Ionicons name={playing ? 'stop' : 'play'} size={12} color={playing ? '#fff' : colors.primaryText} />
           <Text style={[styles.playText, playing && { color: '#fff' }]}>{playing ? '멈춤' : '전체 듣기'}</Text>
         </Pressable>
         <Text style={styles.caption}>1칸 = 1분</Text>
         {!mix.enabled && (
-          <Pressable accessibilityRole="button" accessibilityLabel="둘째 줄 추가 (소리 겹치기)" onPress={showMix}
+          <Pressable accessibilityRole="button" accessibilityLabel="레이어드 추가 (둘째 줄에 소리 겹치기)" onPress={showMix}
             hitSlop={8} style={styles.addRow} testID="add-row">
-            <Text style={styles.addRowText}>＋ 줄</Text>
+            <Text style={styles.addRowText}>＋ 레이어드</Text>
           </Pressable>
         )}
       </View>
@@ -112,7 +112,7 @@ export function Board({ playing, onTogglePlay }: { playing: boolean; onTogglePla
       <View ref={viewportRef} collapsable={false} onLayout={measure}>
         {/* 둘째 줄 이름 (스크롤해도 제자리, 시간 말풍선보다 뒤에) */}
         {mix.enabled && (
-          <Text style={styles.laneLabel} pointerEvents="none">② 둘째 줄 · 원하는 시간에 끌어다 놓기</Text>
+          <Text style={styles.laneLabel} pointerEvents="none">② 레이어드 · 원하는 시간에 끌어다 놓기</Text>
         )}
         <ScrollView
           ref={scrollRef as never}
@@ -305,42 +305,42 @@ function Minimap() {
 }
 
 const styles = StyleSheet.create({
-  plate: { backgroundColor: '#11111D', borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  plate: { backgroundColor: colors.plate, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.md, paddingTop: space.sm },
   caption: { color: colors.faint, fontSize: 11, flex: 1 },
   play: {
     flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9, paddingVertical: 3, borderRadius: radius.pill,
-    borderWidth: 1, borderColor: '#3A3A66', backgroundColor: 'rgba(99,102,241,0.15)', marginRight: space.sm,
+    borderWidth: 1, borderColor: colors.borderStrong, backgroundColor: colors.primarySoft, marginRight: space.sm,
   },
   playOn: { backgroundColor: colors.primary, borderColor: colors.primary },
-  playText: { color: '#C7C8FF', fontSize: 11, fontWeight: '700' },
-  playhead: { position: 'absolute', top: 0, bottom: 0, width: 2, marginLeft: -1, backgroundColor: '#FFFFFF', zIndex: 900 },
+  playText: { color: colors.primaryText, fontSize: 11, fontWeight: '700' },
+  playhead: { position: 'absolute', top: 0, bottom: 0, width: 2, marginLeft: -1, backgroundColor: colors.primary, zIndex: 900 },
   addRow: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: 8, paddingVertical: 1 },
   addRowText: { color: colors.faint, fontSize: 11, fontWeight: '600' },
   abs: { position: 'absolute' },
-  tick: { position: 'absolute', top: 0, height: RULER_HEIGHT, borderLeftWidth: 1, borderLeftColor: '#2A2A40', paddingLeft: 3 },
+  tick: { position: 'absolute', top: 0, height: RULER_HEIGHT, borderLeftWidth: 1, borderLeftColor: colors.border, paddingLeft: 3 },
   tickText: { color: colors.faint, fontSize: 10, fontVariant: ['tabular-nums'] },
   ghost: {
     position: 'absolute', width: GHOST_SLOT, height: BRICK_HEIGHT, borderRadius: 9, borderWidth: 2, borderStyle: 'dashed',
-    borderColor: '#3A3A55', alignItems: 'center', justifyContent: 'center',
+    borderColor: colors.borderStrong, alignItems: 'center', justifyContent: 'center',
   },
-  ghostPlus: { color: '#C7C8FF', fontSize: 22, fontWeight: '700' },
+  ghostPlus: { color: colors.primaryText, fontSize: 22, fontWeight: '700' },
   laneLabel: { position: 'absolute', left: space.md, top: LANE_TOP - LANE_LABEL_HEIGHT - 2, color: colors.muted, fontSize: 11 },
   lane: {
-    position: 'absolute', height: LANE_HEIGHT, borderRadius: 8, borderWidth: 1, borderStyle: 'dashed', borderColor: '#2A2A40',
+    position: 'absolute', height: LANE_HEIGHT, borderRadius: 8, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border,
     backgroundColor: 'rgba(255,255,255,0.02)',
   },
   dropOutline: {
     position: 'absolute', top: 2, height: MIX_BRICK_HEIGHT, borderRadius: 8, borderWidth: 2, borderStyle: 'dashed',
-    borderColor: '#C7C8FF', backgroundColor: 'rgba(99,102,241,0.2)',
+    borderColor: colors.primaryText, backgroundColor: colors.primarySoft,
   },
-  mark: { position: 'absolute', top: 0, width: 3, height: LANE_HEIGHT, marginLeft: -1, borderRadius: 2, backgroundColor: '#C7C8FF' },
+  mark: { position: 'absolute', top: 0, width: 3, height: LANE_HEIGHT, marginLeft: -1, borderRadius: 2, backgroundColor: colors.primaryText },
   bubbleBox: { position: 'absolute', bottom: '100%', left: -2, width: 160, marginBottom: 4, flexDirection: 'row' },
   bubble: {
     backgroundColor: colors.primary, color: '#fff', fontSize: 11, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 1,
     borderRadius: 6, overflow: 'hidden', fontVariant: ['tabular-nums'],
   },
-  guide: { position: 'absolute', top: 0, bottom: 0, width: 2, marginLeft: -1, backgroundColor: '#C7C8FF', opacity: 0.8 },
+  guide: { position: 'absolute', top: 0, bottom: 0, width: 2, marginLeft: -1, backgroundColor: colors.primaryText, opacity: 0.8 },
   miniWrap: { paddingHorizontal: space.md, paddingBottom: space.sm, gap: 4 },
   mini: {
     height: 22, borderRadius: 7, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border,

@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: 16, fontWeight: '800', flexShrink: 1 },
   time: { color: colors.muted, fontSize: 12, fontVariant: ['tabular-nums'] },
   close: { marginLeft: 'auto', padding: 2 },
-  warn: { color: '#FCD34D', fontSize: 12 },
+  warn: { color: colors.warn, fontSize: 12 },
   row: { flexDirection: 'row', gap: 6 },
   action: { flex: 1, alignItems: 'center', gap: 2, paddingVertical: 8, borderRadius: radius.md, backgroundColor: colors.cardActive },
   primary: { backgroundColor: colors.primary },

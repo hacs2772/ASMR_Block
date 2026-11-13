@@ -1,8 +1,30 @@
 /** 백엔드 API 응답 타입 (docs/api_specification.md 와 같은 구조) */
 
-export type Category = { id: number; name: string; color: string; icon: string | null; parentId: number | null; parentName: string | null };
-/** 메뉴 트리: 대분류 + 소분류 */
-export type CategoryGroup = { id: number; name: string; color: string; icon: string | null; description: string | null; children: Category[] };
+/**
+ * 분류. code: 'tap.tapping' 같은 분류 코드, groupCode: 대분류(트리거 묶음) 코드 'tap' — 파형 모양과 트리거 필터에 씀
+ */
+export type Category = {
+  id: number;
+  name: string;
+  code: string | null;
+  groupCode: string | null;
+  color: string;
+  icon: string | null;
+  parentId: number | null;
+  parentName: string | null;
+};
+/** 메뉴 트리: 대분류(트리거 묶음) + 소분류 */
+export type CategoryGroup = {
+  id: number;
+  name: string;
+  code: string | null;
+  color: string;
+  icon: string | null;
+  description: string | null;
+  children: Category[];
+};
+/** 말소리: NONE 노토킹 / WHISPER 속삭임 / TALK 말하기 */
+export type TalkType = 'NONE' | 'WHISPER' | 'TALK';
 export type Tag = { id: number; name: string };
 
 export type User = {
@@ -30,6 +52,9 @@ export type Block = {
   price: number;
   owned: boolean;
   duration: number;
+  talkType: TalkType;
+  /** 녹음한 곳 (선택) */
+  recordedPlace: string | null;
   license: 'CC0' | 'CC_BY' | 'OWN' | 'CREATOR';
   attribution: string | null;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -117,6 +142,8 @@ export type MyUpload = {
   fileUrl: string | null;
   duration: number;
   price: number;
+  talkType: TalkType;
+  recordedPlace: string | null;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   category: Category | null;
   /** 담은 사람 수 (나 제외) */
