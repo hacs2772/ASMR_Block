@@ -88,6 +88,21 @@
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
+    <select id="findTrending" resultType="com.asmrblock.playlist.Playlist">
+        SELECT recent.recent_plays, x.* FROM (
+            <include refid="selectPlaylist"/>
+            WHERE p.is_public = true
+        ) x
+        JOIN (
+            SELECT target_id, COUNT(*) AS recent_plays
+            FROM play_log
+            WHERE target_type = 'PLAYLIST' AND played_at &gt;= NOW() - make_interval(days => #{days})
+            GROUP BY target_id
+        ) recent ON recent.target_id = x.id
+        ORDER BY recent.recent_plays DESC, x.play_count DESC, x.id DESC
+        LIMIT #{limit}
+    </select>
+
     <select id="countPublic" resultType="long">
         SELECT COUNT(*) FROM playlist WHERE is_public = true
     </select>

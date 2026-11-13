@@ -31,6 +31,7 @@ public class Playlist {
 
     // 조인 데이터
     private String ownerNickname;
+    private Integer recentPlays;     // 요즘 뜨는 조합 조회 시 최근 재생 수
     @Builder.Default
     private List<PlaylistLayer> layers = new ArrayList<>();
 

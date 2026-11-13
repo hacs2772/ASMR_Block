@@ -25,7 +25,8 @@ public record AppProperties(
         @Valid @NotNull Cors cors,
         @Valid @NotNull PlayCount playCount,
         @Valid @NotNull Audio audio,
-        @Valid @NotNull Render render) {
+        @Valid @NotNull Render render,
+        @Valid @NotNull Shop shop) {
 
     public record Jwt(
             @NotBlank(message = "JWT 비밀키가 없습니다. JWT_SECRET 환경변수를 설정하세요.")
@@ -56,6 +57,10 @@ public record AppProperties(
             @NotBlank String ffprobePath,
             double targetLufs,
             @NotNull Duration processTimeout) {
+    }
+
+    /** 블록 상점: 판매자가 정할 수 있는 최대 가격(코인). 너무 비싸지지 않게 */
+    public record Shop(@Min(0) int sellerMaxPrice) {
     }
 
     /** 완성본(합친 파일) 만들기 설정 */

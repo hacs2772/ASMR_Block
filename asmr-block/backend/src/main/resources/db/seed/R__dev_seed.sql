@@ -122,10 +122,16 @@ INSERT INTO user_block (user_id, block_id, source) VALUES
 ON CONFLICT DO NOTHING;
 
 -- 5) 요즘 뜨는 소리 데모용 최근 재생 기록 (최근 7일)
-DELETE FROM play_log WHERE user_id IN (1, 2) AND target_type = 'BLOCK';
+DELETE FROM play_log WHERE user_id IN (1, 2) AND target_type IN ('BLOCK', 'PLAYLIST');
 INSERT INTO play_log (user_id, target_type, target_id, played_at)
 SELECT 1 + (n % 2), 'BLOCK', plays.block_id, NOW() - (n || ' hours')::interval
 FROM (VALUES (14, 40), (16, 25), (15, 18), (11, 12), (1, 10), (6, 6)) AS plays(block_id, count),
+     LATERAL generate_series(1, plays.count) AS n;
+
+-- 요즘 뜨는 조합 데모용 (공개 조합 4 왁뿌 > 3 산속 빗물 > 1 비 오는 밤)
+INSERT INTO play_log (user_id, target_type, target_id, played_at)
+SELECT 1 + (n % 2), 'PLAYLIST', plays.playlist_id, NOW() - (n || ' hours')::interval
+FROM (VALUES (4, 30), (3, 20), (1, 8)) AS plays(playlist_id, count),
      LATERAL generate_series(1, plays.count) AS n;
 
 -- 6) id를 직접 넣었으므로 자동증가 번호를 그 다음부터 시작하도록 맞춤

@@ -1,6 +1,7 @@
 package com.asmrblock.block;
 
 import com.asmrblock.block.BlockDtos.BlockResponse;
+import com.asmrblock.block.BlockDtos.MyUploadResponse;
 import com.asmrblock.category.CategoryDtos.TagResponse;
 import com.asmrblock.category.CategoryService;
 import com.asmrblock.common.ApiException;
@@ -108,6 +109,19 @@ public class BlockService {
         Block block = findAny(blockId);
         previewService.ensurePreview(block);
         return toAdminResponse(block);
+    }
+
+    /** 내가 올린 블록 (판매자용): 검수 상태 + 담은 사람 수 */
+    @Transactional(readOnly = true)
+    public PageResponse<MyUploadResponse> myUploads(Long uploaderId, PageQuery page) {
+        List<Block> blocks = blockMapper.findByUploader(uploaderId, page.offset(), page.size());
+        Map<Long, Long> collected = blocks.isEmpty() ? Map.of()
+                : blockMapper.countCollectors(blocks.stream().map(Block::getId).toList()).stream()
+                        .collect(Collectors.toMap(BlockCount::getBlockId, BlockCount::getCount));
+        return PageResponse.of(blocks.stream()
+                        .map(b -> MyUploadResponse.from(b, collected.getOrDefault(b.getId(), 0L), storageService))
+                        .toList(),
+                page, blockMapper.countByUploader(uploaderId));
     }
 
     public Block findPlayable(Long id) {

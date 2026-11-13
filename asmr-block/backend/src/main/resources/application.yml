@@ -61,6 +61,9 @@ app:
     # 완성본 맨 앞/뒤 페이드 시간(초). 플레이어가 '얼마나 들을까요?' 시간만큼 반복 재생하므로
     # 이어지는 곳이 크게 끊기지 않게 짧게 (맨 처음 시작과 마지막 끝은 플레이어가 부드럽게)
     fade-seconds: 1
+  shop:
+    # 판매자가 올릴 때 정할 수 있는 최대 가격(코인). 너무 비싸지지 않게, 운영하면서 조절
+    seller-max-price: ${APP_SHOP_SELLER_MAX_PRICE:100}
 
 management:
   endpoints:

@@ -92,7 +92,43 @@ public final class BlockDtos {
             String sourceUrl,
 
             @Size(max = 300, message = "출처 표기 문구가 너무 깁니다.")
-            String attribution) {
+            String attribution,
+
+            /** 판매 가격(코인). 생략하거나 0이면 무료, 최대는 업로드 규칙의 maxPrice */
+            @Min(value = 0, message = "가격은 0 이상이어야 합니다.")
+            Integer price) {
+    }
+
+    /** 업로드 규칙 (앱이 화면에 안내하고, 서버도 같은 값으로 검사) */
+    public record UploadPolicyResponse(
+            int maxPrice,
+            int maxFileMb,
+            int minSeconds,
+            int maxSeconds,
+            List<String> extensions) {
+    }
+
+    /**
+     * 내가 올린 블록 (판매자용). 검수 상태와 함께, 몇 명이 담았는지(collectedCount, 나 제외)
+     * fileUrl: 내 블록이라 항상 전체 음원
+     */
+    public record MyUploadResponse(
+            Long id,
+            String title,
+            String fileUrl,
+            Integer duration,
+            Integer price,
+            BlockStatus status,
+            CategoryResponse category,
+            long collectedCount,
+            Integer playCount,
+            LocalDateTime createdAt) {
+
+        public static MyUploadResponse from(Block block, long collectedCount, StorageService storage) {
+            return new MyUploadResponse(block.getId(), block.getTitle(), storage.publicUrl(block.getFileKey()),
+                    block.getDuration(), block.getPrice(), block.getStatus(), CategoryResponse.from(block.getCategory()),
+                    collectedCount, block.getPlayCount(), block.getCreatedAt());
+        }
     }
 
     public record BlockStatusRequest(

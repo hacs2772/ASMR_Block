@@ -29,7 +29,8 @@ class LocalStorageServiceTest {
                 new AppProperties.Cors(List.of()),
                 new AppProperties.PlayCount(Duration.ofMinutes(30)),
                 new AppProperties.Audio("ffmpeg", "ffprobe", -24, Duration.ofMinutes(1)),
-                new AppProperties.Render(1, 1.5, 3)));
+                new AppProperties.Render(1, 1.5, 3),
+                new AppProperties.Shop(100)));
     }
 
     @Test

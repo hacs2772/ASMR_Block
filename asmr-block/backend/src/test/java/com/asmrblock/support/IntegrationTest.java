@@ -97,12 +97,21 @@ public abstract class IntegrationTest {
 
     /** 음원 업로드 요청 (license 기본 OWN, 카테고리 자연 > 비·물) */
     protected ResultActions upload(String token, byte[] audio, String filename, String title) throws Exception {
-        return mvc.perform(bearer(multipart("/api/v1/blocks")
+        return upload(token, audio, filename, title, null);
+    }
+
+    /** 판매 가격(코인)을 정해서 업로드 (null이면 무료) */
+    protected ResultActions upload(String token, byte[] audio, String filename, String title, Integer price) throws Exception {
+        var request = bearer(multipart("/api/v1/blocks")
                 .file(new MockMultipartFile("file", filename, "audio/mpeg", audio)), token)
                 .param("title", title)
                 .param("categoryId", String.valueOf(leafCategoryId()))
                 .param("tagIds", "1")
-                .param("license", "OWN"));
+                .param("license", "OWN");
+        if (price != null) {
+            request.param("price", String.valueOf(price));
+        }
+        return mvc.perform(request);
     }
 
     /** 업로드 + 관리자 승인까지 → 블록 id */

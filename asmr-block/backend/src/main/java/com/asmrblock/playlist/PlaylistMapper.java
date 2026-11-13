@@ -31,6 +31,9 @@ public interface PlaylistMapper {
 
     long countPublic();
 
+    /** 요즘 뜨는 조합: 최근 days일 재생이 많은 공개 플레이리스트 (recentPlays 채워짐) */
+    List<Playlist> findTrending(@Param("days") int days, @Param("limit") int limit);
+
     void insertLayer(PlaylistLayer layer);
 
     /** items 순서대로 sort_order 1, 2, 3... (blockId, repeat, startSeconds) */

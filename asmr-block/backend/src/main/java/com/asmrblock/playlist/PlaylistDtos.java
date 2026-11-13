@@ -165,7 +165,7 @@ public final class PlaylistDtos {
         }
     }
 
-    /** 목록용 요약. previewColors: 메인 트랙 왼쪽부터 블록 색 (반복은 1개로, 최대 8개) */
+    /** 목록용 요약. previewColors: 메인 트랙 왼쪽부터 블록 색 (반복은 1개로, 최대 8개), recentPlays: 요즘 뜨는 조합에서만 */
     public record PlaylistSummaryResponse(
             Long id,
             String title,
@@ -178,6 +178,7 @@ public final class PlaylistDtos {
             int blockCount,
             boolean hasMix,
             List<String> previewColors,
+            Integer recentPlays,
             LocalDateTime createdAt) {
 
         public static PlaylistSummaryResponse from(Playlist playlist) {
@@ -193,6 +194,7 @@ public final class PlaylistDtos {
                             .map(pb -> pb.getBlock().getCategory() == null ? "#666666"
                                     : pb.getBlock().getCategory().getColor())
                             .toList(),
+                    playlist.getRecentPlays(),
                     playlist.getCreatedAt());
         }
     }

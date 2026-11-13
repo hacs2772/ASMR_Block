@@ -116,6 +116,26 @@
         UPDATE block SET preview_key = #{previewKey} WHERE id = #{id}
     </update>
 
+    <select id="findByUploader" resultMap="BlockMap">
+        <include refid="selectBlock"/>
+        WHERE b.is_active = true AND b.uploader_id = #{uploaderId}
+        ORDER BY b.created_at DESC, b.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByUploader" resultType="long">
+        SELECT COUNT(*) FROM block WHERE is_active = true AND uploader_id = #{uploaderId}
+    </select>
+
+    <select id="countCollectors" resultType="com.asmrblock.block.BlockCount">
+        SELECT ub.block_id AS block_id, COUNT(*) AS count
+        FROM user_block ub
+        JOIN block b ON b.id = ub.block_id
+        WHERE ub.user_id &lt;&gt; b.uploader_id AND ub.block_id IN
+        <foreach collection="blockIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+        GROUP BY ub.block_id
+    </select>
+
     <select id="findPaidWithoutPreview" resultMap="BlockMap">
         <include refid="selectBlock"/>
         WHERE b.is_active = true AND b.status = 'APPROVED' AND b.price > 0 AND b.preview_key IS NULL

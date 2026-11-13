@@ -35,6 +35,14 @@ public interface BlockMapper {
 
     void updatePreviewKey(@Param("id") Long id, @Param("previewKey") String previewKey);
 
+    /** 내가 올린 블록 (검수 상태 무관, 활성, 최신순) */
+    List<Block> findByUploader(@Param("uploaderId") Long uploaderId, @Param("offset") int offset, @Param("limit") int limit);
+
+    long countByUploader(@Param("uploaderId") Long uploaderId);
+
+    /** 블록마다 담은 사람 수 (올린 사람 본인은 빼고) */
+    List<BlockCount> countCollectors(@Param("blockIds") Collection<Long> blockIds);
+
     /** 맛보기 파일이 아직 없는 유료 블록 (승인·활성) */
     List<Block> findPaidWithoutPreview();
 }

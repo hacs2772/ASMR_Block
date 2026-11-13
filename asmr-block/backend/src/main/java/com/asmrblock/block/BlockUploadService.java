@@ -4,6 +4,8 @@ import com.asmrblock.audio.AudioProcessingException;
 import com.asmrblock.audio.AudioService;
 import com.asmrblock.block.BlockDtos.BlockResponse;
 import com.asmrblock.block.BlockDtos.BlockUploadRequest;
+import com.asmrblock.block.BlockDtos.UploadPolicyResponse;
+import com.asmrblock.config.AppProperties;
 import com.asmrblock.category.CategoryService;
 import com.asmrblock.common.ApiException;
 import com.asmrblock.storage.StorageService;
@@ -35,6 +37,7 @@ public class BlockUploadService {
             Set.of("mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "webm");
     static final int MIN_DURATION_SECONDS = 10;
     static final int MAX_DURATION_SECONDS = 20 * 60;
+    static final int MAX_FILE_MB = 50;
 
     private final AudioService audioService;
     private final StorageService storageService;
@@ -42,6 +45,13 @@ public class BlockUploadService {
     private final BlockMapper blockMapper;
     private final BlockService blockService;
     private final TransactionTemplate transactionTemplate;
+    private final AppProperties properties;
+
+    /** 업로드 규칙 (판매 최대 가격, 파일 크기·길이, 형식) */
+    public UploadPolicyResponse policy() {
+        return new UploadPolicyResponse(properties.shop().sellerMaxPrice(), MAX_FILE_MB,
+                MIN_DURATION_SECONDS, MAX_DURATION_SECONDS, ALLOWED_EXTENSIONS.stream().sorted().toList());
+    }
 
     public BlockResponse upload(Long uploaderId, BlockUploadRequest request) {
         validate(request);
@@ -77,7 +87,7 @@ public class BlockUploadService {
                     .fileKey(fileKey)
                     .masterFileKey(masterKey)
                     .duration(duration)
-                    .price(0)
+                    .price(request.price() == null ? 0 : request.price())
                     .categoryId(request.categoryId())
                     .uploaderId(uploaderId)
                     .license(request.license())
@@ -110,6 +120,10 @@ public class BlockUploadService {
         }
         if (!categoryService.isLeafCategory(request.categoryId())) {
             throw ApiException.badRequest("소분류 카테고리를 골라주세요. (예: 자연 > 비·물)");
+        }
+        int maxPrice = properties.shop().sellerMaxPrice();
+        if (request.price() != null && request.price() > maxPrice) {
+            throw ApiException.badRequest("가격은 최대 %d코인까지 정할 수 있어요.".formatted(maxPrice));
         }
         if (request.tagIds() != null && !categoryService.allTagsExist(request.tagIds())) {
             throw ApiException.badRequest("없는 태그가 포함되어 있습니다.");

@@ -15,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/v1/playlists")
 @RequiredArgsConstructor
@@ -40,6 +42,13 @@ public class PlaylistController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return ApiResponse.ok(playlistService.listPublic(sort, PageQuery.of(page, size)));
+    }
+
+    // 요즘 뜨는 조합 (최근 7일 재생이 많은 공개 조합)
+    @GetMapping("/trending")
+    public ApiResponse<List<PlaylistSummaryResponse>> trending(@RequestParam(defaultValue = "7") int days,
+                                                               @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok(playlistService.trending(days, size));
     }
 
     // 상세 (공개 플레이리스트는 로그인 없이도 가능 → userId가 null일 수 있음)

@@ -2,6 +2,7 @@ package com.asmrblock.block;
 
 import com.asmrblock.block.BlockDtos.BlockResponse;
 import com.asmrblock.block.BlockDtos.BlockUploadRequest;
+import com.asmrblock.block.BlockDtos.UploadPolicyResponse;
 import com.asmrblock.common.ApiResponse;
 import com.asmrblock.common.PageQuery;
 import com.asmrblock.common.PageResponse;
@@ -44,6 +45,12 @@ public class BlockController {
                                                      @RequestParam(defaultValue = "10") int size,
                                                      @AuthenticationPrincipal Long userId) {
         return ApiResponse.ok(blockService.trending(days, size, userId));
+    }
+
+    // 업로드 규칙: 판매 최대 가격(코인), 파일 크기·길이, 형식
+    @GetMapping("/upload-policy")
+    public ApiResponse<UploadPolicyResponse> uploadPolicy() {
+        return ApiResponse.ok(blockUploadService.policy());
     }
 
     @GetMapping("/{blockId}")

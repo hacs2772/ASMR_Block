@@ -51,6 +51,12 @@ public class PlaylistService {
         return PageResponse.of(summaries(playlists), page, playlistMapper.countPublic());
     }
 
+    /** 요즘 뜨는 조합 (최근 days일 재생 수 기준, 공개만) */
+    @Transactional(readOnly = true)
+    public List<PlaylistSummaryResponse> trending(int days, int size) {
+        return summaries(playlistMapper.findTrending(Math.min(Math.max(days, 1), 30), Math.min(Math.max(size, 1), 50)));
+    }
+
     /** 공개 플레이리스트이거나 내 것이면 동 정보까지 채워서 반환 (userId는 비로그인이면 null) */
     @Transactional(readOnly = true)
     public Playlist getViewable(Long id, Long userId) {
