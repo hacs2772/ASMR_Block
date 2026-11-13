@@ -92,7 +92,7 @@ function PlaylistPage() {
               <h3 className="font-medium text-white mb-1">{playlist.title}</h3>
               <p className="text-sm text-gray-400 mb-3 flex flex-wrap items-center gap-x-2">
                 <span>{playlist.blockCount} {t('blockCount')} • {formatDuration(playlist.totalDuration)}</span>
-                {playlist.hasBackground && (
+                {playlist.hasMix && (
                   <span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-300">{t('hasBackground')}</span>
                 )}
                 <span className="text-xs text-gray-500">{playlist.isPublic ? t('visibility.public') : t('visibility.private')}</span>

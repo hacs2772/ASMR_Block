@@ -1,7 +1,7 @@
 import { api } from './client';
 import type {
   Block,
-  Category,
+  CategoryGroup,
   LoginResponse,
   Page,
   PlaylistDetail,
@@ -33,7 +33,10 @@ export const userApi = {
 };
 
 export const catalogApi = {
-  categories: () => api<Category[]>('/categories'),
+  /** 메뉴 트리 (대분류 > 소분류) */
+  categories: () => api<CategoryGroup[]>('/categories'),
+  /** 요즘 뜨는 소리 (최근 7일 재생 많은 순) */
+  trending: (size = 10) => api<Block[]>('/blocks/trending' + query({ size })),
   blocks: (params: { categoryId?: number | null; keyword?: string; sort?: 'latest' | 'popular'; page?: number; size?: number } = {}) =>
     api<Page<Block>>('/blocks' + query({ size: 50, ...params })),
 };

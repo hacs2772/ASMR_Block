@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.IntConsumer;
 
 /** 오디오 처리 기능 모음 (업로드 정규화, 믹싱) */
 @Service
@@ -39,10 +40,18 @@ public class AudioService {
         return duration(output);
     }
 
-    /** 플레이리스트 구성을 하나의 파일로 합침. @return 결과 파일 길이(초) */
-    public int mix(MixPlan plan) {
+    /**
+     * 플레이리스트 구성을 하나의 파일로 합침.
+     * @param onProgress 진행률(0~99) 알림. 끝나면 호출하는 쪽에서 100으로
+     * @return 결과 파일 길이(초)
+     */
+    public int mix(MixPlan plan, IntConsumer onProgress) {
         MixCommandBuilder.Command command = mixCommandBuilder.build(plan);
-        ffmpeg.ffmpeg(command.args(), audio.processTimeout());
+        double total = Math.max(1, command.durationSeconds());
+        // 긴 조합(최대 10시간)도 끝낼 수 있게: 기본 제한시간과 "길이의 1/5" 중 큰 값
+        Duration timeout = Duration.ofSeconds(Math.max(audio.processTimeout().toSeconds(), (long) (total / 5)));
+        ffmpeg.ffmpeg(command.args(), timeout,
+                seconds -> onProgress.accept((int) Math.min(99, Math.floor(seconds * 100 / total))));
         return duration(plan.output());
     }
 

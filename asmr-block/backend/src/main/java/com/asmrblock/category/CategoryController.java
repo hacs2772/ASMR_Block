@@ -1,6 +1,6 @@
 package com.asmrblock.category;
 
-import com.asmrblock.category.CategoryDtos.CategoryResponse;
+import com.asmrblock.category.CategoryDtos.CategoryTreeResponse;
 import com.asmrblock.category.CategoryDtos.TagResponse;
 import com.asmrblock.common.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -17,9 +17,10 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
+    // 메뉴 트리 (대분류 > 소분류)
     @GetMapping("/categories")
-    public ApiResponse<List<CategoryResponse>> getCategories() {
-        return ApiResponse.ok(categoryService.getCategories().stream().map(CategoryResponse::from).toList());
+    public ApiResponse<List<CategoryTreeResponse>> getCategories() {
+        return ApiResponse.ok(categoryService.getCategoryTree());
     }
 
     @GetMapping("/tags")

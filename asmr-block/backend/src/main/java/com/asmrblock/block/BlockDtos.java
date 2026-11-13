@@ -32,6 +32,7 @@ public final class BlockDtos {
             List<TagResponse> tags,
             UploaderResponse uploader,
             Integer playCount,
+            Integer recentPlays,
             LocalDateTime createdAt) {
 
         public static BlockResponse from(Block block, List<TagResponse> tags, StorageService storage) {
@@ -43,7 +44,7 @@ public final class BlockDtos {
                     CategoryResponse.from(block.getCategory()),
                     tags == null ? List.of() : tags,
                     new UploaderResponse(block.getUploaderId(), block.getUploaderNickname()),
-                    block.getPlayCount(), block.getCreatedAt());
+                    block.getPlayCount(), block.getRecentPlays(), block.getCreatedAt());
         }
     }
 

@@ -108,8 +108,8 @@ public class BlockUploadService {
         if (request.license() == License.CC_BY && (request.attribution() == null || request.attribution().isBlank())) {
             throw ApiException.badRequest("CC_BY 라이선스는 출처 표기(attribution)가 필요합니다.");
         }
-        if (!categoryService.existsCategory(request.categoryId())) {
-            throw ApiException.badRequest("없는 카테고리입니다.");
+        if (!categoryService.isLeafCategory(request.categoryId())) {
+            throw ApiException.badRequest("소분류 카테고리를 골라주세요. (예: 자연 > 비·물)");
         }
         if (request.tagIds() != null && !categoryService.allTagsExist(request.tagIds())) {
             throw ApiException.badRequest("없는 태그가 포함되어 있습니다.");

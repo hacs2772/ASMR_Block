@@ -13,24 +13,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class PlaylistApiTest extends IntegrationTest {
 
-    // 샘플: 1 공개(메인만) / 2 비공개(메인+배경) / 3 공개(메인+배경, 산에서 빗물)
+    // 샘플: 1 공개(메인만) / 2 비공개(메인+믹스) / 3 공개(믹스에 빈칸) / 4 공개(트렌드)
     // 블록 길이: 1 빗소리 180, 3 숲속 바람 180, 5 키보드 240, 2 파도 240
 
     @Test
-    @DisplayName("공개 플레이리스트는 비로그인도 상세 조회 - 메인 동/배경 동 구조")
-    void publicDetail() throws Exception {
+    @DisplayName("공개 플레이리스트 상세: 메인 트랙(반복) + 믹스 트랙(시작 위치, 빈칸)")
+    void publicDetailWithMixGaps() throws Exception {
         mvc.perform(get("/api/v1/playlists/3"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.title").value("산에서 빗물 떨어지는 소리"))
-                .andExpect(jsonPath("$.data.owner.nickname").value("테스트유저"))
                 .andExpect(jsonPath("$.data.main.role").value("MAIN"))
-                .andExpect(jsonPath("$.data.main.volume").value(0.8))
-                .andExpect(jsonPath("$.data.main.blocks.length()").value(3))
-                .andExpect(jsonPath("$.data.main.blocks[0].position").value(1))
-                .andExpect(jsonPath("$.data.main.blocks[0].title").value("숲속 바람"))
-                .andExpect(jsonPath("$.data.background.role").value("BACKGROUND"))
-                .andExpect(jsonPath("$.data.background.loop").value(true))
-                .andExpect(jsonPath("$.data.background.blocks[0].fileUrl").value("http://localhost:8080/files/samples/rain.mp3"))
+                .andExpect(jsonPath("$.data.main.items.length()").value(1))
+                .andExpect(jsonPath("$.data.main.items[0].title").value("숲속 바람"))
+                .andExpect(jsonPath("$.data.main.items[0].repeat").value(3))
+                .andExpect(jsonPath("$.data.main.items[0].totalDuration").value(540))
+                .andExpect(jsonPath("$.data.main.items[0].startSeconds").doesNotExist())
+                .andExpect(jsonPath("$.data.mix.role").value("MIX"))
+                .andExpect(jsonPath("$.data.mix.items[0].startSeconds").value(120))
+                .andExpect(jsonPath("$.data.mix.items[1].startSeconds").value(360))
+                .andExpect(jsonPath("$.data.mix.duration").value(540))
+                .andExpect(jsonPath("$.data.main.items[0].category.parentName").value("자연"))
                 .andExpect(jsonPath("$.data.totalDuration").value(540))
                 .andExpect(jsonPath("$.data.render.status").value("NOT_REQUESTED"));
     }
@@ -39,83 +40,107 @@ class PlaylistApiTest extends IntegrationTest {
     @DisplayName("비공개는 남이 보면 403, 주인은 볼 수 있음")
     void privatePlaylist() throws Exception {
         mvc.perform(get("/api/v1/playlists/2")).andExpect(status().isForbidden());
-        getWithToken("/api/v1/playlists/2", newUser().accessToken()).andExpect(status().isForbidden());
         getWithToken("/api/v1/playlists/2", login(SEED_USER_EMAIL, SEED_PASSWORD).accessToken())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.background.volume").value(0.35));
+                .andExpect(jsonPath("$.data.mix.volume").value(0.35))
+                .andExpect(jsonPath("$.data.mix.items[0].repeat").value(6));
     }
 
     @Test
-    @DisplayName("공개 목록에는 공개된 것만, 요약에 블록 색과 배경 동 여부")
+    @DisplayName("공개 목록: 공개된 것만, 요약에 블록 색과 믹스 트랙 여부")
     void publicList() throws Exception {
         mvc.perform(get("/api/v1/playlists/public?size=100"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content[*].id", hasItem(1)))
                 .andExpect(jsonPath("$.data.content[*].id", hasItem(3)))
                 .andExpect(jsonPath("$.data.content[*].id", not(hasItem(2))))
-                .andExpect(jsonPath("$.data.content[?(@.id == 3)].hasBackground").value(true))
-                .andExpect(jsonPath("$.data.content[?(@.id == 1)].previewColors[2]").value("#3B82F6"));
+                .andExpect(jsonPath("$.data.content[?(@.id == 3)].hasMix").value(true))
+                .andExpect(jsonPath("$.data.content[?(@.id == 1)].previewColors[1]").value("#3B82F6"));
     }
 
     @Test
-    @DisplayName("생성: 배경 동이 반복이면 총 시간 = 메인, 반복 아니고 더 길면 배경 길이")
-    void createWithLayers() throws Exception {
+    @DisplayName("생성: 반복 횟수만큼 길이가 늘고, 총 시간 = max(메인, 믹스 끝)")
+    void createWithRepeatAndMix() throws Exception {
         Tokens user = newUser();
-        // 메인 180 + 240 = 420, 배경 180 반복 → 420
+        // 메인: 빗소리 x10 (1800초) + 키보드 (240) = 2040 / 믹스: 1000초에 바람 1번 → 1180에 끝남
         long id = idOf(postJson("/api/v1/playlists", """
-                {"title":"쌍둥이","isPublic":false,
-                 "main":{"blockIds":[1,5]},
-                 "background":{"volume":0.3,"blockIds":[3]}}
+                {"title":"긴 조합","main":{"items":[{"blockId":1,"repeat":10},{"blockId":5}]},
+                 "mix":{"volume":0.3,"items":[{"blockId":3,"startSeconds":1000}]}}
                 """, user.accessToken())
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.data.totalDuration").value(420))
-                .andExpect(jsonPath("$.data.main.volume").value(1.0))
-                .andExpect(jsonPath("$.data.background.volume").value(0.3))
-                .andExpect(jsonPath("$.data.background.loop").value(true)));
+                .andExpect(jsonPath("$.data.totalDuration").value(2040))
+                .andExpect(jsonPath("$.data.main.items[0].repeat").value(10))
+                .andExpect(jsonPath("$.data.main.items[1].repeat").value(1))
+                .andExpect(jsonPath("$.data.mix.volume").value(0.3)));
 
-        getWithToken("/api/v1/playlists?size=100", user.accessToken())
-                .andExpect(jsonPath("$.data.content[0].id").value((int) id))
-                .andExpect(jsonPath("$.data.content[0].blockCount").value(3));
-
-        // 메인 180, 배경 240 x2 = 480 (반복 안 함) → 480
-        postJson("/api/v1/playlists", """
-                {"title":"긴 배경","main":{"blockIds":[1]},
-                 "background":{"loop":false,"blockIds":[2,2]}}
+        // 믹스가 메인보다 늦게 끝나면 그게 전체 길이
+        putJson("/api/v1/playlists/" + id, """
+                {"title":"긴 조합","main":{"items":[{"blockId":1}]},
+                 "mix":{"items":[{"blockId":3,"startSeconds":600,"repeat":2}]}}
                 """, user.accessToken())
-                .andExpect(jsonPath("$.data.totalDuration").value(480))
-                .andExpect(jsonPath("$.data.background.loop").value(false));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalDuration").value(960))
+                .andExpect(jsonPath("$.data.mix.volume").value(0.5));
     }
 
     @Test
-    @DisplayName("저장 검증: 메인 동 필수, 빈 동, 승인 안 된/없는 블록, 볼륨 범위")
+    @DisplayName("믹스 트랙: 시작 시간 필수, 겹치면 안 됨, 순서는 시작 시간 순으로 저장")
+    void mixValidation() throws Exception {
+        String token = newUser().accessToken();
+        postJson("/api/v1/playlists", """
+                {"title":"x","main":{"items":[{"blockId":1}]},"mix":{"items":[{"blockId":3}]}}
+                """, token).andExpect(status().isBadRequest());
+        // 바람(180초)을 0초와 100초에 놓으면 겹침
+        postJson("/api/v1/playlists", """
+                {"title":"x","main":{"items":[{"blockId":1}]},
+                 "mix":{"items":[{"blockId":3,"startSeconds":0},{"blockId":3,"startSeconds":100}]}}
+                """, token).andExpect(status().isBadRequest());
+        // 순서를 뒤섞어 보내도 시작 시간 순으로 저장
+        postJson("/api/v1/playlists", """
+                {"title":"x","main":{"items":[{"blockId":1,"repeat":5}]},
+                 "mix":{"items":[{"blockId":3,"startSeconds":500},{"blockId":11,"startSeconds":0}]}}
+                """, token)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.mix.items[0].title").value("핑크 노이즈"))
+                .andExpect(jsonPath("$.data.mix.items[1].startSeconds").value(500));
+    }
+
+    @Test
+    @DisplayName("저장 검증: 메인 필수, 빈 트랙, 승인 안 된 블록, 반복 범위, 최대 10시간")
     void validation() throws Exception {
         String token = newUser().accessToken();
         postJson("/api/v1/playlists", "{\"title\":\"x\"}", token).andExpect(status().isBadRequest());
-        postJson("/api/v1/playlists", "{\"title\":\"x\",\"main\":{\"blockIds\":[]}}", token).andExpect(status().isBadRequest());
-        postJson("/api/v1/playlists", "{\"title\":\"x\",\"main\":{\"blockIds\":[13]}}", token).andExpect(status().isBadRequest());
-        postJson("/api/v1/playlists", "{\"title\":\"x\",\"main\":{\"blockIds\":[99999]}}", token).andExpect(status().isBadRequest());
-        postJson("/api/v1/playlists", "{\"title\":\"x\",\"main\":{\"blockIds\":[null]}}", token).andExpect(status().isBadRequest());
-        postJson("/api/v1/playlists", "{\"title\":\"x\",\"main\":{\"volume\":1.5,\"blockIds\":[1]}}", token)
+        postJson("/api/v1/playlists", "{\"title\":\"x\",\"main\":{\"items\":[]}}", token).andExpect(status().isBadRequest());
+        postJson("/api/v1/playlists", "{\"title\":\"x\",\"main\":{\"items\":[{\"blockId\":13}]}}", token).andExpect(status().isBadRequest());
+        postJson("/api/v1/playlists", "{\"title\":\"x\",\"main\":{\"items\":[{\"blockId\":1,\"repeat\":0}]}}", token)
+                .andExpect(status().isBadRequest());
+        postJson("/api/v1/playlists", "{\"title\":\"x\",\"main\":{\"items\":[{\"blockId\":1,\"repeat\":201}]}}", token)
+                .andExpect(status().isBadRequest());
+        // 파도 240초 x 160 = 10시간 40분 > 10시간
+        postJson("/api/v1/playlists", "{\"title\":\"x\",\"main\":{\"items\":[{\"blockId\":2,\"repeat\":160}]}}", token)
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+                .andExpect(jsonPath("$.error.message").value("전체 길이는 최대 10시간까지 만들 수 있어요."));
+        // 정확히 8시간 (빗소리 180초 x 160)은 가능
+        postJson("/api/v1/playlists", "{\"title\":\"8시간\",\"main\":{\"items\":[{\"blockId\":1,\"repeat\":160}]}}", token)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.totalDuration").value(28800));
     }
 
     @Test
-    @DisplayName("수정하면 동 구성이 통째로 바뀌고, 남의 것은 수정/삭제 불가")
+    @DisplayName("수정하면 트랙이 통째로 바뀌고, 남의 것은 수정/삭제 불가")
     void updateAndDelete() throws Exception {
         Tokens owner = newUser();
         long id = idOf(postJson("/api/v1/playlists",
-                "{\"title\":\"원래\",\"main\":{\"blockIds\":[1]},\"background\":{\"blockIds\":[3]}}", owner.accessToken()));
+                "{\"title\":\"원래\",\"main\":{\"items\":[{\"blockId\":1}]},\"mix\":{\"items\":[{\"blockId\":3,\"startSeconds\":0}]}}",
+                owner.accessToken()));
 
-        putJson("/api/v1/playlists/" + id, "{\"title\":\"바뀜\",\"main\":{\"blockIds\":[5,5,1]}}", owner.accessToken())
+        putJson("/api/v1/playlists/" + id, "{\"title\":\"바뀜\",\"main\":{\"items\":[{\"blockId\":5},{\"blockId\":5},{\"blockId\":1}]}}", owner.accessToken())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.title").value("바뀜"))
-                .andExpect(jsonPath("$.data.main.blocks.length()").value(3))
-                .andExpect(jsonPath("$.data.main.blocks[2].blockId").value(1))
-                .andExpect(jsonPath("$.data.background").doesNotExist());
+                .andExpect(jsonPath("$.data.main.items.length()").value(3))
+                .andExpect(jsonPath("$.data.main.items[2].blockId").value(1))
+                .andExpect(jsonPath("$.data.mix").doesNotExist());
 
         Tokens other = newUser();
-        putJson("/api/v1/playlists/" + id, "{\"title\":\"해킹\",\"main\":{\"blockIds\":[1]}}", other.accessToken())
+        putJson("/api/v1/playlists/" + id, "{\"title\":\"해킹\",\"main\":{\"items\":[{\"blockId\":1}]}}", other.accessToken())
                 .andExpect(status().isForbidden());
         mvc.perform(bearer(delete("/api/v1/playlists/" + id), other.accessToken())).andExpect(status().isForbidden());
         mvc.perform(bearer(delete("/api/v1/playlists/" + id), owner.accessToken())).andExpect(status().isOk());

@@ -47,6 +47,12 @@ public class BlockService {
         return PageResponse.of(toResponses(blocks), page, blockMapper.count(condition));
     }
 
+    /** 요즘 뜨는 소리 (최근 days일 재생 수 기준) */
+    @Transactional(readOnly = true)
+    public List<BlockResponse> trending(int days, int size) {
+        return toResponses(blockMapper.findTrending(Math.min(Math.max(days, 1), 30), Math.min(Math.max(size, 1), 50)));
+    }
+
     /** 공개 상세: 승인 전 블록은 없는 것처럼 처리 */
     @Transactional(readOnly = true)
     public BlockResponse getPlayable(Long id) {

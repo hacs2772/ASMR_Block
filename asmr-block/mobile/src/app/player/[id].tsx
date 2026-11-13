@@ -6,10 +6,10 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { playlistApi } from '@/api/endpoints';
-import type { Layer, PlaylistDetail, Render } from '@/api/types';
+import type { PlaylistDetail, Render, Track } from '@/api/types';
 import { canDownload, listSaved, localUriOf, localUriOfSaved, removeTrack, saveTrack, type SavedTrack } from '@/audio/downloads';
 import { usePlayer, type NowPlaying } from '@/audio/PlayerProvider';
-import { formatRemaining, SLEEP_OPTIONS_MIN } from '@/audio/sleepTimer';
+import { formatRemaining, sleepOptionLabel, SLEEP_OPTIONS_MIN } from '@/audio/sleepTimer';
 import { Button, Chip, EmptyState, IconButton } from '@/components/ui';
 import { notify } from '@/lib/dialog';
 import { formatDuration, formatMinutes } from '@/lib/format';
@@ -17,7 +17,9 @@ import { useAuth } from '@/store/auth';
 import { colors, radius, space } from '@/theme';
 
 const isWorking = (r?: Render) => r?.status === 'PENDING' || r?.status === 'PROCESSING';
-const colorsOf = (layer: Layer | null) => (layer?.blocks ?? []).map((b) => b.category?.color ?? '#6B7280');
+/** 트랙 블록 색 (반복은 최대 3개까지 펼쳐서) */
+const colorsOf = (track: Track | null) =>
+  (track?.items ?? []).flatMap((i) => Array.from({ length: Math.min(3, i.repeat) }, () => i.category?.color ?? '#6B7280'));
 
 /** 전체 화면 플레이어: 완성본 만들기 → 재생, 수면 타이머, 오프라인 저장 */
 export default function PlayerScreen() {
@@ -111,11 +113,11 @@ export default function PlayerScreen() {
         }}
       />
 
-      <TowerArt main={p?.main ?? null} background={p?.background ?? null} fallbackColors={saved?.colors ?? []} />
+      <TimelineArt main={p?.main ?? null} mix={p?.mix ?? null} total={p?.totalDuration ?? 0} fallbackColors={saved?.colors ?? []} />
 
       <Text style={styles.title} testID="player-title">{title}</Text>
       <Text style={styles.subtitle}>
-        {p ? `${p.owner.nickname} · ${formatMinutes(p.totalDuration)}${p.background ? ' · 배경 동 포함' : ''}` : '휴대폰에 저장된 완성본'}
+        {p ? `${p.owner.nickname} · ${formatMinutes(p.totalDuration)}${p.mix ? ' · 믹스 트랙 포함' : ''}` : '휴대폰에 저장된 완성본'}
       </Text>
 
       {/* 완성본 상태 */}
@@ -124,7 +126,11 @@ export default function PlayerScreen() {
           {isWorking(r) || request.isPending ? (
             <>
               <ActivityIndicator color={colors.primary} />
-              <Text style={styles.renderText}>두 동을 하나로 합치는 중이에요…{'\n'}보통 몇 초~수십 초 걸려요</Text>
+              <Text style={styles.renderText} testID="render-progress">
+                블록들을 하나로 합치는 중이에요… {r?.progress ?? 0}%{'\n'}
+                {(p?.totalDuration ?? 0) > 3600 ? '긴 조합은 몇 분 걸릴 수 있어요. 다른 화면에 다녀와도 괜찮아요' : '보통 몇 초~수십 초 걸려요'}
+              </Text>
+              <View style={styles.progressTrack}><View style={[styles.progressBar, { width: `${r?.progress ?? 0}%` }]} /></View>
             </>
           ) : authStatus !== 'signedIn' ? (
             <>
@@ -192,7 +198,7 @@ export default function PlayerScreen() {
             </View>
             <View style={styles.row}>
               {SLEEP_OPTIONS_MIN.map((m) => (
-                <Chip key={m} label={`${m}분`} onPress={() => player.startSleepTimer(m)} />
+                <Chip key={m} label={sleepOptionLabel(m)} onPress={() => player.startSleepTimer(m)} />
               ))}
               {player.sleepEndsAt !== null && <Chip label="끄기" onPress={player.cancelSleepTimer} />}
             </View>
@@ -204,21 +210,29 @@ export default function PlayerScreen() {
   );
 }
 
-/** 쌍둥이 빌딩 일러스트 (메인 동 + 배경 동) */
-function TowerArt({ main, background, fallbackColors }: { main: Layer | null; background: Layer | null; fallbackColors: string[] }) {
-  const mainColors = main ? colorsOf(main) : fallbackColors;
-  const bgColors = colorsOf(background);
+/** 타임라인 일러스트: 메인 트랙(빈틈없이) + 믹스 트랙(필요한 부분에만), 길이 비율대로 */
+function TimelineArt({ main, mix, total, fallbackColors }: { main: Track | null; mix: Track | null; total: number; fallbackColors: string[] }) {
+  const width = 300;
+  const scale = total > 0 ? width / total : 0;
+  let cursor = 0;
+  const mainBricks = main
+    ? main.items.map((i) => { const left = cursor; cursor += i.totalDuration; return { left, length: i.totalDuration, color: i.category?.color ?? '#6B7280' }; })
+    : fallbackColors.map((color, i) => ({ left: (i * total) / Math.max(1, fallbackColors.length), length: total / Math.max(1, fallbackColors.length), color }));
   return (
     <LinearGradient colors={['#1B1B3A', colors.bg]} style={styles.art}>
-      <View style={styles.artTowers}>
-        <View style={styles.artTower}>
-          {[...mainColors].reverse().slice(0, 10).map((c, i) => <View key={i} style={[styles.artFloor, { backgroundColor: c }]} />)}
-        </View>
-        {bgColors.length > 0 && (
-          <View style={[styles.artTower, { width: 72 }]}>
-            {[...bgColors].reverse().slice(0, 10).map((c, i) => <View key={i} style={[styles.artFloor, { backgroundColor: c, opacity: 0.75 }]} />)}
+      <View style={{ width, alignSelf: 'center', gap: 10 }}>
+        {mix && (
+          <View style={styles.artLane}>
+            {mix.items.map((i, k) => (
+              <View key={k} style={[styles.artBrick, { left: (i.startSeconds ?? 0) * scale, width: Math.max(4, i.totalDuration * scale - 2), backgroundColor: i.category?.color ?? '#6B7280', opacity: 0.8 }]} />
+            ))}
           </View>
         )}
+        <View style={styles.artLane}>
+          {mainBricks.map((b, k) => (
+            <View key={k} style={[styles.artBrick, { left: b.left * scale, width: Math.max(4, b.length * scale - 2), backgroundColor: b.color }]} />
+          ))}
+        </View>
       </View>
       <View style={styles.artGround} />
     </LinearGradient>
@@ -228,10 +242,11 @@ function TowerArt({ main, background, fallbackColors }: { main: Layer | null; ba
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space.lg, paddingBottom: 60 },
-  art: { height: 220, borderRadius: radius.lg, justifyContent: 'flex-end', overflow: 'hidden', marginBottom: space.lg },
-  artTowers: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-end', gap: 14 },
-  artTower: { width: 96, gap: 5 },
-  artFloor: { height: 24, borderRadius: 5 },
+  art: { height: 180, borderRadius: radius.lg, justifyContent: 'flex-end', overflow: 'hidden', marginBottom: space.lg, paddingTop: space.lg },
+  artLane: { height: 28, position: 'relative' },
+  artBrick: { position: 'absolute', top: 0, height: 28, borderRadius: 5, borderBottomWidth: 3, borderBottomColor: 'rgba(0,0,0,0.3)' },
+  progressTrack: { width: '100%', height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden' },
+  progressBar: { height: 6, backgroundColor: colors.primary },
   artGround: { height: 10, backgroundColor: colors.ground, marginTop: 4 },
   title: { color: colors.text, fontSize: 24, fontWeight: '800' },
   subtitle: { color: colors.muted, fontSize: 14, marginTop: 4, marginBottom: space.lg },

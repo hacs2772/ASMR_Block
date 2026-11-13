@@ -6,6 +6,8 @@ import com.asmrblock.storage.StorageService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -20,11 +22,16 @@ public final class PlaylistDtos {
     private PlaylistDtos() {
     }
 
+    /** 최대 길이: 10시간 (밤새 자는 사람 고려) */
+    public static final int MAX_TOTAL_SECONDS = 10 * 60 * 60;
+    public static final int MAX_REPEAT = 200;
+
     // ===================== 요청 =====================
 
     /**
-     * 플레이리스트 저장 (생성/수정 동일).
-     * main: 메인 동 (필수), background: 배경 동 (선택)
+     * 플레이리스트 저장 (생성/수정 동일) = 레고 타임라인.
+     * main: 메인 트랙 (필수) - 순서대로 이어 재생
+     * mix:  믹스 트랙 (선택) - startSeconds 위치에만 블록을 놓아 겹쳐 재생, 사이사이 빈칸 가능
      */
     public record PlaylistSaveRequest(
             @NotBlank(message = "제목은 필수입니다.")
@@ -36,29 +43,44 @@ public final class PlaylistDtos {
 
             Boolean isPublic,
 
-            @NotNull(message = "메인 동(main)은 필수입니다.")
+            @NotNull(message = "메인 트랙(main)은 필수입니다.")
             @Valid
-            LayerRequest main,
+            TrackRequest main,
 
             @Valid
-            LayerRequest background) {
+            TrackRequest mix) {
     }
 
-    /**
-     * 동 하나. blockIds 순서대로 아래층부터 쌓임 (같은 블록 반복 가능).
-     * volume: 0.0~1.0 (생략 시 메인 1.0 / 배경 0.5)
-     * loop: 배경 동이 메인보다 짧으면 반복해서 채움 (생략 시 true, 메인 동에서는 무시)
-     */
-    public record LayerRequest(
+    /** 트랙 하나. volume 0.0~1.0 (생략 시 메인 1.0 / 믹스 0.5) */
+    public record TrackRequest(
             @DecimalMin(value = "0.0", message = "볼륨은 0.0~1.0 사이여야 합니다.")
             @DecimalMax(value = "1.0", message = "볼륨은 0.0~1.0 사이여야 합니다.")
             Double volume,
 
-            Boolean loop,
+            @NotEmpty(message = "트랙에는 블록이 1개 이상 있어야 합니다.")
+            @Size(max = 200, message = "한 트랙에는 블록을 최대 200개까지 놓을 수 있습니다.")
+            List<@Valid @NotNull(message = "블록 정보가 비어 있습니다.") ItemRequest> items) {
+    }
 
-            @NotEmpty(message = "동에는 블록이 1개 이상 있어야 합니다.")
-            @Size(max = 100, message = "한 동에는 블록을 최대 100개까지 쌓을 수 있습니다.")
-            List<@NotNull(message = "blockId가 비어 있습니다.") Long> blockIds) {
+    /**
+     * 트랙에 놓는 블록 (레고 한 조각).
+     * repeat: 연속 반복 횟수 (생략 시 1, 최대 200)
+     * startSeconds: 믹스 트랙에서 시작 시각(초) - 믹스 트랙에서는 필수, 메인 트랙에서는 무시
+     */
+    public record ItemRequest(
+            @NotNull(message = "blockId는 필수입니다.")
+            Long blockId,
+
+            @Min(value = 1, message = "반복은 1번 이상이어야 합니다.")
+            @Max(value = MAX_REPEAT, message = "반복은 최대 200번까지 가능합니다.")
+            Integer repeat,
+
+            @Min(value = 0, message = "시작 시간은 0초 이상이어야 합니다.")
+            Integer startSeconds) {
+
+        public int repeatOrOne() {
+            return repeat == null ? 1 : repeat;
+        }
     }
 
     // ===================== 응답 =====================
@@ -66,32 +88,36 @@ public final class PlaylistDtos {
     public record OwnerResponse(Long id, String nickname) {
     }
 
-    public record LayerBlockResponse(
+    /** 트랙에 놓인 블록. duration은 블록 1번 길이, totalDuration = duration x repeat */
+    public record TrackItemResponse(
             int position,
             Long blockId,
             String title,
             String fileUrl,
             Integer duration,
+            int repeat,
+            Integer startSeconds,
+            int totalDuration,
             boolean playable,
             CategoryResponse category) {
     }
 
-    public record LayerResponse(
+    public record TrackResponse(
             LayerRole role,
             double volume,
-            boolean loop,
             int duration,
-            List<LayerBlockResponse> blocks) {
+            List<TrackItemResponse> items) {
 
-        static LayerResponse from(PlaylistLayer layer, StorageService storage) {
+        static TrackResponse from(PlaylistLayer layer, StorageService storage) {
             List<PlaylistBlock> blocks = layer.getBlocks();
-            return new LayerResponse(layer.getRole(), layer.getVolume(), Boolean.TRUE.equals(layer.getLoopToFill()),
-                    layer.duration(),
+            return new TrackResponse(layer.getRole(), layer.getVolume(), layer.duration(),
                     IntStream.range(0, blocks.size()).mapToObj(i -> {
-                        var block = blocks.get(i).getBlock();
-                        return new LayerBlockResponse(i + 1, block.getId(), block.getTitle(),
-                                storage.publicUrl(block.getFileKey()), block.getDuration(), block.isPlayable(),
-                                CategoryResponse.from(block.getCategory()));
+                        PlaylistBlock pb = blocks.get(i);
+                        var block = pb.getBlock();
+                        return new TrackItemResponse(i + 1, block.getId(), block.getTitle(),
+                                storage.publicUrl(block.getFileKey()), block.getDuration(),
+                                pb.getRepeatCount(), layer.getRole() == LayerRole.MIX ? pb.getStartSeconds() : null,
+                                pb.totalSeconds(), block.isPlayable(), CategoryResponse.from(block.getCategory()));
                     }).toList());
         }
     }
@@ -104,8 +130,8 @@ public final class PlaylistDtos {
             Integer playCount,
             Integer totalDuration,
             OwnerResponse owner,
-            LayerResponse main,
-            LayerResponse background,
+            TrackResponse main,
+            TrackResponse mix,
             RenderResponse render,
             LocalDateTime createdAt,
             LocalDateTime updatedAt) {
@@ -115,13 +141,13 @@ public final class PlaylistDtos {
                     playlist.getId(), playlist.getTitle(), playlist.getDescription(), playlist.getIsPublic(),
                     playlist.getPlayCount(), playlist.getTotalDuration(),
                     new OwnerResponse(playlist.getUserId(), playlist.getOwnerNickname()),
-                    playlist.layer(LayerRole.MAIN).map(l -> LayerResponse.from(l, storage)).orElse(null),
-                    playlist.layer(LayerRole.BACKGROUND).map(l -> LayerResponse.from(l, storage)).orElse(null),
+                    playlist.layer(LayerRole.MAIN).map(l -> TrackResponse.from(l, storage)).orElse(null),
+                    playlist.layer(LayerRole.MIX).map(l -> TrackResponse.from(l, storage)).orElse(null),
                     render, playlist.getCreatedAt(), playlist.getUpdatedAt());
         }
     }
 
-    /** 목록용 요약. previewColors: 메인 동 아래층부터 블록 색 (최대 8개) */
+    /** 목록용 요약. previewColors: 메인 트랙 왼쪽부터 블록 색 (반복은 1개로, 최대 8개) */
     public record PlaylistSummaryResponse(
             Long id,
             String title,
@@ -131,7 +157,7 @@ public final class PlaylistDtos {
             Integer totalDuration,
             OwnerResponse owner,
             int blockCount,
-            boolean hasBackground,
+            boolean hasMix,
             List<String> previewColors,
             LocalDateTime createdAt) {
 
@@ -143,7 +169,7 @@ public final class PlaylistDtos {
                     playlist.getPlayCount(), playlist.getTotalDuration(),
                     new OwnerResponse(playlist.getUserId(), playlist.getOwnerNickname()),
                     playlist.getLayers().stream().mapToInt(l -> l.getBlocks().size()).sum(),
-                    playlist.layer(LayerRole.BACKGROUND).isPresent(),
+                    playlist.layer(LayerRole.MIX).isPresent(),
                     mainBlocks.stream().limit(8)
                             .map(pb -> pb.getBlock().getCategory() == null ? "#666666"
                                     : pb.getBlock().getCategory().getColor())

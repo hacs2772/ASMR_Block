@@ -31,7 +31,7 @@ export function PlaylistCard({ playlist, onPress, onEdit, showOwner }: Props) {
         <Text style={styles.title} numberOfLines={1}>{playlist.title}</Text>
         <Text style={styles.meta} numberOfLines={1}>
           {formatMinutes(playlist.totalDuration)} · 블록 {playlist.blockCount}개
-          {playlist.hasBackground ? ' · 배경 동' : ''}
+          {playlist.hasMix ? ' · 믹스' : ''}
           {showOwner ? ` · ${playlist.owner.nickname}` : playlist.isPublic ? ' · 공개' : ' · 비공개'}
         </Text>
       </View>

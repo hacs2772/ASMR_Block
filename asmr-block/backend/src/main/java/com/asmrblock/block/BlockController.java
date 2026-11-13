@@ -36,6 +36,13 @@ public class BlockController {
                 categoryId, tagIds, keyword, BlockStatus.APPROVED, sort, PageQuery.of(page, size)));
     }
 
+    // 요즘 뜨는 소리 (최근 7일 재생이 많은 순)
+    @GetMapping("/trending")
+    public ApiResponse<List<BlockResponse>> trending(@RequestParam(defaultValue = "7") int days,
+                                                     @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.ok(blockService.trending(days, size));
+    }
+
     @GetMapping("/{blockId}")
     public ApiResponse<BlockResponse> get(@PathVariable Long blockId) {
         return ApiResponse.ok(blockService.getPlayable(blockId));

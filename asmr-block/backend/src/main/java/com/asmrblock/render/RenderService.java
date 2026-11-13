@@ -66,6 +66,7 @@ public class RenderService {
         if (render.getStatus() == RenderStatus.FAILED || fileLost) {
             renderMapper.resetToPending(hash);
             render.setStatus(RenderStatus.PENDING);
+            render.setProgress(0);
         }
         if (render.getStatus() == RenderStatus.PENDING) {
             submit(hash);
@@ -119,10 +120,17 @@ public class RenderService {
             workDir = Files.createTempDirectory("render-");
             Path output = workDir.resolve("mix.mp3");
             long started = System.currentTimeMillis();
+            int[] lastProgress = {0};
             int duration = audioService.mix(new MixPlan(
                     toMixLayer(composition.main()),
-                    composition.background() == null ? null : toMixLayer(composition.background()),
-                    output));
+                    composition.mix() == null ? null : toMixLayer(composition.mix()),
+                    output), progress -> {
+                // DB에는 2% 단위로만 기록 (너무 자주 쓰지 않도록)
+                if (progress >= lastProgress[0] + 2) {
+                    lastProgress[0] = progress;
+                    renderMapper.updateProgress(hash, progress);
+                }
+            });
 
             String fileKey = "renders/" + hash + ".mp3";
             storageService.store(fileKey, output);
@@ -145,14 +153,14 @@ public class RenderService {
     }
 
     private MixPlan.Layer toMixLayer(Composition.Layer layer) {
-        List<MixPlan.Track> tracks = layer.tracks().stream().map(track -> {
-            Path file = storageService.resolve(track.fileKey());
+        List<MixPlan.Clip> clips = layer.clips().stream().map(clip -> {
+            Path file = storageService.resolve(clip.fileKey());
             if (!Files.isRegularFile(file)) {
-                throw new IllegalStateException("음원 파일이 없습니다: " + track.fileKey());
+                throw new IllegalStateException("음원 파일이 없습니다: " + clip.fileKey());
             }
-            return new MixPlan.Track(file, track.duration());
+            return new MixPlan.Clip(file, clip.duration(), clip.repeat(), clip.start());
         }).toList();
-        return new MixPlan.Layer(tracks, layer.volume(), layer.loop());
+        return new MixPlan.Layer(clips, layer.volume());
     }
 
     private static String truncate(String message) {

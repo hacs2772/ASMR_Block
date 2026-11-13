@@ -42,13 +42,13 @@ class BlockApiTest extends IntegrationTest {
     @Test
     @DisplayName("태그/키워드/카테고리 필터")
     void filters() throws Exception {
-        mvc.perform(get("/api/v1/blocks?tagIds=3"))   // 바삭한 → 지글지글
-                .andExpect(jsonPath("$.data.content[*].id", hasItem(9)))
-                .andExpect(jsonPath("$.data.content[*].tags[*].name", everyItem(org.hamcrest.Matchers.is("바삭한"))));
+        mvc.perform(get("/api/v1/blocks?tagIds=3&size=100"))   // 바삭한 → 지글지글, 왁스, 비누
+                .andExpect(jsonPath("$.data.content[*].id", org.hamcrest.Matchers.hasItems(9, 14, 16)))
+                .andExpect(jsonPath("$.data.content[*].id", not(hasItem(1))));
         mvc.perform(get("/api/v1/blocks?keyword=빗소리"))
                 .andExpect(jsonPath("$.data.content[*].id", hasItem(1)));
         mvc.perform(get("/api/v1/blocks?categoryId=4"))
-                .andExpect(jsonPath("$.data.content[*].category.name", everyItem(org.hamcrest.Matchers.is("음식"))));
+                .andExpect(jsonPath("$.data.content[*].category.parentName", everyItem(org.hamcrest.Matchers.is("음식·먹방"))));
     }
 
     @Test
@@ -109,8 +109,15 @@ class BlockApiTest extends IntegrationTest {
 
         mvc.perform(bearer(multipart("/api/v1/blocks")
                         .file(new MockMultipartFile("file", "a.mp3", "audio/mpeg", audio)), user.accessToken())
-                        .param("title", "출처 필요").param("categoryId", "1").param("license", "CC_BY"))
+                        .param("title", "출처 필요").param("categoryId", String.valueOf(leafCategoryId())).param("license", "CC_BY"))
                 .andExpect(status().isBadRequest());
+
+        // 대분류(자연)에는 바로 올릴 수 없음
+        mvc.perform(bearer(multipart("/api/v1/blocks")
+                        .file(new MockMultipartFile("file", "a.mp3", "audio/mpeg", audio)), user.accessToken())
+                        .param("title", "대분류").param("categoryId", "1").param("license", "OWN"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.message").value("소분류 카테고리를 골라주세요. (예: 자연 > 비·물)"));
 
         mvc.perform(bearer(multipart("/api/v1/blocks"), user.accessToken())
                         .param("title", "파일 없음").param("categoryId", "1").param("license", "OWN"))

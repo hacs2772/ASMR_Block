@@ -9,12 +9,13 @@
         <result property="playlistId" column="playlist_id"/>
         <result property="role" column="role"/>
         <result property="volume" column="volume"/>
-        <result property="loopToFill" column="loop_to_fill"/>
         <collection property="blocks" ofType="com.asmrblock.playlist.PlaylistBlock">
             <id property="id" column="pb_id"/>
             <result property="layerId" column="layer_id"/>
             <result property="blockId" column="block_id"/>
             <result property="sortOrder" column="sort_order"/>
+            <result property="repeatCount" column="repeat_count"/>
+            <result property="startSeconds" column="start_seconds"/>
             <association property="block" javaType="com.asmrblock.block.Block">
                 <id property="id" column="block_id"/>
                 <result property="title" column="block_title"/>
@@ -27,6 +28,8 @@
                     <result property="name" column="cat_name"/>
                     <result property="color" column="cat_color"/>
                     <result property="icon" column="cat_icon"/>
+                    <result property="parentId" column="cat_parent_id"/>
+                    <result property="parentName" column="cat_parent_name"/>
                 </association>
             </association>
         </collection>
@@ -88,14 +91,14 @@
     </select>
 
     <insert id="insertLayer" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO playlist_layer (playlist_id, role, volume, loop_to_fill)
-        VALUES (#{playlistId}, #{role}, #{volume}, #{loopToFill})
+        INSERT INTO playlist_layer (playlist_id, role, volume)
+        VALUES (#{playlistId}, #{role}, #{volume})
     </insert>
 
     <insert id="insertLayerBlocks">
-        INSERT INTO playlist_block (layer_id, block_id, sort_order) VALUES
-        <foreach collection="blockIds" item="blockId" index="i" separator=",">
-            (#{layerId}, #{blockId}, #{i} + 1)
+        INSERT INTO playlist_block (layer_id, block_id, sort_order, repeat_count, start_seconds) VALUES
+        <foreach collection="items" item="item" index="i" separator=",">
+            (#{layerId}, #{item.blockId}, #{i} + 1, #{item.repeat}, #{item.startSeconds})
         </foreach>
     </insert>
 
@@ -104,18 +107,20 @@
     </delete>
 
     <select id="findLayers" resultMap="LayerMap">
-        SELECT l.id AS layer_id, l.playlist_id, l.role, l.volume, l.loop_to_fill,
-               pb.id AS pb_id, pb.block_id, pb.sort_order,
+        SELECT l.id AS layer_id, l.playlist_id, l.role, l.volume,
+               pb.id AS pb_id, pb.block_id, pb.sort_order, pb.repeat_count, pb.start_seconds,
                b.title AS block_title, b.file_key, b.duration AS block_duration,
                b.status AS block_status, b.is_active AS block_active,
-               c.id AS cat_id, c.name AS cat_name, c.color AS cat_color, c.icon AS cat_icon
+               c.id AS cat_id, c.name AS cat_name, c.color AS cat_color, c.icon AS cat_icon,
+               c.parent_id AS cat_parent_id, pc.name AS cat_parent_name
         FROM playlist_layer l
         JOIN playlist_block pb ON pb.layer_id = l.id
         JOIN block b ON b.id = pb.block_id
         LEFT JOIN sound_category c ON c.id = b.category_id
+        LEFT JOIN sound_category pc ON pc.id = c.parent_id
         WHERE l.playlist_id IN
         <foreach collection="playlistIds" item="id" open="(" separator="," close=")">#{id}</foreach>
-        ORDER BY l.playlist_id, l.role, pb.sort_order
+        ORDER BY l.playlist_id, l.role, COALESCE(pb.start_seconds, 0), pb.sort_order
     </select>
 
     <update id="incrementPlayCount">

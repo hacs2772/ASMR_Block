@@ -20,11 +20,14 @@ public class PlaylistLayer {
     private Long playlistId;
     private LayerRole role;
     private Double volume;           // 0.0 ~ 1.0
-    private Boolean loopToFill;      // 메인보다 짧으면 반복 (배경 동)
     @Builder.Default
     private List<PlaylistBlock> blocks = new ArrayList<>();
 
+    /** 트랙 길이(초). 메인: 블록 길이 x 반복의 합 / 믹스: 마지막 블록이 끝나는 시각 */
     public int duration() {
-        return blocks.stream().mapToInt(pb -> pb.getBlock().getDuration()).sum();
+        if (role == LayerRole.MIX) {
+            return blocks.stream().mapToInt(PlaylistBlock::endSeconds).max().orElse(0);
+        }
+        return blocks.stream().mapToInt(PlaylistBlock::totalSeconds).sum();
     }
 }

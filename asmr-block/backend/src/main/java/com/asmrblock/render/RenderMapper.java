@@ -19,6 +19,8 @@ public interface RenderMapper {
 
     void markDone(@Param("hash") String hash, @Param("fileKey") String fileKey, @Param("duration") int duration);
 
+    void updateProgress(@Param("hash") String hash, @Param("progress") int progress);
+
     void markFailed(@Param("hash") String hash, @Param("errorMessage") String errorMessage);
 
     /** FAILED/DONE(파일 유실) → PENDING 으로 되돌려 다시 만들게 함 */

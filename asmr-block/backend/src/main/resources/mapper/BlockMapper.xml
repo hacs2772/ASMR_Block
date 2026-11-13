@@ -10,15 +10,19 @@
             <result property="name" column="cat_name"/>
             <result property="color" column="cat_color"/>
             <result property="icon" column="cat_icon"/>
+            <result property="parentId" column="cat_parent_id"/>
+            <result property="parentName" column="cat_parent_name"/>
         </association>
     </resultMap>
 
     <sql id="selectBlock">
         SELECT b.*,
                c.id AS cat_id, c.name AS cat_name, c.color AS cat_color, c.icon AS cat_icon,
+               c.parent_id AS cat_parent_id, pc.name AS cat_parent_name,
                u.nickname AS uploader_nickname
         FROM block b
         LEFT JOIN sound_category c ON c.id = b.category_id
+        LEFT JOIN sound_category pc ON pc.id = c.parent_id
         LEFT JOIN users u ON u.id = b.uploader_id
     </sql>
 
@@ -27,7 +31,11 @@
         <where>
             b.is_active = true
             <if test="status != null">AND b.status = #{status}</if>
-            <if test="categoryId != null">AND b.category_id = #{categoryId}</if>
+            <!-- 대분류를 고르면 그 아래 소분류 블록까지 -->
+            <if test="categoryId != null">
+                AND (b.category_id = #{categoryId}
+                     OR b.category_id IN (SELECT id FROM sound_category WHERE parent_id = #{categoryId}))
+            </if>
             <if test="tagIds != null">
                 AND EXISTS (SELECT 1 FROM block_tag bt WHERE bt.block_id = b.id AND bt.tag_id IN
                 <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">#{tagId}</foreach>)
@@ -72,6 +80,22 @@
     <select id="count" resultType="long">
         SELECT COUNT(*) FROM block b
         <include refid="searchWhere"/>
+    </select>
+
+    <!-- 요즘 뜨는 소리: 최근 N일 재생 기록이 많은 순 -->
+    <select id="findTrending" resultMap="BlockMap">
+        SELECT recent.recent_plays, x.* FROM (
+            <include refid="selectBlock"/>
+            WHERE b.is_active = true AND b.status = 'APPROVED'
+        ) x
+        JOIN (
+            SELECT target_id, COUNT(*) AS recent_plays
+            FROM play_log
+            WHERE target_type = 'BLOCK' AND played_at &gt;= NOW() - make_interval(days => #{days})
+            GROUP BY target_id
+        ) recent ON recent.target_id = x.id
+        ORDER BY recent.recent_plays DESC, x.play_count DESC, x.id DESC
+        LIMIT #{limit}
     </select>
 
     <update id="updateStatus">

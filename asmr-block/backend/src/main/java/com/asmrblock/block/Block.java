@@ -38,6 +38,7 @@ public class Block {
     // 조인 데이터
     private SoundCategory category;
     private String uploaderNickname;
+    private Integer recentPlays;     // 요즘 뜨는 소리 조회 시 최근 재생 수
 
     public boolean isPlayable() {
         return status == BlockStatus.APPROVED && Boolean.TRUE.equals(isActive);

@@ -1,5 +1,7 @@
 package com.asmrblock.category;
 
+import com.asmrblock.category.CategoryDtos.CategoryResponse;
+import com.asmrblock.category.CategoryDtos.CategoryTreeResponse;
 import com.asmrblock.category.CategoryDtos.TagResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,8 +20,18 @@ public class CategoryService {
 
     private final CategoryMapper categoryMapper;
 
-    public List<SoundCategory> getCategories() {
-        return categoryMapper.findAllCategories();
+    /** 대분류 > 소분류 메뉴 트리 */
+    public List<CategoryTreeResponse> getCategoryTree() {
+        List<SoundCategory> all = categoryMapper.findAllCategories();
+        Map<Long, List<CategoryResponse>> children = all.stream()
+                .filter(c -> c.getParentId() != null)
+                .collect(Collectors.groupingBy(SoundCategory::getParentId,
+                        Collectors.mapping(CategoryResponse::from, Collectors.toList())));
+        return all.stream()
+                .filter(c -> c.getParentId() == null)
+                .map(c -> new CategoryTreeResponse(c.getId(), c.getName(), c.getColor(), c.getIcon(),
+                        c.getDescription(), children.getOrDefault(c.getId(), List.of())))
+                .toList();
     }
 
     public List<SoundTag> getTags() {
@@ -28,6 +40,11 @@ public class CategoryService {
 
     public boolean existsCategory(Long id) {
         return id != null && categoryMapper.existsCategory(id);
+    }
+
+    /** 블록은 소분류에만 달 수 있음 (메뉴 트리에서 찾을 수 있도록) */
+    public boolean isLeafCategory(Long id) {
+        return id != null && categoryMapper.isLeafCategory(id);
     }
 
     public boolean allTagsExist(Collection<Long> tagIds) {

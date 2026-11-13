@@ -60,12 +60,20 @@ gen fan.mp3 240 "$(stereo_noise brown 0.6),lowpass=f=900[fn];sine=frequency=120:
 gen pink_noise.mp3 180 "$(stereo_noise pink 0.5)" &
 gen brown_noise.mp3 180 "$(stereo_noise brown 0.6)" &
 
+# --- 트렌드 / 세계의 소리 ---
+# 왁스 부수기: 듬성듬성 터지는 바삭한 크랙 (4초 주기로 세게/약하게)
+gen wax_crack.mp3 180 "aevalsrc=exprs='(random(0)*2-1)*gt(random(1),0.9975)*(0.35+0.65*gt(sin(2*PI*t/4),-0.3))':s=$SR,highpass=f=1200,bandpass=f=3500:width_type=h:w=4000,aecho=0.6:0.3:12:0.25" &
+# 일본 신호등 뻐꾸기: 높은음-낮은음 "뻐꾹" 1.6초 주기 + 낮은 거리 소음
+gen japan_crossing.mp3 180 "aevalsrc=exprs='0.35*(sin(2*PI*1040*t)*between(mod(t,1.6),0,0.22)*sin(PI*min(mod(t,1.6),0.22)/0.22)+sin(2*PI*830*t)*between(mod(t,1.6),0.3,0.62)*sin(PI*min(max(mod(t,1.6)-0.3,0),0.32)/0.32))':s=$SR,aecho=0.7:0.4:80:0.2[cj];$(stereo_noise brown 0.25),lowpass=f=700[cn];[cj]aformat=channel_layouts=stereo[cjs];[cjs][cn]amix=inputs=2:normalize=0" &
+# 비누 깎기: 1.3초마다 사각- 하고 긁는 소리
+gen soap_cutting.mp3 180 "$(stereo_noise white 0.5),bandpass=f=2800:width_type=h:w=2500,volume='pow(sin(PI*min(mod(t,1.3),0.7)/0.7),2)*lt(mod(t,1.3),0.7)':eval=frame" &
+
 wait
 
-# 12개가 모두 만들어졌는지 확인
+# 15개가 모두 만들어졌는지 확인
 count=$(find "$OUT_DIR/samples" -name '*.mp3' ! -name '*.tmp.mp3' | wc -l)
-if [ "$count" -lt 12 ]; then
-  echo "샘플 음원 생성 실패: $count/12 개만 만들어졌습니다." >&2
+if [ "$count" -lt 15 ]; then
+  echo "샘플 음원 생성 실패: $count/15 개만 만들어졌습니다." >&2
   exit 1
 fi
 echo "완료! ($count개)"

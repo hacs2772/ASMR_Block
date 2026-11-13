@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 
 /**
- * 쌍둥이 빌딩 편집기 상태
+ * 웹 편집기 상태 (확인/관리용 - 메인 편집기는 모바일 앱의 레고 타임라인)
+ * 서버 형식: main.items[{blockId, repeat}], mix.items[{blockId, repeat, startSeconds}]
+ * 웹 화면은 예전 세로 빌딩 모양 그대로 두고, 저장할 때 서버 형식으로 바꿔서 보냄
  * - main: 메인 동 (블록을 아래층부터 순서대로 재생)
  * - background: 배경 동 (메인과 동시에 깔리는 소리, 짧으면 반복 가능)
  */
@@ -22,11 +24,14 @@ const emptyState = () => ({
 
 const sumDuration = (blocks) => blocks.reduce((total, item) => total + (item.block?.duration || 0), 0);
 
-// 서버 응답의 동 → 편집용 블록 목록
-const toItems = (layer) => (layer?.blocks || []).map((b) => ({
-  key: newKey(),
-  block: { id: b.blockId, title: b.title, duration: b.duration, fileUrl: b.fileUrl, category: b.category },
-}));
+// 서버 응답의 트랙 → 편집용 블록 목록 (반복은 여러 칸으로 펼침, 최대 50칸)
+const toItems = (track) => (track?.items || [])
+  .flatMap((i) => Array.from({ length: Math.min(i.repeat || 1, 50) }, () => i))
+  .slice(0, 200)
+  .map((b) => ({
+    key: newKey(),
+    block: { id: b.blockId, title: b.title, duration: b.duration, fileUrl: b.fileUrl, category: b.category },
+  }));
 
 const useEditorStore = create((set, get) => ({
   ...emptyState(),
@@ -41,8 +46,8 @@ const useEditorStore = create((set, get) => ({
     description: playlist.description || '',
     isPublic: playlist.isPublic,
     main: { volume: playlist.main?.volume ?? 1.0, blocks: toItems(playlist.main) },
-    background: playlist.background
-      ? { enabled: true, volume: playlist.background.volume, loop: playlist.background.loop, blocks: toItems(playlist.background) }
+    background: playlist.mix
+      ? { enabled: true, volume: playlist.mix.volume, loop: false, blocks: toItems(playlist.mix) }
       : emptyState().background,
   }),
 
@@ -106,18 +111,30 @@ const useEditorStore = create((set, get) => ({
     return { main: mainDuration, background: backgroundDuration, total };
   },
 
-  // 서버 저장 요청 형식
+  // 서버 저장 요청 형식: 메인은 순서대로, 배경(믹스)은 0초부터 차례로 놓음.
+  // "짧으면 반복"이 켜져 있으면 배경 묶음을 메인 길이만큼 되풀이
   toRequest: () => {
     const { title, description, isPublic, main, background } = get();
     const hasBackground = background.enabled && background.blocks.length > 0;
+    let mix = null;
+    if (hasBackground) {
+      const mainDuration = sumDuration(main.blocks);
+      const items = [];
+      let cursor = 0;
+      do {
+        for (const item of background.blocks) {
+          items.push({ blockId: item.block.id, repeat: 1, startSeconds: cursor });
+          cursor += item.block.duration;
+        }
+      } while (background.loop && cursor < mainDuration && items.length < 200);
+      mix = { volume: background.volume, items };
+    }
     return {
       title: title.trim(),
       description,
       isPublic,
-      main: { volume: main.volume, blockIds: main.blocks.map((item) => item.block.id) },
-      background: hasBackground
-        ? { volume: background.volume, loop: background.loop, blockIds: background.blocks.map((item) => item.block.id) }
-        : null,
+      main: { volume: main.volume, items: main.blocks.map((item) => ({ blockId: item.block.id, repeat: 1 })) },
+      mix,
     };
   },
 

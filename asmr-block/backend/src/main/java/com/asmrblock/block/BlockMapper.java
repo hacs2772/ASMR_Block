@@ -24,6 +24,9 @@ public interface BlockMapper {
 
     long count(BlockSearchCondition condition);
 
+    /** 최근 days일 동안 많이 재생된 순 (recentPlays 채워짐) */
+    List<Block> findTrending(@Param("days") int days, @Param("limit") int limit);
+
     void updateStatus(@Param("id") Long id, @Param("status") BlockStatus status);
 
     void incrementPlayCount(Long id);

@@ -25,8 +25,8 @@ class RenderApiTest extends IntegrationTest {
     StorageService storageService;
 
     @Test
-    @DisplayName("메인(A,A,B) + 배경(C 반복) → 하나의 파일로 합쳐지고, 같은 구성은 재사용된다")
-    void renderLayeredPlaylist() throws Exception {
+    @DisplayName("메인(A x2, B) + 믹스(5초·40초에 C, 사이는 빈칸) → 하나의 파일, 같은 구성은 재사용")
+    void renderTimelineWithMixGaps() throws Exception {
         Tokens user = newUser();
         long a = uploadApprovedBlock(user.accessToken(), 12, 440);
         long b = uploadApprovedBlock(user.accessToken(), 10, 660);
@@ -34,24 +34,24 @@ class RenderApiTest extends IntegrationTest {
 
         String playlist = """
                 {"title":"믹스 테스트","isPublic":true,
-                 "main":{"blockIds":[%d,%d,%d]},
-                 "background":{"volume":0.3,"blockIds":[%d]}}
-                """.formatted(a, a, b, c);
+                 "main":{"items":[{"blockId":%d,"repeat":2},{"blockId":%d}]},
+                 "mix":{"volume":0.3,"items":[{"blockId":%d,"startSeconds":5},{"blockId":%d,"startSeconds":40}]}}
+                """.formatted(a, b, c, c);
         long id = idOf(postJson("/api/v1/playlists", playlist, user.accessToken()));
 
-        // 요청 → 완료될 때까지 기다림
         postJson("/api/v1/playlists/" + id + "/render", "", user.accessToken()).andExpect(status().isOk());
         String done = waitUntilFinished(id);
         assertThat((String) JsonPath.read(done, "$.data.status")).isEqualTo("DONE");
+        assertThat((Integer) JsonPath.read(done, "$.data.progress")).isEqualTo(100);
 
-        // 길이: 12 + 12 + 10 - 크로스페이드 1.5초 x 2 = 31초 (배경은 메인 길이에 맞춰 반복 후 자름)
+        // 메인: 12 + 12 + 10 - 크로스페이드 1.5초 x 2 = 31초
+        // 믹스: 40초에 시작한 C(10초)가 50초에 끝남 → 전체 50초 (31~40초 사이 메인 끝, 믹스만)
         String fileUrl = JsonPath.read(done, "$.data.fileUrl");
         assertThat(fileUrl).startsWith("http://localhost:8080/files/renders/");
         Path file = storageService.resolve(fileUrl.substring(fileUrl.indexOf("/files/") + 7));
         assertThat(Files.size(file)).isGreaterThan(10_000);
-        assertThat(TestAudio.durationOf(file)).isCloseTo(31.0, within(1.0));
+        assertThat(TestAudio.durationOf(file)).isCloseTo(50.0, within(1.0));
 
-        // 상세 조회에도 완성본 정보가 보임
         mvc.perform(get("/api/v1/playlists/" + id))
                 .andExpect(jsonPath("$.data.render.status").value("DONE"))
                 .andExpect(jsonPath("$.data.render.fileUrl").value(fileUrl));
@@ -73,7 +73,8 @@ class RenderApiTest extends IntegrationTest {
         assertThat((String) JsonPath.read(waitUntilFinished(1), "$.data.status")).isEqualTo("FAILED");
 
         postJson("/api/v1/playlists/1/render", "", seed.accessToken())
-                .andExpect(jsonPath("$.data.status").value("PENDING"));
+                .andExpect(jsonPath("$.data.status").value("PENDING"))
+                .andExpect(jsonPath("$.data.progress").value(0));
         waitUntilFinished(1);
     }
 

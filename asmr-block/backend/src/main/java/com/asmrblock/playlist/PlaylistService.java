@@ -8,13 +8,15 @@ import com.asmrblock.common.PageResponse;
 import com.asmrblock.play.PlayCountService;
 import com.asmrblock.play.PlayResult;
 import com.asmrblock.play.PlayTarget;
-import com.asmrblock.playlist.PlaylistDtos.LayerRequest;
+import com.asmrblock.playlist.PlaylistDtos.ItemRequest;
 import com.asmrblock.playlist.PlaylistDtos.PlaylistSaveRequest;
+import com.asmrblock.playlist.PlaylistDtos.TrackRequest;
 import com.asmrblock.playlist.PlaylistDtos.PlaylistSummaryResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,7 +27,7 @@ import java.util.stream.Stream;
 public class PlaylistService {
 
     static final double DEFAULT_MAIN_VOLUME = 1.0;
-    static final double DEFAULT_BACKGROUND_VOLUME = 0.5;
+    static final double DEFAULT_MIX_VOLUME = 0.5;
 
     private final PlaylistMapper playlistMapper;
     private final BlockService blockService;
@@ -108,55 +110,78 @@ public class PlaylistService {
     /** 제목 등 기본 정보 + 총 재생 시간 계산 (블록 검증 포함) */
     private void applyFields(Playlist playlist, PlaylistSaveRequest request) {
         Map<Long, Block> blocks = blockService.findPlayableByIds(Stream.concat(
-                request.main().blockIds().stream(),
-                request.background() == null ? Stream.empty() : request.background().blockIds().stream()
-        ).collect(Collectors.toSet()));
+                request.main().items().stream(),
+                request.mix() == null ? Stream.empty() : request.mix().items().stream()
+        ).map(ItemRequest::blockId).collect(Collectors.toSet()));
 
-        int mainDuration = sumDuration(request.main(), blocks);
-        int totalDuration = mainDuration;
-        if (request.background() != null && !loopOf(request.background())) {
-            totalDuration = Math.max(mainDuration, sumDuration(request.background(), blocks));
+        int mainDuration = 0;
+        for (ItemRequest item : request.main().items()) {
+            mainDuration += lengthOf(item, blocks);
+        }
+        int mixEnd = request.mix() == null ? 0 : validateMixAndGetEnd(request.mix(), blocks);
+
+        int total = Math.max(mainDuration, mixEnd);
+        if (total > PlaylistDtos.MAX_TOTAL_SECONDS) {
+            throw ApiException.badRequest("전체 길이는 최대 10시간까지 만들 수 있어요.");
         }
 
         playlist.setTitle(request.title().trim());
         playlist.setDescription(request.description());
         playlist.setIsPublic(Boolean.TRUE.equals(request.isPublic()));
-        playlist.setTotalDuration(totalDuration);
+        playlist.setTotalDuration(total);
     }
 
-    private static int sumDuration(LayerRequest layer, Map<Long, Block> blocks) {
-        int total = 0;
-        for (Long blockId : layer.blockIds()) {
-            Block block = blocks.get(blockId);
-            if (block == null) {
-                throw ApiException.badRequest("사용할 수 없는 블록입니다: " + blockId);
+    /** 믹스 트랙: 시작 시간 필수, 블록끼리 겹치면 안 됨. 마지막 블록이 끝나는 시각을 돌려줌 */
+    private static int validateMixAndGetEnd(TrackRequest mix, Map<Long, Block> blocks) {
+        List<ItemRequest> sorted = mix.items().stream()
+                .peek(item -> {
+                    if (item.startSeconds() == null) {
+                        throw ApiException.badRequest("믹스 트랙의 블록에는 시작 시간(startSeconds)이 필요해요.");
+                    }
+                })
+                .sorted(Comparator.comparingInt(ItemRequest::startSeconds))
+                .toList();
+        int previousEnd = 0;
+        for (ItemRequest item : sorted) {
+            if (item.startSeconds() < previousEnd) {
+                throw ApiException.badRequest("믹스 트랙의 블록끼리 겹쳐요. 위치를 조정해주세요.");
             }
-            total += block.getDuration();
+            previousEnd = item.startSeconds() + lengthOf(item, blocks);
         }
-        return total;
+        return previousEnd;
+    }
+
+    private static int lengthOf(ItemRequest item, Map<Long, Block> blocks) {
+        Block block = blocks.get(item.blockId());
+        if (block == null) {
+            throw ApiException.badRequest("사용할 수 없는 블록입니다: " + item.blockId());
+        }
+        return block.getDuration() * item.repeatOrOne();
     }
 
     private void saveLayers(Long playlistId, PlaylistSaveRequest request) {
-        saveLayer(playlistId, LayerRole.MAIN, request.main(), DEFAULT_MAIN_VOLUME, false);
-        if (request.background() != null) {
-            saveLayer(playlistId, LayerRole.BACKGROUND, request.background(),
-                    DEFAULT_BACKGROUND_VOLUME, loopOf(request.background()));
+        // 메인 트랙은 순서대로 이어지므로 시작 시간을 저장하지 않음
+        List<ItemRequest> mainItems = request.main().items().stream()
+                .map(i -> new ItemRequest(i.blockId(), i.repeatOrOne(), null)).toList();
+        saveLayer(playlistId, LayerRole.MAIN, request.main().volume(), DEFAULT_MAIN_VOLUME, mainItems);
+
+        if (request.mix() != null) {
+            List<ItemRequest> mixItems = request.mix().items().stream()
+                    .map(i -> new ItemRequest(i.blockId(), i.repeatOrOne(), i.startSeconds()))
+                    .sorted(Comparator.comparingInt(ItemRequest::startSeconds))
+                    .toList();
+            saveLayer(playlistId, LayerRole.MIX, request.mix().volume(), DEFAULT_MIX_VOLUME, mixItems);
         }
     }
 
-    private void saveLayer(Long playlistId, LayerRole role, LayerRequest request, double defaultVolume, boolean loop) {
+    private void saveLayer(Long playlistId, LayerRole role, Double volume, double defaultVolume, List<ItemRequest> items) {
         PlaylistLayer layer = PlaylistLayer.builder()
                 .playlistId(playlistId)
                 .role(role)
-                .volume(request.volume() == null ? defaultVolume : request.volume())
-                .loopToFill(loop)
+                .volume(volume == null ? defaultVolume : volume)
                 .build();
         playlistMapper.insertLayer(layer);
-        playlistMapper.insertLayerBlocks(layer.getId(), request.blockIds());
-    }
-
-    private static boolean loopOf(LayerRequest background) {
-        return background.loop() == null || background.loop();
+        playlistMapper.insertLayerBlocks(layer.getId(), items);
     }
 
     private List<PlaylistSummaryResponse> summaries(List<Playlist> playlists) {

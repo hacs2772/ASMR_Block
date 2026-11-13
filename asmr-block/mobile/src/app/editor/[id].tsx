@@ -1,24 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { playlistApi } from '@/api/endpoints';
-import { BlockPicker } from '@/components/BlockPicker';
-import { TwinTower } from '@/components/TwinTower';
+import { DragGhost } from '@/components/timeline/DragGhost';
+import { useDrag } from '@/components/timeline/dragStore';
+import { Palette } from '@/components/timeline/Palette';
+import { SelectionPanel } from '@/components/timeline/SelectionPanel';
+import { Timeline } from '@/components/timeline/Timeline';
 import { Button, EmptyState } from '@/components/ui';
 import { confirm, notify } from '@/lib/dialog';
 import { useAuth } from '@/store/auth';
-import { toSaveRequest, useEditor } from '@/store/editor';
+import { durationsOf, MAX_TOTAL_SECONDS, toSaveRequest, useEditor } from '@/store/editor';
 import { colors, radius, space } from '@/theme';
 
-/** 쌍둥이 빌딩 편집기. id가 "new"면 새로 만들기 */
+/** 레고 타임라인 편집기. id가 "new"면 새로 만들기 */
 export default function EditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const playlistId = id && id !== 'new' ? Number(id) : null;
   const status = useAuth((s) => s.status);
   const queryClient = useQueryClient();
   const editor = useEditor();
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const dragging = useDrag((s) => s.source !== null);
+  const rootRef = useRef<ComponentRef<typeof View>>(null);
+  const [origin, setOrigin] = useState({ x: 0, y: 0 });
 
   const detail = useQuery({
     queryKey: ['playlist', playlistId],
@@ -44,7 +49,6 @@ export default function EditorScreen() {
       useEditor.getState().markSaved(saved.id);
       queryClient.setQueryData(['playlist', saved.id], saved);
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
-      // 저장하면 바로 플레이어로 → 완성본 만들어 듣기
       router.replace({ pathname: '/player/[id]', params: { id: String(saved.id) } });
     },
     onError: (e) => notify('저장하지 못했어요', (e as Error).message),
@@ -53,7 +57,8 @@ export default function EditorScreen() {
   const handleSave = () => {
     const state = useEditor.getState();
     if (!state.title.trim()) return notify('제목을 입력해주세요.');
-    if (state.main.blocks.length === 0) return notify('메인 동에 블록을 1개 이상 쌓아주세요.');
+    if (state.main.items.length === 0) return notify('메인 트랙에 블록을 1개 이상 놓아주세요.');
+    if (durationsOf(state).total > MAX_TOTAL_SECONDS) return notify('전체 길이는 최대 10시간이에요.');
     save.mutate();
   };
 
@@ -78,60 +83,61 @@ export default function EditorScreen() {
   }
 
   return (
-    <View style={styles.screen}>
+    <View
+      ref={rootRef}
+      style={styles.screen}
+      collapsable={false}
+      onLayout={() => rootRef.current?.measureInWindow((x, y) => setOrigin({ x, y }))}
+    >
       <Stack.Screen
         options={{
           title: playlistId ? '조합 수정' : '새 조합',
-          headerRight: () => (
-            <Button title="저장" onPress={handleSave} loading={save.isPending} style={styles.headerSave} testID="save" />
-          ),
+          headerRight: () => <Button title="저장" onPress={handleSave} loading={save.isPending} style={styles.headerSave} testID="save" />,
         }}
       />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <TextInput
-          style={styles.titleInput}
-          value={editor.title}
-          onChangeText={editor.setTitle}
-          placeholder="조합 이름 (예: 비 오는 밤)"
-          placeholderTextColor={colors.faint}
-          maxLength={100}
-          accessibilityLabel="조합 이름"
-          testID="title-input"
-        />
-        <View style={styles.publicRow}>
-          <Text style={styles.publicLabel}>다른 사람에게 공개</Text>
-          <Switch
-            value={editor.isPublic}
-            onValueChange={editor.setIsPublic}
-            trackColor={{ true: colors.primary, false: colors.border }}
-            thumbColor="#fff"
-            accessibilityLabel="공개"
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" scrollEnabled={!dragging}>
+        <View style={styles.titleRow}>
+          <TextInput
+            style={styles.titleInput}
+            value={editor.title}
+            onChangeText={editor.setTitle}
+            placeholder="조합 이름 (예: 비 오는 밤)"
+            placeholderTextColor={colors.faint}
+            maxLength={100}
+            accessibilityLabel="조합 이름"
+            testID="title-input"
           />
+          <View style={styles.publicBox}>
+            <Text style={styles.publicLabel}>공개</Text>
+            <Switch value={editor.isPublic} onValueChange={editor.setIsPublic}
+              trackColor={{ true: colors.primary, false: colors.border }} thumbColor="#fff" accessibilityLabel="공개" />
+          </View>
         </View>
 
-        <TwinTower />
+        <Timeline />
+        <View style={{ marginTop: space.md }}>
+          <SelectionPanel />
+        </View>
 
-        <Button title="블록 쌓기" icon="layers-outline" onPress={() => setPickerOpen(true)} style={{ marginTop: space.md }} testID="open-picker" />
         {playlistId !== null && (
           <Button title="이 조합 삭제" variant="danger" onPress={handleDelete} style={{ marginTop: space.xl }} />
         )}
       </ScrollView>
-      <BlockPicker visible={pickerOpen} onClose={() => setPickerOpen(false)} />
+      <Palette />
+      <DragGhost origin={origin} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: space.lg, paddingBottom: 60 },
+  content: { padding: space.md, paddingBottom: space.xl },
   headerSave: { minHeight: 34, paddingVertical: 4, paddingHorizontal: 14 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: space.md },
   titleInput: {
-    color: colors.text, fontSize: 20, fontWeight: '700', paddingVertical: space.sm,
-    borderBottomWidth: 1, borderBottomColor: colors.border, marginBottom: space.md,
+    flex: 1, color: colors.text, fontSize: 18, fontWeight: '700', paddingVertical: space.sm, paddingHorizontal: space.md,
+    backgroundColor: colors.card, borderRadius: radius.md,
   },
-  publicRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: colors.card, borderRadius: radius.md, paddingHorizontal: space.md, paddingVertical: space.sm, marginBottom: space.md,
-  },
-  publicLabel: { color: colors.text, fontSize: 15 },
+  publicBox: { alignItems: 'center' },
+  publicLabel: { color: colors.muted, fontSize: 11 },
 });

@@ -13,6 +13,9 @@ public interface CategoryMapper {
 
     boolean existsCategory(Long id);
 
+    /** 소분류(하위 분류가 없는 활성 카테고리)인지 */
+    boolean isLeafCategory(Long id);
+
     List<SoundTag> findAllTags();
 
     int countActiveTags(@Param("ids") Collection<Long> ids);

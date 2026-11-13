@@ -14,12 +14,17 @@
     </insert>
 
     <update id="markProcessing">
-        UPDATE audio_render SET status = 'PROCESSING', error_message = NULL
+        UPDATE audio_render SET status = 'PROCESSING', error_message = NULL, progress = 0
         WHERE composition_hash = #{hash} AND status = 'PENDING'
     </update>
 
+    <update id="updateProgress">
+        UPDATE audio_render SET progress = #{progress}
+        WHERE composition_hash = #{hash} AND status = 'PROCESSING'
+    </update>
+
     <update id="markDone">
-        UPDATE audio_render SET status = 'DONE', file_key = #{fileKey}, duration = #{duration}
+        UPDATE audio_render SET status = 'DONE', file_key = #{fileKey}, duration = #{duration}, progress = 100
         WHERE composition_hash = #{hash}
     </update>
 
@@ -29,7 +34,7 @@
     </update>
 
     <update id="resetToPending">
-        UPDATE audio_render SET status = 'PENDING', file_key = NULL, duration = NULL
+        UPDATE audio_render SET status = 'PENDING', file_key = NULL, duration = NULL, progress = 0
         WHERE composition_hash = #{hash} AND status IN ('FAILED', 'DONE')
     </update>
 

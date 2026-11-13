@@ -33,8 +33,8 @@ public interface PlaylistMapper {
 
     void insertLayer(PlaylistLayer layer);
 
-    /** blockIds 순서대로 sort_order 1, 2, 3... */
-    void insertLayerBlocks(@Param("layerId") Long layerId, @Param("blockIds") List<Long> blockIds);
+    /** items 순서대로 sort_order 1, 2, 3... (blockId, repeat, startSeconds) */
+    void insertLayerBlocks(@Param("layerId") Long layerId, @Param("items") List<PlaylistDtos.ItemRequest> items);
 
     void deleteLayers(Long playlistId);
 

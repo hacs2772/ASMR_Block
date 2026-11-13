@@ -33,7 +33,7 @@ class UserApiTest extends IntegrationTest {
     void deleteAccount() throws Exception {
         Tokens user = newUser();
         long playlistId = idOf(postJson("/api/v1/playlists",
-                "{\"title\":\"탈퇴 전\",\"isPublic\":true,\"main\":{\"blockIds\":[1]}}", user.accessToken())
+                "{\"title\":\"탈퇴 전\",\"isPublic\":true,\"main\":{\"items\":[{\"blockId\":1}]}}", user.accessToken())
                 .andExpect(status().isCreated()));
 
         mvc.perform(bearer(delete("/api/v1/users/me"), user.accessToken())).andExpect(status().isOk());

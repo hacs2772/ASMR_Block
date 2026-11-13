@@ -3,6 +3,7 @@ import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { setSessionExpiredHandler } from '@/api/client';
 import { PlayerProvider } from '@/audio/PlayerProvider';
@@ -38,6 +39,7 @@ export default function RootLayout() {
   }
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider value={theme}>
@@ -47,12 +49,13 @@ export default function RootLayout() {
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="login" options={{ title: '로그인', presentation: 'modal' }} />
               <Stack.Screen name="signup" options={{ title: '회원가입', presentation: 'modal' }} />
-              <Stack.Screen name="editor/[id]" options={{ title: '조합 만들기' }} />
+              <Stack.Screen name="editor/[id]" options={{ title: '조합 만들기', gestureEnabled: false }} />
               <Stack.Screen name="player/[id]" options={{ title: '', presentation: 'modal' }} />
             </Stack>
           </PlayerProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

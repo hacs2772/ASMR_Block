@@ -19,6 +19,11 @@ public class SoundCategory {
     private String name;
     private String color;
     private String icon;
+    private Long parentId;           // null이면 대분류
+    private String description;
+
+    // 조인 데이터 (소분류일 때 대분류 이름)
+    private String parentName;
     private Integer sortOrder;
     private Boolean isActive;
     private LocalDateTime createdAt;

@@ -83,12 +83,17 @@ public abstract class IntegrationTest {
         return login(email, "password123");
     }
 
-    /** 음원 업로드 요청 (license 기본 OWN) */
+    /** 첫 번째 소분류 id (자연 > 비·물) - 블록은 소분류에만 달 수 있음 */
+    protected long leafCategoryId() throws Exception {
+        return ((Number) JsonPath.read(json(mvc.perform(get("/api/v1/categories"))), "$.data[0].children[0].id")).longValue();
+    }
+
+    /** 음원 업로드 요청 (license 기본 OWN, 카테고리 자연 > 비·물) */
     protected ResultActions upload(String token, byte[] audio, String filename, String title) throws Exception {
         return mvc.perform(bearer(multipart("/api/v1/blocks")
                 .file(new MockMultipartFile("file", filename, "audio/mpeg", audio)), token)
                 .param("title", title)
-                .param("categoryId", "1")
+                .param("categoryId", String.valueOf(leafCategoryId()))
                 .param("tagIds", "1")
                 .param("license", "OWN"));
     }

@@ -18,6 +18,7 @@ public class AudioRender {
     private RenderStatus status;
     private String fileKey;
     private Integer duration;
+    private Integer progress;        // 만드는 중 진행률 0~100
     private String errorMessage;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -1,12 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { FiArrowRight, FiMusic, FiLayers, FiHeadphones } from 'react-icons/fi';
 import useAuthStore from '../store/authStore';
+import { blockApi } from '../api/blockApi';
+
+const DEMO_COLORS = ['#22C55E', '#64748B', '#14B8A6', '#3B82F6', '#A855F7', '#EC4899'];
 
 function HomePage() {
-  const { t } = useTranslation(['common', 'block']);
   const { isAuthenticated } = useAuthStore();
+  // 메뉴 트리의 대분류 (서버 기준이라 카테고리가 바뀌어도 그대로 맞음)
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    blockApi
+      .getCategories()
+      .then((res) => setCategories(res.data || []))
+      .catch(() => setCategories([]));
+  }, []);
 
   const features = [
     {
@@ -29,13 +39,6 @@ function HomePage() {
     },
   ];
 
-  const categories = [
-    { name: t('block:filter.nature'), color: '#22C55E', icon: '🌿' },
-    { name: t('block:filter.object'), color: '#3B82F6', icon: '⌨️' },
-    { name: t('block:filter.body'), color: '#A855F7', icon: '🤫' },
-    { name: t('block:filter.food'), color: '#F97316', icon: '🍪' },
-    { name: t('block:filter.environment'), color: '#78716C', icon: '☕' },
-  ];
 
   return (
     <div className="pb-12">
@@ -74,12 +77,12 @@ function HomePage() {
       {/* 블록 시각화 데모 */}
       <section className="py-12">
         <div className="flex justify-center gap-2 flex-wrap px-4">
-          {[1, 2, 3, 4, 5, 6].map((_, i) => (
+          {DEMO_COLORS.map((color, i) => (
             <div
               key={i}
               className="w-16 h-16 rounded-xl animate-pulse"
               style={{
-                backgroundColor: categories[i % categories.length].color,
+                backgroundColor: color,
                 animationDelay: `${i * 0.2}s`,
               }}
             />
@@ -120,13 +123,12 @@ function HomePage() {
           다양한 카테고리
         </h2>
         <div className="flex justify-center gap-4 flex-wrap">
-          {categories.map((cat, index) => (
+          {categories.map((cat) => (
             <Link
-              key={index}
-              to={`/explore?category=${index + 1}`}
+              key={cat.id}
+              to={`/explore?category=${cat.id}`}
               className="flex items-center gap-2 px-4 py-2 rounded-full border border-gray-700 hover:border-gray-500 transition-colors"
             >
-              <span>{cat.icon}</span>
               <span style={{ color: cat.color }}>{cat.name}</span>
             </Link>
           ))}

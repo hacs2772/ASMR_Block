@@ -2,8 +2,9 @@
 
 > 최종 수정일: 2026-11-13 / PostgreSQL 16
 >
-> 실제 테이블 정의는 `backend/src/main/resources/db/migration/V1__init_schema.sql` 이 기준입니다.
-> 서버가 시작될 때 Flyway가 자동 적용합니다. **테이블을 바꿀 때는 `V2__설명.sql` 처럼 새 파일을 추가**하세요 (기존 파일 수정 금지).
+> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 + V2 가 기준입니다.
+> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률)
+> 서버가 시작될 때 Flyway가 자동 적용합니다. **테이블을 바꿀 때는 `V3__설명.sql` 처럼 새 파일을 추가**하세요 (기존 파일 수정 금지).
 > 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 환경에서만 실행).
 
 ---
@@ -16,8 +17,8 @@ users ─┬─ refresh_token (1:N)          로그인 유지 토큰
        ├─ block (1:N, 업로더)
        │    ├─ block_tag (N:M) ── sound_tag
        │    └─ sound_category (N:1)
-       └─ playlist (1:N)               = 쌍둥이 빌딩
-            └─ playlist_layer (1:2)    = 동 (MAIN / BACKGROUND)
+       └─ playlist (1:N)               = 레고 타임라인
+            └─ playlist_layer (1:2)    = 트랙 (MAIN / MIX)
                  └─ playlist_block (1:N) ──→ block (N:1)
 
 audio_render                           완성본 (구성 해시로 재사용, 플레이리스트와 직접 연결 X)
@@ -53,7 +54,7 @@ audio_render                           완성본 (구성 해시로 재사용, �
 
 | 테이블 | 주요 컬럼 | 기본 데이터 (운영 DB에도 들어감) |
 |------|------|------|
-| sound_category | name, color(HEX), icon, sort_order, is_active | 자연 #22C55E, 사물 #3B82F6, 신체 #A855F7, 음식 #F97316, 환경 #78716C |
+| sound_category | name, color(HEX), icon, sort_order, is_active, **parent_id**(대분류면 NULL), description | 대분류 7개(자연·노이즈·장소·세계의 소리·사물·생활·신체·목소리·음식·먹방·트렌드) + 소분류 17개 (예: 장소·세계의 소리 > 일본, 트렌드 > 왁스·슬라임) |
 | sound_tag | name, sort_order, is_active | 부드러운, 날카로운, 바삭한, 둔탁한, 습한, 리드미컬한 |
 
 ## block (ASMR 블록)
@@ -78,35 +79,36 @@ audio_render                           완성본 (구성 해시로 재사용, �
 ## block_tag
 `(block_id, tag_id)` PK, 블록 삭제 시 함께 삭제
 
-## playlist (쌍둥이 빌딩)
+## playlist (레고 타임라인)
 
 | 컬럼 | 타입 | 설명 |
 |------|------|------|
 | id | BIGSERIAL PK | |
 | user_id | FK → users (CASCADE) | |
 | title / description | | |
-| total_duration | INTEGER | 초 (메인 동 길이, 배경이 반복 안 하고 더 길면 배경 길이) |
+| total_duration | INTEGER | 초 = max(메인 트랙 길이, 믹스 트랙 끝), 최대 10시간 |
 | is_public | BOOLEAN | 공개면 비로그인도 조회 가능 |
 | play_count | INTEGER | |
 
-## playlist_layer (동)
+## playlist_layer (트랙)
 
 | 컬럼 | 타입 | 설명 |
 |------|------|------|
 | id | BIGSERIAL PK | |
 | playlist_id | FK → playlist (CASCADE) | |
-| role | VARCHAR(20) | `MAIN`(순서대로 재생) / `BACKGROUND`(동시에 깔림) — 플레이리스트당 각 1개 |
+| role | VARCHAR(20) | `MAIN`(순서대로 이어 재생) / `MIX`(지정한 시각에만 겹쳐 재생) — 플레이리스트당 각 1개 |
 | volume | NUMERIC(3,2) | 0.00 ~ 1.00 |
-| loop_to_fill | BOOLEAN | 배경 동이 메인보다 짧으면 반복 |
 
-## playlist_block (동에 쌓인 블록)
+## playlist_block (트랙에 놓인 블록 = 레고 한 조각)
 
 | 컬럼 | 타입 | 설명 |
 |------|------|------|
 | id | BIGSERIAL PK | |
 | layer_id | FK → playlist_layer (CASCADE) | |
 | block_id | FK → block (삭제 연쇄 없음) | 같은 블록 여러 번 가능 |
-| sort_order | INTEGER | 1층, 2층, 3층… (재생 순서) |
+| sort_order | INTEGER | 메인: 재생 순서 / 믹스: 시작 시각 순 |
+| repeat_count | INTEGER | 연속 반복 횟수 1~200 (V2) |
+| start_seconds | INTEGER | 믹스 트랙의 시작 시각(초), 메인은 NULL (V2) |
 
 ## play_log (재생 기록)
 
@@ -123,12 +125,13 @@ audio_render                           완성본 (구성 해시로 재사용, �
 
 | 컬럼 | 타입 | 설명 |
 |------|------|------|
-| composition_hash | VARCHAR(64) UNIQUE | 구성(파일·순서·볼륨·반복 + 믹싱 버전)의 SHA-256 |
+| composition_hash | VARCHAR(64) UNIQUE | 구성(파일·순서·반복·시작 시각·볼륨 + 믹싱 버전)의 SHA-256 |
 | composition_json | TEXT | 만들 때 쓰는 구성 정보 (플레이리스트가 나중에 바뀌어도 영향 없음) |
 | status | VARCHAR(20) | `PENDING` → `PROCESSING` → `DONE` / `FAILED` |
 | file_key | VARCHAR(500) | `renders/{hash}.mp3` |
 | duration | INTEGER | 실제 파일 길이(초) |
 | error_message | VARCHAR(1000) | 실패 사유 (서버 로그용) |
+| progress | INTEGER | 만드는 중 진행률 0~100 (V2) |
 
 서로 다른 플레이리스트라도 구성이 같으면 같은 해시 → 파일 하나를 함께 씀.
 서버가 재시작되면 `PROCESSING`이던 작업을 `PENDING`으로 되돌려 다시 만듦.
