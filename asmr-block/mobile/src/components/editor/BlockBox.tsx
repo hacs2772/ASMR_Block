@@ -81,13 +81,13 @@ export function BlockBox() {
         </View>
       ) : (
         <>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={styles.chips}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipBar} contentContainerStyle={styles.chips}>
             <Chip label="전체" active={groupId === null} onPress={() => setGroupId(null)} />
             {groups.map((g) => (
               <Chip key={g.id} label={g.name} color={g.color} active={groupId === g.id} onPress={() => setGroupId(g.id)} />
             ))}
           </ScrollView>
-          <ScrollView contentContainerStyle={styles.tiles} scrollEnabled={!dragging}>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.tiles} scrollEnabled={!dragging}>
             {blocks.map((b) => <Tile key={b.id} block={b} />)}
           </ScrollView>
         </>
@@ -130,7 +130,7 @@ function Tile({ block }: { block: Block }) {
   const gesture = useCompetingGestures(pan, tap);
 
   return (
-    <View style={[styles.tile, { width: Math.max(width, 64) }]}>
+    <View style={[styles.tile, { width: Math.max(width, 80) }]}>
       <GestureDetector gesture={gesture}>
         <View collapsable={false} accessibilityRole="button" accessibilityLabel={`${block.title} 넣기`} testID={`tile-${block.id}`}>
           <Brick color={block.category?.color ?? categoryFallbackColor} width={width} height={TILE_HEIGHT}
@@ -152,6 +152,7 @@ const styles = StyleSheet.create({
   hint: { color: colors.faint, fontSize: 12, flexShrink: 1 },
   headLink: { marginLeft: 'auto' },
   linkText: { color: '#C7C8FF', fontSize: 13, fontWeight: '700' },
+  chipBar: { flexGrow: 0, flexShrink: 0 },
   chips: { gap: 6, paddingHorizontal: space.lg, paddingVertical: space.sm },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 14, paddingHorizontal: space.lg, paddingBottom: space.xl, paddingTop: 4 },
   tile: { gap: 4 },

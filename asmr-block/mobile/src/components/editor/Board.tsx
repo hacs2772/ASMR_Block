@@ -9,7 +9,7 @@ import {
   type EditorBlock, type RowKey,
 } from '@/store/editor';
 import { categoryFallbackColor, colors, radius, space } from '@/theme';
-import { Brick, BRICK_HEIGHT, MIX_BRICK_HEIGHT } from './Brick';
+import { Brick, BRICK_HEIGHT, DropSlot, MIX_BRICK_HEIGHT } from './Brick';
 import {
   board, BOARD_PAD, LANE_HEIGHT, LANE_LABEL_HEIGHT, LANE_TOP, MAIN_TOP, RULER_HEIGHT, useBoardScroll, useDrag,
   useDragHandlers,
@@ -75,6 +75,8 @@ export function Board() {
     return placeSlots(list);
   }, [main.items, source, preview]);
 
+  const slotByKey = new Map(slots.map((s, index) => [s.key, { ...s, index }]));
+  const newSlot = slotByKey.get('__new');
   const rowWidth = slots.reduce((w, s) => w + s.width, 0);
   const previewEnd = preview?.row === 'mix' && source ? preview.start + source.block.duration : 0;
   const mixWidth = mix.enabled ? Math.max(mixEnd(mix.items), previewEnd, cycleLength({ main, mix })) * PX_PER_SECOND + 160 : 0;
@@ -100,6 +102,10 @@ export function Board() {
       </View>
 
       <View ref={viewportRef} collapsable={false} onLayout={measure}>
+        {/* 둘째 줄 이름 (스크롤해도 제자리, 시간 말풍선보다 뒤에) */}
+        {mix.enabled && (
+          <Text style={styles.laneLabel} pointerEvents="none">② 둘째 줄 · 원하는 시간에 끌어다 놓기</Text>
+        )}
         <ScrollView
           ref={scrollRef as never}
           horizontal
@@ -120,16 +126,16 @@ export function Board() {
               </View>
             ))}
 
-            {/* 첫째 줄 */}
-            {slots.map((s) =>
-              s.key === '__new' ? (
-                <Brick key={s.key} hole color="" width={s.width} icon={null} title=""
-                  style={[styles.abs, { left: BOARD_PAD + s.x, top: MAIN_TOP }]} />
-              ) : (
-                <DraggableBrick key={s.key} row="main" itemKey={s.key} block={s.block} hole={s.hole}
-                  left={BOARD_PAD + s.x} top={MAIN_TOP} width={s.width} height={BRICK_HEIGHT} icon={iconOf(s.block.category)} />
-              ),
-            )}
+            {/* 첫째 줄: 그리는 순서는 그대로 두고 위치만 바꿈 (끄는 중에 요소 순서가 바뀌면 끌기가 끊김) */}
+            {main.items.map((item) => {
+              const slot = slotByKey.get(item.key);
+              if (!slot) return null;
+              return (
+                <DraggableBrick key={item.key} row="main" itemKey={item.key} block={item.block} hole={slot.hole} z={slot.index}
+                  left={BOARD_PAD + slot.x} top={MAIN_TOP} width={slot.width} height={BRICK_HEIGHT} icon={iconOf(item.block.category)} />
+              );
+            })}
+            {newSlot && <DropSlot width={newSlot.width} style={[styles.abs, { left: BOARD_PAD + newSlot.x, top: MAIN_TOP }]} />}
             {/* 다음 블록이 붙을 자리 (블록 상자에서 누르거나 끌어오기) */}
             <View pointerEvents="none" style={[styles.ghost, { left: BOARD_PAD + rowWidth + 12, top: MAIN_TOP }]}>
               <Text style={styles.ghostPlus}>+</Text>
@@ -142,19 +148,19 @@ export function Board() {
                   <Pressable accessibilityRole="button" accessibilityLabel="이 시간에 소리 넣기"
                     style={StyleSheet.absoluteFill} onPress={(e) => onLaneTap(e.nativeEvent.locationX)} testID="lane-bg" />
                   {mix.items.map((m) => (
-                    <DraggableBrick key={m.key} row="mix" itemKey={m.key} block={m.block}
+                    <DraggableBrick key={m.key} row="mix" itemKey={m.key} block={m.block} z={0}
                       hole={source?.kind === 'mix' && source.key === m.key}
                       left={m.start * PX_PER_SECOND} top={2} width={brickWidth(m.block.duration)} height={MIX_BRICK_HEIGHT}
                       icon={iconOf(m.block.category)} timeLabel={`${formatDuration(m.start)} ~ ${formatDuration(m.start + m.block.duration)}`} />
                   ))}
                   {preview?.row === 'mix' && source && (
                     <View pointerEvents="none" style={[styles.dropOutline, { left: preview.start * PX_PER_SECOND, width: brickWidth(source.block.duration) }]}>
-                      <Text style={styles.bubble}>{formatDuration(preview.start)}부터</Text>
+                      <Bubble text={`${formatDuration(preview.start)}부터`} />
                     </View>
                   )}
                   {mixTarget !== null && !source && (
                     <View pointerEvents="none" style={[styles.mark, { left: mixTarget * PX_PER_SECOND }]}>
-                      <Text style={styles.bubble}>{formatDuration(mixTarget)}에 넣기</Text>
+                      <Bubble text={`${formatDuration(mixTarget)}에 넣기`} />
                     </View>
                   )}
                 </View>
@@ -167,9 +173,6 @@ export function Board() {
             )}
           </View>
         </ScrollView>
-        {mix.enabled && (
-          <Text style={styles.laneLabel} pointerEvents="none">② 둘째 줄 · 원하는 시간에 끌어다 놓기</Text>
-        )}
       </View>
       <Minimap />
     </View>
@@ -177,8 +180,8 @@ export function Board() {
 }
 
 /** 바닥판 위 블록: 누르면 선택, 꾹 눌러서 끌면 옮기기 */
-function DraggableBrick({ row, itemKey, block, hole, left, top, width, height, icon, timeLabel }: {
-  row: RowKey; itemKey: string; block: EditorBlock; hole: boolean; left: number; top: number; width: number; height: number;
+function DraggableBrick({ row, itemKey, block, hole, z, left, top, width, height, icon, timeLabel }: {
+  row: RowKey; itemKey: string; block: EditorBlock; hole: boolean; z: number; left: number; top: number; width: number; height: number;
   icon: ReturnType<ReturnType<typeof useCategoryIcon>>; timeLabel?: string;
 }) {
   const selected = useEditor((s) => s.selected?.key === itemKey);
@@ -203,16 +206,25 @@ function DraggableBrick({ row, itemKey, block, hole, left, top, width, height, i
     <GestureDetector gesture={gesture}>
       <View
         collapsable={false}
-        style={[styles.abs, { left, top, width, height }, selected && { zIndex: 50 }]}
+        style={[styles.abs, { left, top, width, height, zIndex: selected ? 500 : z }]}
         accessibilityRole="button"
         accessibilityLabel={`${row === 'main' ? '첫째 줄' : '둘째 줄'} ${block.title}${block.owned ? '' : ' (내 블록함에 없음)'}`}
         testID={`brick-${row}-${block.id}`}
       >
         <Brick color={block.category?.color ?? categoryFallbackColor} width={width} height={height} icon={icon}
           title={block.title} selected={selected} hole={hole} dimmed={!block.owned} />
-        {selected && timeLabel && <Text style={styles.bubble} pointerEvents="none">{timeLabel}</Text>}
+        {selected && timeLabel && <Bubble text={timeLabel} />}
       </View>
     </GestureDetector>
+  );
+}
+
+/** 시간 말풍선 (블록이 좁아도 한 줄로) */
+function Bubble({ text }: { text: string }) {
+  return (
+    <View pointerEvents="none" style={styles.bubbleBox}>
+      <Text style={styles.bubble} numberOfLines={1}>{text}</Text>
+    </View>
   );
 }
 
@@ -291,10 +303,10 @@ const styles = StyleSheet.create({
     borderColor: '#C7C8FF', backgroundColor: 'rgba(99,102,241,0.2)',
   },
   mark: { position: 'absolute', top: 0, width: 3, height: LANE_HEIGHT, marginLeft: -1, borderRadius: 2, backgroundColor: '#C7C8FF' },
+  bubbleBox: { position: 'absolute', bottom: '100%', left: -2, width: 160, marginBottom: 4, flexDirection: 'row' },
   bubble: {
-    position: 'absolute', bottom: '100%', left: -2, marginBottom: 4, backgroundColor: colors.primary, color: '#fff',
-    fontSize: 11, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 6, overflow: 'hidden',
-    fontVariant: ['tabular-nums'],
+    backgroundColor: colors.primary, color: '#fff', fontSize: 11, fontWeight: '800', paddingHorizontal: 6, paddingVertical: 1,
+    borderRadius: 6, overflow: 'hidden', fontVariant: ['tabular-nums'],
   },
   guide: { position: 'absolute', top: 0, bottom: 0, width: 2, marginLeft: -1, backgroundColor: '#C7C8FF', opacity: 0.8 },
   miniWrap: { paddingHorizontal: space.md, paddingBottom: space.sm, gap: 4 },

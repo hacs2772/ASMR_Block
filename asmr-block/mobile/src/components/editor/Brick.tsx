@@ -17,7 +17,7 @@ type Props = {
   icon: IconName | null;
   title: string;
   selected?: boolean;
-  /** 끌고 있는 자리 표시 (점선) */
+  /** 끌고 있는 블록의 원래 자리 (흐리게 + 점선). 손가락 아래 요소가 사라지면 끌기가 멈춰서 모양은 그대로 둠 */
   hole?: boolean;
   /** 내 블록함에 없는 블록 */
   dimmed?: boolean;
@@ -30,9 +30,6 @@ type Props = {
  * 폭 = 소리 길이, 색 = 카테고리, 아이콘으로 구분하고 긴 블록에만 이름.
  */
 export function Brick({ color, width, height = BRICK_HEIGHT, icon, title, selected, hole, dimmed, style }: Props) {
-  if (hole) {
-    return <View style={[styles.hole, { width, height }, style]} pointerEvents="none" />;
-  }
   const base = shade(color, -0.2);
   const studColor = shade(base, 0.25);
   const studHeight = Math.round(height * 0.24);
@@ -40,7 +37,7 @@ export function Brick({ color, width, height = BRICK_HEIGHT, icon, title, select
   const iconSize = height >= BRICK_HEIGHT ? 17 : 14;
 
   return (
-    <View style={[{ width, height, opacity: dimmed ? 0.45 : 1 }, selected && styles.lifted, style]} pointerEvents="box-none">
+    <View style={[{ width, height, opacity: hole ? 0.3 : dimmed ? 0.45 : 1 }, selected && !hole && styles.lifted, style]} pointerEvents="box-none">
       {/* 오른쪽 돌기 */}
       <View style={[styles.stud, { top: height * 0.16, height: studHeight, backgroundColor: studColor }]} />
       <View style={[styles.stud, { bottom: height * 0.22, height: studHeight, backgroundColor: studColor }]} />
@@ -55,8 +52,14 @@ export function Brick({ color, width, height = BRICK_HEIGHT, icon, title, select
           {showName && <Text style={[styles.name, height < BRICK_HEIGHT && { fontSize: 12 }]} numberOfLines={1}>{title}</Text>}
         </View>
       </LinearGradient>
+      {hole && <View style={[styles.hole, StyleSheet.absoluteFill]} pointerEvents="none" />}
     </View>
   );
+}
+
+/** 블록 상자에서 끌어올 때 첫째 줄에 놓일 자리 */
+export function DropSlot({ width, height = BRICK_HEIGHT, style }: { width: number; height?: number; style?: StyleProp<ViewStyle> }) {
+  return <View style={[styles.hole, { width, height }, style]} pointerEvents="none" />;
 }
 
 const styles = StyleSheet.create({
