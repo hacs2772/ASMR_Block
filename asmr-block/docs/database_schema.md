@@ -2,9 +2,9 @@
 
 > 최종 수정일: 2026-11-13 / PostgreSQL 16
 >
-> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 + V2 가 기준입니다.
-> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률)
-> 서버가 시작될 때 Flyway가 자동 적용합니다. **테이블을 바꿀 때는 `V3__설명.sql` 처럼 새 파일을 추가**하세요 (기존 파일 수정 금지).
+> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V4 가 기준입니다.
+> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘)
+> 서버가 시작될 때 Flyway가 자동 적용합니다. **테이블을 바꿀 때는 `V5__설명.sql` 처럼 새 파일을 추가**하세요 (기존 파일 수정 금지).
 > 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 환경에서만 실행).
 
 ---
@@ -13,6 +13,7 @@
 
 ```
 users ─┬─ refresh_token (1:N)          로그인 유지 토큰
+       ├─ user_block (N:M) ── block    내 블록함 (상점에서 담은 블록)
        ├─ play_log (1:N)               재생 기록
        ├─ block (1:N, 업로더)
        │    ├─ block_tag (N:M) ── sound_tag
@@ -54,7 +55,7 @@ audio_render                           완성본 (구성 해시로 재사용, �
 
 | 테이블 | 주요 컬럼 | 기본 데이터 (운영 DB에도 들어감) |
 |------|------|------|
-| sound_category | name, color(HEX), icon, sort_order, is_active, **parent_id**(대분류면 NULL), description | 대분류 7개(자연·노이즈·장소·세계의 소리·사물·생활·신체·목소리·음식·먹방·트렌드) + 소분류 17개 (예: 장소·세계의 소리 > 일본, 트렌드 > 왁스·슬라임) |
+| sound_category | name, color(HEX), icon(앱 아이콘 이름, 소분류마다 - V4), sort_order, is_active, **parent_id**(대분류면 NULL), description | 대분류 7개(자연·노이즈·장소·세계의 소리·사물·생활·신체·목소리·음식·먹방·트렌드) + 소분류 17개 (예: 장소·세계의 소리 > 일본, 트렌드 > 왁스·슬라임) |
 | sound_tag | name, sort_order, is_active | 부드러운, 날카로운, 바삭한, 둔탁한, 습한, 리드미컬한 |
 
 ## block (ASMR 블록)
@@ -67,7 +68,8 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | master_file_key | VARCHAR(500) | 업로드 원본 키 (나중에 더 좋은 품질로 재변환용) |
 | thumbnail_key | VARCHAR(500) | |
 | duration | INTEGER | 초 |
-| price | INTEGER | 0 = 무료 |
+| price | INTEGER | **코인**, 0 = 무료 |
+| preview_key | VARCHAR(500) | 유료 블록 맛보기(앞 30초) 키 `previews/{id}-30s.mp3` (V3) |
 | category_id | FK → sound_category | |
 | uploader_id | FK → users | |
 | license | VARCHAR(30) | `CC0` / `CC_BY`(출처 표기 필요) / `OWN`(직접 녹음) / `CREATOR` |
@@ -76,10 +78,21 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | status | VARCHAR(20) | `PENDING` → `APPROVED` / `REJECTED` (승인된 것만 공개) |
 | is_active | BOOLEAN | **블록은 삭제하지 않고 비활성화** (남의 플레이리스트가 깨지지 않도록) |
 
+## user_block (내 블록함, V3)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| user_id | FK → users (CASCADE) | PK (user_id, block_id) |
+| block_id | FK → block | |
+| source | VARCHAR(20) | `FREE`(무료 담기, 뺄 수 있음) / `PURCHASE`(구매) / `CREATOR`(직접 올림, 승인 시 자동) / `GRANT`(운영자 지급) |
+| acquired_at | TIMESTAMP | 담은 시각 |
+
+편집기·플레이리스트에는 여기 있는 블록만 쓸 수 있음. 같은 블록을 조합 안에서 여러 번 써도 한 줄이면 충분.
+
 ## block_tag
 `(block_id, tag_id)` PK, 블록 삭제 시 함께 삭제
 
-## playlist (레고 타임라인)
+## playlist (레고 블록 두 줄)
 
 | 컬럼 | 타입 | 설명 |
 |------|------|------|
@@ -88,6 +101,7 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | title / description | | |
 | total_duration | INTEGER | 초 = max(메인 트랙 길이, 믹스 트랙 끝), 최대 10시간 |
 | is_public | BOOLEAN | 공개면 비로그인도 조회 가능 |
+| listen_minutes | INTEGER | 얼마나 들을까요? 0 = 한 바퀴만, 그 외 분 (0~600, V3) |
 | play_count | INTEGER | |
 
 ## playlist_layer (트랙)

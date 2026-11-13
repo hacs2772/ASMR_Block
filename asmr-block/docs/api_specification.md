@@ -13,10 +13,11 @@
 2. [인증 (Auth)](#2-인증-auth)
 3. [회원 (User)](#3-회원-user)
 4. [카테고리 / 태그](#4-카테고리--태그)
-5. [블록 (Block)](#5-블록-block)
-6. [플레이리스트 = 레고 타임라인 (Playlist)](#6-플레이리스트--레고-타임라인-playlist)
-7. [완성본 (Render)](#7-완성본-render)
-8. [관리자 (Admin)](#8-관리자-admin)
+5. [블록 상점 (Block)](#5-블록-상점-block)
+6. [내 블록함 (Library)](#6-내-블록함-library)
+7. [플레이리스트 = 레고 블록 두 줄 (Playlist)](#7-플레이리스트--레고-블록-두-줄-playlist)
+8. [완성본 (Render)](#8-완성본-render)
+9. [관리자 (Admin)](#9-관리자-admin)
 
 ---
 
@@ -37,6 +38,7 @@
 | 200 / 201 | 성공 / 생성됨 | |
 | 400 | 요청 값 오류 | `VALIDATION_ERROR`, `BAD_REQUEST` |
 | 401 | 로그인 필요 또는 **Access Token 만료** → 토큰 갱신 후 재시도 | `UNAUTHORIZED` |
+| 402 | 유료 블록이라 구매가 필요 (구매 기능 준비 중) | `PURCHASE_REQUIRED` |
 | 403 | 권한 없음 (남의 비공개 플레이리스트, 관리자 전용 등) | `FORBIDDEN` |
 | 404 | 없음 | `NOT_FOUND` |
 | 409 | 중복 (이메일) | `CONFLICT` |
@@ -54,7 +56,8 @@
 ```
 
 ### 음원 URL
-`fileUrl` 은 로그인 없이 재생 가능하며, 구간 탐색(Range 요청)을 지원합니다.
+`fileUrl` / `previewUrl` 은 로그인 없이 재생 가능하며, 구간 탐색(Range 요청)을 지원합니다.
+**유료 블록의 전체 음원(`fileUrl`)은 내 블록함에 있는 사람에게만** 내려가고, 다른 사람에게는 `null` + 앞 30초 `previewUrl`만 내려갑니다.
 개발 환경에서는 **요청이 들어온 주소 기준**으로 만들어집니다. 휴대폰이 `http://192.168.0.10:8080`으로 요청하면
 `http://192.168.0.10:8080/files/...` 가 돌아옵니다. 운영에서는 `APP_STORAGE_PUBLIC_BASE_URL`(CDN 주소)을 씁니다.
 
@@ -140,40 +143,53 @@
 
 ---
 
-## 5. 블록 (Block)
+## 5. 블록 상점 (Block)
+
+듣는 사람은 블록 상점에서 블록을 **담고(내 블록함)**, 편집기에서는 **담은 블록만** 씁니다.
+같은 블록을 조합 안에서 몇 번 복제해도 추가 비용은 없습니다.
+- `price` = **코인** (0이면 무료). 무료 블록은 바로 담기, 유료 블록은 구매 기능(코인 + 구독 예정)이 열리면 담김
+- 유료 블록은 사기 전 **앞 30초 맛보기**(`previewUrl`)만 들을 수 있음
 
 | Method | URL | 인증 | 설명 |
 |------|------|------|------|
-| GET | `/blocks` | - | 목록 (승인된 블록만) |
+| GET | `/blocks` | - (로그인하면 `owned` 표시) | 목록 (승인된 블록만) |
 | GET | `/blocks/trending` | - | **요즘 뜨는 소리**: 최근 `days`(기본 7)일 재생 수 순, `size` 기본 10 → `recentPlays` 포함 |
 | GET | `/blocks/{id}` | - | 상세 (승인 전이면 404) |
 | POST | `/blocks` | 필요 | **음원 업로드** (multipart) → 검수 대기 |
 | POST | `/blocks/{id}/play` | 필요 | 재생 기록 |
 
-**목록 쿼리**: `categoryId` (대분류면 그 아래 소분류까지), `tagIds=1,2` (하나라도 달린 블록), `keyword` (제목), `sort=latest|popular`, `page`, `size`
+**목록 쿼리**: `categoryId` (대분류면 그 아래 소분류까지), `free=true|false` (무료만 / 유료만), `tagIds=1,2` (하나라도 달린 블록), `keyword` (제목), `sort=latest|popular`, `page`, `size`
 
 **BlockResponse**
 ```json
 {
-  "id": 1,
-  "title": "잔잔한 빗소리",
-  "description": "창밖에 고르게 내리는 비",
-  "fileUrl": "http://localhost:8080/files/samples/rain.mp3",
+  "id": 14,
+  "title": "왁스 부수기",
+  "description": "굳은 왁스를 바삭바삭 깨는 소리",
+  "fileUrl": null,
+  "previewUrl": "http://localhost:8080/files/previews/14-30s.mp3",
   "thumbnailUrl": null,
   "duration": 180,
-  "price": 0,
+  "price": 30,
+  "owned": false,
   "license": "OWN",
   "sourceUrl": null,
   "attribution": null,
   "status": "APPROVED",
-  "category": { "id": 8, "name": "비·물", "color": "#22C55E", "icon": null, "parentId": 1, "parentName": "자연" },
-  "tags": [{ "id": 1, "name": "부드러운" }, { "id": 5, "name": "습한" }],
+  "category": { "id": 23, "name": "왁스·슬라임", "color": "#EC4899", "icon": "color-fill", "parentId": 7, "parentName": "트렌드" },
+  "tags": [{ "id": 2, "name": "날카로운" }, { "id": 3, "name": "바삭한" }],
   "uploader": { "id": 1, "nickname": "관리자" },
-  "playCount": 1500,
-  "recentPlays": null,
+  "playCount": 85,
+  "recentPlays": 40,
   "createdAt": "2026-11-13T10:00:00"
 }
 ```
+| 필드 | 설명 |
+|------|------|
+| `owned` | 내 블록함에 있는지 (비로그인이면 false) |
+| `fileUrl` | 전체 음원. 무료이거나 `owned`일 때만, 아니면 `null` |
+| `previewUrl` | 미리듣기. 무료는 전체와 같고, 유료는 앞 30초 (아직 못 만들었으면 `null`) |
+| `category.icon` | 앱 블록에 그리는 아이콘 (Ionicons 이름, 소분류마다 다름 - V4) |
 
 ### 5.1 음원 업로드 `POST /blocks` (multipart/form-data)
 
@@ -188,7 +204,8 @@
 | `sourceUrl` | | 원본 출처 |
 | `attribution` | `CC_BY`면 ✅ | 출처 표기 문구 |
 
-서버 처리: 원본 보관 → **44.1kHz 스테레오 MP3, 음량 -24 LUFS로 변환** → `status: PENDING` 으로 등록 (관리자 승인 후 공개)
+서버 처리: 원본 보관 → **44.1kHz 스테레오 MP3, 음량 -24 LUFS로 변환** → `status: PENDING` 으로 등록 (관리자 승인 후 공개).
+승인되면 **올린 사람의 블록함에 자동으로** 들어갑니다.
 
 ### 5.2 재생 기록 `POST /blocks/{id}/play`
 같은 사용자가 30분 안에 다시 재생하면 세지 않습니다.
@@ -198,17 +215,32 @@
 
 ---
 
-## 6. 플레이리스트 = 레고 타임라인 (Playlist)
+## 6. 내 블록함 (Library)
 
-플레이리스트는 **왼쪽에서 오른쪽으로 흐르는 타임라인**입니다.
+| Method | URL | 인증 | 설명 |
+|------|------|------|------|
+| GET | `/me/blocks` | 필요 | 내 블록함 (최근에 담은 순, 모두 `owned: true`) |
+| POST | `/me/blocks/{blockId}` | 필요 | **담기** - 무료 블록만. 이미 있으면 그대로 성공. 유료면 **402** `PURCHASE_REQUIRED` |
+| DELETE | `/me/blocks/{blockId}` | 필요 | 빼기 - 무료로 담은 블록만 (구매·지급·직접 올린 블록은 400) |
 
-| 트랙 | 설명 |
+- 새로 가입하면 **빈 블록함**으로 시작
+- 조합에 들어 있는 블록을 빼도 그 조합의 완성본은 그대로 들을 수 있지만, 다시 저장하려면 다시 담아야 함
+
+---
+
+## 7. 플레이리스트 = 레고 블록 두 줄 (Playlist)
+
+플레이리스트는 **왼쪽에서 오른쪽으로 흐르는 레고 블록 줄**입니다. 블록 길이 = 소리 길이.
+
+| 줄 | 설명 |
 |------|------|
-| **메인 트랙** `main` (필수) | 블록을 **순서대로 빈틈없이** 이어 재생. 대부분의 사람은 이것만 씀 |
-| **믹스 트랙** `mix` (선택) | 블록을 **원하는 시각(`startSeconds`)에만** 놓아 메인과 겹쳐 재생. 사이사이는 빈칸 (예: 바람 소리 2:00~5:00 구간에만 빗소리) |
+| **첫째 줄** `main` (필수) | 블록을 **순서대로 빈틈없이** 이어 재생. 대부분의 사람은 이것만 씀 |
+| **둘째 줄** `mix` (선택) | 첫째 줄과 **따로 흐름**. 블록을 **원하는 시각(`startSeconds`)에만** 놓아 겹쳐 재생, 사이사이는 빈칸 (예: 바람 소리 2:00~5:00 구간에만 빗소리) |
 
-- 블록마다 **반복 횟수(`repeat`, 1~200)**: "빗소리 ×20" 처럼 긴 조합도 조각 하나로
-- **총 재생 시간** = max(메인 트랙 길이, 믹스 트랙 마지막 조각이 끝나는 시각), **최대 10시간**
+- 편집기에는 **내 블록함에 담은 블록만** 쓸 수 있음 (없으면 400). 같은 블록은 몇 번이든 무료
+- 이어진 같은 블록은 **반복 횟수(`repeat`, 1~200)** 하나로 묶어 저장 (앱이 복제한 블록을 묶어서 보냄)
+- **한 바퀴 길이** = max(첫째 줄 길이, 둘째 줄 마지막 블록이 끝나는 시각), **최대 10시간**
+- **얼마나 들을까요?** `listenMinutes`: 0 = 한 바퀴만, 30/60/180/480 등 = 앱이 완성본(한 바퀴)을 그 시간 동안 이어서 반복 재생하고 끝에 서서히 작아지며 꺼짐 (최대 600)
 
 | Method | URL | 인증 | 설명 |
 |------|------|------|------|
@@ -220,12 +252,13 @@
 | DELETE | `/playlists/{id}` | 본인 | 삭제 |
 | POST | `/playlists/{id}/play` | 필요 | 재생 기록 (블록과 같은 규칙) |
 
-### 6.1 저장 요청 (생성/수정 동일)
+### 7.1 저장 요청 (생성/수정 동일)
 ```json
 {
   "title": "산에서 빗물 떨어지는 소리",
   "description": "숲속 바람에 중간중간 빗소리",
   "isPublic": true,
+  "listenMinutes": 60,
   "main": { "volume": 0.8, "items": [ { "blockId": 3, "repeat": 3 } ] },
   "mix":  { "volume": 0.6, "items": [
       { "blockId": 1, "startSeconds": 120 },
@@ -233,25 +266,27 @@
   ] }
 }
 ```
-- `items`: 트랙마다 1~200개, **승인된 블록만**. `repeat` 생략 시 1
+- `items`: 트랙마다 1~200개, **승인되고 내 블록함에 있는 블록만**. `repeat` 생략 시 1
+- `listenMinutes`: 0~600 (생략 시 0 = 한 바퀴만)
 - 메인 트랙: 배열 순서대로 이어짐 (`startSeconds` 무시)
 - 믹스 트랙: `startSeconds` **필수**, 조각끼리 **겹치면 400**. 시작 시각 순으로 저장
 - `volume`: 0.0~1.0 (생략 시 메인 1.0 / 믹스 0.5)
 - `mix` 생략 또는 `null` → 메인 트랙만
 
-**Error:** 400 (빈 트랙, 승인 안 된 블록, 반복 범위, 믹스 겹침/시작 시간 없음, 10시간 초과)
+**Error:** 400 (빈 트랙, 승인 안 된 블록, **내 블록함에 없는 블록**, 반복 범위, 믹스 겹침/시작 시간 없음, 10시간 초과, 재생 시간 범위)
 
-### 6.2 상세 응답 (PlaylistDetailResponse)
+### 7.2 상세 응답 (PlaylistDetailResponse)
 ```json
 {
   "id": 3, "title": "산에서 빗물 떨어지는 소리", "isPublic": true, "playCount": 12,
-  "totalDuration": 540,
+  "totalDuration": 540, "listenMinutes": 60,
   "owner": { "id": 2, "nickname": "테스트유저" },
   "main": {
     "role": "MAIN", "volume": 0.8, "duration": 540,
     "items": [
       { "position": 1, "blockId": 3, "title": "숲속 바람", "fileUrl": "http://.../wind.mp3",
         "duration": 180, "repeat": 3, "startSeconds": null, "totalDuration": 540, "playable": true,
+        "owned": true, "price": 0,
         "category": { "id": 9, "name": "바람·숲", "color": "#22C55E", "parentId": 1, "parentName": "자연" } }
     ]
   },
@@ -269,11 +304,12 @@
 - `duration` = 블록 1번 길이, `totalDuration` = `duration × repeat`
 - 믹스 트랙 `duration` = 마지막 조각이 끝나는 시각
 - `playable: false` 인 블록은 나중에 비활성화/검수 취소된 블록 (완성본에서 빠짐)
+- `owned`: 보는 사람의 블록함에 있는지. 유료 블록의 `fileUrl`은 `owned`일 때만 (남의 공개 조합은 완성본으로 들을 수 있음)
 
-### 6.3 목록 응답 (PlaylistSummaryResponse)
+### 7.3 목록 응답 (PlaylistSummaryResponse)
 ```json
 {
-  "id": 3, "title": "...", "isPublic": true, "playCount": 12, "totalDuration": 540,
+  "id": 3, "title": "...", "isPublic": true, "playCount": 12, "totalDuration": 540, "listenMinutes": 60,
   "owner": { "id": 2, "nickname": "테스트유저" },
   "blockCount": 3, "hasMix": true, "previewColors": ["#22C55E"], "createdAt": "..."
 }
@@ -281,12 +317,12 @@
 
 ---
 
-## 7. 완성본 (Render)
+## 8. 완성본 (Render)
 
-**완성본** = 플레이리스트의 두 동을 서버(ffmpeg)가 **하나의 파일로 합친 것**.
+**완성본** = 플레이리스트의 두 줄을 서버(ffmpeg)가 **하나의 파일로 합친 것** (한 바퀴).
 앱은 이 파일 하나만 재생하면 되므로 끊김 없는 재생, 백그라운드 재생, 오프라인 저장이 쉬워집니다.
 
-처리 내용: 메인 트랙 조각을 크로스페이드(1.5초)로 이음 → 믹스 조각은 앞뒤 2초 페이드 후 지정한 시각에 겹침 → 트랙별 볼륨 → 리미터(소리 깨짐 방지) → 전체 앞뒤 페이드(3초)
+처리 내용: 메인 트랙 조각을 크로스페이드(1.5초)로 이음 → 믹스 조각은 앞뒤 2초 페이드 후 지정한 시각에 겹침 → 트랙별 볼륨 → 리미터(소리 깨짐 방지) → 전체 앞뒤 페이드(1초 - 반복 재생 때 이음매가 크게 끊기지 않게)
 구성(파일·순서·반복·위치·볼륨)이 같으면 **이미 만든 파일을 재사용**합니다. 1시간이 넘으면 128kbps로 만들어 파일 크기를 줄입니다.
 
 | Method | URL | 인증 | 설명 |
@@ -308,22 +344,26 @@
 
 > 플레이리스트를 수정하면 구성이 바뀌므로 새 완성본을 요청해야 합니다 (상세의 `render.status`가 `NOT_REQUESTED`로 바뀜).
 > 소요 시간 참고 (개발 서버 1코어 기준): 9분짜리 약 13초, 18분짜리 약 27초, **8시간짜리 약 12분 (파일 약 460MB, 128kbps)**
-> 밤새 듣는다면 30분~1시간 조합 + 플레이어의 "반복 재생" + 수면 타이머(최대 8시간)도 좋은 방법입니다.
+> 밤새 들을 때는 8시간짜리를 만들지 않고, 한 바퀴 완성본을 `listenMinutes` 동안 반복 재생합니다 (서버 부담·용량↓).
 
 ---
 
-## 8. 관리자 (Admin)
+## 9. 관리자 (Admin)
 
 `role: ADMIN` 계정만 호출 가능 (아니면 403). 개발 환경 관리자: `admin@asmrblock.com` / `password123`
 
 | Method | URL | 설명 |
 |------|------|------|
 | GET | `/admin/blocks?status=PENDING` | 검수 목록 (`PENDING` / `APPROVED` / `REJECTED`) |
-| PATCH | `/admin/blocks/{id}/status` | 승인/거절 `{ "status": "APPROVED" }` |
+| PATCH | `/admin/blocks/{id}/status` | 승인/거절 `{ "status": "APPROVED" }` - 승인되면 올린 사람 블록함에 넣고, 유료면 맛보기 생성 |
+| PATCH | `/admin/blocks/{id}/price` | 가격(코인) `{ "price": 30 }` (0~10000, 0 = 무료). 유료가 되면 **앞 30초 맛보기 파일**(`previews/{id}-30s.mp3`)을 만듦 |
+
+관리자 목록·응답에는 유료 블록도 `fileUrl`(전체 음원)이 들어갑니다 (검수용).
 
 ---
 
 ## 향후 추가 예정
-- 블록 구매 / 구독, 크리에이터 수익 배분 (`play_log` 기반)
+- **코인 충전(인앱결제) → 코인으로 블록 구매 + 구독**, 크리에이터 수익 배분 (`play_log` 기반)
+- 유료 원본 보호 강화: S3/R2 서명된 URL
 - 좋아요 / 신고 / 추천
 - 저장소 S3/R2 + CDN
