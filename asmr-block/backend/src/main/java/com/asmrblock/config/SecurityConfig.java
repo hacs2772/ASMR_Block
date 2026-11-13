@@ -44,12 +44,16 @@ public class SecurityConfig {
                 .authenticationEntryPoint(errorResponder.authenticationEntryPoint())
                 .accessDeniedHandler(errorResponder.accessDeniedHandler()))
             .authorizeHttpRequests(auth -> auth
+                // 관리자 전용 (블록 승인 등)
+                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 // 로그인 없이 가능
-                .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login",
+                    "/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll()
                 .requestMatchers(HttpMethod.GET,
                     "/api/v1/categories", "/api/v1/tags",
                     "/api/v1/blocks", "/api/v1/blocks/*",
-                    "/api/v1/playlists/*"          // 공개 플레이리스트 공유 링크 (비공개는 서비스에서 막음)
+                    "/api/v1/playlists/public",
+                    "/api/v1/playlists/*", "/api/v1/playlists/*/render"  // 공개 플레이리스트 (비공개는 서비스에서 막음)
                 ).permitAll()
                 .requestMatchers(
                     "/files/**",                    // 음원 파일

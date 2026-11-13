@@ -19,12 +19,44 @@
     "title": "조합 편집기",
     "blocks": "블록 목록",
     "myBlocks": "내 조합",
-    "dragHint": "블록을 드래그하여 순서를 변경하세요",
+    "dragHint": "블록을 끌어서 같은 동 안에서 층을 바꿀 수 있어요",
     "emptyBlocks": "블록을 추가해주세요",
-    "selectBlocks": "왼쪽에서 블록을 선택하세요"
+    "selectBlocks": "왼쪽에서 블록을 선택하세요",
+    "addHint": "+ 를 누르면 {{tower}}에 쌓여요"
   },
   "visibility": {
     "public": "공개",
     "private": "비공개"
+  },
+  "hasBackground": "배경 동",
+  "tower": {
+    "main": "메인 동",
+    "background": "배경 동",
+    "mainHint": "아래층부터 순서대로 재생",
+    "backgroundHint": "메인과 동시에 깔리는 소리",
+    "stackHere": "눌러서 여기에 쌓기",
+    "stacking": "여기에 쌓는 중",
+    "volume": "볼륨",
+    "loop": "짧으면 반복",
+    "loopGhost": "반복",
+    "remove": "배경 동 빼기",
+    "addBackground": "배경 동 추가 (빗소리·바람처럼 계속 깔릴 소리)",
+    "emptyMain": "왼쪽 블록의 + 를 눌러 쌓아보세요",
+    "emptyBackground": "빗소리·바람처럼 계속 깔릴 소리를 쌓아보세요",
+    "added": "{{tower}}에 \"{{title}}\" 쌓음"
+  },
+  "render": {
+    "hint": "두 동을 끊김 없이 하나로 합쳐 들을 수 있어요",
+    "saveFirst": "저장하면 완성본을 만들어 들을 수 있어요",
+    "unsaved": "바뀐 내용을 저장하면 새 완성본을 만들 수 있어요",
+    "make": "완성본 만들기",
+    "making": "완성본 만드는 중… (보통 몇 초~수십 초)",
+    "failed": "완성본을 만들지 못했어요.",
+    "retry": "다시 만들기",
+    "ready": "완성본"
+  },
+  "validation": {
+    "title": "제목을 입력해주세요.",
+    "mainEmpty": "메인 동에 블록을 1개 이상 쌓아주세요."
   }
 }

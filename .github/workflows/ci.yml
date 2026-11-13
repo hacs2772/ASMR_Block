@@ -21,6 +21,8 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
+      - name: ffmpeg 설치 (음원 변환/완성본 테스트용)
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
       - name: 테스트 실행 (Testcontainers가 PostgreSQL을 자동으로 띄움)
         run: ./gradlew test --no-daemon
       - name: 테스트 결과 업로드

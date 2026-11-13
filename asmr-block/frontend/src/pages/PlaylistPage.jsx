@@ -77,14 +77,10 @@ function PlaylistPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {playlists.map((playlist) => (
             <div key={playlist.id} className="card hover:border-gray-700 transition-colors">
-              {/* 블록 미리보기 */}
-              <div className="flex gap-1 mb-3">
-                {(playlist.previewBlocks || []).slice(0, 6).map((block, i) => (
-                  <div
-                    key={i}
-                    className="w-8 h-8 rounded"
-                    style={{ backgroundColor: block.color || '#666' }}
-                  />
+              {/* 메인 동 블록 색 미리보기 */}
+              <div className="flex items-center gap-1 mb-3">
+                {(playlist.previewColors || []).slice(0, 6).map((color, i) => (
+                  <div key={i} className="w-8 h-8 rounded" style={{ backgroundColor: color }} />
                 ))}
                 {playlist.blockCount > 6 && (
                   <div className="w-8 h-8 rounded bg-gray-700 flex items-center justify-center text-xs text-gray-400">
@@ -94,8 +90,12 @@ function PlaylistPage() {
               </div>
 
               <h3 className="font-medium text-white mb-1">{playlist.title}</h3>
-              <p className="text-sm text-gray-400 mb-3">
-                {playlist.blockCount} {t('blockCount')} • {formatDuration(playlist.totalDuration)}
+              <p className="text-sm text-gray-400 mb-3 flex flex-wrap items-center gap-x-2">
+                <span>{playlist.blockCount} {t('blockCount')} • {formatDuration(playlist.totalDuration)}</span>
+                {playlist.hasBackground && (
+                  <span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-300">{t('hasBackground')}</span>
+                )}
+                <span className="text-xs text-gray-500">{playlist.isPublic ? t('visibility.public') : t('visibility.private')}</span>
               </p>
 
               <div className="flex gap-2">

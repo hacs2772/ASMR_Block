@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.asmrblock.render.RenderMapper">
+
+    <select id="findByHash" resultType="com.asmrblock.render.AudioRender">
+        SELECT * FROM audio_render WHERE composition_hash = #{hash}
+    </select>
+
+    <insert id="insertIfAbsent">
+        INSERT INTO audio_render (composition_hash, composition_json)
+        VALUES (#{hash}, #{json})
+        ON CONFLICT (composition_hash) DO NOTHING
+    </insert>
+
+    <update id="markProcessing">
+        UPDATE audio_render SET status = 'PROCESSING', error_message = NULL
+        WHERE composition_hash = #{hash} AND status = 'PENDING'
+    </update>
+
+    <update id="markDone">
+        UPDATE audio_render SET status = 'DONE', file_key = #{fileKey}, duration = #{duration}
+        WHERE composition_hash = #{hash}
+    </update>
+
+    <update id="markFailed">
+        UPDATE audio_render SET status = 'FAILED', error_message = #{errorMessage}
+        WHERE composition_hash = #{hash}
+    </update>
+
+    <update id="resetToPending">
+        UPDATE audio_render SET status = 'PENDING', file_key = NULL, duration = NULL
+        WHERE composition_hash = #{hash} AND status IN ('FAILED', 'DONE')
+    </update>
+
+    <update id="resetProcessingToPending">
+        UPDATE audio_render SET status = 'PENDING' WHERE status = 'PROCESSING'
+    </update>
+
+    <select id="findPendingHashes" resultType="string">
+        SELECT composition_hash FROM audio_render WHERE status = 'PENDING' ORDER BY created_at
+    </select>
+
+</mapper>

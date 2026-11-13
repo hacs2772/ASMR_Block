@@ -1,101 +1,125 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
-    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.asmrblock.repository.PlaylistRepository">
-    
-    <resultMap id="PlaylistResultMap" type="Playlist">
-        <id property="id" column="id"/>
-        <result property="userId" column="user_id"/>
-        <result property="title" column="title"/>
-        <result property="description" column="description"/>
-        <result property="totalDuration" column="total_duration"/>
-        <result property="isPublic" column="is_public"/>
-        <result property="playCount" column="play_count"/>
-        <result property="createdAt" column="created_at"/>
-        <result property="updatedAt" column="updated_at"/>
-    </resultMap>
-    
-    <resultMap id="PlaylistBlockResultMap" type="PlaylistBlock">
-        <id property="id" column="pb_id"/>
+<mapper namespace="com.asmrblock.playlist.PlaylistMapper">
+
+    <!-- 동 → 블록 → 블록 정보 → 카테고리 (한 번의 JOIN 결과를 중첩 객체로 묶음) -->
+    <resultMap id="LayerMap" type="com.asmrblock.playlist.PlaylistLayer">
+        <id property="id" column="layer_id"/>
         <result property="playlistId" column="playlist_id"/>
-        <result property="blockId" column="block_id"/>
-        <result property="sortOrder" column="sort_order"/>
-        <result property="createdAt" column="pb_created_at"/>
-        <association property="block" javaType="Block">
-            <id property="id" column="block_id"/>
-            <result property="title" column="block_title"/>
-            <result property="fileKey" column="file_key"/>
-            <result property="thumbnailKey" column="thumbnail_key"/>
-            <result property="duration" column="duration"/>
-            <association property="category" javaType="SoundCategory">
-                <id property="id" column="cat_id"/>
-                <result property="name" column="cat_name"/>
-                <result property="color" column="cat_color"/>
+        <result property="role" column="role"/>
+        <result property="volume" column="volume"/>
+        <result property="loopToFill" column="loop_to_fill"/>
+        <collection property="blocks" ofType="com.asmrblock.playlist.PlaylistBlock">
+            <id property="id" column="pb_id"/>
+            <result property="layerId" column="layer_id"/>
+            <result property="blockId" column="block_id"/>
+            <result property="sortOrder" column="sort_order"/>
+            <association property="block" javaType="com.asmrblock.block.Block">
+                <id property="id" column="block_id"/>
+                <result property="title" column="block_title"/>
+                <result property="fileKey" column="file_key"/>
+                <result property="duration" column="block_duration"/>
+                <result property="status" column="block_status"/>
+                <result property="isActive" column="block_active"/>
+                <association property="category" javaType="com.asmrblock.category.SoundCategory">
+                    <id property="id" column="cat_id"/>
+                    <result property="name" column="cat_name"/>
+                    <result property="color" column="cat_color"/>
+                    <result property="icon" column="cat_icon"/>
+                </association>
             </association>
-        </association>
+        </collection>
     </resultMap>
-    
-    <insert id="insert" parameterType="Playlist" useGeneratedKeys="true" keyProperty="id">
+
+    <sql id="selectPlaylist">
+        SELECT p.*, u.nickname AS owner_nickname
+        FROM playlist p
+        JOIN users u ON u.id = p.user_id
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO playlist (user_id, title, description, total_duration, is_public)
         VALUES (#{userId}, #{title}, #{description}, #{totalDuration}, #{isPublic})
     </insert>
-    
-    <!-- 블록 목록을 한 번에 저장 (배열 순서 = 재생 순서) -->
-    <insert id="insertPlaylistBlocks">
-        INSERT INTO playlist_block (playlist_id, block_id, sort_order) VALUES
-        <foreach collection="blockIds" item="blockId" index="i" separator=",">
-            (#{playlistId}, #{blockId}, #{i} + 1)
-        </foreach>
-    </insert>
-    
-    <select id="findById" resultMap="PlaylistResultMap">
-        SELECT * FROM playlist WHERE id = #{id}
-    </select>
-    
-    <select id="findByUserId" resultMap="PlaylistResultMap">
-        SELECT * FROM playlist 
-        WHERE user_id = #{userId}
-        ORDER BY created_at DESC
-        LIMIT #{limit} OFFSET #{offset}
-    </select>
-    
-    <select id="countByUserId" resultType="long">
-        SELECT COUNT(*) FROM playlist WHERE user_id = #{userId}
-    </select>
-    
-    <select id="findBlocksByPlaylistId" resultMap="PlaylistBlockResultMap">
-        SELECT pb.id as pb_id, pb.playlist_id, pb.block_id, pb.sort_order, 
-               pb.created_at as pb_created_at,
-               b.title as block_title, b.file_key, b.thumbnail_key, b.duration,
-               c.id as cat_id, c.name as cat_name, c.color as cat_color
-        FROM playlist_block pb
-        INNER JOIN block b ON pb.block_id = b.id
-        LEFT JOIN sound_category c ON b.category_id = c.id
-        WHERE pb.playlist_id = #{playlistId}
-        ORDER BY pb.sort_order
-    </select>
-    
-    <update id="update" parameterType="Playlist">
-        UPDATE playlist SET
-            title = #{title},
-            description = #{description},
-            total_duration = #{totalDuration},
-            is_public = #{isPublic},
-            updated_at = NOW()
+
+    <update id="update">
+        UPDATE playlist SET title = #{title}, description = #{description},
+                            total_duration = #{totalDuration}, is_public = #{isPublic}
         WHERE id = #{id}
     </update>
-    
-    <delete id="deletePlaylistBlocks">
-        DELETE FROM playlist_block WHERE playlist_id = #{playlistId}
-    </delete>
-    
+
     <delete id="delete">
         DELETE FROM playlist WHERE id = #{id}
     </delete>
-    
+
+    <delete id="deleteByUserId">
+        DELETE FROM playlist WHERE user_id = #{userId}
+    </delete>
+
+    <select id="findById" resultType="com.asmrblock.playlist.Playlist">
+        <include refid="selectPlaylist"/>
+        WHERE p.id = #{id}
+    </select>
+
+    <select id="findByUserId" resultType="com.asmrblock.playlist.Playlist">
+        <include refid="selectPlaylist"/>
+        WHERE p.user_id = #{userId}
+        ORDER BY p.created_at DESC, p.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByUserId" resultType="long">
+        SELECT COUNT(*) FROM playlist WHERE user_id = #{userId}
+    </select>
+
+    <select id="findPublic" resultType="com.asmrblock.playlist.Playlist">
+        <include refid="selectPlaylist"/>
+        WHERE p.is_public = true
+        <choose>
+            <when test="sort == 'popular'">ORDER BY p.play_count DESC, p.created_at DESC, p.id DESC</when>
+            <otherwise>ORDER BY p.created_at DESC, p.id DESC</otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countPublic" resultType="long">
+        SELECT COUNT(*) FROM playlist WHERE is_public = true
+    </select>
+
+    <insert id="insertLayer" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO playlist_layer (playlist_id, role, volume, loop_to_fill)
+        VALUES (#{playlistId}, #{role}, #{volume}, #{loopToFill})
+    </insert>
+
+    <insert id="insertLayerBlocks">
+        INSERT INTO playlist_block (layer_id, block_id, sort_order) VALUES
+        <foreach collection="blockIds" item="blockId" index="i" separator=",">
+            (#{layerId}, #{blockId}, #{i} + 1)
+        </foreach>
+    </insert>
+
+    <delete id="deleteLayers">
+        DELETE FROM playlist_layer WHERE playlist_id = #{playlistId}
+    </delete>
+
+    <select id="findLayers" resultMap="LayerMap">
+        SELECT l.id AS layer_id, l.playlist_id, l.role, l.volume, l.loop_to_fill,
+               pb.id AS pb_id, pb.block_id, pb.sort_order,
+               b.title AS block_title, b.file_key, b.duration AS block_duration,
+               b.status AS block_status, b.is_active AS block_active,
+               c.id AS cat_id, c.name AS cat_name, c.color AS cat_color, c.icon AS cat_icon
+        FROM playlist_layer l
+        JOIN playlist_block pb ON pb.layer_id = l.id
+        JOIN block b ON b.id = pb.block_id
+        LEFT JOIN sound_category c ON c.id = b.category_id
+        WHERE l.playlist_id IN
+        <foreach collection="playlistIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+        ORDER BY l.playlist_id, l.role, pb.sort_order
+    </select>
+
     <update id="incrementPlayCount">
         UPDATE playlist SET play_count = play_count + 1 WHERE id = #{id}
     </update>
-    
+
 </mapper>

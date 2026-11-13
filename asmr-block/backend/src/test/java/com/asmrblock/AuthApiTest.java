@@ -77,6 +77,13 @@ class AuthApiTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("이메일은 대소문자 구분 없이 같은 계정으로 취급")
+    void emailIsCaseInsensitive() throws Exception {
+        postJson("/api/v1/auth/login", "{\"email\":\"TEST@asmrblock.com\",\"password\":\"%s\"}".formatted(SEED_PASSWORD))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("이미 있는 이메일로 가입하면 409")
     void duplicateEmail() throws Exception {
         postJson("/api/v1/auth/signup",

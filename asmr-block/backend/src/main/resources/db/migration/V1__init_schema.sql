@@ -1,8 +1,8 @@
 -- =====================================================
 -- ASMR Block - V1 초기 스키마 (PostgreSQL 16)
 -- Flyway가 서버 시작 시 자동으로 실행합니다.
--- 이미 적용된 마이그레이션 파일은 절대 수정하지 말고,
--- 변경이 필요하면 V2__설명.sql 처럼 새 파일을 추가하세요.
+-- ⚠️ 이 파일은 이미 적용된 뒤에는 절대 수정하지 마세요.
+--    테이블 변경이 필요하면 V2__설명.sql 처럼 새 파일을 추가합니다.
 -- =====================================================
 
 -- updated_at 자동 갱신 함수
@@ -97,8 +97,9 @@ CREATE TABLE block (
     id            BIGSERIAL PRIMARY KEY,
     title         VARCHAR(100) NOT NULL,
     description   TEXT,
-    file_key      VARCHAR(500) NOT NULL,
-    thumbnail_key VARCHAR(500),
+    file_key        VARCHAR(500) NOT NULL,
+    master_file_key VARCHAR(500),
+    thumbnail_key   VARCHAR(500),
     duration      INTEGER      NOT NULL,
     price         INTEGER      NOT NULL DEFAULT 0,
     category_id   BIGINT       NOT NULL REFERENCES sound_category(id),
@@ -114,7 +115,7 @@ CREATE TABLE block (
     CONSTRAINT chk_block_status   CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED')),
     CONSTRAINT chk_block_duration CHECK (duration > 0),
     CONSTRAINT chk_block_price    CHECK (price >= 0),
-    CONSTRAINT chk_block_license  CHECK (license IN ('CC0', 'CC-BY', 'OWN', 'CREATOR'))
+    CONSTRAINT chk_block_license  CHECK (license IN ('CC0', 'CC_BY', 'OWN', 'CREATOR'))
 );
 CREATE INDEX idx_block_category   ON block(category_id);
 CREATE INDEX idx_block_uploader   ON block(uploader_id);
@@ -123,8 +124,9 @@ CREATE INDEX idx_block_created_at ON block(created_at DESC);
 CREATE TRIGGER update_block_updated_at BEFORE UPDATE ON block
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-COMMENT ON COLUMN block.file_key    IS '음원 파일 저장 키 (예: samples/rain.mp3). URL은 서버가 저장소 주소와 합쳐서 만듦';
-COMMENT ON COLUMN block.license     IS '라이선스: CC0 / CC-BY(출처표기 필요) / OWN(직접 녹음) / CREATOR(크리에이터 업로드)';
+COMMENT ON COLUMN block.file_key        IS '서비스용 음원 키 (44.1kHz 스테레오, -24 LUFS로 맞춘 MP3). URL은 서버가 저장소 주소와 합쳐서 만듦';
+COMMENT ON COLUMN block.master_file_key IS '업로드된 원본 파일 키 (나중에 더 좋은 품질로 다시 변환할 때 사용)';
+COMMENT ON COLUMN block.license         IS '라이선스: CC0 / CC_BY(출처표기 필요) / OWN(직접 녹음·제작) / CREATOR(크리에이터 업로드)';
 COMMENT ON COLUMN block.source_url  IS '원본 출처 URL (무료 음원 사이트 등)';
 COMMENT ON COLUMN block.attribution IS '출처 표기 문구 (CC-BY일 때 필수)';
 COMMENT ON COLUMN block.is_active   IS '블록은 삭제하지 않고 비활성화만 함 (남의 플레이리스트가 깨지지 않도록)';
@@ -152,27 +154,42 @@ CREATE TABLE playlist (
     created_at     TIMESTAMP    NOT NULL DEFAULT NOW(),
     updated_at     TIMESTAMP    NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_playlist_user       ON playlist(user_id);
-CREATE INDEX idx_playlist_public     ON playlist(is_public);
-CREATE INDEX idx_playlist_created_at ON playlist(created_at DESC);
+CREATE INDEX idx_playlist_user           ON playlist(user_id, created_at DESC);
+CREATE INDEX idx_playlist_public_created ON playlist(is_public, created_at DESC);
 CREATE TRIGGER update_playlist_updated_at BEFORE UPDATE ON playlist
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- =====================================================
--- 8. playlist_block (플레이리스트에 포함된 블록)
+-- 8. playlist_layer (동 = 쌍둥이 빌딩의 한 동)
+--    MAIN: 메인 동 - 블록을 순서대로 재생
+--    BACKGROUND: 배경 동 - 메인과 동시에 깔리는 소리. loop_to_fill이면 메인 길이만큼 반복
+-- =====================================================
+CREATE TABLE playlist_layer (
+    id           BIGSERIAL PRIMARY KEY,
+    playlist_id  BIGINT       NOT NULL REFERENCES playlist(id) ON DELETE CASCADE,
+    role         VARCHAR(20)  NOT NULL,
+    volume       NUMERIC(3,2) NOT NULL DEFAULT 1.00,
+    loop_to_fill BOOLEAN      NOT NULL DEFAULT FALSE,
+    CONSTRAINT uq_playlist_layer_role UNIQUE (playlist_id, role),
+    CONSTRAINT chk_playlist_layer_role   CHECK (role IN ('MAIN', 'BACKGROUND')),
+    CONSTRAINT chk_playlist_layer_volume CHECK (volume BETWEEN 0 AND 1)
+);
+
+-- =====================================================
+-- 9. playlist_block (동에 쌓인 블록, sort_order 순서대로 재생)
 -- 블록 쪽은 ON DELETE CASCADE를 걸지 않음 → 블록은 비활성화(is_active=false)로만 처리
 -- =====================================================
 CREATE TABLE playlist_block (
-    id          BIGSERIAL PRIMARY KEY,
-    playlist_id BIGINT    NOT NULL REFERENCES playlist(id) ON DELETE CASCADE,
-    block_id    BIGINT    NOT NULL REFERENCES block(id),
-    sort_order  INTEGER   NOT NULL,
-    created_at  TIMESTAMP NOT NULL DEFAULT NOW()
+    id         BIGSERIAL PRIMARY KEY,
+    layer_id   BIGINT    NOT NULL REFERENCES playlist_layer(id) ON DELETE CASCADE,
+    block_id   BIGINT    NOT NULL REFERENCES block(id),
+    sort_order INTEGER   NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_playlist_block_playlist ON playlist_block(playlist_id, sort_order);
+CREATE INDEX idx_playlist_block_layer ON playlist_block(layer_id, sort_order);
 
 -- =====================================================
--- 9. play_log (재생 기록 - 재생수 중복 방지 + 나중에 크리에이터 수익 배분 근거)
+-- 10. play_log (재생 기록 - 재생수 중복 방지 + 나중에 크리에이터 수익 배분 근거)
 -- =====================================================
 CREATE TABLE play_log (
     id          BIGSERIAL PRIMARY KEY,
@@ -183,3 +200,23 @@ CREATE TABLE play_log (
     CONSTRAINT chk_play_log_target CHECK (target_type IN ('BLOCK', 'PLAYLIST'))
 );
 CREATE INDEX idx_play_log_lookup ON play_log(user_id, target_type, target_id, played_at DESC);
+
+-- =====================================================
+-- 11. audio_render (완성본: 플레이리스트 구성을 ffmpeg로 합친 하나의 파일)
+--     구성(블록 파일·순서·볼륨·반복)이 같으면 같은 해시 → 한 번만 만들고 재사용
+-- =====================================================
+CREATE TABLE audio_render (
+    id               BIGSERIAL PRIMARY KEY,
+    composition_hash VARCHAR(64)   NOT NULL UNIQUE,
+    composition_json TEXT          NOT NULL,
+    status           VARCHAR(20)   NOT NULL DEFAULT 'PENDING',
+    file_key         VARCHAR(500),
+    duration         INTEGER,
+    error_message    VARCHAR(1000),
+    created_at       TIMESTAMP     NOT NULL DEFAULT NOW(),
+    updated_at       TIMESTAMP     NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_audio_render_status CHECK (status IN ('PENDING', 'PROCESSING', 'DONE', 'FAILED'))
+);
+CREATE INDEX idx_audio_render_status ON audio_render(status);
+CREATE TRIGGER update_audio_render_updated_at BEFORE UPDATE ON audio_render
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

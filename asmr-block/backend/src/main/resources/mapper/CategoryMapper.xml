@@ -1,54 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
-    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.asmrblock.repository.CategoryRepository">
-    
-    <resultMap id="CategoryResultMap" type="SoundCategory">
-        <id property="id" column="id"/>
-        <result property="name" column="name"/>
-        <result property="color" column="color"/>
-        <result property="icon" column="icon"/>
-        <result property="sortOrder" column="sort_order"/>
-        <result property="isActive" column="is_active"/>
-        <result property="createdAt" column="created_at"/>
-    </resultMap>
-    
-    <resultMap id="TagResultMap" type="SoundTag">
-        <id property="id" column="id"/>
-        <result property="name" column="name"/>
-        <result property="sortOrder" column="sort_order"/>
-        <result property="isActive" column="is_active"/>
-        <result property="createdAt" column="created_at"/>
-    </resultMap>
-    
-    <select id="findAllCategories" resultMap="CategoryResultMap">
-        SELECT * FROM sound_category 
-        WHERE is_active = true 
-        ORDER BY sort_order
+<mapper namespace="com.asmrblock.category.CategoryMapper">
+
+    <select id="findAllCategories" resultType="com.asmrblock.category.SoundCategory">
+        SELECT * FROM sound_category WHERE is_active = true ORDER BY sort_order
     </select>
-    
-    <select id="findCategoryById" resultMap="CategoryResultMap">
-        SELECT * FROM sound_category 
-        WHERE id = #{id} AND is_active = true
+
+    <select id="existsCategory" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM sound_category WHERE id = #{id} AND is_active = true)
     </select>
-    
-    <select id="findAllTags" resultMap="TagResultMap">
-        SELECT * FROM sound_tag 
-        WHERE is_active = true 
-        ORDER BY sort_order
+
+    <select id="findAllTags" resultType="com.asmrblock.category.SoundTag">
+        SELECT * FROM sound_tag WHERE is_active = true ORDER BY sort_order
     </select>
-    
-    <select id="findTagById" resultMap="TagResultMap">
-        SELECT * FROM sound_tag 
-        WHERE id = #{id} AND is_active = true
+
+    <select id="countActiveTags" resultType="int">
+        SELECT COUNT(*) FROM sound_tag WHERE is_active = true AND id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </select>
-    
-    <select id="findTagsByBlockId" resultMap="TagResultMap">
-        SELECT t.* FROM sound_tag t
-        INNER JOIN block_tag bt ON t.id = bt.tag_id
-        WHERE bt.block_id = #{blockId} AND t.is_active = true
-        ORDER BY t.sort_order
+
+    <select id="findTagsByBlockIds" resultType="com.asmrblock.category.BlockTag">
+        SELECT bt.block_id, t.id, t.name
+        FROM block_tag bt
+        JOIN sound_tag t ON t.id = bt.tag_id AND t.is_active = true
+        WHERE bt.block_id IN
+        <foreach collection="blockIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+        ORDER BY bt.block_id, t.sort_order
     </select>
-    
+
 </mapper>

@@ -1,157 +1,85 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
-    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.asmrblock.repository.BlockRepository">
-    
-    <resultMap id="BlockResultMap" type="Block">
+<mapper namespace="com.asmrblock.block.BlockMapper">
+
+    <resultMap id="BlockMap" type="com.asmrblock.block.Block" autoMapping="true">
         <id property="id" column="id"/>
-        <result property="title" column="title"/>
-        <result property="description" column="description"/>
-        <result property="fileKey" column="file_key"/>
-        <result property="thumbnailKey" column="thumbnail_key"/>
-        <result property="duration" column="duration"/>
-        <result property="price" column="price"/>
-        <result property="categoryId" column="category_id"/>
-        <result property="uploaderId" column="uploader_id"/>
-        <result property="license" column="license"/>
-        <result property="sourceUrl" column="source_url"/>
-        <result property="attribution" column="attribution"/>
-        <result property="playCount" column="play_count"/>
-        <result property="status" column="status"/>
-        <result property="isActive" column="is_active"/>
-        <result property="createdAt" column="created_at"/>
-        <result property="updatedAt" column="updated_at"/>
-        <association property="category" javaType="SoundCategory">
+        <association property="category" javaType="com.asmrblock.category.SoundCategory">
             <id property="id" column="cat_id"/>
             <result property="name" column="cat_name"/>
             <result property="color" column="cat_color"/>
             <result property="icon" column="cat_icon"/>
         </association>
-        <association property="uploader" javaType="User">
-            <id property="id" column="uploader_id"/>
-            <result property="nickname" column="uploader_nickname"/>
-        </association>
     </resultMap>
-    
-    <insert id="insert" parameterType="Block" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO block (title, description, file_key, thumbnail_key, duration,
-                          price, category_id, uploader_id, license, source_url, attribution, status)
-        VALUES (#{title}, #{description}, #{fileKey}, #{thumbnailKey}, #{duration},
-                #{price}, #{categoryId}, #{uploaderId}, #{license}, #{sourceUrl}, #{attribution}, #{status})
-    </insert>
-    
-    <insert id="insertBlockTag">
-        INSERT INTO block_tag (block_id, tag_id) VALUES (#{blockId}, #{tagId})
-    </insert>
-    
-    <select id="findById" resultMap="BlockResultMap">
+
+    <sql id="selectBlock">
         SELECT b.*,
-               c.id as cat_id, c.name as cat_name, c.color as cat_color, c.icon as cat_icon,
-               u.nickname as uploader_nickname
+               c.id AS cat_id, c.name AS cat_name, c.color AS cat_color, c.icon AS cat_icon,
+               u.nickname AS uploader_nickname
         FROM block b
-        LEFT JOIN sound_category c ON b.category_id = c.id
-        LEFT JOIN users u ON b.uploader_id = u.id
+        LEFT JOIN sound_category c ON c.id = b.category_id
+        LEFT JOIN users u ON u.id = b.uploader_id
+    </sql>
+
+    <!-- 검색 조건 (search, count 공통) -->
+    <sql id="searchWhere">
+        <where>
+            b.is_active = true
+            <if test="status != null">AND b.status = #{status}</if>
+            <if test="categoryId != null">AND b.category_id = #{categoryId}</if>
+            <if test="tagIds != null">
+                AND EXISTS (SELECT 1 FROM block_tag bt WHERE bt.block_id = b.id AND bt.tag_id IN
+                <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">#{tagId}</foreach>)
+            </if>
+            <if test="keyword != null">AND b.title ILIKE '%' || #{keyword} || '%'</if>
+        </where>
+    </sql>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO block (title, description, file_key, master_file_key, thumbnail_key, duration, price,
+                           category_id, uploader_id, license, source_url, attribution, status)
+        VALUES (#{title}, #{description}, #{fileKey}, #{masterFileKey}, #{thumbnailKey}, #{duration}, #{price},
+                #{categoryId}, #{uploaderId}, #{license}, #{sourceUrl}, #{attribution}, #{status})
+    </insert>
+
+    <insert id="insertTags">
+        INSERT INTO block_tag (block_id, tag_id) VALUES
+        <foreach collection="tagIds" item="tagId" separator=",">(#{blockId}, #{tagId})</foreach>
+    </insert>
+
+    <select id="findById" resultMap="BlockMap">
+        <include refid="selectBlock"/>
         WHERE b.id = #{id} AND b.is_active = true
     </select>
-    
-    <!-- 여러 블록을 한 번에 조회 (플레이리스트 저장 시 검증용) -->
-    <select id="findAllByIds" resultMap="BlockResultMap">
-        SELECT b.*,
-               c.id as cat_id, c.name as cat_name, c.color as cat_color, c.icon as cat_icon,
-               u.nickname as uploader_nickname
-        FROM block b
-        LEFT JOIN sound_category c ON b.category_id = c.id
-        LEFT JOIN users u ON b.uploader_id = u.id
+
+    <select id="findByIds" resultMap="BlockMap">
+        <include refid="selectBlock"/>
         WHERE b.is_active = true AND b.id IN
         <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </select>
 
-    <select id="findAll" resultMap="BlockResultMap">
-        SELECT DISTINCT b.*,
-               c.id as cat_id, c.name as cat_name, c.color as cat_color, c.icon as cat_icon,
-               u.nickname as uploader_nickname
-        FROM block b
-        LEFT JOIN sound_category c ON b.category_id = c.id
-        LEFT JOIN users u ON b.uploader_id = u.id
-        <if test="tagIds != null and tagIds.size() > 0">
-            INNER JOIN block_tag bt ON b.id = bt.block_id
-        </if>
-        <where>
-            b.is_active = true
-            <if test="status != null">
-                AND b.status = #{status}
-            </if>
-            <if test="categoryId != null">
-                AND b.category_id = #{categoryId}
-            </if>
-            <if test="tagIds != null and tagIds.size() > 0">
-                AND bt.tag_id IN
-                <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
-                    #{tagId}
-                </foreach>
-            </if>
-            <if test="keyword != null and keyword != ''">
-                AND b.title ILIKE CONCAT('%', #{keyword}, '%')
-            </if>
-        </where>
+    <select id="search" resultMap="BlockMap">
+        <include refid="selectBlock"/>
+        <include refid="searchWhere"/>
         <choose>
-            <when test="sort == 'popular'">
-                ORDER BY b.play_count DESC, b.created_at DESC, b.id DESC
-            </when>
-            <otherwise>
-                ORDER BY b.created_at DESC, b.id DESC
-            </otherwise>
+            <when test="sort == 'popular'">ORDER BY b.play_count DESC, b.created_at DESC, b.id DESC</when>
+            <otherwise>ORDER BY b.created_at DESC, b.id DESC</otherwise>
         </choose>
         LIMIT #{limit} OFFSET #{offset}
     </select>
-    
-    <select id="countAll" resultType="long">
-        SELECT COUNT(DISTINCT b.id)
-        FROM block b
-        <if test="tagIds != null and tagIds.size() > 0">
-            INNER JOIN block_tag bt ON b.id = bt.block_id
-        </if>
-        <where>
-            b.is_active = true
-            <if test="status != null">
-                AND b.status = #{status}
-            </if>
-            <if test="categoryId != null">
-                AND b.category_id = #{categoryId}
-            </if>
-            <if test="tagIds != null and tagIds.size() > 0">
-                AND bt.tag_id IN
-                <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
-                    #{tagId}
-                </foreach>
-            </if>
-            <if test="keyword != null and keyword != ''">
-                AND b.title ILIKE CONCAT('%', #{keyword}, '%')
-            </if>
-        </where>
+
+    <select id="count" resultType="long">
+        SELECT COUNT(*) FROM block b
+        <include refid="searchWhere"/>
     </select>
-    
+
+    <update id="updateStatus">
+        UPDATE block SET status = #{status} WHERE id = #{id}
+    </update>
+
     <update id="incrementPlayCount">
         UPDATE block SET play_count = play_count + 1 WHERE id = #{id}
     </update>
-    
-    <update id="update" parameterType="Block">
-        UPDATE block SET
-            title = #{title},
-            description = #{description},
-            file_key = #{fileKey},
-            thumbnail_key = #{thumbnailKey},
-            duration = #{duration},
-            price = #{price},
-            category_id = #{categoryId},
-            status = #{status},
-            updated_at = NOW()
-        WHERE id = #{id}
-    </update>
-    
-    <delete id="deleteBlockTags">
-        DELETE FROM block_tag WHERE block_id = #{blockId}
-    </delete>
-    
+
 </mapper>

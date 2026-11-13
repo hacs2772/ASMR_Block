@@ -1,231 +1,141 @@
-# ASMR Block - 데이터베이스 테이블 명세서
+# ASMR Block - 데이터베이스 명세서
 
-> 최종 수정일: 2026-11-13  
-> 버전: MVP 1.0
+> 최종 수정일: 2026-11-13 / PostgreSQL 16
 >
 > 실제 테이블 정의는 `backend/src/main/resources/db/migration/V1__init_schema.sql` 이 기준입니다.
-> 서버가 시작될 때 Flyway가 자동으로 적용하며, 변경은 `V2__설명.sql` 처럼 **새 파일을 추가**해서 합니다.
+> 서버가 시작될 때 Flyway가 자동 적용합니다. **테이블을 바꿀 때는 `V2__설명.sql` 처럼 새 파일을 추가**하세요 (기존 파일 수정 금지).
 > 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 환경에서만 실행).
-
----
-
-## 1. users (회원)
-
-| 컬럼명 | 타입 | NULL | 기본값 | 설명 |
-|--------|------|------|--------|------|
-| id | BIGSERIAL | NO | - | PK, 자동증가 |
-| email | VARCHAR(255) | NO | - | 이메일 (UNIQUE) |
-| password | VARCHAR(255) | NO | - | 비밀번호 (암호화 저장) |
-| nickname | VARCHAR(50) | NO | - | 닉네임 |
-| profile_image | VARCHAR(500) | YES | NULL | 프로필 이미지 URL |
-| language | VARCHAR(5) | NO | 'ko' | 언어 설정 (ko, en, ja 등) |
-| role | VARCHAR(20) | NO | 'USER' | 권한 (USER / ADMIN) |
-| is_active | BOOLEAN | NO | TRUE | 활성화 여부 |
-| created_at | TIMESTAMP | NO | NOW() | 가입일시 |
-| updated_at | TIMESTAMP | NO | NOW() | 수정일시 |
-
-**인덱스:**
-- PRIMARY KEY (id)
-- UNIQUE (email)
-
----
-
-## 2. sound_category (소리 출처 - 1단계 분류)
-
-| 컬럼명 | 타입 | NULL | 기본값 | 설명 |
-|--------|------|------|--------|------|
-| id | BIGSERIAL | NO | - | PK, 자동증가 |
-| name | VARCHAR(50) | NO | - | 카테고리명 (자연, 사물, 신체 등) |
-| color | VARCHAR(7) | NO | '#000000' | 블록 색상 (HEX 코드) |
-| icon | VARCHAR(100) | YES | NULL | 아이콘 이미지 URL 또는 아이콘명 |
-| sort_order | INTEGER | NO | 0 | 정렬 순서 |
-| is_active | BOOLEAN | NO | TRUE | 사용 여부 |
-| created_at | TIMESTAMP | NO | NOW() | 생성일시 |
-
-**인덱스:**
-- PRIMARY KEY (id)
-
-**초기 데이터 예시:**
-| name | color | sort_order |
-|------|-------|------------|
-| 자연 | #22C55E | 1 |
-| 사물 | #3B82F6 | 2 |
-| 신체 | #A855F7 | 3 |
-| 음식 | #F97316 | 4 |
-| 환경 | #78716C | 5 |
-
----
-
-## 3. sound_tag (소리 느낌 - 2단계 분류)
-
-| 컬럼명 | 타입 | NULL | 기본값 | 설명 |
-|--------|------|------|--------|------|
-| id | BIGSERIAL | NO | - | PK, 자동증가 |
-| name | VARCHAR(50) | NO | - | 태그명 (부드러운, 날카로운 등) |
-| sort_order | INTEGER | NO | 0 | 정렬 순서 |
-| is_active | BOOLEAN | NO | TRUE | 사용 여부 |
-| created_at | TIMESTAMP | NO | NOW() | 생성일시 |
-
-**인덱스:**
-- PRIMARY KEY (id)
-
-**초기 데이터 예시:**
-| name | sort_order |
-|------|------------|
-| 부드러운 | 1 |
-| 날카로운 | 2 |
-| 바삭한 | 3 |
-| 둔탁한 | 4 |
-| 습한 | 5 |
-| 리드미컬한 | 6 |
-
----
-
-## 4. block (ASMR 블록)
-
-| 컬럼명 | 타입 | NULL | 기본값 | 설명 |
-|--------|------|------|--------|------|
-| id | BIGSERIAL | NO | - | PK, 자동증가 |
-| title | VARCHAR(100) | NO | - | 블록 제목 |
-| description | TEXT | YES | NULL | 블록 설명 |
-| file_key | VARCHAR(500) | NO | - | 음원 파일 저장 키 (예: samples/rain.mp3). API는 저장소 주소와 합쳐 fileUrl로 응답 |
-| thumbnail_key | VARCHAR(500) | YES | NULL | 썸네일 이미지 저장 키 |
-| duration | INTEGER | NO | - | 재생 시간 (초 단위) |
-| price | INTEGER | NO | 0 | 가격 (0이면 무료) |
-| category_id | BIGINT | NO | - | FK → sound_category.id |
-| uploader_id | BIGINT | NO | - | FK → users.id (업로더) |
-| license | VARCHAR(30) | NO | - | CC0 / CC-BY(출처 표기 필요) / OWN(직접 녹음·제작) / CREATOR(크리에이터 업로드) |
-| source_url | VARCHAR(500) | YES | NULL | 원본 출처 URL (무료 음원 사이트 등) |
-| attribution | VARCHAR(300) | YES | NULL | 출처 표기 문구 (CC-BY일 때 필수) |
-| play_count | INTEGER | NO | 0 | 재생 횟수 |
-| status | VARCHAR(20) | NO | 'PENDING' | 상태 (PENDING/APPROVED/REJECTED) |
-| is_active | BOOLEAN | NO | TRUE | 사용 여부 |
-| created_at | TIMESTAMP | NO | NOW() | 생성일시 |
-| updated_at | TIMESTAMP | NO | NOW() | 수정일시 |
-
-**인덱스:**
-- PRIMARY KEY (id)
-- INDEX (category_id)
-- INDEX (uploader_id)
-- INDEX (status)
-- INDEX (created_at)
-
-**제약조건:**
-- FOREIGN KEY (category_id) REFERENCES sound_category(id)
-- FOREIGN KEY (uploader_id) REFERENCES users(id)
-
----
-
-## 5. block_tag (블록-태그 연결)
-
-| 컬럼명 | 타입 | NULL | 기본값 | 설명 |
-|--------|------|------|--------|------|
-| block_id | BIGINT | NO | - | FK → block.id |
-| tag_id | BIGINT | NO | - | FK → sound_tag.id |
-
-**인덱스:**
-- PRIMARY KEY (block_id, tag_id)
-
-**제약조건:**
-- FOREIGN KEY (block_id) REFERENCES block(id) ON DELETE CASCADE
-- FOREIGN KEY (tag_id) REFERENCES sound_tag(id) ON DELETE CASCADE
-
----
-
-## 6. playlist (내 조합 - 사용자가 만든 ASMR)
-
-| 컬럼명 | 타입 | NULL | 기본값 | 설명 |
-|--------|------|------|--------|------|
-| id | BIGSERIAL | NO | - | PK, 자동증가 |
-| user_id | BIGINT | NO | - | FK → users.id |
-| title | VARCHAR(100) | NO | - | 조합 제목 |
-| description | TEXT | YES | NULL | 조합 설명 |
-| total_duration | INTEGER | NO | 0 | 총 재생 시간 (초 단위) |
-| is_public | BOOLEAN | NO | FALSE | 공개 여부 |
-| play_count | INTEGER | NO | 0 | 재생 횟수 |
-| created_at | TIMESTAMP | NO | NOW() | 생성일시 |
-| updated_at | TIMESTAMP | NO | NOW() | 수정일시 |
-
-**인덱스:**
-- PRIMARY KEY (id)
-- INDEX (user_id)
-- INDEX (is_public)
-
-**제약조건:**
-- FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-
----
-
-## 7. playlist_block (조합에 포함된 블록)
-
-| 컬럼명 | 타입 | NULL | 기본값 | 설명 |
-|--------|------|------|--------|------|
-| id | BIGSERIAL | NO | - | PK, 자동증가 |
-| playlist_id | BIGINT | NO | - | FK → playlist.id |
-| block_id | BIGINT | NO | - | FK → block.id |
-| sort_order | INTEGER | NO | - | 블록 순서 (1, 2, 3...) |
-| created_at | TIMESTAMP | NO | NOW() | 추가일시 |
-
-**인덱스:**
-- PRIMARY KEY (id)
-- INDEX (playlist_id, sort_order)
-
-**제약조건:**
-- FOREIGN KEY (playlist_id) REFERENCES playlist(id) ON DELETE CASCADE
-- FOREIGN KEY (block_id) REFERENCES block(id) — 삭제 연쇄 없음. **블록은 지우지 않고 is_active=false로 비활성화** (남의 플레이리스트가 깨지지 않도록)
-
-**참고:** 같은 block_id가 하나의 playlist에 여러 번 들어갈 수 있음 (블록 반복 시)
-
----
-
-## 8. refresh_token (로그인 유지 토큰)
-
-| 컬럼명 | 타입 | NULL | 기본값 | 설명 |
-|--------|------|------|--------|------|
-| id | BIGSERIAL | NO | - | PK |
-| user_id | BIGINT | NO | - | FK → users.id (ON DELETE CASCADE) |
-| token_hash | VARCHAR(64) | NO | - | 토큰의 SHA-256 해시 (원문은 저장 안 함, UNIQUE) |
-| expires_at | TIMESTAMP | NO | - | 만료 시각 (발급 후 14일) |
-| revoked_at | TIMESTAMP | YES | NULL | 폐기 시각 (사용/로그아웃/탈취 감지 시) |
-| created_at | TIMESTAMP | NO | NOW() | 발급일시 |
-
----
-
-## 9. play_log (재생 기록)
-
-| 컬럼명 | 타입 | NULL | 기본값 | 설명 |
-|--------|------|------|--------|------|
-| id | BIGSERIAL | NO | - | PK |
-| user_id | BIGINT | NO | - | FK → users.id |
-| target_type | VARCHAR(10) | NO | - | BLOCK / PLAYLIST |
-| target_id | BIGINT | NO | - | block.id 또는 playlist.id |
-| played_at | TIMESTAMP | NO | NOW() | 재생 시각 |
-
-같은 사용자가 30분 안에 같은 대상을 다시 재생하면 기록하지 않음 (재생수 부풀리기 방지).
-나중에 크리에이터 수익 배분(재생 비율)의 근거 데이터로 사용.
 
 ---
 
 ## ERD 요약
 
 ```
-users
-  └── refresh_token (1:N)
-  └── play_log (1:N)
-  └── playlist (1:N)
-        └── playlist_block (1:N) ──→ block (N:1)
-  └── block (1:N - 업로더로서)
-        └── block_tag (1:N) ──→ sound_tag (N:1)
-        └── sound_category (N:1)
+users ─┬─ refresh_token (1:N)          로그인 유지 토큰
+       ├─ play_log (1:N)               재생 기록
+       ├─ block (1:N, 업로더)
+       │    ├─ block_tag (N:M) ── sound_tag
+       │    └─ sound_category (N:1)
+       └─ playlist (1:N)               = 쌍둥이 빌딩
+            └─ playlist_layer (1:2)    = 동 (MAIN / BACKGROUND)
+                 └─ playlist_block (1:N) ──→ block (N:1)
+
+audio_render                           완성본 (구성 해시로 재사용, 플레이리스트와 직접 연결 X)
 ```
 
 ---
 
-## 향후 추가 예정 테이블 (MVP 이후)
+## users (회원)
 
-- **payment** - 결제 내역
-- **settlement** - 정산 내역
-- **likes** - 좋아요
-- **report** - 신고
-- **notification** - 알림
-- **admin_log** - 관리자 로그
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | BIGSERIAL PK | |
+| email | VARCHAR(255) UNIQUE | 로그인 ID (소문자로 저장) |
+| password | VARCHAR(255) | BCrypt 해시 |
+| nickname | VARCHAR(50) | |
+| profile_image | VARCHAR(500) | |
+| language | VARCHAR(5) | ko, en, ja, zh (기본 ko) |
+| role | VARCHAR(20) | `USER` / `ADMIN` |
+| is_active | BOOLEAN | 탈퇴 시 false + 이메일·닉네임 익명화 |
+| created_at, updated_at | TIMESTAMP | updated_at은 트리거로 자동 갱신 |
+
+## refresh_token
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | BIGSERIAL PK | |
+| user_id | BIGINT FK → users (CASCADE) | |
+| token_hash | VARCHAR(64) UNIQUE | 토큰 원문이 아니라 SHA-256 해시 |
+| expires_at | TIMESTAMP | 발급 후 14일 |
+| revoked_at | TIMESTAMP | 사용/로그아웃/탈취 감지/탈퇴 시 기록 |
+
+## sound_category / sound_tag
+
+| 테이블 | 주요 컬럼 | 기본 데이터 (운영 DB에도 들어감) |
+|------|------|------|
+| sound_category | name, color(HEX), icon, sort_order, is_active | 자연 #22C55E, 사물 #3B82F6, 신체 #A855F7, 음식 #F97316, 환경 #78716C |
+| sound_tag | name, sort_order, is_active | 부드러운, 날카로운, 바삭한, 둔탁한, 습한, 리드미컬한 |
+
+## block (ASMR 블록)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | BIGSERIAL PK | |
+| title / description | VARCHAR(100) / TEXT | |
+| file_key | VARCHAR(500) | 서비스용 음원 키 (44.1kHz 스테레오, -24 LUFS MP3). API가 URL로 바꿔 응답 |
+| master_file_key | VARCHAR(500) | 업로드 원본 키 (나중에 더 좋은 품질로 재변환용) |
+| thumbnail_key | VARCHAR(500) | |
+| duration | INTEGER | 초 |
+| price | INTEGER | 0 = 무료 |
+| category_id | FK → sound_category | |
+| uploader_id | FK → users | |
+| license | VARCHAR(30) | `CC0` / `CC_BY`(출처 표기 필요) / `OWN`(직접 녹음) / `CREATOR` |
+| source_url / attribution | VARCHAR | 출처 URL / 출처 표기 문구 |
+| play_count | INTEGER | 30분 내 중복 제외 |
+| status | VARCHAR(20) | `PENDING` → `APPROVED` / `REJECTED` (승인된 것만 공개) |
+| is_active | BOOLEAN | **블록은 삭제하지 않고 비활성화** (남의 플레이리스트가 깨지지 않도록) |
+
+## block_tag
+`(block_id, tag_id)` PK, 블록 삭제 시 함께 삭제
+
+## playlist (쌍둥이 빌딩)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | BIGSERIAL PK | |
+| user_id | FK → users (CASCADE) | |
+| title / description | | |
+| total_duration | INTEGER | 초 (메인 동 길이, 배경이 반복 안 하고 더 길면 배경 길이) |
+| is_public | BOOLEAN | 공개면 비로그인도 조회 가능 |
+| play_count | INTEGER | |
+
+## playlist_layer (동)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | BIGSERIAL PK | |
+| playlist_id | FK → playlist (CASCADE) | |
+| role | VARCHAR(20) | `MAIN`(순서대로 재생) / `BACKGROUND`(동시에 깔림) — 플레이리스트당 각 1개 |
+| volume | NUMERIC(3,2) | 0.00 ~ 1.00 |
+| loop_to_fill | BOOLEAN | 배경 동이 메인보다 짧으면 반복 |
+
+## playlist_block (동에 쌓인 블록)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | BIGSERIAL PK | |
+| layer_id | FK → playlist_layer (CASCADE) | |
+| block_id | FK → block (삭제 연쇄 없음) | 같은 블록 여러 번 가능 |
+| sort_order | INTEGER | 1층, 2층, 3층… (재생 순서) |
+
+## play_log (재생 기록)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| user_id | FK → users | |
+| target_type | VARCHAR(10) | `BLOCK` / `PLAYLIST` |
+| target_id | BIGINT | |
+| played_at | TIMESTAMP | |
+
+같은 사용자가 30분 안에 다시 재생하면 기록하지 않음. 나중에 **크리에이터 수익 배분 근거 데이터**로 사용.
+
+## audio_render (완성본)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| composition_hash | VARCHAR(64) UNIQUE | 구성(파일·순서·볼륨·반복 + 믹싱 버전)의 SHA-256 |
+| composition_json | TEXT | 만들 때 쓰는 구성 정보 (플레이리스트가 나중에 바뀌어도 영향 없음) |
+| status | VARCHAR(20) | `PENDING` → `PROCESSING` → `DONE` / `FAILED` |
+| file_key | VARCHAR(500) | `renders/{hash}.mp3` |
+| duration | INTEGER | 실제 파일 길이(초) |
+| error_message | VARCHAR(1000) | 실패 사유 (서버 로그용) |
+
+서로 다른 플레이리스트라도 구성이 같으면 같은 해시 → 파일 하나를 함께 씀.
+서버가 재시작되면 `PROCESSING`이던 작업을 `PENDING`으로 되돌려 다시 만듦.
+
+---
+
+## 향후 추가 예정
+- subscription / payment (구독·결제), settlement (정산)
+- likes, report, notification
+- audio_render 정리 작업 (오래 안 쓴 완성본 삭제)

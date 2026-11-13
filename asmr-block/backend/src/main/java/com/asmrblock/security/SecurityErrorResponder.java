@@ -1,6 +1,6 @@
 package com.asmrblock.security;
 
-import com.asmrblock.dto.response.ApiResponse;
+import com.asmrblock.common.ApiResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

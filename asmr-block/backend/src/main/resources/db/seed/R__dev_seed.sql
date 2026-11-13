@@ -56,27 +56,46 @@ INSERT INTO block_tag (block_id, tag_id) VALUES
     (13, 1)
 ON CONFLICT DO NOTHING;
 
--- 4) 샘플 플레이리스트 (test 계정 소유)
+-- 4) 샘플 플레이리스트 (test 계정 소유) - 쌍둥이 빌딩: 메인 동 + 배경 동
 INSERT INTO playlist (id, user_id, title, description, is_public) VALUES
-    (1, 2, '비 오는 밤 작업용', '빗소리 사이에 키보드 소리 (공개)', TRUE),
-    (2, 2, '잠들기 전 루틴',   '숨소리 → 심장박동 → 싱잉볼 → 파도 (비공개)', FALSE)
+    (1, 2, '비 오는 밤 작업용', '빗소리 사이에 키보드 소리 (메인만, 공개)', TRUE),
+    (2, 2, '잠들기 전 루틴',   '숨소리 → 심장박동 → 싱잉볼 → 파도, 뒤에 잔잔한 빗소리 (비공개)', FALSE),
+    (3, 2, '산에서 빗물 떨어지는 소리', '숲속 바람 위에 빗소리를 겹친 조합 (공개)', TRUE)
 ON CONFLICT (id) DO UPDATE SET
     user_id = EXCLUDED.user_id, title = EXCLUDED.title,
     description = EXCLUDED.description, is_public = EXCLUDED.is_public;
 
-DELETE FROM playlist_block WHERE playlist_id IN (1, 2);
-INSERT INTO playlist_block (playlist_id, block_id, sort_order) VALUES
-    (1, 1, 1), (1, 1, 2), (1, 5, 3), (1, 1, 4), (1, 1, 5),
-    (2, 8, 1), (2, 7, 2), (2, 6, 3), (2, 2, 4), (2, 2, 5);
+-- 동은 지우고 다시 만듦 (playlist_block은 ON DELETE CASCADE로 같이 지워짐)
+DELETE FROM playlist_layer WHERE playlist_id IN (1, 2, 3);
+INSERT INTO playlist_layer (id, playlist_id, role, volume, loop_to_fill) VALUES
+    (1, 1, 'MAIN',       1.00, FALSE),
+    (2, 2, 'MAIN',       1.00, FALSE),
+    (3, 2, 'BACKGROUND', 0.35, TRUE),
+    (4, 3, 'MAIN',       0.80, FALSE),
+    (5, 3, 'BACKGROUND', 0.60, TRUE);
 
+INSERT INTO playlist_block (layer_id, block_id, sort_order) VALUES
+    (1, 1, 1), (1, 1, 2), (1, 5, 3), (1, 1, 4), (1, 1, 5),   -- 빗소리 x2, 키보드, 빗소리 x2
+    (2, 8, 1), (2, 7, 2), (2, 6, 3), (2, 2, 4), (2, 2, 5),   -- 숨소리, 심장박동, 싱잉볼, 파도 x2
+    (3, 1, 1),                                               -- 배경: 빗소리 (반복)
+    (4, 3, 1), (4, 3, 2), (4, 3, 3),                         -- 숲속 바람 x3
+    (5, 1, 1);                                               -- 배경: 빗소리 (반복)
+
+-- 총 재생 시간 = 메인 동 길이 (배경 동이 반복이 아니고 더 길면 배경 동 길이)
 UPDATE playlist p SET total_duration = (
-    SELECT COALESCE(SUM(b.duration), 0)
-    FROM playlist_block pb JOIN block b ON b.id = pb.block_id
-    WHERE pb.playlist_id = p.id
-) WHERE p.id IN (1, 2);
+    SELECT COALESCE(MAX(CASE
+               WHEN l.role = 'MAIN' OR NOT l.loop_to_fill THEN layer_total.duration
+               ELSE 0 END), 0)
+    FROM playlist_layer l
+    JOIN (SELECT pb.layer_id, SUM(b.duration) AS duration
+          FROM playlist_block pb JOIN block b ON b.id = pb.block_id
+          GROUP BY pb.layer_id) layer_total ON layer_total.layer_id = l.id
+    WHERE l.playlist_id = p.id
+) WHERE p.id IN (1, 2, 3);
 
 -- 5) id를 직접 넣었으므로 자동증가 번호를 그 다음부터 시작하도록 맞춤
 SELECT setval('users_id_seq',          GREATEST((SELECT MAX(id) FROM users), 1));
 SELECT setval('block_id_seq',          GREATEST((SELECT MAX(id) FROM block), 1));
 SELECT setval('playlist_id_seq',       GREATEST((SELECT MAX(id) FROM playlist), 1));
+SELECT setval('playlist_layer_id_seq', GREATEST((SELECT MAX(id) FROM playlist_layer), 1));
 SELECT setval('playlist_block_id_seq', GREATEST((SELECT MAX(id) FROM playlist_block), 1));

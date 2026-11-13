@@ -23,8 +23,8 @@ export const blockApi = {
     return response.data;
   },
 
-  // 재생 횟수 증가
-  incrementPlayCount: async (blockId) => {
+  // 재생 기록 (로그인 필요)
+  recordPlay: async (blockId) => {
     const response = await axiosInstance.post(`/blocks/${blockId}/play`);
     return response.data;
   },

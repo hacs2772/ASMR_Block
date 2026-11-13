@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FiUser, FiMail, FiGlobe, FiSave } from 'react-icons/fi';
 import { toast } from 'react-toastify';
+import authApi from '../api/authApi';
 import useAuthStore from '../store/authStore';
 import Button from '../components/common/Button';
 
@@ -49,6 +50,19 @@ function ProfilePage() {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  // 회원 탈퇴 (내 플레이리스트도 함께 삭제됨)
+  const handleDeleteAccount = async () => {
+    if (!window.confirm(t('auth:deleteAccount.confirm'))) return;
+    try {
+      await authApi.deleteMe();
+      await logout();
+      toast.success(t('auth:deleteAccount.done'));
+      navigate('/');
+    } catch (error) {
+      toast.error(t('message.error'));
+    }
   };
 
   return (
@@ -114,6 +128,9 @@ function ProfilePage() {
         <Button variant="outline" className="w-full" onClick={handleLogout}>
           {t('header.logout')}
         </Button>
+        <button onClick={handleDeleteAccount} className="w-full mt-4 text-sm text-gray-500 hover:text-red-400">
+          {t('auth:deleteAccount.button')}
+        </button>
       </div>
     </div>
   );

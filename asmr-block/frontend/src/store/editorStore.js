@@ -1,130 +1,128 @@
 import { create } from 'zustand';
 
-const useEditorStore = create((set, get) => ({
-  // 편집 중인 플레이리스트
+/**
+ * 쌍둥이 빌딩 편집기 상태
+ * - main: 메인 동 (블록을 아래층부터 순서대로 재생)
+ * - background: 배경 동 (메인과 동시에 깔리는 소리, 짧으면 반복 가능)
+ */
+export const TOWERS = ['main', 'background'];
+
+const newKey = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+const emptyState = () => ({
   playlistId: null,
   title: '',
   description: '',
   isPublic: false,
-  blocks: [], // { id, blockId, block, sortOrder }
-  
-  // 상태
+  main: { volume: 1.0, blocks: [] },
+  background: { enabled: false, volume: 0.5, loop: true, blocks: [] },
+  activeTower: 'main',
   isModified: false,
+});
+
+const sumDuration = (blocks) => blocks.reduce((total, item) => total + (item.block?.duration || 0), 0);
+
+// 서버 응답의 동 → 편집용 블록 목록
+const toItems = (layer) => (layer?.blocks || []).map((b) => ({
+  key: newKey(),
+  block: { id: b.blockId, title: b.title, duration: b.duration, fileUrl: b.fileUrl, category: b.category },
+}));
+
+const useEditorStore = create((set, get) => ({
+  ...emptyState(),
   isSaving: false,
-  
-  // 플레이리스트 초기화 (새로 만들기)
-  initNew: () => {
-    set({
-      playlistId: null,
-      title: '',
-      description: '',
-      isPublic: false,
-      blocks: [],
-      isModified: false,
-    });
-  },
-  
-  // 기존 플레이리스트 로드
-  loadPlaylist: (playlist) => {
-    set({
-      playlistId: playlist.id,
-      title: playlist.title,
-      description: playlist.description || '',
-      isPublic: playlist.isPublic,
-      blocks: playlist.blocks.map((pb, index) => ({
-        id: `${pb.playlistBlockId || Date.now()}-${index}`,
-        blockId: pb.block.id,
-        block: pb.block,
-        sortOrder: pb.sortOrder,
-      })),
-      isModified: false,
-    });
-  },
-  
-  // 제목 변경
-  setTitle: (title) => {
-    set({ title, isModified: true });
-  },
-  
-  // 설명 변경
-  setDescription: (description) => {
-    set({ description, isModified: true });
-  },
-  
-  // 공개 여부 변경
-  setIsPublic: (isPublic) => {
-    set({ isPublic, isModified: true });
-  },
-  
-  // 블록 추가
-  addBlock: (block) => {
-    const { blocks } = get();
-    const newBlock = {
-      id: `${Date.now()}-${Math.random()}`,
-      blockId: block.id,
-      block: block,
-      sortOrder: blocks.length + 1,
-    };
-    set({
-      blocks: [...blocks, newBlock],
-      isModified: true,
-    });
-  },
-  
-  // 블록 제거
-  removeBlock: (id) => {
-    const { blocks } = get();
-    const newBlocks = blocks
-      .filter((b) => b.id !== id)
-      .map((b, index) => ({ ...b, sortOrder: index + 1 }));
-    set({
-      blocks: newBlocks,
-      isModified: true,
-    });
-  },
-  
-  // 블록 순서 변경
-  reorderBlocks: (sourceIndex, destinationIndex) => {
-    const { blocks } = get();
-    const newBlocks = Array.from(blocks);
-    const [removed] = newBlocks.splice(sourceIndex, 1);
-    newBlocks.splice(destinationIndex, 0, removed);
-    
-    // sortOrder 재계산
-    const reorderedBlocks = newBlocks.map((b, index) => ({
-      ...b,
-      sortOrder: index + 1,
-    }));
-    
-    set({
-      blocks: reorderedBlocks,
-      isModified: true,
-    });
-  },
-  
-  // 총 재생 시간 계산
-  getTotalDuration: () => {
-    const { blocks } = get();
-    return blocks.reduce((total, b) => total + (b.block?.duration || 0), 0);
-  },
-  
-  // 저장용 데이터 생성
-  getPlaylistData: () => {
-    const { title, description, isPublic, blocks } = get();
+
+  initNew: () => set(emptyState()),
+
+  loadPlaylist: (playlist) => set({
+    ...emptyState(),
+    playlistId: playlist.id,
+    title: playlist.title,
+    description: playlist.description || '',
+    isPublic: playlist.isPublic,
+    main: { volume: playlist.main?.volume ?? 1.0, blocks: toItems(playlist.main) },
+    background: playlist.background
+      ? { enabled: true, volume: playlist.background.volume, loop: playlist.background.loop, blocks: toItems(playlist.background) }
+      : emptyState().background,
+  }),
+
+  setTitle: (title) => set({ title, isModified: true }),
+  setDescription: (description) => set({ description, isModified: true }),
+  setIsPublic: (isPublic) => set({ isPublic, isModified: true }),
+  setActiveTower: (activeTower) => set((state) => ({
+    activeTower,
+    background: activeTower === 'background' ? { ...state.background, enabled: true } : state.background,
+  })),
+
+  // 지금 선택된 동 맨 위층에 블록 추가
+  addBlock: (block) => set((state) => {
+    const tower = state.activeTower;
     return {
-      title,
+      [tower]: {
+        ...state[tower],
+        enabled: true,
+        blocks: [...state[tower].blocks, { key: newKey(), block }],
+      },
+      isModified: true,
+    };
+  }),
+
+  removeBlock: (tower, key) => set((state) => ({
+    [tower]: { ...state[tower], blocks: state[tower].blocks.filter((item) => item.key !== key) },
+    isModified: true,
+  })),
+
+  moveBlock: (tower, fromIndex, toIndex) => set((state) => {
+    const blocks = [...state[tower].blocks];
+    const [moved] = blocks.splice(fromIndex, 1);
+    blocks.splice(toIndex, 0, moved);
+    return { [tower]: { ...state[tower], blocks }, isModified: true };
+  }),
+
+  setVolume: (tower, volume) => set((state) => ({
+    [tower]: { ...state[tower], volume },
+    isModified: true,
+  })),
+
+  setLoop: (loop) => set((state) => ({
+    background: { ...state.background, loop },
+    isModified: true,
+  })),
+
+  // 배경 동 끄기 (블록도 비움)
+  removeBackground: () => set((state) => ({
+    background: { ...emptyState().background },
+    activeTower: 'main',
+    isModified: state.background.blocks.length > 0 || state.isModified,
+  })),
+
+  // 길이(초)
+  durations: () => {
+    const { main, background } = get();
+    const mainDuration = sumDuration(main.blocks);
+    const backgroundDuration = sumDuration(background.blocks);
+    const hasBackground = background.enabled && background.blocks.length > 0;
+    const total = !hasBackground || background.loop ? mainDuration : Math.max(mainDuration, backgroundDuration);
+    return { main: mainDuration, background: backgroundDuration, total };
+  },
+
+  // 서버 저장 요청 형식
+  toRequest: () => {
+    const { title, description, isPublic, main, background } = get();
+    const hasBackground = background.enabled && background.blocks.length > 0;
+    return {
+      title: title.trim(),
       description,
       isPublic,
-      blocks: blocks.map((b) => ({
-        blockId: b.blockId,
-        sortOrder: b.sortOrder,
-      })),
+      main: { volume: main.volume, blockIds: main.blocks.map((item) => item.block.id) },
+      background: hasBackground
+        ? { volume: background.volume, loop: background.loop, blockIds: background.blocks.map((item) => item.block.id) }
+        : null,
     };
   },
-  
-  // 저장 상태 변경
+
   setSaving: (isSaving) => set({ isSaving }),
-  setModified: (isModified) => set({ isModified }),
+  markSaved: (playlistId) => set({ playlistId, isModified: false }),
 }));
 
 export default useEditorStore;

@@ -1,6 +1,8 @@
 package com.asmrblock.config;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -21,7 +23,9 @@ public record AppProperties(
         @Valid @NotNull Auth auth,
         @Valid @NotNull Storage storage,
         @Valid @NotNull Cors cors,
-        @Valid @NotNull PlayCount playCount) {
+        @Valid @NotNull PlayCount playCount,
+        @Valid @NotNull Audio audio,
+        @Valid @NotNull Render render) {
 
     public record Jwt(
             @NotBlank(message = "JWT 비밀키가 없습니다. JWT_SECRET 환경변수를 설정하세요.")
@@ -43,5 +47,20 @@ public record AppProperties(
     }
 
     public record PlayCount(@NotNull Duration dedupeWindow) {
+    }
+
+    /** ffmpeg 위치와 오디오 처리 기준 */
+    public record Audio(
+            @NotBlank String ffmpegPath,
+            @NotBlank String ffprobePath,
+            double targetLufs,
+            @NotNull Duration processTimeout) {
+    }
+
+    /** 완성본(합친 파일) 만들기 설정 */
+    public record Render(
+            @Min(1) int maxConcurrent,
+            @DecimalMin("0.0") double crossfadeSeconds,
+            @DecimalMin("0.0") double fadeSeconds) {
     }
 }

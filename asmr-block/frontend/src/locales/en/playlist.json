@@ -19,12 +19,44 @@
     "title": "Playlist Editor",
     "blocks": "Block List",
     "myBlocks": "My Playlist",
-    "dragHint": "Drag blocks to reorder",
+    "dragHint": "Drag blocks to change floors within the same tower",
     "emptyBlocks": "Please add blocks",
-    "selectBlocks": "Select blocks from the left"
+    "selectBlocks": "Select blocks from the left",
+    "addHint": "Press + to stack on the {{tower}}"
   },
   "visibility": {
     "public": "Public",
     "private": "Private"
+  },
+  "hasBackground": "Background",
+  "tower": {
+    "main": "Main tower",
+    "background": "Background tower",
+    "mainHint": "Plays from the ground floor up",
+    "backgroundHint": "Plays underneath the main tower",
+    "stackHere": "Click to stack here",
+    "stacking": "Stacking here",
+    "volume": "Vol",
+    "loop": "Loop if shorter",
+    "loopGhost": "Loop",
+    "remove": "Remove",
+    "addBackground": "Add a background tower (rain, wind…)",
+    "emptyMain": "Press + on a block to stack it",
+    "emptyBackground": "Stack sounds that keep playing underneath",
+    "added": "Stacked \"{{title}}\" on the {{tower}}"
+  },
+  "render": {
+    "hint": "Merge both towers into one seamless track",
+    "saveFirst": "Save to create a seamless track",
+    "unsaved": "Save your changes to create a new track",
+    "make": "Create track",
+    "making": "Creating your track…",
+    "failed": "Couldn't create the track.",
+    "retry": "Try again",
+    "ready": "Seamless track"
+  },
+  "validation": {
+    "title": "Please enter a title.",
+    "mainEmpty": "Stack at least one block on the main tower."
   }
 }

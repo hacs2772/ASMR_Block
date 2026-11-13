@@ -23,7 +23,6 @@ spring:
 
 mybatis:
   mapper-locations: classpath:mapper/**/*.xml
-  type-aliases-package: com.asmrblock.domain
   configuration:
     map-underscore-to-camel-case: true
     default-fetch-size: 100
@@ -46,6 +45,19 @@ app:
   play-count:
     # 같은 사람이 이 시간 안에 다시 재생하면 재생수를 올리지 않음
     dedupe-window: 30m
+  audio:
+    ffmpeg-path: ${APP_FFMPEG_PATH:ffmpeg}
+    ffprobe-path: ${APP_FFPROBE_PATH:ffprobe}
+    # 모든 블록을 이 음량으로 맞춤 (LUFS, 클수록 큰 소리. ASMR은 조용한 편이 좋음)
+    target-lufs: -24
+    process-timeout: 15m
+  render:
+    # 동시에 몇 개까지 완성본을 만들지 (서버 CPU에 맞게)
+    max-concurrent: 2
+    # 블록 사이를 겹쳐서 부드럽게 넘어가는 시간(초)
+    crossfade-seconds: 1.5
+    # 완성본 맨 앞/뒤 페이드 시간(초)
+    fade-seconds: 3
 
 management:
   endpoints:

@@ -31,6 +31,12 @@ export const authApi = {
     return response.data;
   },
 
+  // 회원 탈퇴
+  deleteMe: async () => {
+    const response = await axiosInstance.delete('/users/me');
+    return response.data;
+  },
+
   // 내 정보 수정
   updateMe: async (data) => {
     const response = await axiosInstance.put('/users/me', data);

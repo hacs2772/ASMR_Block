@@ -8,7 +8,8 @@
 # 실제 ASMR 녹음이 아니라 "소리 블록" 기능을 테스트하기 위한
 # 합성 음원입니다. 진짜 음원이 생기면 교체하세요.
 # 모든 파일은 같은 형식(44.1kHz 스테레오 128kbps)과
-# 같은 음량(-24 LUFS)으로 맞추고, 앞뒤 2초 페이드를 넣습니다.
+# 같은 음량(-24 LUFS)으로 맞춥니다. 블록끼리는 서버가 크로스페이드로
+# 이어 붙이므로, 앞뒤 페이드는 잡음 방지용으로 0.5초만 넣습니다.
 # =====================================================
 set -eu
 
@@ -27,9 +28,9 @@ gen() { # $1=파일명 $2=길이(초) $3=필터그래프(마지막 출력은 라
     echo "  - $1 (이미 있음, 건너뜀)"
     return
   fi
-  fade_out_start=$(( $2 - 2 ))
+  fade_out_start=$(awk "BEGIN { print $2 - 0.5 }")
   ffmpeg -nostdin -hide_banner -loglevel error -y \
-    -filter_complex "$3,aformat=channel_layouts=stereo,afade=t=in:d=2,afade=t=out:st=${fade_out_start}:d=2,loudnorm=I=-24:TP=-2:LRA=11,aresample=$SR" \
+    -filter_complex "$3,aformat=channel_layouts=stereo,afade=t=in:d=0.5,afade=t=out:st=${fade_out_start}:d=0.5,loudnorm=I=-24:TP=-2:LRA=11,aresample=$SR" \
     -t "$2" -ac 2 -c:a libmp3lame -b:a 128k "$out.tmp.mp3"
   mv "$out.tmp.mp3" "$out"
   echo "  + $1 (${2}초)"
