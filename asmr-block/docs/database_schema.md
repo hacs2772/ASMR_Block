@@ -2,8 +2,8 @@
 
 > 최종 수정일: 2026-11-13 / PostgreSQL 16
 >
-> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V4 가 기준입니다.
-> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘)
+> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V5 가 기준입니다.
+> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘 / V5: 트리거 중심 분류(code), 말소리, 녹음한 곳)
 > 서버가 시작될 때 Flyway가 자동 적용합니다. **테이블을 바꿀 때는 `V5__설명.sql` 처럼 새 파일을 추가**하세요 (기존 파일 수정 금지).
 > 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 환경에서만 실행).
 
@@ -55,7 +55,7 @@ audio_render                           완성본 (구성 해시로 재사용, �
 
 | 테이블 | 주요 컬럼 | 기본 데이터 (운영 DB에도 들어감) |
 |------|------|------|
-| sound_category | name, color(HEX), icon(앱 아이콘 이름, 소분류마다 - V4), sort_order, is_active, **parent_id**(대분류면 NULL), description | 대분류 7개(자연·노이즈·장소·세계의 소리·사물·생활·신체·목소리·음식·먹방·트렌드) + 소분류 17개 (예: 장소·세계의 소리 > 일본, 트렌드 > 왁스·슬라임) |
+| sound_category | name, **code**(V5, `tap` / `tap.tapping`), color(HEX), icon(앱 아이콘 이름, 소분류마다), sort_order, is_active, **parent_id**(대분류면 NULL), description | V5부터 대분류 = **트리거 묶음 10개** (탭핑·타건 · 스크래칭·브러싱 · 바스락 · 귓속말·입소리 · 슬라임·왁스 · 커팅·부수기 · 빗소리·물 · 자연·바람 · 거리·장소 · 노이즈·명상) + 소분류 28개. 옛 분류 행은 지우지 않고 이름·부모만 바꿔 블록 연결 유지 |
 | sound_tag | name, sort_order, is_active | 부드러운, 날카로운, 바삭한, 둔탁한, 습한, 리드미컬한 |
 
 ## block (ASMR 블록)
@@ -70,6 +70,8 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | duration | INTEGER | 초 |
 | price | INTEGER | **코인**, 0 = 무료 |
 | preview_key | VARCHAR(500) | 유료 블록 맛보기(앞 30초) 키 `previews/{id}-30s.mp3` (V3) |
+| talk_type | VARCHAR(10) | 말소리 `NONE`(노토킹) / `WHISPER`(속삭임) / `TALK`(말하기) (V5) |
+| recorded_place | VARCHAR(60) | 녹음한 곳 (선택, 예: 도쿄 신주쿠역 앞) (V5) |
 | category_id | FK → sound_category | |
 | uploader_id | FK → users | |
 | license | VARCHAR(30) | `CC0` / `CC_BY`(출처 표기 필요) / `OWN`(직접 녹음) / `CREATOR` |

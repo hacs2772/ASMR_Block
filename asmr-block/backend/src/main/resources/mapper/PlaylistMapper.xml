@@ -27,10 +27,12 @@
                 <association property="category" javaType="com.asmrblock.category.SoundCategory">
                     <id property="id" column="cat_id"/>
                     <result property="name" column="cat_name"/>
+                    <result property="code" column="cat_code"/>
                     <result property="color" column="cat_color"/>
                     <result property="icon" column="cat_icon"/>
                     <result property="parentId" column="cat_parent_id"/>
                     <result property="parentName" column="cat_parent_name"/>
+                    <result property="parentCode" column="cat_parent_code"/>
                 </association>
             </association>
         </collection>
@@ -128,8 +130,8 @@
                pb.id AS pb_id, pb.block_id, pb.sort_order, pb.repeat_count, pb.start_seconds,
                b.title AS block_title, b.file_key, b.duration AS block_duration, b.price AS block_price,
                b.status AS block_status, b.is_active AS block_active,
-               c.id AS cat_id, c.name AS cat_name, c.color AS cat_color, c.icon AS cat_icon,
-               c.parent_id AS cat_parent_id, pc.name AS cat_parent_name
+               c.id AS cat_id, c.name AS cat_name, c.code AS cat_code, c.color AS cat_color, c.icon AS cat_icon,
+               c.parent_id AS cat_parent_id, pc.name AS cat_parent_name, pc.code AS cat_parent_code
         FROM playlist_layer l
         JOIN playlist_block pb ON pb.layer_id = l.id
         JOIN block b ON b.id = pb.block_id

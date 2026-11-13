@@ -68,12 +68,24 @@ gen japan_crossing.mp3 180 "aevalsrc=exprs='0.35*(sin(2*PI*1040*t)*between(mod(t
 # 비누 깎기: 1.3초마다 사각- 하고 긁는 소리
 gen soap_cutting.mp3 180 "$(stereo_noise white 0.5),bandpass=f=2800:width_type=h:w=2500,volume='pow(sin(PI*min(mod(t,1.3),0.7)/0.7),2)*lt(mod(t,1.3),0.7)':eval=frame" &
 
+# --- 트리거 (V5) ---
+# 탭핑: 불규칙한 손톱 톡톡 (짧고 또렷한 클릭, 가끔 두 번)
+gen tapping.mp3 200 "aevalsrc=exprs='(sin(2*PI*1900*t)+0.6*sin(2*PI*3100*t))*(exp(-mod(t,0.37)*90)+0.7*exp(-mod(t+0.11,0.53)*110))*(0.5+0.5*gt(sin(2*PI*t/6),-0.4))*0.5':s=$SR,highpass=f=900,aecho=0.5:0.3:9:0.2" &
+# 브러싱: 2초마다 솔로 쓸어내리는 부드러운 쉬익
+gen brushing.mp3 200 "$(stereo_noise pink 0.5),bandpass=f=4200:width_type=h:w=4500,volume='pow(sin(PI*mod(t,2)/2),3)':eval=frame" &
+# 바스락: 얇은 비닐 - 촘촘한 크랙이 몰렸다 흩어짐
+gen crinkle.mp3 180 "aevalsrc=exprs='(random(0)*2-1)*gt(random(1),0.985-0.012*gt(sin(2*PI*t/3),0))':s=$SR,highpass=f=2500,lowpass=f=11000" &
+# 귓속말 느낌: 말소리 없이 '스-' 하는 속삭임 리듬 (합성)
+gen whisper.mp3 180 "$(stereo_noise pink 0.5),bandpass=f=2600:width_type=h:w=2200,volume='0.08+0.9*gt(sin(2*PI*t*1.7)+sin(2*PI*t*0.43),0.4)*pow(sin(PI*mod(t,0.6)/0.6),2)':eval=frame" &
+# 슬라임: 낮고 말랑한 꾹꾹 + 작은 뽁 소리
+gen slime.mp3 240 "$(stereo_noise brown 0.6),lowpass=f=1100,volume='0.15+0.85*pow(sin(PI*mod(t,1.4)/1.4),6)':eval=frame[sb];aevalsrc=exprs='0.5*sin(2*PI*(500-300*mod(t,1.4))*t)*exp(-mod(t+0.7,1.4)*60)':s=$SR,aformat=channel_layouts=stereo[sp];[sb][sp]amix=inputs=2:normalize=0" &
+
 wait
 
-# 15개가 모두 만들어졌는지 확인
+# 20개가 모두 만들어졌는지 확인
 count=$(find "$OUT_DIR/samples" -name '*.mp3' ! -name '*.tmp.mp3' | wc -l)
-if [ "$count" -lt 15 ]; then
-  echo "샘플 음원 생성 실패: $count/15 개만 만들어졌습니다." >&2
+if [ "$count" -lt 20 ]; then
+  echo "샘플 음원 생성 실패: $count/20 개만 만들어졌습니다." >&2
   exit 1
 fi
 echo "완료! ($count개)"

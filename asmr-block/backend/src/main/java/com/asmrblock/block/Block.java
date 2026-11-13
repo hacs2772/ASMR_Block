@@ -25,6 +25,8 @@ public class Block {
     private String previewKey;       // 유료 블록 맛보기(앞 30초) 파일
     private Integer duration;        // 재생 시간 (초)
     private Integer price;           // 가격 (코인, 0이면 무료)
+    private TalkType talkType;       // 말소리 (노토킹 / 속삭임 / 말하기)
+    private String recordedPlace;    // 녹음한 곳 (선택)
     private Long categoryId;
     private Long uploaderId;
     private License license;

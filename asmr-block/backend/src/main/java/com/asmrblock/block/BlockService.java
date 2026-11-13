@@ -39,8 +39,8 @@ public class BlockService {
     /** 블록 상점 목록 (승인된 것만). viewerId: 로그인 사용자 (owned 표시용, 비로그인 null) */
     @Transactional(readOnly = true)
     public PageResponse<BlockResponse> search(Long categoryId, List<Long> tagIds, String keyword, Boolean free,
-                                              String sort, PageQuery page, Long viewerId) {
-        BlockSearchCondition condition = condition(categoryId, tagIds, keyword, free, BlockStatus.APPROVED, sort, page);
+                                              TalkType talkType, String sort, PageQuery page, Long viewerId) {
+        BlockSearchCondition condition = condition(categoryId, tagIds, keyword, free, talkType, BlockStatus.APPROVED, sort, page);
         List<Block> blocks = blockMapper.search(condition);
         return PageResponse.of(toResponses(blocks, viewerId, false), page, blockMapper.count(condition));
     }
@@ -48,7 +48,7 @@ public class BlockService {
     /** 관리자 검수 목록: 상태별, 전체 음원 주소까지 */
     @Transactional(readOnly = true)
     public PageResponse<BlockResponse> searchForAdmin(BlockStatus status, PageQuery page) {
-        BlockSearchCondition condition = condition(null, null, null, null, status, "latest", page);
+        BlockSearchCondition condition = condition(null, null, null, null, null, status, "latest", page);
         List<Block> blocks = blockMapper.search(condition);
         return PageResponse.of(toResponses(blocks, null, true), page, blockMapper.count(condition));
     }
@@ -163,12 +163,13 @@ public class BlockService {
     }
 
     private static BlockSearchCondition condition(Long categoryId, List<Long> tagIds, String keyword, Boolean free,
-                                                  BlockStatus status, String sort, PageQuery page) {
+                                                  TalkType talkType, BlockStatus status, String sort, PageQuery page) {
         return BlockSearchCondition.builder()
                 .categoryId(categoryId)
                 .tagIds(tagIds == null || tagIds.isEmpty() ? null : tagIds)
                 .keyword(keyword == null || keyword.isBlank() ? null : keyword.trim())
                 .free(free)
+                .talkType(talkType)
                 .status(status)
                 .sort("popular".equals(sort) ? "popular" : "latest")
                 .offset(page.offset())

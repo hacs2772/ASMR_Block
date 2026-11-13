@@ -88,6 +88,8 @@ public class BlockUploadService {
                     .masterFileKey(masterKey)
                     .duration(duration)
                     .price(request.price() == null ? 0 : request.price())
+                    .talkType(request.talkType() == null ? TalkType.NONE : request.talkType())
+                    .recordedPlace(blankToNull(request.recordedPlace()))
                     .categoryId(request.categoryId())
                     .uploaderId(uploaderId)
                     .license(request.license())
@@ -119,7 +121,7 @@ public class BlockUploadService {
             throw ApiException.badRequest("CC_BY 라이선스는 출처 표기(attribution)가 필요합니다.");
         }
         if (!categoryService.isLeafCategory(request.categoryId())) {
-            throw ApiException.badRequest("소분류 카테고리를 골라주세요. (예: 자연 > 비·물)");
+            throw ApiException.badRequest("소분류 카테고리를 골라주세요. (예: 탭핑·타건 > 탭핑)");
         }
         int maxPrice = properties.shop().sellerMaxPrice();
         if (request.price() != null && request.price() > maxPrice) {
@@ -128,6 +130,10 @@ public class BlockUploadService {
         if (request.tagIds() != null && !categoryService.allTagsExist(request.tagIds())) {
             throw ApiException.badRequest("없는 태그가 포함되어 있습니다.");
         }
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private static String extensionOf(String filename) {

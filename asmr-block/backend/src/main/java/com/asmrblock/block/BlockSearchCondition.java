@@ -12,7 +12,8 @@ public class BlockSearchCondition {
 
     private Long categoryId;
     private List<Long> tagIds;       // 이 중 하나라도 달린 블록
-    private String keyword;          // 제목 검색
+    private String keyword;          // 이름·녹음한 곳·크리에이터 닉네임 검색
+    private TalkType talkType;       // NONE: 노토킹만, WHISPER: 속삭임만
     private Boolean free;            // true: 무료만, false: 유료만, null: 전부
     private BlockStatus status;
     private String sort;             // latest | popular

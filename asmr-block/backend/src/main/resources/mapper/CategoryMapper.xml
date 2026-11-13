@@ -4,7 +4,7 @@
 <mapper namespace="com.asmrblock.category.CategoryMapper">
 
     <select id="findAllCategories" resultType="com.asmrblock.category.SoundCategory">
-        SELECT c.*, p.name AS parent_name
+        SELECT c.*, p.name AS parent_name, p.code AS parent_code
         FROM sound_category c
         LEFT JOIN sound_category p ON p.id = c.parent_id
         WHERE c.is_active = true

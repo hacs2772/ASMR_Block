@@ -130,16 +130,29 @@
 | GET | `/categories` | - | 메뉴 트리 (아래) |
 | GET | `/tags` | - | `[{ "id": 1, "name": "부드러운" }]` |
 
-**메뉴 트리** - 대분류 > 소분류. 소분류는 대분류 색을 씀. 블록은 **소분류에만** 달림
+**메뉴 트리** - 대분류(**트리거 묶음**) > 소분류. 소분류는 대분류 색을 씀. 블록은 **소분류에만** 달림 (V5)
 ```json
 [
-  { "id": 1, "name": "자연", "color": "#22C55E", "icon": "leaf", "description": "비, 바람, 숲, 바다",
-    "children": [ { "id": 8, "name": "비·물", "color": "#22C55E", "icon": null, "parentId": 1, "parentName": "자연" }, ... ] },
-  { "id": 6, "name": "노이즈", ... }, { "id": 5, "name": "장소·세계의 소리", "children": [ ..., { "name": "일본" } ] },
-  { "id": 7, "name": "트렌드", "children": [ { "name": "왁스·슬라임" }, { "name": "커팅·부수기" } ] }
+  { "id": 2, "name": "탭핑·타건", "code": "tap", "color": "#FF8A3D", "icon": "hand-left", "description": "톡톡 두드리기, 키보드, 시계 딸깍",
+    "children": [ { "id": 33, "name": "탭핑", "code": "tap.tapping", "groupCode": "tap", "color": "#FF8A3D", "icon": "hand-left",
+                    "parentId": 2, "parentName": "탭핑·타건" }, ... ] },
+  { "name": "스크래칭·브러싱", "code": "scratch", ... }, { "name": "바스락", "code": "crinkle", ... }, ...
 ]
 ```
-대분류: 자연 · 노이즈 · 장소·세계의 소리 · 사물·생활 · 신체·목소리 · 음식·먹방 · 트렌드
+| 대분류 (`code`) | 소분류 |
+|------|------|
+| 탭핑·타건 (`tap`) | 탭핑 · 키보드 타건 · 시계·딸깍 |
+| 스크래칭·브러싱 (`scratch`) | 스크래칭 · 브러싱 · 머리 빗기 |
+| 바스락 (`crinkle`) | 비닐·포장 · 종이·책장 |
+| 귓속말·입소리 (`whisper`) | 귓속말 · 입소리 · 숨소리·심장 |
+| 슬라임·왁스 (`slime`) | 슬라임 · 왁스 |
+| 커팅·부수기 (`cut`) | 커팅 · 바삭·씹기 · 요리·먹방 |
+| 빗소리·물 (`rain`) | 비 · 물·계곡 · 바다·파도 |
+| 자연·바람 (`nature`) | 바람·숲 · 새소리 · 모닥불 |
+| 거리·장소 (`place`) | 카페·도시 · 거리·교통 · 여행지 |
+| 노이즈·명상 (`noise`) | 컬러 노이즈 · 생활 소음 · 싱잉볼·명상 |
+
+- `code`: 분류 코드 (소분류는 `대분류.이름` 형태). `groupCode`: 대분류 코드 — 앱·웹이 **파형 모양**과 트리거 필터에 씀
 
 ---
 
@@ -160,7 +173,7 @@
 | GET | `/me/uploads` | 필요 | **내가 올린 블록** (검수 상태 무관, 최신순, 페이지) |
 | POST | `/blocks/{id}/play` | 필요 | 재생 기록 |
 
-**목록 쿼리**: `categoryId` (대분류면 그 아래 소분류까지), `free=true|false` (무료만 / 유료만), `tagIds=1,2` (하나라도 달린 블록), `keyword` (제목), `sort=latest|popular`, `page`, `size`
+**목록 쿼리**: `categoryId` (대분류면 그 아래 소분류까지), `free=true|false` (무료만 / 유료만), `talkType=NONE|WHISPER|TALK` (**노토킹만** / 속삭임만 / 말하기만), `tagIds=1,2` (하나라도 달린 블록), `keyword` (이름 · 녹음한 곳 · 크리에이터 닉네임), `sort=latest|popular`, `page`, `size`
 
 **BlockResponse**
 ```json
@@ -174,13 +187,15 @@
   "duration": 180,
   "price": 30,
   "owned": false,
+  "talkType": "NONE",
+  "recordedPlace": "망원동 바삭공방",
   "license": "OWN",
   "sourceUrl": null,
   "attribution": null,
   "status": "APPROVED",
-  "category": { "id": 23, "name": "왁스·슬라임", "color": "#EC4899", "icon": "color-fill", "parentId": 7, "parentName": "트렌드" },
+  "category": { "id": 23, "name": "왁스", "code": "slime.wax", "groupCode": "slime", "color": "#B98CF5", "icon": "color-fill", "parentId": 7, "parentName": "슬라임·왁스" },
   "tags": [{ "id": 2, "name": "날카로운" }, { "id": 3, "name": "바삭한" }],
-  "uploader": { "id": 1, "nickname": "관리자" },
+  "uploader": { "id": 1, "nickname": "ASMR Block" },
   "playCount": 85,
   "recentPlays": 40,
   "createdAt": "2026-11-13T10:00:00"
@@ -191,7 +206,10 @@
 | `owned` | 내 블록함에 있는지 (비로그인이면 false) |
 | `fileUrl` | 전체 음원. 무료이거나 `owned`일 때만, 아니면 `null` |
 | `previewUrl` | 미리듣기. 무료는 전체와 같고, 유료는 앞 30초 (아직 못 만들었으면 `null`) |
-| `category.icon` | 앱 블록에 그리는 아이콘 (Ionicons 이름, 소분류마다 다름 - V4) |
+| `category.icon` | 앱 블록에 그리는 아이콘 (Ionicons 이름, 소분류마다 다름) |
+| `talkType` | 말소리: `NONE` 노토킹(말소리 없음) / `WHISPER` 속삭임 / `TALK` 말하기 |
+| `recordedPlace` | 녹음한 곳 (선택, 없으면 `null`). 블록에 작게 표시 |
+| `uploader.nickname` | 크리에이터 (앱에서 `@닉네임`처럼 표시) |
 
 ### 5.1 음원 업로드 `POST /blocks` (multipart/form-data)
 
@@ -206,6 +224,8 @@
 | `sourceUrl` | | 원본 출처 |
 | `attribution` | `CC_BY`면 ✅ | 출처 표기 문구 |
 | `price` | | 판매 가격(코인). 생략/0 = 무료, **최대 `maxPrice`**(설정 `app.shop.seller-max-price`, 기본 100) 넘으면 400 |
+| `talkType` | | 말소리 `NONE`(기본, 노토킹) / `WHISPER` / `TALK` |
+| `recordedPlace` | | 녹음한 곳 (60자 이내, 앞뒤 공백 정리, 비우면 없음) |
 
 서버 처리: 원본 보관 → **44.1kHz 스테레오 MP3, 음량 -24 LUFS로 변환** → `status: PENDING` 으로 등록 (관리자 승인 후 공개).
 승인되면 **올린 사람의 블록함에 자동으로** 들어갑니다.
@@ -213,6 +233,7 @@
 **내가 올린 블록 (MyUploadResponse)** - `GET /me/uploads`
 ```json
 { "id": 31, "title": "희귀한 교토 왁스 부수기", "fileUrl": "http://.../blocks/....mp3", "duration": 15, "price": 30,
+  "talkType": "NONE", "recordedPlace": "교토 공방",
   "status": "PENDING", "category": { "id": 23, "name": "왁스·슬라임", ... }, "collectedCount": 0, "playCount": 0, "createdAt": "..." }
 ```
 - `status`: `PENDING`(검수 중) / `APPROVED`(판매 중) / `REJECTED`(거절)
@@ -299,7 +320,7 @@
       { "position": 1, "blockId": 3, "title": "숲속 바람", "fileUrl": "http://.../wind.mp3",
         "duration": 180, "repeat": 3, "startSeconds": null, "totalDuration": 540, "playable": true,
         "owned": true, "price": 0,
-        "category": { "id": 9, "name": "바람·숲", "color": "#22C55E", "parentId": 1, "parentName": "자연" } }
+        "category": { "id": 9, "name": "바람·숲", "code": "nature.wind", "groupCode": "nature", "color": "#40BF85", "parentId": 1, "parentName": "자연·바람" } }
     ]
   },
   "mix": {

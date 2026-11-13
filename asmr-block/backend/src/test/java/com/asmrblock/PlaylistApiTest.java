@@ -31,7 +31,8 @@ class PlaylistApiTest extends IntegrationTest {
                 .andExpect(jsonPath("$.data.mix.items[0].startSeconds").value(120))
                 .andExpect(jsonPath("$.data.mix.items[1].startSeconds").value(360))
                 .andExpect(jsonPath("$.data.mix.duration").value(540))
-                .andExpect(jsonPath("$.data.main.items[0].category.parentName").value("자연"))
+                .andExpect(jsonPath("$.data.main.items[0].category.parentName").value("자연·바람"))
+                .andExpect(jsonPath("$.data.main.items[0].category.groupCode").value("nature"))
                 .andExpect(jsonPath("$.data.totalDuration").value(540))
                 .andExpect(jsonPath("$.data.render.status").value("NOT_REQUESTED"));
     }
@@ -54,7 +55,7 @@ class PlaylistApiTest extends IntegrationTest {
                 .andExpect(jsonPath("$.data.content[*].id", hasItem(3)))
                 .andExpect(jsonPath("$.data.content[*].id", not(hasItem(2))))
                 .andExpect(jsonPath("$.data.content[?(@.id == 3)].hasMix").value(true))
-                .andExpect(jsonPath("$.data.content[?(@.id == 1)].previewColors[1]").value("#3B82F6"));
+                .andExpect(jsonPath("$.data.content[?(@.id == 1)].previewColors[1]").value("#FF8A3D"));
     }
 
     @Test

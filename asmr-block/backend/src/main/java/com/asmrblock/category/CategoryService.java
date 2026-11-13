@@ -29,7 +29,7 @@ public class CategoryService {
                         Collectors.mapping(CategoryResponse::from, Collectors.toList())));
         return all.stream()
                 .filter(c -> c.getParentId() == null)
-                .map(c -> new CategoryTreeResponse(c.getId(), c.getName(), c.getColor(), c.getIcon(),
+                .map(c -> new CategoryTreeResponse(c.getId(), c.getName(), c.getCode(), c.getColor(), c.getIcon(),
                         c.getDescription(), children.getOrDefault(c.getId(), List.of())))
                 .toList();
     }

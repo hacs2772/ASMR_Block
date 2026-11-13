@@ -24,6 +24,7 @@ public final class BlockDtos {
      * owned: 내 블록함에 있는지 (비로그인이면 false)
      * fileUrl: 전체 음원 - 무료이거나 내 블록함에 있을 때만, 아니면 null
      * previewUrl: 미리듣기 - 무료는 전체, 유료는 앞 30초 맛보기 (아직 못 만들었으면 null)
+     * talkType: 말소리 (NONE 노토킹 / WHISPER 속삭임 / TALK 말하기), recordedPlace: 녹음한 곳 (없으면 null)
      */
     public record BlockResponse(
             Long id,
@@ -35,6 +36,8 @@ public final class BlockDtos {
             Integer duration,
             Integer price,
             boolean owned,
+            TalkType talkType,
+            String recordedPlace,
             License license,
             String sourceUrl,
             String attribution,
@@ -56,6 +59,7 @@ public final class BlockDtos {
                     block.isPaid() ? storage.publicUrl(block.getPreviewKey()) : fullUrl,
                     storage.publicUrl(block.getThumbnailKey()),
                     block.getDuration(), block.getPrice(), owned,
+                    block.getTalkType() == null ? TalkType.NONE : block.getTalkType(), block.getRecordedPlace(),
                     block.getLicense(), block.getSourceUrl(), block.getAttribution(), block.getStatus(),
                     CategoryResponse.from(block.getCategory()),
                     tags == null ? List.of() : tags,
@@ -96,7 +100,14 @@ public final class BlockDtos {
 
             /** 판매 가격(코인). 생략하거나 0이면 무료, 최대는 업로드 규칙의 maxPrice */
             @Min(value = 0, message = "가격은 0 이상이어야 합니다.")
-            Integer price) {
+            Integer price,
+
+            /** 말소리. 생략하면 NONE(노토킹) */
+            TalkType talkType,
+
+            /** 녹음한 곳 (선택, 예: 도쿄 신주쿠역 앞) */
+            @Size(max = 60, message = "녹음한 곳은 60자 이내여야 합니다.")
+            String recordedPlace) {
     }
 
     /** 업로드 규칙 (앱이 화면에 안내하고, 서버도 같은 값으로 검사) */
@@ -118,6 +129,8 @@ public final class BlockDtos {
             String fileUrl,
             Integer duration,
             Integer price,
+            TalkType talkType,
+            String recordedPlace,
             BlockStatus status,
             CategoryResponse category,
             long collectedCount,
@@ -126,7 +139,9 @@ public final class BlockDtos {
 
         public static MyUploadResponse from(Block block, long collectedCount, StorageService storage) {
             return new MyUploadResponse(block.getId(), block.getTitle(), storage.publicUrl(block.getFileKey()),
-                    block.getDuration(), block.getPrice(), block.getStatus(), CategoryResponse.from(block.getCategory()),
+                    block.getDuration(), block.getPrice(),
+                    block.getTalkType() == null ? TalkType.NONE : block.getTalkType(), block.getRecordedPlace(),
+                    block.getStatus(), CategoryResponse.from(block.getCategory()),
                     collectedCount, block.getPlayCount(), block.getCreatedAt());
         }
     }

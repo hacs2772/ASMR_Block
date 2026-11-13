@@ -17,6 +17,7 @@ public class SoundCategory {
     
     private Long id;
     private String name;
+    private String code;             // tap, tap.tapping … (앱·웹 파형 모양·필터)
     private String color;
     private String icon;
     private Long parentId;           // null이면 대분류
@@ -24,6 +25,7 @@ public class SoundCategory {
 
     // 조인 데이터 (소분류일 때 대분류 이름)
     private String parentName;
+    private String parentCode;
     private Integer sortOrder;
     private Boolean isActive;
     private LocalDateTime createdAt;

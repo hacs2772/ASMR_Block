@@ -2,12 +2,14 @@ package com.asmrblock;
 
 import com.asmrblock.support.IntegrationTest;
 import com.asmrblock.support.TestAudio;
+import org.springframework.mock.web.MockMultipartFile;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -56,6 +58,33 @@ class SellerApiTest extends IntegrationTest {
         // 유료라서 다른 사람은 아직 담을 수 없음 (구매 준비 중)
         mvc.perform(bearer(post("/api/v1/me/blocks/" + id), newUser().accessToken())).andExpect(status().isPaymentRequired());
         mvc.perform(get("/api/v1/me/uploads")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("올릴 때 말소리(속삭임)와 녹음한 곳을 적으면 블록에 같이 나온다")
+    void talkTypeAndRecordedPlace() throws Exception {
+        String seller = newUser().accessToken();
+        var request = bearer(multipart("/api/v1/blocks")
+                .file(new MockMultipartFile("file", "whisper.mp3", "audio/mpeg", TestAudio.sineMp3(12, 400))), seller)
+                .param("title", "작은 귓속말")
+                .param("categoryId", String.valueOf(leafCategoryId()))
+                .param("license", "OWN")
+                .param("talkType", "WHISPER")
+                .param("recordedPlace", "  도쿄 신주쿠역 앞  ");
+        long id = idOf(mvc.perform(request)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.talkType").value("WHISPER"))
+                .andExpect(jsonPath("$.data.recordedPlace").value("도쿄 신주쿠역 앞")));
+        getWithToken("/api/v1/me/uploads", seller)
+                .andExpect(jsonPath("$.data.content[0].id").value(id))
+                .andExpect(jsonPath("$.data.content[0].talkType").value("WHISPER"))
+                .andExpect(jsonPath("$.data.content[0].recordedPlace").value("도쿄 신주쿠역 앞"));
+
+        // 말소리를 안 적으면 노토킹, 녹음한 곳은 비워도 됨
+        upload(seller, TestAudio.sineMp3(12, 450), "tap.mp3", "톡톡")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.talkType").value("NONE"))
+                .andExpect(jsonPath("$.data.recordedPlace").doesNotExist());
     }
 
     @Test

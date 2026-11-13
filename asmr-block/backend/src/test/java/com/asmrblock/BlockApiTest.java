@@ -38,7 +38,9 @@ class BlockApiTest extends IntegrationTest {
         mvc.perform(get("/api/v1/blocks/1"))
                 .andExpect(jsonPath("$.data.title").value("잔잔한 빗소리"))
                 .andExpect(jsonPath("$.data.tags[*].name", hasItem("습한")))
-                .andExpect(jsonPath("$.data.category.color").value("#22C55E"));
+                .andExpect(jsonPath("$.data.category.color").value("#58A6F2"))
+                .andExpect(jsonPath("$.data.category.groupCode").value("rain"))
+                .andExpect(jsonPath("$.data.talkType").value("NONE"));
     }
 
     @Test
@@ -50,7 +52,25 @@ class BlockApiTest extends IntegrationTest {
         mvc.perform(get("/api/v1/blocks?keyword=빗소리"))
                 .andExpect(jsonPath("$.data.content[*].id", hasItem(1)));
         mvc.perform(get("/api/v1/blocks?categoryId=4"))
-                .andExpect(jsonPath("$.data.content[*].category.parentName", everyItem(org.hamcrest.Matchers.is("음식·먹방"))));
+                .andExpect(jsonPath("$.data.content[*].category.parentName", everyItem(org.hamcrest.Matchers.is("커팅·부수기"))));
+    }
+
+    @Test
+    @DisplayName("말소리 필터(노토킹/속삭임)와 크리에이터·녹음한 곳으로 찾기")
+    void talkTypeAndKeyword() throws Exception {
+        mvc.perform(get("/api/v1/blocks?talkType=WHISPER&size=100"))
+                .andExpect(jsonPath("$.data.content[*].id", hasItem(20)))
+                .andExpect(jsonPath("$.data.content[*].talkType", everyItem(org.hamcrest.Matchers.is("WHISPER"))));
+        mvc.perform(get("/api/v1/blocks?talkType=NONE&size=100"))
+                .andExpect(jsonPath("$.data.content[*].id", not(hasItem(20))))
+                .andExpect(jsonPath("$.data.content[*].id", hasItem(17)));
+        mvc.perform(get("/api/v1/blocks?keyword=whisper.mo&size=100"))
+                .andExpect(jsonPath("$.data.content[*].id", hasItem(20)))
+                .andExpect(jsonPath("$.data.content[*].uploader.nickname", everyItem(org.hamcrest.Matchers.is("whisper.mo"))));
+        mvc.perform(get("/api/v1/blocks?keyword=신주쿠&size=100"))
+                .andExpect(jsonPath("$.data.content[*].id", hasItem(15)))
+                .andExpect(jsonPath("$.data.content[?(@.id == 15)].recordedPlace", hasItem("도쿄 신주쿠역 앞")));
+        mvc.perform(get("/api/v1/blocks?talkType=SHOUT")).andExpect(status().isBadRequest());
     }
 
     @Test
@@ -119,7 +139,7 @@ class BlockApiTest extends IntegrationTest {
                         .file(new MockMultipartFile("file", "a.mp3", "audio/mpeg", audio)), user.accessToken())
                         .param("title", "대분류").param("categoryId", "1").param("license", "OWN"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.message").value("소분류 카테고리를 골라주세요. (예: 자연 > 비·물)"));
+                .andExpect(jsonPath("$.error.message").value("소분류 카테고리를 골라주세요. (예: 탭핑·타건 > 탭핑)"));
 
         mvc.perform(bearer(multipart("/api/v1/blocks"), user.accessToken())
                         .param("title", "파일 없음").param("categoryId", "1").param("license", "OWN"))
