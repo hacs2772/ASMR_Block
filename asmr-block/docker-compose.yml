@@ -20,7 +20,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      # 내 컴퓨터 안에서만 열기 (공인 IP 컴퓨터에서도 DB가 인터넷에 노출되지 않게)
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
