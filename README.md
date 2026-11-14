@@ -210,6 +210,13 @@ npx expo start
 나오는 QR 코드를 휴대폰으로 찍으면 앱이 열립니다 (휴대폰과 PC가 같은 와이파이).
 자세한 내용과 문제 해결: [mobile/README.md](./asmr-block/mobile/README.md)
 
+**윈도우 PC + 아이폰에서 실제로 겪은 문제와 해결**
+- `git`이 없다고 나오면: 설치 **전에** 열어 둔 PowerShell이라서 그래요 → 창을 새로 열기
+- Docker 설치가 "Virtual Machine Platform" 때문에 실패하면: 관리자 PowerShell에서 `wsl --install` → 재부팅 → 다시 설치
+- PowerShell에서 `npm`/`npx`가 보안 설정 오류를 내면: `npm.cmd install`, `npx.cmd expo start` 처럼 `.cmd`를 붙이기
+- 아이폰 Expo Go가 "signed in" 오류를 내면: 무료 Expo 계정을 만들어 PC에서 `npx.cmd expo login`, 아이폰 Expo Go에서도 같은 계정으로 로그인
+- 공유기 없이 인터넷에 바로 연결된 PC(주소가 192.168.… 이 아님)면 같은 와이파이가 아니어도 열려요. 이때는 윈도우 네트워크 프로필을 **"공용" 그대로** 두고, 안 쓸 땐 서버를 꺼 두세요
+
 ### (선택) Docker 없이 개발 모드로 실행
 Java 21, Node 22, ffmpeg 가 필요합니다.
 ```bash

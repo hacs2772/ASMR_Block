@@ -76,6 +76,16 @@
   - containerd가 꼬였으면: `pkill -f containerd; pkill dockerd; rm -f /var/run/docker.pid /var/run/docker/containerd/containerd.pid` 후 다시 시작
 - 백엔드 테스트(`./gradlew test`)는 Docker가 켜져 있어야 함
 
+### 사용자 컴퓨터(윈도우 데스크탑 + 아이폰)에서 겪은 문제와 해결
+- 사용자 환경: **윈도우 데스크탑(유선, 공유기 없이 공인 IP로 바로 연결) + 아이폰**. 명령은 PowerShell 기준으로 안내
+- `git`을 못 찾음 → 설치 전에 열어 둔 창이라서. 새 창을 열면 됨
+- Docker Desktop 설치 실패("Virtual Machine Platform") → 관리자 PowerShell에서 `wsl --install` → 재부팅 → 다시 설치(Per-user + WSL 2)
+- PowerShell 보안 설정 때문에 `npm`/`npx`가 막힐 수 있음 → 처음부터 `npm.cmd`, `npx.cmd`로 안내
+- 아이폰 Expo Go는 **PC의 Expo CLI와 같은 Expo 계정으로 로그인**해야 열림 (`npx.cmd expo login`)
+- 공인 IP PC라서 같은 와이파이가 아니어도 휴대폰이 바로 붙음. 대신 열린 포트가 인터넷에 노출됨 → 네트워크 프로필은 "공용" 유지, DB 포트는 `127.0.0.1`에만 열기(compose에 반영함), 안 쓸 땐 서버 끄기
+- 창 안을 클릭하면 제목이 "선택"이 되고 화면이 멈춘 듯 보임 → Esc
+- 돈 쓰기 전 방향: **졸업 프로젝트처럼 거의 0원으로 먼저 보여 주기** (도메인 asmrblock.com만 구매 → Cloudflare Tunnel로 내 PC 서버 공개 → 웹 버전을 Cloudflare Pages에 → 반응을 본 뒤 스토어 등록·사업자)
+
 ---
 
 ## 3. ASMR Block 요약 (참고용)
