@@ -80,6 +80,8 @@ export const playlistApi = {
     api<PlaylistDetail>(`/playlists/${id}`, { method: 'PUT', body: data }),
   remove: (id: number) => api<void>(`/playlists/${id}`, { method: 'DELETE' }),
   recordPlay: (id: number) => api<{ playCount: number; counted: boolean }>(`/playlists/${id}/play`, { method: 'POST' }),
+  /** 조합 한 번에 담기: 블록은 내 블록함에, 조합은 내 조합(비공개)으로 복사 → 복사본 상세 */
+  collect: (id: number) => api<PlaylistDetail>(`/playlists/${id}/collect`, { method: 'POST' }),
   requestRender: (id: number) => api<Render>(`/playlists/${id}/render`, { method: 'POST' }),
   render: (id: number) => api<Render>(`/playlists/${id}/render`),
 };

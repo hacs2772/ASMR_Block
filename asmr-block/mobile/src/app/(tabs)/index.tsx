@@ -1,117 +1,158 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { BlockLoader } from '@/components/BlockLoader';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { catalogApi, playlistApi } from '@/api/endpoints';
+import type { PlaylistSummary } from '@/api/types';
+import { usePlayer } from '@/audio/PlayerProvider';
 import { usePreview } from '@/audio/usePreview';
 import { AdSlot } from '@/components/AdSlot';
-import { BrickStack } from '@/components/Brand';
 import { BlockCard } from '@/components/BlockCard';
+import { BlockLoader } from '@/components/BlockLoader';
 import { PlaylistCard } from '@/components/PlaylistCard';
-import { Glossary, TingleWord, WhatIsTingle } from '@/components/tingle/Tingle';
-import { TriggerPicker } from '@/components/tingle/TriggerPicker';
-import { Button, EmptyState } from '@/components/ui';
+import { Button } from '@/components/ui';
+import { formatMinutes } from '@/lib/format';
 import { useAuth } from '@/store/auth';
-import { colors, space } from '@/theme';
+import { colors, radius, space } from '@/theme';
+
+const MORE_LIMIT = 4;
+
+/** 바로 듣기: 완성본이 없으면 플레이어가 만들고, 다 되면 자동 재생 */
+function play(id: number) {
+  router.push({ pathname: '/player/[id]', params: { id: String(id), autoplay: '1' } });
+}
 
 /**
- * 홈: "나만의 팅글을 쌓아 보세요" + 팅글이 뭐예요? + 단어장 → 트리거 고르기(첫 조합) →
- * 요즘 팅글 많이 오는 소리 · 요즘 뜨는 레이어드 조합 · 새로 올라온 조합 (사이사이 광고 자리)
+ * 홈: 맨 위는 "내 조합 바로 듣기"(가장 많이 쓰는 것), 그 아래 요즘 팅글 많이 오는 블록 + 광고 자리.
+ * 설명·단어장은 오른쪽 위 ? 도움말로, 다른 사람 조합은 ★추천 조합 탭으로.
  */
 export default function HomeScreen() {
+  const status = useAuth((s) => s.status);
   const user = useAuth((s) => s.user);
-  const query = useQuery({ queryKey: ['playlists', 'public', 'latest'], queryFn: () => playlistApi.public('latest') });
+  const mine = useQuery({ queryKey: ['playlists', 'mine'], queryFn: playlistApi.mine, enabled: status === 'signedIn' });
   const trending = useQuery({ queryKey: ['blocks', 'trending'], queryFn: () => catalogApi.trending(10) });
-  const trendingMixes = useQuery({ queryKey: ['playlists', 'trending'], queryFn: () => playlistApi.trending(5) });
-  const openPlayer = (id: number) => router.push({ pathname: '/player/[id]', params: { id: String(id) } });
   const preview = usePreview();
+  const combos = mine.data?.content ?? [];
+  const [first, ...rest] = combos;
 
   return (
-    <FlatList
+    <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
-      data={query.data?.content ?? []}
-      keyExtractor={(p) => String(p.id)}
       refreshControl={
-        <RefreshControl refreshing={query.isRefetching}
-          onRefresh={() => { void query.refetch(); void trending.refetch(); void trendingMixes.refetch(); }} tintColor={colors.muted} />
+        <RefreshControl refreshing={mine.isRefetching}
+          onRefresh={() => { void mine.refetch(); void trending.refetch(); }} tintColor={colors.muted} />
       }
-      ListHeaderComponent={
-        <View>
-          <View style={styles.hero}>
-            {user ? <Text style={styles.greeting}>{user.nickname}님,</Text> : null}
-            <Text style={styles.headline}>나만의 <TingleWord size={30} />을{'\n'}블록으로 쌓아 보세요</Text>
-            <BrickStack />
-            <Text style={styles.lead}>소리 하나가 블록 하나. 탭핑 3분, 바스락 3분, 귓속말 3분처럼 좋아하는 트리거 블록만 골라 딸깍 이어 붙이면 나한테 딱 맞는 ASMR이 돼요.</Text>
-            <WhatIsTingle />
-          </View>
-          <Glossary />
+    >
+      <Text style={styles.eyebrow}>{user ? `${user.nickname}님의 조합` : '내 조합'}</Text>
+      <Text style={styles.title}>바로 듣기</Text>
 
-          <View style={styles.section}>
-            <Text style={styles.eyebrow}>트리거 고르기</Text>
-            <Text style={styles.sectionTitle}>어떤 소리에 팅글이 오세요?</Text>
-            <Text style={styles.sectionSub}>끌리는 트리거를 고르면 첫 조합을 바로 쌓아 드려요.</Text>
-            <TriggerPicker />
-          </View>
-
-          {(trending.data?.length ?? 0) > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.eyebrow}>최근 7일</Text>
-              <Text style={[styles.sectionTitle, { marginBottom: space.md }]}>요즘 팅글 많이 오는 블록</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-                {trending.data!.map((b, i) => (
-                  <BlockCard key={b.id} block={b} rank={i + 1} style={styles.trendCard}
-                    previewing={preview.previewId === b.id} onPreview={() => preview.toggle(b)} />
-                ))}
-              </ScrollView>
-              <Button title="블록 상점에서 더 보기" variant="secondary" icon="storefront-outline" onPress={() => router.push('/explore')}
-                style={{ marginTop: space.md }} />
-            </View>
-          )}
-
-          <AdSlot index={0} />
-
-          {(trendingMixes.data?.length ?? 0) > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.eyebrow}>레이어드 조합</Text>
-              <Text style={[styles.sectionTitle, { marginBottom: space.md }]}>다른 사람들은 이렇게 쌓았어요</Text>
-              {trendingMixes.data!.map((p, i) => (
-                <View key={p.id} style={styles.rankRow}>
-                  <Text style={[styles.rank, i < 3 && { color: colors.primaryText }]}>{i + 1}</Text>
-                  <View style={{ flex: 1 }}>
-                    <PlaylistCard playlist={p} showOwner onPress={() => openPlayer(p.id)} />
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
-
-          <AdSlot index={1} />
-          <Text style={[styles.sectionTitle, { marginTop: space.md, marginBottom: space.md }]}>새로 올라온 조합</Text>
+      {status !== 'signedIn' ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyTitle}>로그인하면 내가 만든 조합을 여기서 바로 들을 수 있어요</Text>
+          <Button title="로그인" onPress={() => router.push('/login')} style={{ alignSelf: 'stretch' }} testID="home-login" />
         </View>
-      }
-      renderItem={({ item }) => <PlaylistCard playlist={item} showOwner onPress={() => openPlayer(item.id)} />}
-      ListEmptyComponent={
-        query.isLoading ? <BlockLoader style={{ marginTop: 40 }} />
-          : query.isError ? <EmptyState icon="cloud-offline-outline" title="서버에 연결할 수 없어요" message={(query.error as Error).message} />
-            : <EmptyState icon="albums-outline" title="아직 공개된 조합이 없어요" />
-      }
-    />
+      ) : mine.isLoading ? (
+        <BlockLoader style={{ marginVertical: space.lg }} />
+      ) : !first ? (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyTitle}>아직 만든 조합이 없어요</Text>
+          <Text style={styles.emptyText}>블록을 직접 쌓거나, 다른 사람 조합을 한 번에 담아 와 보세요.</Text>
+          <View style={styles.emptyActions}>
+            <Button title="새로 만들기" icon="add" onPress={() => router.push({ pathname: '/editor/[id]', params: { id: 'new' } })} style={{ flex: 1 }} />
+            <Button title="추천 조합" icon="star" variant="secondary" onPress={() => router.push('/combos')} style={{ flex: 1 }} />
+          </View>
+        </View>
+      ) : (
+        <>
+          <HeroCombo playlist={first} />
+          {rest.slice(0, MORE_LIMIT).map((p) => (
+            <PlaylistCard key={p.id} playlist={p} onPress={() => play(p.id)} />
+          ))}
+          {rest.length > MORE_LIMIT && (
+            <Pressable accessibilityRole="button" onPress={() => router.push('/library')} style={styles.moreLink} testID="home-all-combos">
+              <Text style={styles.moreText}>내 조합 전체 보기 ({combos.length})</Text>
+              <Ionicons name="chevron-forward" size={14} color={colors.primaryText} />
+            </Pressable>
+          )}
+        </>
+      )}
+
+      {(trending.data?.length ?? 0) > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.eyebrow}>최근 7일</Text>
+          <Text style={[styles.sectionTitle, { marginBottom: space.md }]}>요즘 팅글 많이 오는 블록</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+            {trending.data!.map((b, i) => (
+              <BlockCard key={b.id} block={b} rank={i + 1} style={styles.trendCard}
+                previewing={preview.previewId === b.id} onPreview={() => preview.toggle(b)} />
+            ))}
+          </ScrollView>
+          <Button title="블록 구매에서 더 보기" variant="secondary" icon="storefront-outline" onPress={() => router.push('/explore')}
+            style={{ marginTop: space.md }} />
+        </View>
+      )}
+
+      <AdSlot index={0} />
+    </ScrollView>
+  );
+}
+
+/** 가장 최근 조합: 크게, 누르면 바로 재생 (지금 재생 중이면 멈춤/이어 듣기) */
+function HeroCombo({ playlist }: { playlist: PlaylistSummary }) {
+  const player = usePlayer();
+  const current = player.nowPlaying?.playlistId === playlist.id;
+  const playing = current && player.status.playing;
+  const onPress = () => (current ? player.toggle() : play(playlist.id));
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={`${playlist.title} 바로 듣기`} onPress={onPress}
+      style={({ pressed }) => [styles.hero, pressed && { backgroundColor: colors.cardActive }]} testID={`hero-${playlist.id}`}>
+      <View style={styles.heroBricks}>
+        {playlist.previewColors.slice(0, 8).map((color, i) => (
+          <View key={i} style={[styles.heroBrick, { backgroundColor: color, zIndex: i }]}>
+            <View style={[styles.heroStud, { backgroundColor: color }]} />
+          </View>
+        ))}
+      </View>
+      <View style={styles.heroRow}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={styles.heroTitle} numberOfLines={1}>{playlist.title}</Text>
+          <Text style={styles.heroMeta} numberOfLines={1}>
+            한 바퀴 {formatMinutes(playlist.totalDuration)} · 블록 {playlist.blockCount}개{playlist.hasMix ? ' · 레이어드' : ''}
+            {playlist.listenMinutes >= 60 ? ` · ${playlist.listenMinutes / 60}시간 반복` : playlist.listenMinutes > 0 ? ` · ${playlist.listenMinutes}분 반복` : ''}
+          </Text>
+        </View>
+        <View style={styles.heroPlay}>
+          <Ionicons name={playing ? 'pause' : 'play'} size={26} color="#fff" style={playing ? undefined : { marginLeft: 3 }} />
+        </View>
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space.lg, paddingBottom: space.xl },
-  hero: { gap: space.md, paddingTop: space.sm, paddingBottom: space.xl },
-  greeting: { color: colors.muted, fontSize: 14 },
-  headline: { color: colors.text, fontSize: 30, fontWeight: '800', lineHeight: 38, letterSpacing: -0.5 },
-  lead: { color: colors.muted, fontSize: 14, lineHeight: 21 },
-  section: { marginTop: 36 },
   eyebrow: { color: colors.primaryText, fontSize: 12, fontWeight: '700', marginBottom: 4 },
+  title: { color: colors.text, fontSize: 24, fontWeight: '800', letterSpacing: -0.4, marginBottom: space.md },
+  section: { marginTop: 36 },
   sectionTitle: { color: colors.text, fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
-  sectionSub: { color: colors.muted, fontSize: 13, marginTop: 4, marginBottom: space.md },
-  rankRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  rank: { color: colors.faint, fontSize: 16, fontWeight: '800', width: 20, textAlign: 'center' },
   trendCard: { width: 172 },
+  emptyCard: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.lg, gap: space.sm },
+  emptyTitle: { color: colors.text, fontSize: 15, fontWeight: '700', lineHeight: 21 },
+  emptyText: { color: colors.muted, fontSize: 13, lineHeight: 19 },
+  emptyActions: { flexDirection: 'row', gap: space.sm, marginTop: space.sm },
+  hero: {
+    backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.borderStrong,
+    padding: space.lg, gap: space.md, marginBottom: space.sm,
+  },
+  heroBricks: { flexDirection: 'row', height: 30, backgroundColor: colors.plate, borderRadius: radius.sm, padding: 6, paddingRight: 10 },
+  heroBrick: { flex: 1, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(0,0,0,0.45)', borderBottomWidth: 3 },
+  heroStud: { position: 'absolute', right: -3, top: 5, width: 4, height: 7, borderTopRightRadius: 2, borderBottomRightRadius: 2 },
+  heroRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+  heroTitle: { color: colors.text, fontSize: 19, fontWeight: '800', letterSpacing: -0.3 },
+  heroMeta: { color: colors.muted, fontSize: 12, marginTop: 4 },
+  heroPlay: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+  moreLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: space.sm },
+  moreText: { color: colors.primaryText, fontSize: 13, fontWeight: '700' },
 });

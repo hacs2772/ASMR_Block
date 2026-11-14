@@ -6,6 +6,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BlockLoader } from '@/components/BlockLoader';
+import { CollectButton } from '@/components/CollectButton';
 import { playlistApi } from '@/api/endpoints';
 import type { PlaylistDetail, Render, Track } from '@/api/types';
 import { canDownload, listSaved, localUriOf, localUriOfSaved, removeTrack, saveTrack, type SavedTrack } from '@/audio/downloads';
@@ -97,6 +98,17 @@ export default function PlayerScreen() {
     playLatest.current();
   }, [autoplay, ready, isCurrent]);
 
+  // 홈의 "바로 듣기": 완성본이 아직 없으면 바로 만들기 시작 (다 되면 위에서 자동 재생)
+  const autoRequested = useRef(false);
+  const requestLatest = useRef(request.mutate);
+  useEffect(() => { requestLatest.current = request.mutate; });
+  useEffect(() => {
+    if (autoplay !== '1' || autoRequested.current || authStatus !== 'signedIn' || saved) return;
+    if (r?.status !== 'NOT_REQUESTED') return;
+    autoRequested.current = true;
+    requestLatest.current();
+  }, [autoplay, authStatus, r?.status, saved]);
+
   const download = useMutation({
     mutationFn: async () => {
       if (!p || !r?.fileUrl) throw new Error('완성본이 아직 없어요.');
@@ -146,6 +158,15 @@ export default function PlayerScreen() {
           ? `${p.owner.nickname} · 한 바퀴 ${formatMinutes(p.totalDuration)}${p.listenMinutes > 0 ? ` · ${sleepOptionLabel(p.listenMinutes)} 반복 재생` : ''}${p.mix ? ' · 레이어드' : ''}`
           : '휴대폰에 저장된 완성본'}
       </Text>
+      {p?.collect.sourceOwner && (
+        <Text style={styles.source}>★ @{p.collect.sourceOwner.nickname}님의 조합을 담아 왔어요</Text>
+      )}
+      {p && user && p.owner.id !== user.id && (
+        <View style={styles.collectRow}>
+          <Text style={styles.collectInfo}>담은 사람 {p.collect.collectCount}명</Text>
+          <CollectButton playlist={p} style={styles.collectBtn} />
+        </View>
+      )}
 
       {/* 완성본 상태 */}
       {!canPlay && (
@@ -267,6 +288,10 @@ function TimelineArt({ main, mix, total, fallbackColors }: { main: Track | null;
 }
 
 const styles = StyleSheet.create({
+  source: { color: colors.primaryText, fontSize: 12, textAlign: 'center', marginTop: -10, marginBottom: space.md },
+  collectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.md, marginBottom: space.lg },
+  collectInfo: { color: colors.muted, fontSize: 12 },
+  collectBtn: { minHeight: 38, paddingVertical: 6, paddingHorizontal: 16 },
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space.lg, paddingBottom: 60 },
   art: { height: 180, borderRadius: radius.lg, justifyContent: 'flex-end', overflow: 'hidden', marginBottom: space.lg, paddingTop: space.lg },

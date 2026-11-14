@@ -98,6 +98,19 @@ export type Track = {
 export type RenderStatus = 'NOT_REQUESTED' | 'PENDING' | 'PROCESSING' | 'DONE' | 'FAILED';
 export type Render = { status: RenderStatus; fileUrl: string | null; duration: number | null; progress: number };
 
+/**
+ * 조합 담기 정보 (보는 사람 기준).
+ * sourceOwner: 남의 조합을 담아 온 복사본이면 원작자. collectedId: 내가 이미 담았으면 내 복사본 id.
+ * lockedCount: 내가 아직 갖지 않은 유료 블록 수 (0이어야 한 번에 담기 가능)
+ */
+export type CollectInfo = {
+  sourcePlaylistId: number | null;
+  sourceOwner: { id: number; nickname: string } | null;
+  collectCount: number;
+  collectedId: number | null;
+  lockedCount: number;
+};
+
 export type PlaylistDetail = {
   id: number;
   title: string;
@@ -111,6 +124,7 @@ export type PlaylistDetail = {
   main: Track | null;
   mix: Track | null;
   render: Render;
+  collect: CollectInfo;
   createdAt: string;
   updatedAt: string;
 };
@@ -129,6 +143,7 @@ export type PlaylistSummary = {
   previewColors: string[];
   /** 요즘 뜨는 조합에서만: 최근 재생 수 */
   recentPlays: number | null;
+  collect: CollectInfo;
   createdAt: string;
 };
 

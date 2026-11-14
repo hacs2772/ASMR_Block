@@ -8,16 +8,18 @@ import { playlistApi } from '@/api/endpoints';
 import { canDownload, listSaved, localUriOfSaved, type SavedTrack } from '@/audio/downloads';
 import { usePlayer } from '@/audio/PlayerProvider';
 import { PlaylistCard } from '@/components/PlaylistCard';
+import { TriggerPicker } from '@/components/tingle/TriggerPicker';
 import { Button, EmptyState, SectionTitle } from '@/components/ui';
 import { formatMinutes } from '@/lib/format';
 import { useAuth } from '@/store/auth';
 import { colors, radius, space } from '@/theme';
 
-/** ASMR 편집: 새로 만들기 + 내 조합 + 휴대폰에 저장한 완성본(오프라인) */
+/** 블록 편집: 새로 만들기(+ 트리거로 빠르게 시작) + 내 조합 + 휴대폰에 저장한 완성본(오프라인) */
 export default function LibraryScreen() {
   const status = useAuth((s) => s.status);
   const mine = useQuery({ queryKey: ['playlists', 'mine'], queryFn: playlistApi.mine, enabled: status === 'signedIn' });
   const [saved, setSaved] = useState<SavedTrack[]>([]);
+  const [quickOpen, setQuickOpen] = useState(false);
   const player = usePlayer();
 
   useFocusEffect(useCallback(() => {
@@ -47,6 +49,18 @@ export default function LibraryScreen() {
     >
       <Button title="새로 만들기" icon="add" onPress={() => router.push({ pathname: '/editor/[id]', params: { id: 'new' } })} testID="new-playlist" />
 
+      {/* 트리거로 빠르게 시작: 좋아하는 소리를 고르면 무료 블록으로 첫 조합을 쌓아 줌 (처음 온 사람용, 접어 둠) */}
+      <View style={styles.quick}>
+        <Pressable accessibilityRole="button" accessibilityState={{ expanded: quickOpen }} onPress={() => setQuickOpen((v) => !v)}
+          style={styles.quickHead} testID="quick-start">
+          <Ionicons name="flash-outline" size={16} color={colors.primaryText} />
+          <Text style={styles.quickTitle}>트리거로 빠르게 시작</Text>
+          <Text style={styles.quickHint} numberOfLines={1}>좋아하는 소리만 고르면 첫 조합을 쌓아 줘요</Text>
+          <Ionicons name={quickOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.muted} />
+        </Pressable>
+        {quickOpen && <TriggerPicker />}
+      </View>
+
       {canDownload && saved.length > 0 && (
         <View style={styles.section}>
           <SectionTitle>휴대폰에 저장됨</SectionTitle>
@@ -61,7 +75,7 @@ export default function LibraryScreen() {
       )}
 
       <View style={styles.section}>
-        <SectionTitle>만든 조합</SectionTitle>
+        <SectionTitle>내 조합</SectionTitle>
         {mine.isLoading ? (
           <BlockLoader size="small" />
         ) : mine.isError ? (
@@ -92,5 +106,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card, borderRadius: radius.md,
   },
   savedTitle: { flex: 1, color: colors.text, fontSize: 15 },
+  quick: { marginTop: space.md, backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.md, gap: space.md },
+  quickHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  quickTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },
+  quickHint: { flex: 1, color: colors.faint, fontSize: 12 },
   savedMeta: { color: colors.muted, fontSize: 12 },
 });
