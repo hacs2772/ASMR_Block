@@ -40,6 +40,12 @@ public class LibraryService {
         return blockService.toResponse(block, userId);
     }
 
+    /** 조합 담기에서 쓰는 무료 블록 여러 개 담기 (이미 있는 블록은 건너뜀). 호출하는 쪽에서 무료·재생 가능을 확인함 */
+    @Transactional
+    public void addFree(Long userId, Collection<Long> blockIds) {
+        blockIds.forEach(blockId -> libraryMapper.insert(userId, blockId, LibrarySource.FREE));
+    }
+
     /** 빼기: 무료로 담은 블록만 (구매·지급 블록은 그대로 둠) */
     @Transactional
     public void remove(Long userId, Long blockId) {

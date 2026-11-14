@@ -38,16 +38,35 @@
         </collection>
     </resultMap>
 
+    <!-- 작성자 닉네임 + (담아 온 복사본이면) 원작자 + 이 조합을 담아 간 사람 수 -->
     <sql id="selectPlaylist">
-        SELECT p.*, u.nickname AS owner_nickname
+        SELECT p.*, u.nickname AS owner_nickname,
+               sp.user_id AS source_owner_id, su.nickname AS source_owner_nickname,
+               (SELECT COUNT(*) FROM playlist c WHERE c.source_playlist_id = p.id) AS collect_count
         FROM playlist p
         JOIN users u ON u.id = p.user_id
+        LEFT JOIN playlist sp ON sp.id = p.source_playlist_id
+        LEFT JOIN users su ON su.id = sp.user_id
     </sql>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO playlist (user_id, title, description, total_duration, is_public, listen_minutes)
         VALUES (#{userId}, #{title}, #{description}, #{totalDuration}, #{isPublic}, #{listenMinutes})
     </insert>
+
+    <!-- 담아 온 복사본. 이미 같은 원본을 담았으면 아무것도 넣지 않음 (id가 비어 있음) -->
+    <insert id="insertCopy" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO playlist (user_id, title, description, total_duration, is_public, listen_minutes, source_playlist_id)
+        VALUES (#{userId}, #{title}, #{description}, #{totalDuration}, #{isPublic}, #{listenMinutes}, #{sourcePlaylistId})
+        ON CONFLICT (user_id, source_playlist_id) WHERE source_playlist_id IS NOT NULL DO NOTHING
+    </insert>
+
+    <!-- userId가 sourceIds 중에서 담아 온 복사본 (id, source_playlist_id) -->
+    <select id="findCopies" resultType="com.asmrblock.playlist.Playlist">
+        SELECT id, source_playlist_id FROM playlist
+        WHERE user_id = #{userId} AND source_playlist_id IN
+        <foreach collection="sourceIds" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
 
     <update id="update">
         UPDATE playlist SET title = #{title}, description = #{description},

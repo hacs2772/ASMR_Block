@@ -12,6 +12,12 @@ public interface PlaylistMapper {
 
     void insert(Playlist playlist);
 
+    /** 담아 온 복사본 저장. 같은 사람이 같은 원본을 이미 담았으면 넣지 않음 (그때 id는 null로 남음) */
+    void insertCopy(Playlist playlist);
+
+    /** userId가 sourceIds 중에서 담아 온 복사본 (id, sourcePlaylistId만 채워짐) */
+    List<Playlist> findCopies(@Param("userId") Long userId, @Param("sourceIds") Collection<Long> sourceIds);
+
     void update(Playlist playlist);
 
     void delete(Long id);

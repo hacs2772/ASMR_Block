@@ -284,6 +284,7 @@
 | PUT | `/playlists/{id}` | 본인 | 수정 (트랙을 통째로 교체) |
 | DELETE | `/playlists/{id}` | 본인 | 삭제 |
 | POST | `/playlists/{id}/play` | 필요 | 재생 기록 (블록과 같은 규칙) |
+| POST | `/playlists/{id}/collect` | 필요 | **조합 한 번에 담기** (7.4) |
 
 ### 7.1 저장 요청 (생성/수정 동일)
 ```json
@@ -331,6 +332,7 @@
     ]
   },
   "render": { "status": "DONE", "fileUrl": "http://.../renders/73b9....mp3", "duration": 540, "progress": 100 },
+  "collect": { "sourcePlaylistId": null, "sourceOwner": null, "collectCount": 4, "collectedId": 57, "lockedCount": 0 },
   "createdAt": "...", "updatedAt": "..."
 }
 ```
@@ -344,9 +346,26 @@
 {
   "id": 3, "title": "...", "isPublic": true, "playCount": 12, "totalDuration": 540, "listenMinutes": 60,
   "owner": { "id": 2, "nickname": "테스트유저" },
-  "blockCount": 3, "hasMix": true, "previewColors": ["#22C55E"], "recentPlays": null, "createdAt": "..."
+  "blockCount": 3, "hasMix": true, "previewColors": ["#22C55E"], "recentPlays": null,
+  "collect": { "sourcePlaylistId": null, "sourceOwner": null, "collectCount": 4, "collectedId": null, "lockedCount": 0 },
+  "createdAt": "..."
 }
 ```
+- `collect` (상세·목록 공통, **보는 사람 기준** — 공개 목록·요즘 뜨는 조합도 토큰을 보내면 채워짐)
+  - `sourcePlaylistId` / `sourceOwner`: 남의 조합을 담아 온 복사본이면 원본 id와 원작자 (아니면 null)
+  - `collectCount`: 이 조합을 담아 간 사람 수
+  - `collectedId`: 내가 이미 담았으면 내 복사본 id (아니면 null)
+  - `lockedCount`: 내가 아직 갖지 않은 유료 블록 수 (0이어야 한 번에 담기 가능)
+
+### 7.4 조합 한 번에 담기 `POST /playlists/{id}/collect`
+남의 **공개** 조합을 담으면
+1. 그 조합에 들어간 블록이 **내 블록함**에 들어오고 (무료 블록, 이미 있으면 그대로)
+2. 조합이 **내 조합(비공개)**으로 복사됩니다 → 바로 듣거나 편집기에서 내 마음대로 고칠 수 있음
+
+- 이미 담은 조합이면 새로 만들지 않고 그 복사본을 돌려줌 (복사본을 지우면 다시 담을 수 있음)
+- 응답: 복사본 상세(7.2), 메시지 `"내 조합에 담았어요."`
+
+**Error:** 400 (내가 만든 조합, 지금 들을 수 없는 블록 포함), 401, 402 (아직 갖지 않은 **유료 블록** 포함 — 코인 구매가 열리면 그 블록 값만 내고 담게 됨), 403 (남의 비공개), 404
 
 ---
 

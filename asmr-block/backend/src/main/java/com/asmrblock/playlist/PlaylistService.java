@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -41,20 +42,22 @@ public class PlaylistService {
     @Transactional(readOnly = true)
     public PageResponse<PlaylistSummaryResponse> listMine(Long userId, PageQuery page) {
         List<Playlist> playlists = playlistMapper.findByUserId(userId, page.offset(), page.size());
-        return PageResponse.of(summaries(playlists), page, playlistMapper.countByUserId(userId));
+        return PageResponse.of(summaries(playlists, userId), page, playlistMapper.countByUserId(userId));
     }
 
+    /** 공개 조합 (viewerId: 보는 사람, 비로그인이면 null → 이미 담았는지·잠긴 유료 블록 수 계산에 씀) */
     @Transactional(readOnly = true)
-    public PageResponse<PlaylistSummaryResponse> listPublic(String sort, PageQuery page) {
+    public PageResponse<PlaylistSummaryResponse> listPublic(String sort, PageQuery page, Long viewerId) {
         String order = "popular".equals(sort) ? "popular" : "latest";
         List<Playlist> playlists = playlistMapper.findPublic(order, page.offset(), page.size());
-        return PageResponse.of(summaries(playlists), page, playlistMapper.countPublic());
+        return PageResponse.of(summaries(playlists, viewerId), page, playlistMapper.countPublic());
     }
 
     /** 요즘 뜨는 조합 (최근 days일 재생 수 기준, 공개만) */
     @Transactional(readOnly = true)
-    public List<PlaylistSummaryResponse> trending(int days, int size) {
-        return summaries(playlistMapper.findTrending(Math.min(Math.max(days, 1), 30), Math.min(Math.max(size, 1), 50)));
+    public List<PlaylistSummaryResponse> trending(int days, int size, Long viewerId) {
+        return summaries(playlistMapper.findTrending(Math.min(Math.max(days, 1), 30), Math.min(Math.max(size, 1), 50)),
+                viewerId);
     }
 
     /** 공개 플레이리스트이거나 내 것이면 동 정보까지 채워서 반환 (userId는 비로그인이면 null) */
@@ -87,6 +90,65 @@ public class PlaylistService {
         playlistMapper.deleteLayers(id);
         saveLayers(id, request);
         return getViewable(id, userId);
+    }
+
+    /**
+     * 조합 한 번에 담기: 남의 공개 조합의 블록을 내 블록함에 넣고, 조합을 내 조합(비공개)으로 복사.
+     * 아직 갖지 않은 유료 블록이 있으면 담을 수 없음 (코인 구매가 열리면 그 블록 값만 내고 담게 됨).
+     * 이미 담은 조합이면 그 복사본을 그대로 돌려줌.
+     */
+    @Transactional
+    public Playlist collect(Long id, Long userId) {
+        Playlist source = getViewable(id, userId);
+        if (source.getUserId().equals(userId)) {
+            throw ApiException.badRequest("내가 만든 조합이에요.");
+        }
+        Long existing = collectedIds(userId, List.of(id)).get(id);
+        if (existing != null) {
+            return getViewable(existing, userId);
+        }
+
+        List<Block> blocks = source.distinctBlocks();
+        if (blocks.stream().anyMatch(b -> !b.isPlayable())) {
+            throw ApiException.badRequest("지금은 들을 수 없는 블록이 있어서 담을 수 없어요.");
+        }
+        Set<Long> owned = libraryService.ownedIds(userId, blocks.stream().map(Block::getId).toList());
+        int locked = source.lockedCount(owned);
+        if (locked > 0) {
+            throw ApiException.paymentRequired("유료 블록이 " + locked + "개 들어 있어요. 코인 구매가 열리면 담을 수 있어요.");
+        }
+        libraryService.addFree(userId, blocks.stream().map(Block::getId).filter(b -> !owned.contains(b)).toList());
+
+        Playlist copy = Playlist.builder()
+                .userId(userId).title(source.getTitle()).description(source.getDescription())
+                .totalDuration(source.getTotalDuration()).isPublic(false).listenMinutes(source.getListenMinutes())
+                .playCount(0).sourcePlaylistId(source.getId())
+                .build();
+        playlistMapper.insertCopy(copy);
+        if (copy.getId() == null) {
+            // 동시에 두 번 누른 경우: 먼저 만들어진 복사본을 돌려줌
+            return getViewable(collectedIds(userId, List.of(id)).get(id), userId);
+        }
+        for (PlaylistLayer layer : source.getLayers()) {
+            PlaylistLayer copied = PlaylistLayer.builder()
+                    .playlistId(copy.getId()).role(layer.getRole()).volume(layer.getVolume()).build();
+            playlistMapper.insertLayer(copied);
+            playlistMapper.insertLayerBlocks(copied.getId(), layer.getBlocks().stream()
+                    .map(pb -> new ItemRequest(pb.getBlock().getId(), pb.getRepeatCount(),
+                            layer.getRole() == LayerRole.MIX ? pb.getStartSeconds() : null))
+                    .toList());
+        }
+        return getViewable(copy.getId(), userId);
+    }
+
+    /** viewerId가 담아 온 복사본 id (원본 id → 복사본 id). 비로그인이면 빈 맵 */
+    @Transactional(readOnly = true)
+    public Map<Long, Long> collectedIds(Long viewerId, Collection<Long> sourceIds) {
+        if (viewerId == null || sourceIds.isEmpty()) {
+            return Map.of();
+        }
+        return playlistMapper.findCopies(viewerId, sourceIds).stream()
+                .collect(Collectors.toMap(Playlist::getSourcePlaylistId, Playlist::getId));
     }
 
     @Transactional
@@ -210,9 +272,15 @@ public class PlaylistService {
         playlistMapper.insertLayerBlocks(layer.getId(), items);
     }
 
-    private List<PlaylistSummaryResponse> summaries(List<Playlist> playlists) {
+    /** 목록 요약: 동 정보 + 보는 사람이 이미 담았는지 + 잠긴 유료 블록 수 (모두 쿼리 몇 번으로) */
+    private List<PlaylistSummaryResponse> summaries(List<Playlist> playlists, Long viewerId) {
         loadLayers(playlists);
-        return playlists.stream().map(PlaylistSummaryResponse::from).toList();
+        Map<Long, Long> collected = collectedIds(viewerId, playlists.stream().map(Playlist::getId).toList());
+        Set<Long> owned = libraryService.ownedIds(viewerId, playlists.stream()
+                .flatMap(p -> p.distinctBlocks().stream()).map(Block::getId).collect(Collectors.toSet()));
+        return playlists.stream()
+                .map(p -> PlaylistSummaryResponse.from(p, collected.get(p.getId()), p.lockedCount(owned)))
+                .toList();
     }
 
     /** 여러 플레이리스트의 동을 쿼리 한 번으로 채움 */

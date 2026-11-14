@@ -198,4 +198,59 @@ class PlaylistApiTest extends IntegrationTest {
         postJson("/api/v1/playlists/1/play", "", user.accessToken()).andExpect(jsonPath("$.data.counted").value(false));
         postJson("/api/v1/playlists/2/play", "", user.accessToken()).andExpect(status().isForbidden());
     }
+
+    @Test
+    @DisplayName("조합 한 번에 담기: 블록은 내 블록함에, 조합은 내 조합(비공개)으로 복사, 두 번 담아도 하나")
+    void collectPlaylist() throws Exception {
+        Tokens user = newUser();
+        String token = user.accessToken();
+        // 샘플 3번(공개, test 계정): 메인 숲속 바람 x3 + 믹스 빗소리 2:00, 6:00 — 모두 무료
+        getWithToken("/api/v1/playlists/public?size=100", token)
+                .andExpect(jsonPath("$.data.content[?(@.id == 3)].collect.collectedId").value(org.hamcrest.Matchers.contains((Object) null)))
+                .andExpect(jsonPath("$.data.content[?(@.id == 3)].collect.lockedCount").value(0))
+                .andExpect(jsonPath("$.data.content[?(@.id == 4)].collect.lockedCount").value(2));
+
+        long copyId = idOf(postJson("/api/v1/playlists/3/collect", "", token)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").value("내 조합에 담았어요."))
+                .andExpect(jsonPath("$.data.isPublic").value(false))
+                .andExpect(jsonPath("$.data.owner.nickname").value("테스터"))
+                .andExpect(jsonPath("$.data.collect.sourcePlaylistId").value(3))
+                .andExpect(jsonPath("$.data.collect.sourceOwner.id").value(2))
+                .andExpect(jsonPath("$.data.main.items[0].repeat").value(3))
+                .andExpect(jsonPath("$.data.main.items[0].owned").value(true))
+                .andExpect(jsonPath("$.data.mix.items[1].startSeconds").value(360))
+                .andExpect(jsonPath("$.data.totalDuration").value(540))
+                .andExpect(jsonPath("$.data.listenMinutes").value(60)));
+
+        // 블록은 내 블록함에 들어옴 → 복사본을 그대로 고쳐 저장할 수 있음
+        getWithToken("/api/v1/me/blocks", token)
+                .andExpect(jsonPath("$.data[*].id", org.hamcrest.Matchers.hasItems(1, 3)));
+        // 두 번 담으면 같은 복사본
+        postJson("/api/v1/playlists/3/collect", "", token)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(copyId));
+        // 원본 쪽에서 보면: 담아 간 사람 수 + 내가 담은 복사본 id
+        getWithToken("/api/v1/playlists/3", token)
+                .andExpect(jsonPath("$.data.collect.collectedId").value(copyId))
+                .andExpect(jsonPath("$.data.collect.collectCount").value(org.hamcrest.Matchers.greaterThanOrEqualTo(1)));
+        getWithToken("/api/v1/playlists?size=50", token)
+                .andExpect(jsonPath("$.data.content[?(@.id == %d)].collect.sourceOwner.nickname".formatted(copyId))
+                        .value(org.hamcrest.Matchers.contains(org.hamcrest.Matchers.notNullValue())));
+    }
+
+    @Test
+    @DisplayName("조합 담기가 안 되는 경우: 내 조합 400, 남의 비공개 403, 아직 없는 유료 블록 402, 비로그인 401")
+    void collectPlaylistRejected() throws Exception {
+        String owner = login(SEED_USER_EMAIL, SEED_PASSWORD).accessToken();
+        postJson("/api/v1/playlists/3/collect", "", owner).andExpect(status().isBadRequest());
+
+        String user = newUser().accessToken();
+        postJson("/api/v1/playlists/2/collect", "", user).andExpect(status().isForbidden());
+        // 샘플 4번: 왁스·비누(유료) → 코인 구매가 열리기 전에는 담을 수 없음
+        postJson("/api/v1/playlists/4/collect", "", user)
+                .andExpect(status().isPaymentRequired())
+                .andExpect(jsonPath("$.error.message").value("유료 블록이 2개 들어 있어요. 코인 구매가 열리면 담을 수 있어요."));
+        postJson("/api/v1/playlists/3/collect", "").andExpect(status().isUnauthorized());
+    }
 }

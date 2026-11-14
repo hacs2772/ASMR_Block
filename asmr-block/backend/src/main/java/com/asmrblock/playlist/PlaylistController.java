@@ -38,17 +38,19 @@ public class PlaylistController {
     // 공개 플레이리스트 둘러보기 (sort=latest|popular)
     @GetMapping("/public")
     public ApiResponse<PageResponse<PlaylistSummaryResponse>> listPublic(
+            @AuthenticationPrincipal Long userId,
             @RequestParam(defaultValue = "latest") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ApiResponse.ok(playlistService.listPublic(sort, PageQuery.of(page, size)));
+        return ApiResponse.ok(playlistService.listPublic(sort, PageQuery.of(page, size), userId));
     }
 
     // 요즘 뜨는 조합 (최근 7일 재생이 많은 공개 조합)
     @GetMapping("/trending")
-    public ApiResponse<List<PlaylistSummaryResponse>> trending(@RequestParam(defaultValue = "7") int days,
+    public ApiResponse<List<PlaylistSummaryResponse>> trending(@AuthenticationPrincipal Long userId,
+                                                               @RequestParam(defaultValue = "7") int days,
                                                                @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.ok(playlistService.trending(days, size));
+        return ApiResponse.ok(playlistService.trending(days, size, userId));
     }
 
     // 상세 (공개 플레이리스트는 로그인 없이도 가능 → userId가 null일 수 있음)
@@ -79,6 +81,13 @@ public class PlaylistController {
         return ApiResponse.message("플레이리스트가 삭제되었습니다.");
     }
 
+    // 조합 한 번에 담기: 블록은 내 블록함에, 조합은 내 조합(비공개)으로 복사 (로그인 필요)
+    @PostMapping("/{playlistId}/collect")
+    public ApiResponse<PlaylistDetailResponse> collect(@AuthenticationPrincipal Long userId,
+                                                       @PathVariable Long playlistId) {
+        return ApiResponse.ok("내 조합에 담았어요.", detail(playlistService.collect(playlistId, userId), userId));
+    }
+
     // 재생 기록 (로그인 필요)
     @PostMapping("/{playlistId}/play")
     public ApiResponse<PlayResult> recordPlay(@AuthenticationPrincipal Long userId,
@@ -88,6 +97,7 @@ public class PlaylistController {
 
     private PlaylistDetailResponse detail(Playlist playlist, Long viewerId) {
         return PlaylistDetailResponse.from(playlist, renderService.statusOf(playlist), storageService,
-                playlistService.ownedBlockIds(playlist, viewerId));
+                playlistService.ownedBlockIds(playlist, viewerId),
+                playlistService.collectedIds(viewerId, List.of(playlist.getId())).get(playlist.getId()));
     }
 }

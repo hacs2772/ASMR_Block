@@ -94,6 +94,27 @@ public final class PlaylistDtos {
     // ===================== 응답 =====================
 
     public record OwnerResponse(Long id, String nickname) {
+
+        /** 담아 온 복사본이면 원본을 만든 사람, 아니면 null */
+        static OwnerResponse sourceOf(Playlist playlist) {
+            return playlist.getSourceOwnerId() == null ? null
+                    : new OwnerResponse(playlist.getSourceOwnerId(), playlist.getSourceOwnerNickname());
+        }
+    }
+
+    /**
+     * 조합 담기 정보 (보는 사람 기준).
+     * sourcePlaylistId/sourceOwner: 담아 온 복사본이면 원본과 원작자.
+     * collectCount: 이 조합을 담아 간 사람 수. collectedId: 보는 사람이 이미 담았으면 그 복사본 id.
+     * lockedCount: 보는 사람이 아직 갖지 않은 유료 블록 수 (0이어야 한 번에 담을 수 있음)
+     */
+    public record CollectInfo(Long sourcePlaylistId, OwnerResponse sourceOwner, int collectCount,
+                              Long collectedId, int lockedCount) {
+
+        static CollectInfo of(Playlist playlist, Long collectedId, int lockedCount) {
+            return new CollectInfo(playlist.getSourcePlaylistId(), OwnerResponse.sourceOf(playlist),
+                    playlist.getCollectCount() == null ? 0 : playlist.getCollectCount(), collectedId, lockedCount);
+        }
     }
 
     /**
@@ -150,18 +171,20 @@ public final class PlaylistDtos {
             TrackResponse main,
             TrackResponse mix,
             RenderResponse render,
+            CollectInfo collect,
             LocalDateTime createdAt,
             LocalDateTime updatedAt) {
 
         public static PlaylistDetailResponse from(Playlist playlist, RenderResponse render, StorageService storage,
-                                                  Set<Long> ownedBlockIds) {
+                                                  Set<Long> ownedBlockIds, Long collectedId) {
             return new PlaylistDetailResponse(
                     playlist.getId(), playlist.getTitle(), playlist.getDescription(), playlist.getIsPublic(),
                     playlist.getPlayCount(), playlist.getTotalDuration(), playlist.getListenMinutes(),
                     new OwnerResponse(playlist.getUserId(), playlist.getOwnerNickname()),
                     playlist.layer(LayerRole.MAIN).map(l -> TrackResponse.from(l, storage, ownedBlockIds)).orElse(null),
                     playlist.layer(LayerRole.MIX).map(l -> TrackResponse.from(l, storage, ownedBlockIds)).orElse(null),
-                    render, playlist.getCreatedAt(), playlist.getUpdatedAt());
+                    render, CollectInfo.of(playlist, collectedId, playlist.lockedCount(ownedBlockIds)),
+                    playlist.getCreatedAt(), playlist.getUpdatedAt());
         }
     }
 
@@ -179,9 +202,10 @@ public final class PlaylistDtos {
             boolean hasMix,
             List<String> previewColors,
             Integer recentPlays,
+            CollectInfo collect,
             LocalDateTime createdAt) {
 
-        public static PlaylistSummaryResponse from(Playlist playlist) {
+        public static PlaylistSummaryResponse from(Playlist playlist, Long collectedId, int lockedCount) {
             List<PlaylistBlock> mainBlocks = playlist.layer(LayerRole.MAIN)
                     .map(PlaylistLayer::getBlocks).orElse(List.of());
             return new PlaylistSummaryResponse(
@@ -195,6 +219,7 @@ public final class PlaylistDtos {
                                     : pb.getBlock().getCategory().getColor())
                             .toList(),
                     playlist.getRecentPlays(),
+                    CollectInfo.of(playlist, collectedId, lockedCount),
                     playlist.getCreatedAt());
         }
     }

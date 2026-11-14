@@ -2,9 +2,9 @@
 
 > 최종 수정일: 2026-11-13 / PostgreSQL 16
 >
-> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V5 가 기준입니다.
-> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘 / V5: 트리거 중심 분류(code), 말소리, 녹음한 곳)
-> 서버가 시작될 때 Flyway가 자동 적용합니다. **테이블을 바꿀 때는 `V5__설명.sql` 처럼 새 파일을 추가**하세요 (기존 파일 수정 금지).
+> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V6 가 기준입니다.
+> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘 / V5: 트리거 중심 분류(code), 말소리, 녹음한 곳 / V6: 조합 담기 — 복사본의 원본)
+> 서버가 시작될 때 Flyway가 자동 적용합니다. **테이블을 바꿀 때는 `V7__설명.sql` 처럼 새 파일을 추가**하세요 (기존 파일 수정 금지).
 > 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 환경에서만 실행).
 
 ---
@@ -105,6 +105,7 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | is_public | BOOLEAN | 공개면 비로그인도 조회 가능 |
 | listen_minutes | INTEGER | 얼마나 들을까요? 0 = 한 바퀴만, 그 외 분 (0~600, V3) |
 | play_count | INTEGER | |
+| source_playlist_id | FK → playlist (SET NULL) | 남의 공개 조합을 **담아 온 복사본**이면 원본 id (V6). `(user_id, source_playlist_id)` 유일 → 같은 조합은 한 번만 담김 |
 
 ## playlist_layer (트랙)
 
