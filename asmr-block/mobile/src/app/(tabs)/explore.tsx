@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { BlockLoader } from '@/components/BlockLoader';
 import { ApiError } from '@/api/client';
 import { catalogApi, libraryApi } from '@/api/endpoints';
 import type { Block, TalkType } from '@/api/types';
@@ -146,7 +147,7 @@ export default function ShopScreen() {
             <EmptyState icon="lock-closed-outline" title="로그인하면 블록을 담을 수 있어요">
               <Button title="로그인" onPress={() => router.push('/login')} style={{ alignSelf: 'stretch', marginTop: space.md }} />
             </EmptyState>
-          ) : query.isLoading ? <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
+          ) : query.isLoading ? <BlockLoader style={{ marginTop: 40 }} />
             : query.isError ? <EmptyState icon="cloud-offline-outline" title="서버에 연결할 수 없어요" message={(query.error as Error).message} />
               : tab === 'mine' && raw.length === 0 ? <EmptyState icon="cube-outline" title="아직 담은 블록이 없어요" message="무료 블록부터 담아보세요" />
                 : <EmptyState icon="musical-notes-outline" title="찾는 소리가 없어요" message="다른 트리거나 이름으로 찾아보세요" />

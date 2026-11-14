@@ -63,6 +63,7 @@ cd asmr-block/mobile && npm run typecheck && npm run lint && npm test
 - 편집기: 상태·계산은 `src/store/editor.ts`(순수 함수 + zustand, jest로 테스트), 화면은 `src/components/editor/`. 드래그는 react-native-gesture-handler v3 훅(`usePanGesture` 등, Reanimated 없음)
   - 끄는 동안 블록 요소를 없애거나 그리는 순서를 바꾸지 않는다 (손가락 아래 요소가 바뀌면 웹/기기에서 끌기가 취소됨). 위치(`left`)·`zIndex`·흐리게만 바꾼다
   - 블록 색 = 대분류, 아이콘 = 소분류(`category.icon`, Ionicons 이름)
+  - **로딩 표시 = `BlockLoader`**(`components/BlockLoader.tsx`): 블록 셋이 떨어졌다 딸깍 붙기를 반복 + 블록 안 소리 막대가 트리거마다 다른 박자로 움직임. 빙글빙글 `ActivityIndicator`는 버튼 안의 작은 표시에만. 앱을 켜면 정지 첫 화면 다음에 움직이는 `StartupScreen`(최소 1.1초, "동작 줄이기" 켠 사람은 멈춘 블록)
   - 앱 아이콘·첫 화면 = 사용자가 고른 "블록마다 다른 소리"(탭핑·바스락·귓속말 블록 셋 + 소리 막대). `node scripts/make-app-icons.js`(Playwright)로 `assets/`의 아이콘·안드로이드 아이콘·첫 화면·파비콘을 다시 만듦. 첫 화면 설정은 `app.json`의 `expo-splash-screen`
   - 블록 모양(`components/editor/Brick.tsx`) = 사용자가 고른 **C안**: 각진 모서리 + 진한 테두리 + 아래 두께·그림자, 오른쪽 네모 돌기, 겉면 **홈 한 칸 = 1분**(`minutes` 넘기면 그려짐). 둥근 알약 모양으로 되돌리지 않는다
 - 로직은 `__tests__`에 jest 테스트를 추가한다. 화면 흐름은 웹 미리보기(`npx expo export -p web`) + Playwright로 확인.

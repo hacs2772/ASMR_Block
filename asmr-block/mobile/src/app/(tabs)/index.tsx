@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BlockLoader } from '@/components/BlockLoader';
 import { catalogApi, playlistApi } from '@/api/endpoints';
 import { usePreview } from '@/audio/usePreview';
 import { AdSlot } from '@/components/AdSlot';
@@ -91,7 +92,7 @@ export default function HomeScreen() {
       }
       renderItem={({ item }) => <PlaylistCard playlist={item} showOwner onPress={() => openPlayer(item.id)} />}
       ListEmptyComponent={
-        query.isLoading ? <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />
+        query.isLoading ? <BlockLoader style={{ marginTop: 40 }} />
           : query.isError ? <EmptyState icon="cloud-offline-outline" title="서버에 연결할 수 없어요" message={(query.error as Error).message} />
             : <EmptyState icon="albums-outline" title="아직 공개된 조합이 없어요" />
       }

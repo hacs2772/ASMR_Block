@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlockLoader } from '@/components/BlockLoader';
 import { playlistApi } from '@/api/endpoints';
 import { canDownload, listSaved, localUriOfSaved, type SavedTrack } from '@/audio/downloads';
 import { usePlayer } from '@/audio/PlayerProvider';
@@ -62,7 +63,7 @@ export default function LibraryScreen() {
       <View style={styles.section}>
         <SectionTitle>만든 조합</SectionTitle>
         {mine.isLoading ? (
-          <ActivityIndicator color={colors.primary} />
+          <BlockLoader size="small" />
         ) : mine.isError ? (
           <EmptyState icon="cloud-offline-outline" title="서버에 연결할 수 없어요" message={(mine.error as Error).message} />
         ) : (mine.data?.content.length ?? 0) === 0 ? (

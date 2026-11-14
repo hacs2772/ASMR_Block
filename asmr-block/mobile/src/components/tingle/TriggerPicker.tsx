@@ -1,7 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { BlockLoader } from '@/components/BlockLoader';
 import { catalogApi, libraryApi } from '@/api/endpoints';
 import type { Block } from '@/api/types';
 import { Button, Chip } from '@/components/ui';
@@ -80,7 +81,7 @@ export function TriggerPicker() {
     }
   };
 
-  if (all.isLoading || categories.isLoading) return <ActivityIndicator color={colors.primary} style={{ marginVertical: space.lg }} />;
+  if (all.isLoading || categories.isLoading) return <BlockLoader size="small" style={{ marginVertical: space.lg }} />;
 
   return (
     <View style={{ gap: space.md }}>

@@ -1,12 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { setSessionExpiredHandler } from '@/api/client';
 import { PlayerProvider } from '@/audio/PlayerProvider';
+import { StartupScreen } from '@/components/BlockLoader';
 import { useAuth } from '@/store/auth';
 import { colors } from '@/theme';
 
@@ -19,8 +19,16 @@ const theme = {
   colors: { ...DarkTheme.colors, background: colors.bg, card: colors.bg, primary: colors.primary, border: colors.border, text: colors.text },
 };
 
+/** 앱을 켤 때 블록이 딸깍 붙는 모습을 한 번은 보여 주는 최소 시간 */
+const STARTUP_MIN_MS = 1100;
+
 export default function RootLayout() {
   const status = useAuth((s) => s.status);
+  const [introDone, setIntroDone] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setIntroDone(true), STARTUP_MIN_MS);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     setSessionExpiredHandler(() => {
@@ -30,13 +38,7 @@ export default function RootLayout() {
     useAuth.getState().bootstrap();
   }, []);
 
-  if (status === 'loading') {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
-  }
+  if (status === 'loading' || !introDone) return <StartupScreen />;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

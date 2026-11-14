@@ -3,7 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { BlockLoader } from '@/components/BlockLoader';
 import { catalogApi, sellerApi } from '@/api/endpoints';
 import type { Block, MyUpload, TalkType } from '@/api/types';
 import { BlockCard } from '@/components/BlockCard';
@@ -185,7 +186,7 @@ export default function UploadScreen() {
       </View>
 
       <Text style={styles.sectionTitle}>내가 올린 블록</Text>
-      {mine.isLoading ? <ActivityIndicator color={colors.primary} />
+      {mine.isLoading ? <BlockLoader size="small" />
         : (mine.data?.content ?? []).length === 0 ? <Text style={styles.empty}>아직 올린 블록이 없어요</Text>
           : mine.data!.content.map((u) => <UploadRow key={u.id} upload={u} />)}
     </ScrollView>

@@ -4,7 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BlockLoader } from '@/components/BlockLoader';
 import { playlistApi } from '@/api/endpoints';
 import type { PlaylistDetail, Render, Track } from '@/api/types';
 import { canDownload, listSaved, localUriOf, localUriOfSaved, removeTrack, saveTrack, type SavedTrack } from '@/audio/downloads';
@@ -114,7 +115,7 @@ export default function PlayerScreen() {
   };
 
   // ---------- 화면 ----------
-  if (offline !== '1' && detail.isLoading) return <ActivityIndicator color={colors.primary} style={{ marginTop: 80 }} />;
+  if (offline !== '1' && detail.isLoading) return <BlockLoader style={{ marginTop: 80 }} />;
   if (offline !== '1' && detail.isError && !saved) {
     return <EmptyState icon="alert-circle-outline" title="조합을 불러오지 못했어요" message={(detail.error as Error).message} />;
   }
@@ -151,7 +152,7 @@ export default function PlayerScreen() {
         <View style={styles.renderBox}>
           {isWorking(r) || request.isPending ? (
             <>
-              <ActivityIndicator color={colors.primary} />
+              <BlockLoader />
               <Text style={styles.renderText} testID="render-progress">
                 블록들을 하나로 합치는 중이에요… {r?.progress ?? 0}%{'\n'}
                 {(p?.totalDuration ?? 0) > 3600 ? '긴 조합은 몇 분 걸릴 수 있어요. 다른 화면에 다녀와도 괜찮아요' : '보통 몇 초~수십 초 걸려요'}

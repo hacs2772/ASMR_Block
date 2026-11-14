@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { GestureDetector, ScrollView, useCompetingGestures, usePanGesture, useTapGesture } from 'react-native-gesture-handler';
+import { BlockLoader } from '@/components/BlockLoader';
 import { libraryApi } from '@/api/endpoints';
 import type { Block } from '@/api/types';
 import { Button, Chip } from '@/components/ui';
@@ -70,7 +71,7 @@ export function BlockBox() {
       </View>
 
       {library.isLoading ? (
-        <ActivityIndicator color={colors.primary} style={{ marginTop: space.lg }} />
+        <BlockLoader size="small" style={{ marginTop: space.lg }} />
       ) : (library.data ?? []).length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>내 블록함이 비어 있어요</Text>

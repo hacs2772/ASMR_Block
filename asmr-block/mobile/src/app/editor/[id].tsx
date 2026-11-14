@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { BlockLoader } from '@/components/BlockLoader';
 import { libraryApi, playlistApi } from '@/api/endpoints';
 import { ActionPanel } from '@/components/editor/ActionPanel';
 import { BlockBox } from '@/components/editor/BlockBox';
@@ -102,7 +103,7 @@ export default function EditorScreen() {
   if (sessionKey !== routeKey) {
     return detail.isError
       ? <EmptyState icon="alert-circle-outline" title="불러오지 못했어요" message={(detail.error as Error).message} />
-      : <ActivityIndicator color={colors.primary} style={{ marginTop: 60 }} />;
+      : <BlockLoader style={{ marginTop: 60 }} label="조합을 불러오는 중" />;
   }
 
   /** 전체 듣기 시작 위치: 고른 블록이 있으면 거기서부터 */
