@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#0B0B12",
+    "backgroundColor": "#0A0A0F",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.asmrblock.app"
@@ -15,7 +15,7 @@
     "android": {
       "package": "com.asmrblock.app",
       "adaptiveIcon": {
-        "backgroundColor": "#0B0B12",
+        "backgroundColor": "#0A0A0F",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -38,7 +38,20 @@
         }
       ],
       "expo-font",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 240,
+          "resizeMode": "contain",
+          "backgroundColor": "#0A0A0F",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#0A0A0F"
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
