@@ -55,7 +55,7 @@ export function BlockCard({ block, previewing, onPreview, rank, showNote, right,
           ))}
         </View>
         <Brick color={color} width={productBrickWidth(block.duration)} height={BRICK_H} icon={iconOf(block.category)}
-          title={formatDuration(block.duration)} labelMinWidth={60} style={styles.product} />
+          title={formatDuration(block.duration)} minutes={block.duration / 60} labelMinWidth={60} style={styles.product} />
         <View style={[styles.tag, block.price === 0 && styles.tagFree]}>
           <View style={styles.tagHole} />
           <Text style={[styles.tagText, block.price === 0 && { color: colors.success }]}>{block.price > 0 ? `${block.price}코인` : '무료'}</Text>

@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg, borderRadius: radius.sm,
   },
   chain: { flexDirection: 'row' },
-  brick: { flex: 1, height: 14, borderRadius: 3, borderBottomWidth: 2, borderBottomColor: 'rgba(0,0,0,0.3)' },
+  brick: { flex: 1, height: 14, borderRadius: 1.5, borderWidth: 1, borderColor: 'rgba(0,0,0,0.45)', borderBottomWidth: 2.5 },
   stud: { position: 'absolute', right: -2, top: 4, width: 3, height: 5, borderTopRightRadius: 2, borderBottomRightRadius: 2 },
   mixLine: { height: 4, width: '55%', marginLeft: '20%', borderRadius: 2, backgroundColor: colors.faint },
   info: { flex: 1, minWidth: 0 },

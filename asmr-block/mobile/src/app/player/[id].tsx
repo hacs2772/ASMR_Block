@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
   content: { padding: space.lg, paddingBottom: 60 },
   art: { height: 180, borderRadius: radius.lg, justifyContent: 'flex-end', overflow: 'hidden', marginBottom: space.lg, paddingTop: space.lg },
   artLane: { height: 28, position: 'relative' },
-  artBrick: { position: 'absolute', top: 0, height: 28, borderRadius: 5, borderBottomWidth: 3, borderBottomColor: 'rgba(0,0,0,0.3)' },
+  artBrick: { position: 'absolute', top: 0, height: 28, borderRadius: 2, borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.45)', borderBottomWidth: 4 },
   progressTrack: { width: '100%', height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden' },
   progressBar: { height: 6, backgroundColor: colors.primary },
   artGround: { height: 2, backgroundColor: colors.primary, opacity: 0.5, marginTop: 4 },

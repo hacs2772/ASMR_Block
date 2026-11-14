@@ -12,7 +12,7 @@ export function DragGhost({ origin }: { origin: { x: number; y: number } }) {
   return (
     <View pointerEvents="none" style={[styles.ghost, { left: x - origin.x - grabX, top: y - origin.y - grabY }]}>
       <Brick color={source.block.category?.color ?? categoryFallbackColor} width={width} height={height}
-        icon={iconOf(source.block.category)} title={source.block.title} />
+        icon={iconOf(source.block.category)} title={source.block.title} minutes={source.block.duration / 60} />
     </View>
   );
 }

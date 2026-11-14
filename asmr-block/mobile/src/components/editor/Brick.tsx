@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { IconName } from '@/components/ui';
 import { shade } from './colors';
@@ -17,6 +16,8 @@ type Props = {
   height?: number;
   icon: IconName | null;
   title: string;
+  /** 소리 길이(분). 주면 겉면에 1분마다 홈을 팜 */
+  minutes?: number;
   selected?: boolean;
   /** 끌고 있는 블록의 원래 자리 (흐리게 + 점선). 손가락 아래 요소가 사라지면 끌기가 멈춰서 모양은 그대로 둠 */
   hole?: boolean;
@@ -27,34 +28,50 @@ type Props = {
   style?: StyleProp<ViewStyle>;
 };
 
+/** 홈은 너무 촘촘하면 지저분해서 최소 이 간격일 때만 */
+const MIN_GROOVE_GAP = 10;
+const EDGE = 1.5;
+
 /**
- * 옆으로 누운 레고 블록. 오른쪽 돌기 2개가 다음 블록 속으로 끼워짐
- * (뒤에 그려지는 블록이 앞 블록의 돌기를 덮어서 딱 붙은 것처럼 보임).
- * 폭 = 소리 길이, 색 = 카테고리, 아이콘으로 구분하고 긴 블록에만 이름.
+ * 옆으로 누운 블록 (각진 모양 + 또렷한 테두리 + 아래 두께).
+ * 오른쪽 네모 돌기 2개가 다음 블록 속으로 끼워짐 (뒤에 그려지는 블록이 앞 블록의 돌기를 덮음).
+ * 폭 = 소리 길이, 겉면 홈 한 칸 = 1분, 색 = 트리거, 아이콘으로 구분하고 넓으면 글자까지.
  */
-export function Brick({ color, width, height = BRICK_HEIGHT, icon, title, selected, hole, dimmed, labelMinWidth = NAME_MIN_WIDTH, style }: Props) {
-  const base = shade(color, -0.2);
-  const studColor = shade(base, 0.25);
-  const studHeight = Math.round(height * 0.24);
+export function Brick({ color, width, height = BRICK_HEIGHT, icon, title, minutes, selected, hole, dimmed, labelMinWidth = NAME_MIN_WIDTH, style }: Props) {
+  const base = shade(color, -0.12);
+  const edge = shade(base, -0.42);
+  const top = shade(base, 0.32);
+  const bottom = shade(base, -0.24);
+  const studHeight = Math.max(6, Math.round(height * 0.26));
   const showName = width >= labelMinWidth;
   const iconSize = height >= BRICK_HEIGHT ? 17 : 14;
+  const gap = minutes && minutes > 0 ? width / minutes : 0;
+  const grooves = gap >= MIN_GROOVE_GAP ? Math.floor(minutes! - 0.05) : 0;
 
   return (
     <View style={[{ width, height, opacity: hole ? 0.3 : dimmed ? 0.45 : 1 }, selected && !hole && styles.lifted, style]} pointerEvents="box-none">
-      {/* 오른쪽 돌기 */}
-      <View style={[styles.stud, { top: height * 0.16, height: studHeight, backgroundColor: studColor }]} />
-      <View style={[styles.stud, { bottom: height * 0.22, height: studHeight, backgroundColor: studColor }]} />
-      <LinearGradient
-        colors={[shade(base, 0.3), base, base, shade(base, -0.25)]}
-        locations={[0, 0.3, 0.7, 1]}
-        style={[styles.body, { height }, selected && styles.selected]}
-      >
-        <View style={styles.seam} />
+      {/* 바닥 그림자 받침 (입체감) */}
+      <View style={styles.drop} pointerEvents="none" />
+      {/* 오른쪽 네모 돌기 */}
+      {[height * 0.17, height * 0.57].map((y) => (
+        <View key={y} style={[styles.stud, { top: y, height: studHeight, backgroundColor: base, borderColor: edge }]}>
+          <View style={[styles.studTop, { backgroundColor: top }]} />
+        </View>
+      ))}
+      <View style={[styles.body, { height, backgroundColor: base, borderColor: selected ? colors.white : edge }, selected && styles.selected]}>
+        <View style={[styles.topLight, { backgroundColor: top }]} />
+        <View style={[styles.bottomShade, { backgroundColor: bottom }]} />
+        {Array.from({ length: grooves }, (_, i) => (
+          <View key={i} style={[styles.groove, { left: gap * (i + 1) - EDGE - 1 }]}>
+            <View style={styles.grooveDark} />
+            <View style={styles.grooveLight} />
+          </View>
+        ))}
         <View style={[styles.content, !showName && styles.iconOnly]}>
-          {icon && <Ionicons name={icon} size={iconSize} color="#fff" />}
+          {icon && <Ionicons name={icon} size={iconSize} color={colors.white} />}
           {showName && <Text style={[styles.name, height < BRICK_HEIGHT && { fontSize: 12 }]} numberOfLines={1}>{title}</Text>}
         </View>
-      </LinearGradient>
+      </View>
       {hole && <View style={[styles.hole, StyleSheet.absoluteFill]} pointerEvents="none" />}
     </View>
   );
@@ -66,16 +83,22 @@ export function DropSlot({ width, height = BRICK_HEIGHT, style }: { width: numbe
 }
 
 const styles = StyleSheet.create({
-  body: { borderRadius: 9, overflow: 'hidden', justifyContent: 'center', borderBottomWidth: 3, borderBottomColor: 'rgba(0,0,0,0.28)' },
-  selected: { borderWidth: 2.5, borderColor: '#FFFFFF', borderBottomWidth: 3 },
+  body: { borderRadius: 3, borderWidth: EDGE, overflow: 'hidden', justifyContent: 'center' },
+  drop: { position: 'absolute', left: 1, right: 1, top: 3, bottom: -3, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.42)' },
+  topLight: { position: 'absolute', left: 0, right: 0, top: 0, height: 3 },
+  bottomShade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 5 },
+  groove: { position: 'absolute', top: 3, bottom: 5, width: 2, flexDirection: 'row' },
+  grooveDark: { width: 1, backgroundColor: 'rgba(0,0,0,0.28)' },
+  grooveLight: { width: 1, backgroundColor: 'rgba(255,255,255,0.2)' },
+  selected: { borderWidth: 2.5 },
   lifted: { transform: [{ translateY: -6 }], zIndex: 50 },
-  seam: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 1.5, backgroundColor: 'rgba(0,0,0,0.22)' },
   stud: {
-    position: 'absolute', right: -STUD_WIDTH + 1, width: STUD_WIDTH,
-    borderTopRightRadius: 5, borderBottomRightRadius: 5,
+    position: 'absolute', right: -STUD_WIDTH + 1, width: STUD_WIDTH, overflow: 'hidden',
+    borderWidth: EDGE, borderLeftWidth: 0, borderTopRightRadius: 2, borderBottomRightRadius: 2,
   },
+  studTop: { position: 'absolute', left: 0, right: 0, top: 0, height: 2 },
   content: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8 },
   iconOnly: { justifyContent: 'center', paddingHorizontal: 2 },
-  name: { color: '#fff', fontSize: 13, fontWeight: '800', flexShrink: 1, textShadowColor: 'rgba(0,0,0,0.25)', textShadowRadius: 1, textShadowOffset: { width: 0, height: 1 } },
-  hole: { borderRadius: 9, borderWidth: 2, borderStyle: 'dashed', borderColor: colors.primaryText, backgroundColor: colors.primarySoft },
+  name: { color: colors.white, fontSize: 13, fontWeight: '800', flexShrink: 1, textShadowColor: 'rgba(0,0,0,0.25)', textShadowRadius: 1, textShadowOffset: { width: 0, height: 1 } },
+  hole: { borderRadius: 3, borderWidth: 2, borderStyle: 'dashed', borderColor: colors.primaryText, backgroundColor: colors.primarySoft },
 });

@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Brick } from '@/components/editor/Brick';
+import { shade } from '@/components/editor/colors';
 import type { IconName } from '@/components/ui';
 import { colors, triggerColor } from '@/theme';
 
@@ -16,10 +17,10 @@ export function BrandTitle() {
   );
 }
 
-const STACK: { label: string; color: string; icon: IconName; width: number }[] = [
-  { label: '탭핑', color: triggerColor.tap, icon: 'hand-left', width: 92 },
-  { label: '바스락', color: triggerColor.crinkle, icon: 'bag-handle', width: 104 },
-  { label: '귓속말', color: triggerColor.whisper, icon: 'chatbubble-ellipses', width: 98 },
+const STACK: { label: string; color: string; icon: IconName; width: number; minutes: number }[] = [
+  { label: '탭핑', color: triggerColor.tap, icon: 'hand-left', width: 92, minutes: 3 },
+  { label: '바스락', color: triggerColor.crinkle, icon: 'bag-handle', width: 104, minutes: 3.5 },
+  { label: '귓속말', color: triggerColor.whisper, icon: 'chatbubble-ellipses', width: 98, minutes: 3.3 },
 ];
 
 /** 홈 첫 화면: 트리거 블록 3개가 딸깍 이어진 모습 (블록을 쌓는다는 걸 바로 보여줌) */
@@ -27,7 +28,7 @@ export function BrickStack() {
   return (
     <View style={styles.stack} accessibilityLabel="탭핑, 바스락, 귓속말 블록을 이어 붙인 모습">
       {STACK.map((b) => (
-        <Brick key={b.label} color={b.color} width={b.width} height={34} icon={b.icon} title={b.label} labelMinWidth={60} />
+        <Brick key={b.label} color={b.color} width={b.width} height={34} icon={b.icon} title={b.label} minutes={b.minutes} labelMinWidth={60} />
       ))}
     </View>
   );
@@ -35,8 +36,8 @@ export function BrickStack() {
 
 const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  logo: { width: 22, height: 16, borderRadius: 4, backgroundColor: colors.primary, borderBottomWidth: 2, borderBottomColor: 'rgba(0,0,0,0.3)' },
-  logoStud: { position: 'absolute', right: -4, width: 4, height: 4, borderTopRightRadius: 2, borderBottomRightRadius: 2, backgroundColor: colors.primaryText },
+  logo: { width: 22, height: 16, borderRadius: 2, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: shade(colors.primary, -0.42), borderBottomWidth: 3 },
+  logoStud: { position: 'absolute', right: -5, width: 4, height: 4, borderTopRightRadius: 1, borderBottomRightRadius: 1, backgroundColor: colors.primary },
   name: { color: colors.text, fontSize: 18, fontWeight: '800', letterSpacing: -0.3 },
   stack: { flexDirection: 'row', alignItems: 'center', marginRight: 6 },
 });
