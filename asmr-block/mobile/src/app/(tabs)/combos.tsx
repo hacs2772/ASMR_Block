@@ -57,9 +57,13 @@ export default function CombosScreen() {
               footer={
                 <View style={styles.footer}>
                   <View style={styles.stats}>
-                    <Ionicons name="star" size={12} color={colors.primaryText} />
-                    <Text style={styles.statText}>담은 사람 {item.collect.collectCount}명</Text>
-                    {item.recentPlays ? <Text style={styles.statText}>· 이번 주 {item.recentPlays}번 들음</Text> : null}
+                    <View style={styles.statLine}>
+                      <Ionicons name="star" size={12} color={colors.primaryText} />
+                      <Text style={styles.statText}>
+                        {item.collect.collectCount > 0 ? `담은 사람 ${item.collect.collectCount}명` : '새 조합'}
+                      </Text>
+                    </View>
+                    {item.recentPlays ? <Text style={styles.statText}>이번 주 {item.recentPlays}번 들음</Text> : null}
                   </View>
                   <CollectButton playlist={item} style={styles.collect} />
                 </View>
@@ -87,7 +91,8 @@ const styles = StyleSheet.create({
   rankRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
   rank: { color: colors.faint, fontSize: 16, fontWeight: '800', width: 20, textAlign: 'center', marginTop: 24 },
   footer: { flexDirection: 'row', alignItems: 'center', gap: space.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: space.sm },
-  stats: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4, flexWrap: 'wrap' },
+  stats: { flex: 1, gap: 2 },
+  statLine: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   statText: { color: colors.muted, fontSize: 12 },
   collect: { minHeight: 36, paddingVertical: 6, paddingHorizontal: 14 },
 });

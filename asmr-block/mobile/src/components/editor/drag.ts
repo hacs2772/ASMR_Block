@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
-import { Platform } from 'react-native';
+import { Animated, Platform } from 'react-native';
 import { create } from 'zustand';
+import { samePreview, tiltFor, type DropPreview } from '@/lib/motion';
 import { insertIndexAtX, PX_PER_SECOND, snapMixStart, useEditor, type EditorBlock } from '@/store/editor';
 import { BRICK_HEIGHT, MIX_BRICK_HEIGHT } from './Brick';
 
@@ -15,36 +16,51 @@ export type DragSource =
   | { kind: 'main'; key: string; block: EditorBlock }
   | { kind: 'mix'; key: string; block: EditorBlock };
 
-export type DropPreview = { row: 'main'; index: number } | { row: 'mix'; start: number } | { row: 'box' } | null;
+export type { DropPreview };
 
+/**
+ * 끄는 중인 블록 정보. 손가락 위치(x, y)는 여기 넣지 않고 dragMotion(Animated)으로만 움직임
+ * → 손가락이 움직일 때마다 화면 전체를 다시 그리지 않아 끌기가 부드러움.
+ * preview(놓일 자리)도 바뀔 때만 바꿈
+ */
 type DragState = {
   source: DragSource | null;
-  x: number;
-  y: number;
   /** 블록 안에서 잡은 위치 (블록 왼쪽 위 기준) */
   grabX: number;
   grabY: number;
   width: number;
   height: number;
   preview: DropPreview;
-  start: (source: DragSource, x: number, y: number, grabX: number, grabY: number, width: number, height: number) => void;
-  move: (x: number, y: number, preview: DropPreview) => void;
+  start: (source: DragSource, grabX: number, grabY: number, width: number, height: number) => void;
+  setPreview: (preview: DropPreview) => void;
   end: () => void;
 };
 
-export const useDrag = create<DragState>((set) => ({
+export const useDrag = create<DragState>((set, get) => ({
   source: null,
-  x: 0,
-  y: 0,
   grabX: 0,
   grabY: 0,
   width: 0,
   height: 0,
   preview: null,
-  start: (source, x, y, grabX, grabY, width, height) => set({ source, x, y, grabX, grabY, width, height, preview: null }),
-  move: (x, y, preview) => set({ x, y, preview }),
+  start: (source, grabX, grabY, width, height) => set({ source, grabX, grabY, width, height, preview: null }),
+  setPreview: (preview) => { if (!samePreview(get().preview, preview)) set({ preview }); },
   end: () => set({ source: null, preview: null }),
 }));
+
+const NATIVE = Platform.OS !== 'web';
+
+/** 끄는 블록의 움직임: 손가락 위치 · 들어 올림(0→1) · 기울기(도) */
+export const dragMotion = {
+  pos: new Animated.ValueXY({ x: 0, y: 0 }),
+  lift: new Animated.Value(0),
+  tilt: new Animated.Value(0),
+  lastX: 0,
+  settle: null as ReturnType<typeof setTimeout> | null,
+};
+
+/** 방금 놓은 블록: 그 블록이 딸깍 하고 살짝 튀어 오름 (nonce가 바뀔 때마다) */
+export const useDropPop = create<{ key: string | null; nonce: number }>(() => ({ key: null, nonce: 0 }));
 
 /** 가로 스크롤 위치 (전체 보기 슬라이더가 따라 그림) */
 export const useBoardScroll = create<{ x: number; width: number }>(() => ({ x: 0, width: 0 }));
@@ -66,6 +82,8 @@ export const board = {
   measureBox: () => {},
   scrollTo: (_x: number) => {},
   scrollToEnd: () => {},
+  /** 블록함을 키웠을 때 편집 화면을 바닥판까지 올려서 바닥판이 가려지지 않게 (편집기 화면이 채움) */
+  revealBoard: () => {},
 
   /** 화면 x → 바닥판 안 x(px, 0 = 첫 블록 왼쪽) */
   contentX(absX: number) {
@@ -115,20 +133,27 @@ function commit(source: DragSource, preview: DropPreview) {
   if (preview.row === 'box') {
     if (source.kind !== 'new') editor.remove(source.key);
   } else if (source.kind === 'new') {
+    // 새로 넣은 블록은 바닥판에 처음 나타날 때 위에서 딸깍 내려앉음 (Board)
     if (preview.row === 'main') editor.addMain(source.block, preview.index);
     else editor.addMix(source.block, preview.start);
   } else if (source.kind === 'main' && preview.row === 'main') {
     editor.moveMain(source.key, preview.index);
+    useDropPop.setState((s) => ({ key: source.key, nonce: s.nonce + 1 }));
   } else if (source.kind === 'mix' && preview.row === 'mix') {
     editor.moveMix(source.key, preview.start);
+    useDropPop.setState((s) => ({ key: source.key, nonce: s.nonce + 1 }));
   }
-  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+  if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => undefined);
+}
+
+function springTilt(toValue: number) {
+  Animated.spring(dragMotion.tilt, { toValue, speed: 40, bounciness: 6, useNativeDriver: NATIVE }).start();
 }
 
 /** 드래그 시작/이동/놓기 (바닥판 블록과 블록 상자 블록이 같이 씀) */
 export function useDragHandlers() {
   const start = useDrag((s) => s.start);
-  const move = useDrag((s) => s.move);
+  const setPreview = useDrag((s) => s.setPreview);
   const end = useDrag((s) => s.end);
 
   return {
@@ -136,17 +161,30 @@ export function useDragHandlers() {
       board.measure();
       board.measureBox();
       useEditor.getState().select(null);
-      start(source, absX, absY, grabX, grabY, width, height);
-      if (Platform.OS !== 'web') Haptics.selectionAsync().catch(() => undefined);
+      // 손가락 아래에서 블록을 쏙 들어 올림
+      dragMotion.pos.setValue({ x: absX, y: absY });
+      dragMotion.lastX = absX;
+      dragMotion.tilt.setValue(0);
+      dragMotion.lift.setValue(0);
+      Animated.spring(dragMotion.lift, { toValue: 1, speed: 20, bounciness: 12, useNativeDriver: NATIVE }).start();
+      start(source, grabX, grabY, width, height);
+      if (Platform.OS !== 'web') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
     },
     onMove: (absX: number, absY: number) => {
       const { source, grabX, preview } = useDrag.getState();
       if (!source) return;
+      dragMotion.pos.setValue({ x: absX, y: absY });
+      // 움직이는 쪽으로 살짝 기울었다가, 멈추면 바로 섬
+      springTilt(tiltFor(absX - dragMotion.lastX));
+      dragMotion.lastX = absX;
+      if (dragMotion.settle) clearTimeout(dragMotion.settle);
+      dragMotion.settle = setTimeout(() => springTilt(0), 90);
       board.autoScroll(absX);
-      move(absX, absY, board.hitTest(source, absX, absY, grabX, preview));
+      setPreview(board.hitTest(source, absX, absY, grabX, preview));
     },
     onEnd: (canceled: boolean) => {
       const { source, preview } = useDrag.getState();
+      if (dragMotion.settle) clearTimeout(dragMotion.settle);
       if (source && !canceled) commit(source, preview);
       end();
     },

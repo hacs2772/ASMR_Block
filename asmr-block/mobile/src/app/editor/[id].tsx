@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
-import { ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { BlockLoader } from '@/components/BlockLoader';
 import { libraryApi, playlistApi } from '@/api/endpoints';
 import { ActionPanel } from '@/components/editor/ActionPanel';
-import { BlockBox } from '@/components/editor/BlockBox';
+import { BlockBox, useBlockBoxSize } from '@/components/editor/BlockBox';
 import { Board } from '@/components/editor/Board';
-import { useDrag } from '@/components/editor/drag';
+import { board, useDrag } from '@/components/editor/drag';
 import { DragGhost } from '@/components/editor/DragGhost';
 import { ListenRow } from '@/components/editor/EditorCards';
 import { useMixPreview } from '@/audio/useMixPreview';
@@ -29,8 +29,17 @@ export default function EditorScreen() {
   const editor = useEditor();
   const dragging = useDrag((s) => s.source !== null);
   const rootRef = useRef<ComponentRef<typeof View>>(null);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const boardY = useRef(0);
+  // 블록함을 키우면 바닥판이 보이도록 편집 화면을 바닥판 위치까지 올림
+  useEffect(() => {
+    board.revealBoard = () => scrollRef.current?.scrollTo({ y: Math.max(0, boardY.current - 8), animated: true });
+    return () => { board.revealBoard = () => {}; };
+  }, []);
   const [origin, setOrigin] = useState({ x: 0, y: 0 });
   const mixPreview = useMixPreview();
+  const boxExpanded = useBlockBoxSize((s) => s.expanded);
+  const { height: screenH } = useWindowDimensions();
 
   const detail = useQuery({
     queryKey: ['playlist', playlistId],
@@ -132,7 +141,8 @@ export default function EditorScreen() {
           headerRight: () => <Button title="저장" onPress={handleSave} loading={save.isPending} style={styles.headerSave} testID="save" />,
         }}
       />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" scrollEnabled={!dragging}>
+      <ScrollView ref={scrollRef} contentContainerStyle={[styles.content, boxExpanded && { paddingBottom: screenH * 0.5 }]}
+        keyboardShouldPersistTaps="handled" scrollEnabled={!dragging}>
         <View style={styles.titleRow}>
           <View style={{ flex: 1 }}>
             <TextInput
@@ -157,7 +167,9 @@ export default function EditorScreen() {
         </View>
 
         <ListenRow />
-        <Board playing={mixPreview.playing} onTogglePlay={() => mixPreview.toggle(startFrom())} />
+        <View onLayout={(e) => { boardY.current = e.nativeEvent.layout.y; }}>
+          <Board playing={mixPreview.playing} onTogglePlay={() => mixPreview.toggle(startFrom())} />
+        </View>
         <ActionPanel />
 
         {playlistId !== null && (

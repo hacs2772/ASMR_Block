@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useMemo, useRef, type ComponentRef } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
+import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   GestureDetector, ScrollView, useCompetingGestures, usePanGesture, useTapGesture,
 } from 'react-native-gesture-handler';
@@ -13,13 +13,14 @@ import { categoryFallbackColor, colors, radius, space } from '@/theme';
 import { Brick, BRICK_HEIGHT, DropSlot, MIX_BRICK_HEIGHT } from './Brick';
 import {
   board, BOARD_PAD, LANE_HEIGHT, LANE_LABEL_HEIGHT, LANE_TOP, MAIN_TOP, RULER_HEIGHT, useBoardScroll, useDrag,
-  useDragHandlers,
+  useDragHandlers, useDropPop,
 } from './drag';
 import { useCategoryIcon } from './useCategoryIcon';
 import { RowTwoVolume } from './EditorCards';
 import { usePreviewClock } from '@/audio/useMixPreview';
 
-const LONG_PRESS_MS = 260;
+const LONG_PRESS_MS = 200;
+const NATIVE = Platform.OS !== 'web';
 
 /** 첫째 줄 블록들을 왼쪽부터 이어 붙인 위치(px) */
 function placeSlots<T extends { block: EditorBlock }>(list: T[]) {
@@ -46,6 +47,8 @@ export function Board({ playing, onTogglePlay }: { playing: boolean; onTogglePla
   const preview = useDrag((s) => s.preview);
   const iconOf = useCategoryIcon();
   const viewportRef = useRef<ComponentRef<typeof View>>(null);
+  // 처음부터 있던 블록(불러온 조합)은 그대로, 나중에 들어오는 블록만 위에서 딸깍 내려앉게
+  const [initialKeys] = useState(() => new Set([...main.items, ...mix.items].map((i) => i.key)));
   const scrollRef = useRef<{ scrollTo: (o: { x: number; animated?: boolean }) => void; scrollToEnd: (o?: { animated?: boolean }) => void } | null>(null);
 
   const measure = useCallback(() => {
@@ -140,7 +143,8 @@ export function Board({ playing, onTogglePlay }: { playing: boolean; onTogglePla
               if (!slot) return null;
               return (
                 <DraggableBrick key={item.key} row="main" itemKey={item.key} block={item.block} hole={slot.hole} z={slot.index}
-                  left={BOARD_PAD + slot.x} top={MAIN_TOP} width={slot.width} height={BRICK_HEIGHT} icon={iconOf(item.block.category)} />
+                  left={BOARD_PAD + slot.x} top={MAIN_TOP} width={slot.width} height={BRICK_HEIGHT} icon={iconOf(item.block.category)}
+                  animateIn={!initialKeys.has(item.key)} />
               );
             })}
             {newSlot && <DropSlot width={newSlot.width} style={[styles.abs, { left: BOARD_PAD + newSlot.x, top: MAIN_TOP }]} />}
@@ -159,7 +163,8 @@ export function Board({ playing, onTogglePlay }: { playing: boolean; onTogglePla
                     <DraggableBrick key={m.key} row="mix" itemKey={m.key} block={m.block} z={0}
                       hole={source?.kind === 'mix' && source.key === m.key}
                       left={m.start * PX_PER_SECOND} top={2} width={brickWidth(m.block.duration)} height={MIX_BRICK_HEIGHT}
-                      icon={iconOf(m.block.category)} timeLabel={`${formatDuration(m.start)} ~ ${formatDuration(m.start + m.block.duration)}`} />
+                      icon={iconOf(m.block.category)} timeLabel={`${formatDuration(m.start)} ~ ${formatDuration(m.start + m.block.duration)}`}
+                      animateIn={!initialKeys.has(m.key)} />
                   ))}
                   {preview?.row === 'mix' && source && (
                     <View pointerEvents="none" style={[styles.dropOutline, { left: preview.start * PX_PER_SECOND, width: brickWidth(source.block.duration) }]}>
@@ -190,14 +195,55 @@ export function Board({ playing, onTogglePlay }: { playing: boolean; onTogglePla
   );
 }
 
+/**
+ * 블록이 자리를 옮길 때 미끄러지듯 (FLIP: 새 자리에 그리고, 옛 자리만큼 밀어 둔 뒤 0으로 스르륵).
+ * 새로 들어온 블록은 위에서 딸깍 내려앉고, 방금 놓은 블록은 살짝 튀어 오름
+ */
+function useBrickMotion(itemKey: string, left: number, animateIn: boolean) {
+  const prevLeft = useRef(left);
+  const [shift] = useState(() => new Animated.Value(0));
+  const [enter] = useState(() => new Animated.Value(animateIn ? 0 : 1));
+  const [pop] = useState(() => new Animated.Value(1));
+  const popNonce = useDropPop((s) => (s.key === itemKey ? s.nonce : 0));
+
+  useLayoutEffect(() => {
+    const dx = prevLeft.current - left;
+    prevLeft.current = left;
+    if (dx === 0) return;
+    shift.setValue(dx);
+    Animated.spring(shift, { toValue: 0, speed: 26, bounciness: 5, useNativeDriver: NATIVE }).start();
+  }, [left, shift]);
+
+  // animateIn은 블록마다 처음 정해진 값 그대로라 한 번만 돎
+  useEffect(() => {
+    if (animateIn) Animated.spring(enter, { toValue: 1, speed: 14, bounciness: 11, useNativeDriver: NATIVE }).start();
+  }, [animateIn, enter]);
+
+  useEffect(() => {
+    if (!popNonce) return;
+    pop.setValue(1.12);
+    Animated.spring(pop, { toValue: 1, speed: 18, bounciness: 14, useNativeDriver: NATIVE }).start();
+  }, [popNonce, pop]);
+
+  return {
+    opacity: enter,
+    transform: [
+      { translateX: shift },
+      { translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [-22, 0] }) },
+      { scale: Animated.multiply(pop, enter.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1] })) },
+    ],
+  };
+}
+
 /** 바닥판 위 블록: 누르면 선택, 꾹 눌러서 끌면 옮기기 */
-function DraggableBrick({ row, itemKey, block, hole, z, left, top, width, height, icon, timeLabel }: {
+function DraggableBrick({ row, itemKey, block, hole, z, left, top, width, height, icon, timeLabel, animateIn }: {
   row: RowKey; itemKey: string; block: EditorBlock; hole: boolean; z: number; left: number; top: number; width: number; height: number;
-  icon: ReturnType<ReturnType<typeof useCategoryIcon>>; timeLabel?: string;
+  icon: ReturnType<ReturnType<typeof useCategoryIcon>>; timeLabel?: string; animateIn: boolean;
 }) {
   const selected = useEditor((s) => s.selected?.key === itemKey);
   const select = useEditor((s) => s.select);
   const handlers = useDragHandlers();
+  const motion = useBrickMotion(itemKey, left, animateIn);
 
   const tap = useTapGesture({
     runOnJS: true,
@@ -222,8 +268,10 @@ function DraggableBrick({ row, itemKey, block, hole, z, left, top, width, height
         accessibilityLabel={`${row === 'main' ? '첫째 줄' : '둘째 줄'} ${block.title}${block.owned ? '' : ' (내 블록함에 없음)'}`}
         testID={`brick-${row}-${block.id}`}
       >
-        <Brick color={block.category?.color ?? categoryFallbackColor} width={width} height={height} icon={icon}
-          title={block.title} minutes={block.duration / 60} selected={selected} hole={hole} dimmed={!block.owned} />
+        <Animated.View style={motion}>
+          <Brick color={block.category?.color ?? categoryFallbackColor} width={width} height={height} icon={icon}
+            title={block.title} minutes={block.duration / 60} selected={selected} hole={hole} dimmed={!block.owned} />
+        </Animated.View>
         {selected && timeLabel && <Bubble text={timeLabel} />}
       </View>
     </GestureDetector>
