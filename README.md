@@ -210,6 +210,8 @@ npx expo start
 나오는 QR 코드를 휴대폰으로 찍으면 앱이 열립니다 (휴대폰과 PC가 같은 와이파이).
 자세한 내용과 문제 해결: [mobile/README.md](./asmr-block/mobile/README.md)
 
+**윈도우에서 한 번에 켜기**: `asmr-block` 폴더의 `start-windows.bat`를 더블클릭하면 최신 코드 받기 → Docker 확인 → 서버 창과 앱(QR) 창을 열어 줍니다. (Docker Desktop은 먼저 켜 두세요)
+
 **윈도우 PC + 아이폰에서 실제로 겪은 문제와 해결**
 - `git`이 없다고 나오면: 설치 **전에** 열어 둔 PowerShell이라서 그래요 → 창을 새로 열기
 - Docker 설치가 "Virtual Machine Platform" 때문에 실패하면: 관리자 PowerShell에서 `wsl --install` → 재부팅 → 다시 설치

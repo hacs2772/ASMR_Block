@@ -9,7 +9,10 @@
 - **분류 = 트리거 묶음 10개**(V5, `sound_category.code`: tap·scratch·crinkle·whisper·slime·cut·rain·nature·place·noise, 소분류는 `tap.tapping`처럼). 파형 모양 규칙은 `mobile/src/lib/waveform.ts`(웹 시안과 같음)
 - **정체성 = Block**: 상점 카드는 음악 앱처럼 보이지 않게 **레고 바닥판 위의 블록 상품**(블록 길이 = 소리 길이, 위에 길이·아이콘, 가격표, "블록 담기")으로 보여준다 (`mobile/src/components/BlockCard.tsx`). 홈 머리글은 분홍 블록 로고 + ASMR Block
 - **색**: 앱 `src/theme.ts` = 어두운 밤 바탕 + 분홍(`primary`) 하나. 화면에서 색 숫자를 직접 쓰지 않는다
-- **앱 큰 메뉴**: 홈(요즘 뜨는 소리·조합 + 광고 자리) · **구매**(블록 상점) · **편집** · **업로드**(판매자) · 내 정보
+- **앱 큰 메뉴**(사용자가 실기기로 써 보고 정함): 아래 탭 5칸 = **홈** · **블록 구매**(블록 상점) · **★추천 조합** · **블록 편집** · **업로드**(판매자). **내 정보**와 **? 도움말**은 오른쪽 위 아이콘(`components/HeaderActions.tsx`)
+  - **홈은 단순하게**: 맨 위 = **내 조합 바로 듣기**(가장 최근 조합 크게 + 나머지, 완성본이 없으면 플레이어가 만들고 자동 재생) → 요즘 팅글 많이 오는 블록 → 광고 자리. 팅글 설명·쓰는 법·단어장은 홈에 두지 않고 `/help`로, 남의 조합은 추천 조합 탭으로
+  - **추천 조합 = 조합 한 번에 담기**(V6, `POST /playlists/{id}/collect`): 남의 공개 조합의 블록은 내 블록함에, 조합은 내 조합(비공개 복사본, `source_playlist_id`)으로. 아직 없는 유료 블록이 있으면 402
+  - 트리거 고르기(첫 조합 쌓아 주기)는 블록 편집 탭의 접힌 "트리거로 빠르게 시작"에
 - **블록**: 3~4분짜리 ASMR 소리. 판매자가 업로드(가격은 판매자가 정하되 `app.shop.seller-max-price` 이하) → 관리자 승인(APPROVED) → 공개. `price` = 코인(0 무료)
 - **블록 상점 → 내 블록함**: 듣는 사람은 상점에서 블록을 담고(`user_block`), 편집기에는 **담은 블록만**. 같은 블록 복제는 무료. 무료는 바로 담기, 유료는 구매(코인 + 구독, 준비 중) — 사기 전엔 앞 30초 맛보기(`preview_key`)만, 원본 `fileUrl`은 내 것일 때만
 - **플레이리스트 = 옆으로 누운 레고 블록 두 줄** (왼쪽→오른쪽, 블록 길이 = 소리 길이): **첫째 줄**(`MAIN`, 빈틈없이 순서대로) + **둘째 줄**(`MIX`, 선택, 따로 흐름, `startSeconds` 위치에만·사이는 빈칸·겹침 금지). 이어진 같은 블록은 `repeat`(1~200)로 묶어 저장, 줄별 볼륨, 한 바퀴 최대 10시간
@@ -62,6 +65,8 @@ cd asmr-block/mobile && npm run typecheck && npm run lint && npm test
 - expo-audio 플레이어의 볼륨/반복 대입은 `src/audio/playerControls.ts`에서만 (lint 규칙 때문).
 - 편집기: 상태·계산은 `src/store/editor.ts`(순수 함수 + zustand, jest로 테스트), 화면은 `src/components/editor/`. 드래그는 react-native-gesture-handler v3 훅(`usePanGesture` 등, Reanimated 없음)
   - 끄는 동안 블록 요소를 없애거나 그리는 순서를 바꾸지 않는다 (손가락 아래 요소가 바뀌면 웹/기기에서 끌기가 취소됨). 위치(`left`)·`zIndex`·흐리게만 바꾼다
+  - 끌기는 "딱딱하지 않게"(사용자 피드백): 손가락 위치는 zustand에 넣지 말고 `dragMotion`(Animated)으로만, 놓일 자리(`preview`)는 바뀔 때만 갱신. 다른 블록은 FLIP으로 미끄러지고, 새 블록은 딸깍 내려앉고, 놓은 블록은 살짝 튐 (`Board.tsx` `useBrickMotion`, 계산은 `lib/motion.ts`)
+  - 내 블록함은 손잡이·"크게" 버튼으로 작게·중간·크게 (커지면 바닥판이 보이게 화면을 올림)
   - 블록 색 = 대분류, 아이콘 = 소분류(`category.icon`, Ionicons 이름)
   - **로딩 표시 = `BlockLoader`**(`components/BlockLoader.tsx`): 블록 셋이 떨어졌다 딸깍 붙기를 반복 + 블록 안 소리 막대가 트리거마다 다른 박자로 움직임. 빙글빙글 `ActivityIndicator`는 버튼 안의 작은 표시에만. 앱을 켜면 정지 첫 화면 다음에 움직이는 `StartupScreen`(최소 1.1초, "동작 줄이기" 켠 사람은 멈춘 블록)
   - 앱 아이콘·첫 화면 = 사용자가 고른 "블록마다 다른 소리"(탭핑·바스락·귓속말 블록 셋 + 소리 막대). `node scripts/make-app-icons.js`(Playwright)로 `assets/`의 아이콘·안드로이드 아이콘·첫 화면·파비콘을 다시 만듦. 첫 화면 설정은 `app.json`의 `expo-splash-screen`
