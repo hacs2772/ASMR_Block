@@ -6,7 +6,8 @@
 ## 핵심 개념
 - **제품의 중심 = "나만의 팅글"**: 팅글이 오는 소리는 사람마다 다르니, 좋아하는 **트리거**(탭핑·바스락·귓속말…)를 골라 직접 쌓는다. 팅글·트리거·레이어드(둘째 줄)·노토킹 같은 매니아 말을 당당히 쓰되, 처음 온 사람을 위해 한 줄 설명(단어장, "팅글이 뭐예요?")을 곁에 둔다. 디자인은 깔끔·요즘 느낌의 어두운 밤 화면(잠들기 전에 보니까), 올드하거나 AI가 만든 듯한 과장 꾸밈은 피한다.
 - **사람과 장소는 블록의 작은 정보로**: 크리에이터(@닉네임)와 녹음한 곳(`recorded_place`, 예: 도쿄 신주쿠역 앞)·한 줄 소개(`description`)를 블록 카드에 작게 붙인다 — 앞에 내세우지는 않는다. 말소리 `talk_type`(NONE 노토킹 / WHISPER 속삭임 / TALK 말하기)
-- **분류 = 트리거 묶음 10개**(V5, `sound_category.code`: tap·scratch·crinkle·whisper·slime·cut·rain·nature·place·noise, 소분류는 `tap.tapping`처럼). 블록 카드 파형 모양은 대분류 code로 정함 (`mobile/src/lib/waveform.ts`, 웹 시안과 같은 규칙)
+- **분류 = 트리거 묶음 10개**(V5, `sound_category.code`: tap·scratch·crinkle·whisper·slime·cut·rain·nature·place·noise, 소분류는 `tap.tapping`처럼). 파형 모양 규칙은 `mobile/src/lib/waveform.ts`(웹 시안과 같음)
+- **정체성 = Block**: 상점 카드는 음악 앱처럼 보이지 않게 **레고 바닥판 위의 블록 상품**(블록 길이 = 소리 길이, 위에 길이·아이콘, 가격표, "블록 담기")으로 보여준다 (`mobile/src/components/BlockCard.tsx`). 홈 머리글은 분홍 블록 로고 + ASMR Block
 - **색**: 앱 `src/theme.ts` = 어두운 밤 바탕 + 분홍(`primary`) 하나. 화면에서 색 숫자를 직접 쓰지 않는다
 - **앱 큰 메뉴**: 홈(요즘 뜨는 소리·조합 + 광고 자리) · **구매**(블록 상점) · **편집** · **업로드**(판매자) · 내 정보
 - **블록**: 3~4분짜리 ASMR 소리. 판매자가 업로드(가격은 판매자가 정하되 `app.shop.seller-max-price` 이하) → 관리자 승인(APPROVED) → 공개. `price` = 코인(0 무료)

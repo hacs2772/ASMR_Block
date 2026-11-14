@@ -130,9 +130,9 @@ export default function ShopScreen() {
         keyExtractor={(b) => (b ? String(b.id) : 'spacer')}
         ListHeaderComponent={
           <Text style={styles.caption}>
-            {tab === 'hot' ? '최근 7일 동안 팅글 많이 온 소리예요'
+            {tab === 'hot' ? '최근 7일 동안 팅글 많이 온 블록이에요 · 블록 길이 = 소리 길이'
               : tab === 'mine' ? '담은 블록은 편집기 블록 상자에 나와요 · 몇 번을 복제해도 무료'
-                : tab === 'free' ? '무료 블록은 바로 담을 수 있어요'
+                : tab === 'free' ? '무료 블록은 바로 내 블록함에 담을 수 있어요'
                   : group?.description ?? '코인 결제는 준비 중이라 지금은 무료 블록만 담을 수 있어요'}
           </Text>
         }
@@ -186,7 +186,8 @@ function CollectButton({ block, inLibraryView }: { block: Block; inLibraryView: 
     }
     return (
       <View style={[styles.pill, styles.pillDone]} accessibilityLabel={block.price > 0 ? '내 블록' : '담음'}>
-        <Text style={styles.pillDoneText}>{block.price > 0 ? '내 블록' : '담음'}</Text>
+        <Ionicons name="checkmark" size={13} color={colors.muted} />
+        <Text style={styles.pillDoneText}>{block.price > 0 ? '내 블록' : '블록함에 있음'}</Text>
       </View>
     );
   }
@@ -206,7 +207,12 @@ function CollectButton({ block, inLibraryView }: { block: Block; inLibraryView: 
       style={({ pressed }) => [styles.pill, styles.pillAdd, pressed && { opacity: 0.8 }]}
       testID={`collect-${block.id}`}
     >
-      {add.isPending ? <ActivityIndicator color={colors.white} size="small" /> : <Text style={styles.pillAddText}>담기</Text>}
+      {add.isPending ? <ActivityIndicator color={colors.white} size="small" /> : (
+        <>
+          <Ionicons name="cube" size={13} color={colors.white} />
+          <Text style={styles.pillAddText}>블록 담기</Text>
+        </>
+      )}
     </Pressable>
   );
 }
@@ -233,7 +239,7 @@ const styles = StyleSheet.create({
   column: { gap: 10 },
   card: { flex: 1, marginBottom: 10 },
   caption: { color: colors.faint, fontSize: 12, marginBottom: space.sm },
-  pill: { minWidth: 48, height: 28, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },
+  pill: { flexDirection: 'row', gap: 4, minWidth: 48, height: 28, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 10 },
   pillAdd: { backgroundColor: colors.primary },
   pillAddText: { color: colors.white, fontWeight: '700', fontSize: 12 },
   pillDone: { backgroundColor: colors.cardActive },

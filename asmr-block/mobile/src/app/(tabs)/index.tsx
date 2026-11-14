@@ -4,6 +4,7 @@ import { ActivityIndicator, FlatList, RefreshControl, ScrollView, StyleSheet, Te
 import { catalogApi, playlistApi } from '@/api/endpoints';
 import { usePreview } from '@/audio/usePreview';
 import { AdSlot } from '@/components/AdSlot';
+import { BrickStack } from '@/components/Brand';
 import { BlockCard } from '@/components/BlockCard';
 import { PlaylistCard } from '@/components/PlaylistCard';
 import { Glossary, TingleWord, WhatIsTingle } from '@/components/tingle/Tingle';
@@ -38,8 +39,9 @@ export default function HomeScreen() {
         <View>
           <View style={styles.hero}>
             {user ? <Text style={styles.greeting}>{user.nickname}님,</Text> : null}
-            <Text style={styles.headline}>나만의 <TingleWord size={30} />을{'\n'}쌓아 보세요</Text>
-            <Text style={styles.lead}>탭핑 3분, 바스락 3분, 귓속말 3분. 좋아하는 트리거만 골라 블록처럼 이어 붙이면 나한테 딱 맞는 ASMR이 돼요.</Text>
+            <Text style={styles.headline}>나만의 <TingleWord size={30} />을{'\n'}블록으로 쌓아 보세요</Text>
+            <BrickStack />
+            <Text style={styles.lead}>소리 하나가 블록 하나. 탭핑 3분, 바스락 3분, 귓속말 3분처럼 좋아하는 트리거 블록만 골라 딸깍 이어 붙이면 나한테 딱 맞는 ASMR이 돼요.</Text>
             <WhatIsTingle />
           </View>
           <Glossary />
@@ -54,7 +56,7 @@ export default function HomeScreen() {
           {(trending.data?.length ?? 0) > 0 && (
             <View style={styles.section}>
               <Text style={styles.eyebrow}>최근 7일</Text>
-              <Text style={[styles.sectionTitle, { marginBottom: space.md }]}>요즘 팅글 많이 오는 소리</Text>
+              <Text style={[styles.sectionTitle, { marginBottom: space.md }]}>요즘 팅글 많이 오는 블록</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
                 {trending.data!.map((b, i) => (
                   <BlockCard key={b.id} block={b} rank={i + 1} style={styles.trendCard}

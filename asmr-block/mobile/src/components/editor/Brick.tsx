@@ -22,6 +22,8 @@ type Props = {
   hole?: boolean;
   /** 내 블록함에 없는 블록 */
   dimmed?: boolean;
+  /** 이 폭 이상이면 아이콘 옆에 글자 (기본 90) */
+  labelMinWidth?: number;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -30,11 +32,11 @@ type Props = {
  * (뒤에 그려지는 블록이 앞 블록의 돌기를 덮어서 딱 붙은 것처럼 보임).
  * 폭 = 소리 길이, 색 = 카테고리, 아이콘으로 구분하고 긴 블록에만 이름.
  */
-export function Brick({ color, width, height = BRICK_HEIGHT, icon, title, selected, hole, dimmed, style }: Props) {
+export function Brick({ color, width, height = BRICK_HEIGHT, icon, title, selected, hole, dimmed, labelMinWidth = NAME_MIN_WIDTH, style }: Props) {
   const base = shade(color, -0.2);
   const studColor = shade(base, 0.25);
   const studHeight = Math.round(height * 0.24);
-  const showName = width >= NAME_MIN_WIDTH;
+  const showName = width >= labelMinWidth;
   const iconSize = height >= BRICK_HEIGHT ? 17 : 14;
 
   return (
