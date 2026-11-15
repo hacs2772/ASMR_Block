@@ -6,7 +6,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SvgXml } from 'react-native-svg';
 import { BlockLoader } from '@/components/BlockLoader';
 import { catalogApi, sellerApi } from '@/api/endpoints';
 import type { Block, BlockDesign, MyUpload, TalkType } from '@/api/types';
@@ -14,7 +13,9 @@ import { BlockCard } from '@/components/BlockCard';
 import { Button, Chip, EmptyState } from '@/components/ui';
 import { notify } from '@/lib/dialog';
 import { formatDuration } from '@/lib/format';
-import { MAX_STICKERS, PATTERNS, STICKER_CODES, STICKERS } from '@/lib/stickers';
+import { MAX_STICKERS, PATTERNS } from '@/lib/stickers';
+import { StickerArt } from '@/components/StickerArt';
+import { useStickers } from '@/store/stickers';
 import { useAuth } from '@/store/auth';
 import { categoryFallbackColor, colors, radius, space, talkLabel } from '@/theme';
 
@@ -57,6 +58,8 @@ export default function UploadScreen() {
   // 블록 꾸미기(C안): 사진이 있으면 사진, 없으면 스티커 + 무늬
   const [cover, setCover] = useState<PickedMedia | null>(null);
   const [stickers, setStickers] = useState<string[]>([]);
+  // 고를 수 있는 스티커 (관리자가 숨긴 것은 빼고, 서버 순서대로)
+  const stickerChoices = useStickers().list.filter((st) => st.active);
   const [pattern, setPattern] = useState<BlockDesign['pattern']>('dots');
 
   const maxPrice = policy.data?.maxPrice ?? 100;
@@ -187,13 +190,13 @@ export default function UploadScreen() {
         </Pressable>
         <Text style={[styles.hint, { marginTop: space.sm }]}>스티커 최대 {MAX_STICKERS}개{cover ? ' (사진을 빼면 보여요)' : ''}</Text>
         <View style={styles.stickerGrid}>
-          {STICKER_CODES.map((code) => {
-            const on = stickers.includes(code);
+          {stickerChoices.map((st) => {
+            const on = stickers.includes(st.code);
             return (
-              <Pressable key={code} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => toggleSticker(code)}
-                style={[styles.sticker, on && styles.stickerOn]} testID={`sticker-${code}`}>
-                <SvgXml xml={STICKERS[code].svg} width={30} height={24} />
-                <Text style={[styles.stickerLabel, on && { color: colors.primaryText }]}>{STICKERS[code].label}</Text>
+              <Pressable key={st.code} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => toggleSticker(st.code)}
+                style={[styles.sticker, on && styles.stickerOn]} testID={`sticker-${st.code}`}>
+                <StickerArt sticker={st} width={30} height={24} />
+                <Text style={[styles.stickerLabel, on && { color: colors.primaryText }]} numberOfLines={1}>{st.name}</Text>
               </Pressable>
             );
           })}
@@ -302,6 +305,9 @@ function UploadRow({ upload }: { upload: MyUpload }) {
           {upload.category?.name ?? '기타'} · {talkLabel[upload.talkType ?? 'NONE']} · {formatDuration(upload.duration)} · {upload.price > 0 ? `${upload.price}코인` : '무료'}
           {upload.recordedPlace ? ` · ${upload.recordedPlace}` : ''}
         </Text>
+        {upload.status === 'REJECTED' && upload.reviewNote ? (
+          <Text style={styles.reviewNote} testID={`review-note-${upload.id}`}>돌려보낸 이유: {upload.reviewNote}</Text>
+        ) : null}
       </View>
       <View style={{ alignItems: 'flex-end', gap: 2 }}>
         <Text style={[styles.badge, { color: s.color, borderColor: s.color }]}>{s.label}</Text>
@@ -312,6 +318,7 @@ function UploadRow({ upload }: { upload: MyUpload }) {
 }
 
 const styles = StyleSheet.create({
+  reviewNote: { marginTop: 4, fontSize: 12, color: colors.danger, lineHeight: 17 },
   coverThumb: { width: 48, height: 28, borderRadius: 4 },
   stickerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   sticker: {

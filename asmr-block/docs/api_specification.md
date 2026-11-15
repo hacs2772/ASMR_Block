@@ -17,7 +17,7 @@
 6. [내 블록함 (Library)](#6-내-블록함-library)
 7. [플레이리스트 = 레고 블록 두 줄 (Playlist)](#7-플레이리스트--레고-블록-두-줄-playlist)
 8. [완성본 (Render)](#8-완성본-render)
-9. [관리자 (Admin)](#9-관리자-admin)
+9. [관리자 (Admin)](#9-관리자-admin) — 블록 검수 · 트리거 종류 · 스티커
 
 ---
 
@@ -136,6 +136,7 @@
 |------|------|------|------|
 | GET | `/categories` | - | 메뉴 트리 (아래) |
 | GET | `/tags` | - | `[{ "id": 1, "name": "부드러운" }]` |
+| GET | `/stickers` | - | 블록 겉면 스티커 그림 (아래, V8) |
 
 **메뉴 트리** - 대분류(**트리거 묶음**) > 소분류. 소분류는 대분류 색을 씀. 블록은 **소분류에만** 달림 (V5)
 ```json
@@ -160,6 +161,19 @@
 | 노이즈·명상 (`noise`) | 컬러 노이즈 · 생활 소음 · 싱잉볼·명상 |
 
 - `code`: 분류 코드 (소분류는 `대분류.이름` 형태). `groupCode`: 대분류 코드 — 앱·웹이 **파형 모양**과 트리거 필터에 씀
+- 위 표는 처음 넣은 분류예요. **관리자 페이지에서 추가·숨기기·순서 변경**을 하면 이 API에 바로 반영돼요 (9장). 숨긴 분류와 숨긴 묶음 아래 소분류는 빠짐
+
+**스티커 그림** `GET /stickers` (V8) - 블록 겉면(`design.stickers`)을 그릴 때 씀. 관리자가 추가하면 **앱 업데이트 없이** 바로 보임
+```json
+[
+  { "code": "flagjp", "name": "일본", "svg": "<svg viewBox=\"0 0 30 22\">…</svg>", "imageUrl": null, "active": true },
+  { "code": "shzhebm", "name": "해님", "svg": null, "imageUrl": "http://…/files/stickers/shzhebm.png", "active": true },
+  { "code": "sn92uqc", "name": "등대", "svg": "<svg …>", "imageUrl": null, "active": false }
+]
+```
+- 그림은 `svg`(SVG 글자) 또는 `imageUrl`(PNG, 최대 256px) 중 하나. 웹은 `<img>`로, 앱은 react-native-svg / Image로 그림
+- `active: false` = 숨긴 스티커: **새로 고를 수 없지만**(업로드 규칙 `stickers`에서 빠짐, 업로드하면 400) 이미 붙인 블록에는 그대로 그림. 그래서 숨긴 것도 목록에 있음
+- 서버에서 못 받을 때(오프라인 등) 앱·웹은 기본 16개(V8에 넣은 그림)로 그림
 
 ---
 
@@ -226,7 +240,7 @@
 | `file` | `video`가 없으면 ✅ | mp3, wav, flac, m4a, aac, ogg, opus, webm / 최대 50MB / 길이 10초~20분 |
 | `video` | | 같이 보는 영상 (선택) mp4, mov, m4v, webm / 최대 200MB. **`file` 없이 영상만 올리면 영상의 소리를 블록 음원으로 씀** (소리 없는 영상이면 400) |
 | `cover` | | 블록 겉면 사진 (선택) jpg, jpeg, png, webp / 최대 10MB → 가로 640px jpg로 |
-| `stickers` | | 겉면 스티커 코드, 쉼표로 최대 3개 (예: `flagjp,signal,bird`, 목록은 업로드 규칙 `stickers`). 없는 코드·4개 이상이면 400 |
+| `stickers` | | 겉면 스티커 코드, 쉼표로 최대 3개 (예: `flagjp,signal,bird`, 고를 수 있는 목록은 업로드 규칙 `stickers` = 숨기지 않은 스티커). 없거나 숨긴 코드·4개 이상이면 400 |
 | `pattern` | | 스티커 무늬 `dots`(기본) / `lines` / `none` |
 | `title` | ✅ | 100자 이내 |
 | `description` | | 1000자 이내 |
@@ -247,9 +261,10 @@
 ```json
 { "id": 31, "title": "희귀한 교토 왁스 부수기", "fileUrl": "http://.../blocks/....mp3", "duration": 15, "price": 30,
   "talkType": "NONE", "recordedPlace": "교토 공방",
-  "status": "PENDING", "category": { "id": 23, "name": "왁스·슬라임", ... }, "collectedCount": 0, "playCount": 0, "createdAt": "..." }
+  "status": "REJECTED", "reviewNote": "소리가 너무 작아요", "category": { "id": 23, "name": "왁스·슬라임", ... }, "collectedCount": 0, "playCount": 0, "createdAt": "..." }
 ```
 - `status`: `PENDING`(검수 중) / `APPROVED`(판매 중) / `REJECTED`(거절)
+- `reviewNote`: 관리자가 돌려보낸 이유 (`REJECTED`일 때만, V8)
 - `collectedCount`: 이 블록을 담은 사람 수 (올린 사람 본인 제외)
 
 ### 5.2 재생 기록 `POST /blocks/{id}/play`
@@ -415,15 +430,48 @@
 
 ## 9. 관리자 (Admin)
 
-`role: ADMIN` 계정만 호출 가능 (아니면 403). 개발 환경 관리자: `admin@asmrblock.com` / `password123`
+`role: ADMIN` 계정만 호출 가능 (아니면 403, 비로그인 401). 개발 환경 관리자: `admin@asmrblock.com` / `password123`
+웹 **관리자 페이지**(`/admin`, 관리자로 로그인하면 위 메뉴에 "관리자")가 아래 API를 씀.
+
+### 9.1 블록 검수
 
 | Method | URL | 설명 |
 |------|------|------|
 | GET | `/admin/blocks?status=PENDING` | 검수 목록 (`PENDING` / `APPROVED` / `REJECTED`) |
-| PATCH | `/admin/blocks/{id}/status` | 승인/거절 `{ "status": "APPROVED" }` - 승인되면 올린 사람 블록함에 넣고, 유료면 맛보기 생성 |
+| PATCH | `/admin/blocks/{id}/status` | 승인/거절 `{ "status": "REJECTED", "note": "소리가 너무 작아요" }` - 승인되면 올린 사람 블록함에 넣고, 유료면 맛보기 생성. `note`(200자)는 **거절할 때만** 저장돼 판매자의 `GET /me/uploads` `reviewNote`에 보임 (승인하면 지움) |
 | PATCH | `/admin/blocks/{id}/price` | 가격(코인) `{ "price": 30 }` (0~10000, 0 = 무료). 유료가 되면 **앞 30초 맛보기 파일**(`previews/{id}-30s.mp3`)을 만듦 |
 
 관리자 목록·응답에는 유료 블록도 `fileUrl`(전체 음원)이 들어갑니다 (검수용).
+
+### 9.2 트리거 종류 (카테고리) - V8
+
+바꾸면 `GET /categories`(앱·웹 메뉴)에 바로 반영. 블록이 달려 있을 수 있어 **지우지 않고 숨김**. 응답은 항상 **바뀐 뒤 전체 트리**.
+
+| Method | URL | 설명 |
+|------|------|------|
+| GET | `/admin/categories` | 숨긴 것까지 트리. 각 분류에 `active`, `sortOrder`, `blockCount`(직접 달린 블록 수) |
+| POST | `/admin/categories` | 추가 (201) `{ "parentId": null, "name": "먹방·씹기", "color": "#E879F9", "icon": "pizza", "description": "…", "code": "mukbang" }` |
+| PATCH | `/admin/categories/{id}` | 보낸 것만 고침 `{ "name", "color", "icon", "description", "active" }` |
+| PUT | `/admin/categories/order` | 같은 줄 순서 `{ "ids": [12, 9, 10] }` (묶음끼리 또는 한 묶음의 소분류끼리, 섞으면 400) |
+
+- `parentId` 없음 = **트리거 묶음**(대분류): `color` 필수 → 블록 색. 있음 = 그 묶음의 **소분류**: 색은 묶음을 따름(따로 보내면 400), `icon`(Ionicons 이름) → 블록 아이콘
+- `code`(선택, 영문 소문자 2~20자): 비우면 자동(묶음 `g12`, 소분류 `묶음코드.c13`), 소분류는 `묶음코드.적은코드`. 같은 코드면 409. 만든 뒤에는 못 바꿈 (앱·웹 파형 모양에 씀)
+- 소분류 아래에 또 만들면 400. 묶음 색을 바꾸면 소분류 색도 같이 바뀜
+- 숨긴 분류, 숨긴 묶음 아래 소분류로는 **업로드할 수 없음**(400). 이미 달린 블록은 그대로 보임
+
+### 9.3 스티커 - V8
+
+| Method | URL | 설명 |
+|------|------|------|
+| POST | `/admin/stickers` | 추가 (multipart, 201) `name`(10자) + `file`. 응답 `StickerResponse`, 코드는 자동(`s`+6자) |
+| PATCH | `/admin/stickers/{code}` | `{ "name": "등대", "active": false }` 보낸 것만 (숨기기·다시 보이기) |
+| PUT | `/admin/stickers/order` | `{ "codes": ["sn92uqc", "flagjp"] }` 앞에서부터, 안 보낸 것은 그 뒤 |
+
+- 목록은 공개 `GET /stickers` (숨긴 것 포함, 4장)
+- `file`이 **SVG**면 검사 후 글자로 저장: 30KB까지, `<svg …viewBox>`로 시작·`</svg>`로 끝, **script·style·image·use·foreignObject·on…= 속성·외부 주소(href·url)는 400** (xml 선언·주석은 지움)
+- **PNG·JPG·WEBP**(2MB까지)면 256px 안으로 줄인 투명 배경 PNG(`stickers/{code}.png`)로 저장
+
+> 웹은 다른 주소(:3000 → :8080)에서 부르므로 CORS 허용 메서드에 `PATCH`가 있어야 함 (GET, POST, PUT, PATCH, DELETE).
 
 ---
 

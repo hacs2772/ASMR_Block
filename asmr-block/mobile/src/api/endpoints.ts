@@ -10,6 +10,7 @@ import type {
   PlaylistSaveRequest,
   PlaylistSummary,
   Render,
+  Sticker,
   TalkType,
   UploadPolicy,
   User,
@@ -55,6 +56,11 @@ export const catalogApi = {
     size?: number;
   } = {}) =>
     api<Page<Block>>('/blocks' + query({ size: 50, ...params })),
+};
+
+/** 블록 겉면 스티커 그림 (로그인 없이, 숨긴 것 포함) */
+export const stickerApi = {
+  list: () => api<Sticker[]>('/stickers'),
 };
 
 /** 판매자: ASMR 업로드 */

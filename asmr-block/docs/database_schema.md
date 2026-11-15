@@ -2,8 +2,8 @@
 
 > 최종 수정일: 2026-11-13 / PostgreSQL 16
 >
-> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V7 가 기준입니다.
-> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘 / V5: 트리거 중심 분류(code), 말소리, 녹음한 곳 / V6: 조합 담기 — 복사본의 원본 / V7: 블록 꾸미기(사진·스티커) + 영상 블록)
+> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V8 가 기준입니다.
+> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘 / V5: 트리거 중심 분류(code), 말소리, 녹음한 곳 / V6: 조합 담기 — 복사본의 원본 / V7: 블록 꾸미기(사진·스티커) + 영상 블록 / V8: 스티커 테이블(관리자 페이지에서 추가), 검수 메모)
 > 서버가 시작될 때 Flyway가 자동 적용합니다. **테이블을 바꿀 때는 `V8__설명.sql` 처럼 새 파일을 추가**하세요 (기존 파일 수정 금지).
 > 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 환경에서만 실행).
 
@@ -55,7 +55,7 @@ audio_render                           완성본 (구성 해시로 재사용, �
 
 | 테이블 | 주요 컬럼 | 기본 데이터 (운영 DB에도 들어감) |
 |------|------|------|
-| sound_category | name, **code**(V5, `tap` / `tap.tapping`), color(HEX), icon(앱 아이콘 이름, 소분류마다), sort_order, is_active, **parent_id**(대분류면 NULL), description | V5부터 대분류 = **트리거 묶음 10개** (탭핑·타건 · 스크래칭·브러싱 · 바스락 · 귓속말·입소리 · 슬라임·왁스 · 커팅·부수기 · 빗소리·물 · 자연·바람 · 거리·장소 · 노이즈·명상) + 소분류 28개. 옛 분류 행은 지우지 않고 이름·부모만 바꿔 블록 연결 유지 |
+| sound_category | name, **code**(V5, `tap` / `tap.tapping`), color(HEX), icon(앱 아이콘 이름, 소분류마다), sort_order, is_active, **parent_id**(대분류면 NULL), description | V5부터 대분류 = **트리거 묶음 10개** (탭핑·타건 · 스크래칭·브러싱 · 바스락 · 귓속말·입소리 · 슬라임·왁스 · 커팅·부수기 · 빗소리·물 · 자연·바람 · 거리·장소 · 노이즈·명상) + 소분류 28개. 옛 분류 행은 지우지 않고 이름·부모만 바꿔 블록 연결 유지. **V8부터 관리자 페이지에서 추가·고치기·숨기기(is_active)·순서(sort_order)** |
 | sound_tag | name, sort_order, is_active | 부드러운, 날카로운, 바삭한, 둔탁한, 습한, 리드미컬한 |
 
 ## block (ASMR 블록)
@@ -75,6 +75,7 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | thumbnail_key | VARCHAR(500) | **블록 겉면 사진** (V7부터 크리에이터가 올림, 가로 640px jpg) |
 | stickers / sticker_pattern | VARCHAR | 겉면 스티커 코드 최대 3개(쉼표) + 무늬 `dots`·`lines`·`none` (V7, 사진이 없을 때 보임) |
 | video_key | VARCHAR(500) | 같이 보는 영상 (V7, 480p · 소리 없음 mp4) |
+| review_note | VARCHAR(200) | 관리자가 돌려보낸 이유 (V8, `REJECTED`일 때만, 판매자에게 보임) |
 | category_id | FK → sound_category | |
 | uploader_id | FK → users | |
 | license | VARCHAR(30) | `CC0` / `CC_BY`(출처 표기 필요) / `OWN`(직접 녹음) / `CREATOR` |
@@ -82,6 +83,18 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | play_count | INTEGER | 30분 내 중복 제외 |
 | status | VARCHAR(20) | `PENDING` → `APPROVED` / `REJECTED` (승인된 것만 공개) |
 | is_active | BOOLEAN | **블록은 삭제하지 않고 비활성화** (남의 플레이리스트가 깨지지 않도록) |
+
+## sticker (블록 겉면 스티커, V8)
+관리자 페이지에서 추가·숨김·순서 변경. 앱·웹은 `GET /stickers`로 받아 그림 (앱 업데이트 필요 없음)
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| code | VARCHAR(20) PK | 스티커 코드 (기본 16개는 `flagjp` 등, 관리자가 추가하면 `s` + 6자 자동). `block.stickers`에 쉼표로 저장 |
+| name | VARCHAR(20) | 판매 화면에 보이는 이름 |
+| svg | TEXT | SVG 그림 (검사 후 저장) — `svg`나 `image_key` 중 하나는 꼭 (CHECK) |
+| image_key | VARCHAR(500) | PNG 그림 파일 키 (`stickers/xxx.png`, 256px) |
+| sort_order | INTEGER | 고르기 화면 순서 |
+| is_active | BOOLEAN | 숨기면 FALSE: 새로 못 고르지만 이미 붙인 블록에는 그대로 그림 |
 
 ## user_block (내 블록함, V3)
 

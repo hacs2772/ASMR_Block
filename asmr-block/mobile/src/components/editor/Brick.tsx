@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import Svg, { Circle, Defs, Line, Pattern, Rect, SvgXml } from 'react-native-svg';
+import Svg, { Circle, Defs, Line, Pattern, Rect } from 'react-native-svg';
 import type { BlockDesign } from '@/api/types';
 import type { IconName } from '@/components/ui';
-import { STICKERS } from '@/lib/stickers';
+import { StickerArt } from '@/components/StickerArt';
+import { useStickers } from '@/store/stickers';
 import { shade } from './colors';
 import { colors } from '@/theme';
 
@@ -53,7 +54,8 @@ export function Brick({ color, width, height = BRICK_HEIGHT, icon, title, minute
   const iconSize = height >= BRICK_HEIGHT ? 17 : 14;
   const gap = minutes && minutes > 0 ? width / minutes : 0;
   const cover = design?.coverUrl ?? null;
-  const stickers = !cover ? (design?.stickers ?? []).filter((k) => STICKERS[k]) : [];
+  const { map: stickerMap } = useStickers();
+  const stickers = !cover ? (design?.stickers ?? []).filter((k) => stickerMap[k]) : [];
   const decorated = !!cover || stickers.length > 0;
   const grooves = gap >= MIN_GROOVE_GAP && !cover ? Math.floor(minutes! - 0.05) : 0;
 
@@ -87,7 +89,7 @@ export function Brick({ color, width, height = BRICK_HEIGHT, icon, title, minute
           <>
             {stickers.length > 0 && (
               <View style={styles.stickers} pointerEvents="none">
-                {stickers.map((k) => <SvgXml key={k} xml={STICKERS[k].svg} width={height * 0.75} height={height * 0.56} />)}
+                {stickers.map((k) => <StickerArt key={k} sticker={stickerMap[k]} width={height * 0.75} height={height * 0.56} />)}
               </View>
             )}
             {showName && <Text style={styles.time} numberOfLines={1}>{title}</Text>}

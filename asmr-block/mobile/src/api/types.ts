@@ -24,6 +24,14 @@ export type BlockDesign = {
   hasVideo: boolean;
   videoUrl: string | null;
 };
+/** 블록 겉면 스티커 그림 (svg 글자 또는 imageUrl PNG). active=false면 숨긴 스티커: 새로 고를 수는 없지만 이미 붙인 블록에는 그림 */
+export type Sticker = {
+  code: string;
+  name: string;
+  svg: string | null;
+  imageUrl: string | null;
+  active: boolean;
+};
 /** 메뉴 트리: 대분류(트리거 묶음) + 소분류 */
 export type CategoryGroup = {
   id: number;
@@ -178,6 +186,8 @@ export type MyUpload = {
   talkType: TalkType;
   recordedPlace: string | null;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  /** 관리자가 돌려보낸 이유 (REJECTED일 때만) */
+  reviewNote: string | null;
   category: Category | null;
   design: BlockDesign | null;
   /** 담은 사람 수 (나 제외) */

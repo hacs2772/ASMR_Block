@@ -1,8 +1,11 @@
+import type { Sticker } from '@/api/types';
+
 /**
- * 블록 겉면 스티커 (C안: 사진이 없을 때 보임). 저작권 걱정 없게 직접 그린 단순한 평면 그림.
- * ⚠ 서버(BlockDesign.STICKERS)·웹(frontend/src/lib/stickers.js)과 코드·그림이 같아야 함. 추가하면 세 곳을 같이 고칠 것
+ * 블록 겉면 스티커 (C안: 사진이 없을 때 보임).
+ * V8부터 스티커 목록·그림은 서버(GET /stickers)에 있고 관리자 페이지에서 추가함 → store/stickers.ts가 받아 옴.
+ * 아래 BUILTIN은 서버에서 받기 전(또는 오프라인일 때) 쓰는 기본 16개 (서버 V8 마이그레이션·웹과 같은 그림)
  */
-export const STICKERS: Record<string, { label: string; svg: string }> = {
+const BUILTIN: Record<string, { label: string; svg: string }> = {
   flagjp: { label: '일본', svg: '<svg viewBox="0 0 30 22"><rect width="30" height="22" rx="2" fill="#fff"/><circle cx="15" cy="11" r="6" fill="#d7263d"/></svg>' },
   flagkr: { label: '한국', svg: '<svg viewBox="0 0 30 22"><rect width="30" height="22" rx="2" fill="#fff"/><circle cx="15" cy="11" r="5.5" fill="#cd2e3a"/><path d="M9.5 11a5.5 5.5 0 0 0 11 0 2.75 2.75 0 0 0-5.5 0 2.75 2.75 0 0 1-5.5 0z" fill="#0047a0"/><path d="M4 5l3-2M23 3l3 2M4 17l3 2M23 19l3-2" stroke="#222" stroke-width="1.4"/></svg>' },
   signal: { label: '신호등', svg: '<svg viewBox="0 0 22 30"><rect x="9.5" y="20" width="3" height="10" fill="#777"/><rect x="2" y="1" width="18" height="21" rx="4" fill="#222"/><circle cx="11" cy="7" r="3.6" fill="#555"/><circle cx="11" cy="16" r="3.6" fill="#36d18a"/></svg>' },
@@ -21,7 +24,14 @@ export const STICKERS: Record<string, { label: string; svg: string }> = {
   mic: { label: '마이크', svg: '<svg viewBox="0 0 24 30"><rect x="7" y="2" width="10" height="16" rx="5" fill="#c9ccd6"/><path d="M8 7h8M8 11h8" stroke="#8a8f9c" stroke-width="1.2"/><path d="M4 13a8 8 0 0 0 16 0M12 21v6M7 28h10" stroke="#e8e8ef" stroke-width="2" fill="none" stroke-linecap="round"/></svg>' },
 };
 
-export const STICKER_CODES = Object.keys(STICKERS);
+
+export const BUILTIN_STICKERS: Sticker[] = Object.entries(BUILTIN).map(([code, s]) => ({
+  code, name: s.label, svg: s.svg, imageUrl: null, active: true,
+}));
+
+/** 목록 → code로 찾는 표 */
+export const toStickerMap = (list: Sticker[]): Record<string, Sticker> => Object.fromEntries(list.map((s) => [s.code, s]));
+
 export const PATTERNS: { key: 'dots' | 'lines' | 'none'; label: string }[] = [
   { key: 'dots', label: '점' },
   { key: 'lines', label: '빗금' },
