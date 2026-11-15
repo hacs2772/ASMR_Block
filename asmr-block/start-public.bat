@@ -26,7 +26,7 @@ echo [3/4] 설정 파일 확인 (.env.public)
 if not exist ".env.public" (
     powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\new-env-public.ps1"
 )
-findstr /c:"CHANGE_ME" ".env.public" >nul
+findstr /c:"=CHANGE_ME" ".env.public" >nul
 if not errorlevel 1 (
     echo.
     echo   메모장이 열리면 CHANGE_ME 세 곳을 바꾸고 저장해 주세요:
