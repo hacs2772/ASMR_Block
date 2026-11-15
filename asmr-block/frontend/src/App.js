@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { VideoModal } from './components/block/VideoModal';
 import { ComingSoonModal } from './components/common/ComingSoon';
 import { FeedbackFab, FeedbackModal } from './components/common/Feedback';
+import { InstallModal, listenInstallPrompt } from './components/common/Install';
 import Footer from './components/common/Footer';
 import Header from './components/common/Header';
 import AdminPage from './pages/AdminPage';
@@ -34,6 +35,8 @@ function EditorRedirect() {
   const { playlistId } = useParams();
   return <Navigate to={playlistId ? `/create/${playlistId}` : '/create'} replace />;
 }
+
+listenInstallPrompt();
 
 function App() {
   const fetchMe = useAuthStore((s) => s.fetchMe);
@@ -73,8 +76,9 @@ function App() {
         <ComingSoonModal />
         <VideoModal />
         <FeedbackModal />
+        <InstallModal />
         <FeedbackFab />
-        <ToastContainer position="bottom-center" autoClose={2800} hideProgressBar theme="dark" />
+        <ToastContainer position="bottom-center" autoClose={2800} hideProgressBar theme="dark" style={{ marginBottom: 'env(safe-area-inset-bottom)' }} />
       </div>
     </Router>
   );

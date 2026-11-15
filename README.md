@@ -237,6 +237,7 @@ npx expo start
 - 웹·API·음원이 한 주소(`https://asmrblock.com`, `/api`, `/files`)로. DB 포트는 밖으로 안 열림, API 문서(Swagger) 숨김
 - 영상 업로드는 **90MB까지** (Cloudflare 무료 요금제가 한 번에 100MB까지만 받음)
 - **개인정보 처리방침·이용약관**(`/privacy`, `/terms`, 베타판), 어디서나 **의견 보내기**, 관리자 페이지 **통계·의견** 탭, **자동 백업**
+- 휴대폰에서 **홈 화면에 추가**하면 앱처럼(주소창 없이) 열리고, 듣는 중엔 **잠금화면에 조합 이름·재생 버튼**. 카톡에서 열면 Safari·크롬으로 열라고 안내해요
 
 **처음 한 번 (순서대로)**
 1. **도메인 사기**: [Cloudflare](https://dash.cloudflare.com) 가입 → Domain Registration → Register Domains → `asmrblock.com` 검색·구매 (www.asmrblock.com 도 같이 따라옴)

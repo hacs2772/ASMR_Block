@@ -32,7 +32,7 @@ function Footer() {
           </ul>
         </div>
       </div>
-      <div className="border-t border-line py-5 text-center text-xs text-faint">© ASMR Block · 베타</div>
+      <div className="border-t border-line py-5 text-center text-xs text-faint" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>© ASMR Block · 베타</div>
     </footer>
   );
 }

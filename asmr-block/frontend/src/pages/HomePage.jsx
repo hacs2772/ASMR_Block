@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { InstallBanner } from '../components/common/Install';
 import { Link } from 'react-router-dom';
 import { IoArrowForward, IoCash, IoCheckmarkCircle, IoCube, IoMoon, IoPhonePortrait } from 'react-icons/io5';
 import { catalogApi, playlistApi } from '../api/api';
@@ -27,6 +28,7 @@ function HomePage() {
   return (
     <div>
       {/* ---------- 첫 화면 ---------- */}
+      <InstallBanner />
       <section className="page grid items-center gap-12 pb-16 pt-12 lg:grid-cols-[1.05fr_1fr] lg:pt-20">
         <div>
           <p className="eyebrow">ASMR · 나만의 팅글 만들기</p>

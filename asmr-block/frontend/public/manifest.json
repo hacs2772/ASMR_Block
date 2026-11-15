@@ -1,0 +1,16 @@
+{
+  "name": "ASMR Block · 나만의 팅글을 블록으로",
+  "short_name": "ASMR Block",
+  "description": "좋아하는 ASMR 트리거 블록만 골라 딸깍 이어 붙이는 나만의 팅글 조합",
+  "lang": "ko",
+  "start_url": "/?source=homescreen",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0F",
+  "theme_color": "#0A0A0F",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -7,10 +7,10 @@ import BetaLoginButton from '../components/common/BetaLoginButton';
 import BlockVideoPanel from '../components/playlist/BlockVideoPanel';
 import { CollectComboButton } from '../components/playlist/ComboCard';
 import { colorOf, formatDuration, formatLength, listenLabel } from '../lib/blocks';
+import { positionState, sleepStep } from '../lib/sleep';
 import useAuthStore from '../store/authStore';
 
 const isWorking = (r) => r?.status === 'PENDING' || r?.status === 'PROCESSING';
-const FADE_SECONDS = 20;
 
 /**
  * 조합 듣기: 완성본(서버가 두 줄을 끊김 없이 합친 파일)을 재생.
@@ -59,19 +59,40 @@ function ListenPage() {
     return () => clearInterval(t);
   }, [id, render]);
 
-  // 수면 타이머: 남은 시간 표시 + 마지막 20초 동안 서서히 작아지다 멈춤
+  // 수면 타이머: 끝나는 시각(endsAt)과 시계로만 판단 → 화면이 꺼져 타이머가 늦어져도
+  // 재생 중 오는 timeupdate, 0.5초 타이머, 화면으로 돌아왔을 때 중 어디서든 늦지 않게 멈춤 (마지막 20초는 점점 작게)
+  const endsAtRef = useRef(null);
+  endsAtRef.current = endsAt;
+  const applySleep = useCallback(() => {
+    const a = audioRef.current;
+    const step = sleepStep(endsAtRef.current, Date.now());
+    if (!a || step.left === null) return;
+    if (step.stop) {
+      a.pause();
+      a.volume = 1;
+      endsAtRef.current = null;
+      setEndsAt(null);
+      return;
+    }
+    if (a.volume !== step.volume) a.volume = step.volume;
+    if (step.fading) setShowVideo(false);
+  }, []);
   useEffect(() => {
     if (!endsAt || !playing) return undefined;
-    const t = setInterval(() => {
-      const left = (endsAt - Date.now()) / 1000;
-      setNow(Date.now());
-      const a = audioRef.current;
-      if (!a) return;
-      if (left <= 0) { a.pause(); a.volume = 1; setEndsAt(null); }
-      else if (left < FADE_SECONDS) { a.volume = Math.max(0, left / FADE_SECONDS); setShowVideo(false); }
-    }, 500);
+    const t = setInterval(() => { setNow(Date.now()); applySleep(); }, 500);
     return () => clearInterval(t);
-  }, [endsAt, playing]);
+  }, [endsAt, playing, applySleep]);
+  useEffect(() => {
+    const back = () => { if (!document.hidden) { setNow(Date.now()); applySleep(); } };
+    document.addEventListener('visibilitychange', back);
+    window.addEventListener('pageshow', back);
+    window.addEventListener('focus', back);
+    return () => {
+      document.removeEventListener('visibilitychange', back);
+      window.removeEventListener('pageshow', back);
+      window.removeEventListener('focus', back);
+    };
+  }, [applySleep]);
 
   /** 조합 그림을 누르거나 끌면 그 위치(비율)로 이동, 멈춰 있었으면 거기서부터 재생 */
   const seekTo = (clientX, rect, play) => {
@@ -99,15 +120,75 @@ function ListenPage() {
     },
   };
 
+  const start = () => {
+    const a = audioRef.current;
+    if (!a || !combo) return;
+    a.volume = 1;
+    a.loop = combo.listenMinutes > 0;
+    if (combo.listenMinutes > 0 && !endsAtRef.current) {
+      endsAtRef.current = Date.now() + combo.listenMinutes * 60 * 1000;
+      setEndsAt(endsAtRef.current);
+    }
+    // 아이폰: 무음 스위치를 켜 둬도 소리가 나도록 "재생" 종류로 (지원하는 브라우저만)
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { /* 괜찮음 */ }
+    a.play().catch(() => {});
+    if (!recorded.current && isAuthenticated) { recorded.current = true; playlistApi.recordPlay(id).catch(() => {}); }
+  };
   const toggle = () => {
     const a = audioRef.current;
     if (!a) return;
     if (!a.paused) { a.pause(); return; }
-    a.volume = 1;
-    a.loop = combo.listenMinutes > 0;
-    if (combo.listenMinutes > 0 && !endsAt) setEndsAt(Date.now() + combo.listenMinutes * 60 * 1000);
-    a.play().catch(() => {});
-    if (!recorded.current && isAuthenticated) { recorded.current = true; playlistApi.recordPlay(id).catch(() => {}); }
+    start();
+  };
+  const startRef = useRef(start);
+  startRef.current = start;
+
+  // 잠금화면·알림창 재생 조절 (Media Session): 조합 이름·그림 + 재생/멈춤/이동
+  const ready = render?.status === 'DONE' && render.fileUrl;
+  useEffect(() => {
+    if (!combo || !ready || typeof navigator === 'undefined' || !('mediaSession' in navigator)) return undefined;
+    const ms = navigator.mediaSession;
+    try {
+      ms.metadata = new window.MediaMetadata({
+        title: combo.title,
+        artist: `@${combo.owner?.nickname ?? ''} · ASMR Block`,
+        album: combo.listenMinutes > 0 ? `${listenLabel(combo.listenMinutes)} 반복` : '나만의 팅글',
+        artwork: [
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+        ],
+      });
+    } catch { /* MediaMetadata가 없는 브라우저 */ }
+    const a = () => audioRef.current;
+    const handlers = {
+      play: () => startRef.current(),
+      pause: () => a()?.pause(),
+      stop: () => a()?.pause(),
+      seekto: (d) => { if (a() && Number.isFinite(d.seekTime)) a().currentTime = d.seekTime; },
+      seekbackward: (d) => { if (a()) a().currentTime = Math.max(0, a().currentTime - (d.seekOffset || 10)); },
+      seekforward: (d) => { if (a()) a().currentTime = Math.min(a().duration || 0, a().currentTime + (d.seekOffset || 10)); },
+    };
+    Object.entries(handlers).forEach(([k, fn]) => { try { ms.setActionHandler(k, fn); } catch { /* 지원 안 함 */ } });
+    return () => {
+      Object.keys(handlers).forEach((k) => { try { ms.setActionHandler(k, null); } catch { /* 지원 안 함 */ } });
+      try { ms.metadata = null; } catch { /* 괜찮음 */ }
+    };
+  }, [combo, ready]);
+  const lastPosition = useRef(-1);
+  const onTime = (e) => {
+    const el = e.currentTarget;
+    setTime({ current: el.currentTime, duration: el.duration });
+    applySleep();
+    const sec = Math.floor(el.currentTime);
+    if (sec !== lastPosition.current && 'mediaSession' in navigator && navigator.mediaSession.setPositionState) {
+      lastPosition.current = sec;
+      const state = positionState(el.currentTime, el.duration);
+      if (state) { try { navigator.mediaSession.setPositionState(state); } catch { /* 괜찮음 */ } }
+    }
+  };
+  const setPlayback = (state) => {
+    setPlaying(state === 'playing');
+    try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = state; } catch { /* 괜찮음 */ }
   };
 
   if (error) return <div className="page pt-16"><p className="card p-8 text-center text-muted">{error}</p></div>;
@@ -116,7 +197,6 @@ function ListenPage() {
   const mine = user && combo.owner?.id === user.id;
   const videoCount = [...(combo.main?.items || []), ...(combo.mix?.items || [])].filter((i) => i.design?.hasVideo).length;
   const total = combo.totalDuration || 1;
-  const ready = render?.status === 'DONE' && render.fileUrl;
   const left = endsAt ? Math.max(0, Math.round((endsAt - now) / 1000)) : null;
 
   return (
@@ -182,9 +262,9 @@ function ListenPage() {
                   {left !== null && <p className="mt-1 flex items-center gap-1 text-xs text-pink-text"><IoMoon /> {formatDuration(left)} 뒤에 스르르 꺼져요</p>}
                 </div>
                 <audio ref={audioRef} src={render.fileUrl} preload="metadata"
-                  onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)}
+                  onPlay={() => setPlayback('playing')} onPause={() => setPlayback('paused')}
                   onLoadedMetadata={(e) => setTime({ current: 0, duration: e.currentTarget.duration })}
-                  onTimeUpdate={(e) => setTime({ current: e.currentTarget.currentTime, duration: e.currentTarget.duration })} />
+                  onTimeUpdate={onTime} data-testid="listen-audio" />
               </div>
             ) : isWorking(render) || requesting ? (
               <div className="rounded-xl bg-card-active p-5 text-center">

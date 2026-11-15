@@ -76,7 +76,8 @@ export function FeedbackFab() {
   if (pathname.startsWith('/create') || pathname.startsWith('/admin')) return null;
   return (
     <button type="button" onClick={open} data-testid="feedback-fab"
-      className="fixed bottom-4 right-4 z-40 flex items-center gap-1.5 rounded-full border border-line-strong bg-card/95 px-3.5 py-2.5 text-sm font-bold text-ink shadow-xl backdrop-blur hover:border-pink">
+      style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+      className="fixed right-4 z-40 flex items-center gap-1.5 rounded-full border border-line-strong bg-card/95 px-3.5 py-2.5 text-sm font-bold text-ink shadow-xl backdrop-blur hover:border-pink">
       <IoChatbubbleEllipses className="text-pink-text" size={17} /> 의견<span className="hidden sm:inline"> 보내기</span>
     </button>
   );
