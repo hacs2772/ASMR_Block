@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
+import { IoPlayCircle } from 'react-icons/io5';
 import { useLocation } from 'react-router-dom';
 import Brick from '../components/brand/Brick';
+import { useGuide } from '../components/guide/GuideModal';
 import AssembleButton from '../components/home/AssembleButton';
 import { TRIGGER_COLOR } from '../lib/blocks';
 
@@ -42,7 +44,12 @@ function GuidePage() {
         딸깍 이어 붙이기만 하면 나한테 맞는 ASMR이 되게 했어요.
       </p>
 
-      <h2 className="mt-14 text-2xl font-extrabold">이렇게 써요</h2>
+      <div className="mt-14 flex flex-wrap items-center gap-3">
+        <h2 className="mr-auto text-2xl font-extrabold">이렇게 써요</h2>
+        <button type="button" className="btn-line btn-sm" onClick={() => useGuide.getState().show('full')} data-testid="guide-replay">
+          <IoPlayCircle size={18} className="text-pink-text" /> 움직이는 안내로 보기
+        </button>
+      </div>
       <ol className="mt-5 space-y-4">
         {STEPS.map((s, i) => (
           <li key={s.title} className="card flex gap-4 p-5">

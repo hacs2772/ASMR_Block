@@ -10,6 +10,7 @@ import { BlockBox, useBlockBoxSize } from '@/components/editor/BlockBox';
 import { Board } from '@/components/editor/Board';
 import { board, useDrag } from '@/components/editor/drag';
 import { DragGhost } from '@/components/editor/DragGhost';
+import { EditorGuide } from '@/components/guide/GuideHost';
 import { ListenRow } from '@/components/editor/EditorCards';
 import { useMixPreview } from '@/audio/useMixPreview';
 import { Button, EmptyState } from '@/components/ui';
@@ -180,6 +181,8 @@ export default function EditorScreen() {
       </ScrollView>
       <BlockBox />
       <DragGhost origin={origin} />
+      {/* 편집기를 처음 열면 한 번: 끌어서 쌓는 법 */}
+      <EditorGuide />
     </View>
   );
 }

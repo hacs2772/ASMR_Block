@@ -1,7 +1,10 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BrickStack } from '@/components/Brand';
 import { FeedbackForm } from '@/components/FeedbackForm';
+import { GuideModal } from '@/components/guide/GuideModal';
+import { FULL_STEPS } from '@/lib/guide';
 import { PRIVACY_URL, TERMS_URL } from '@/lib/links';
 import { Glossary, TingleWord } from '@/components/tingle/Tingle';
 import { Button } from '@/components/ui';
@@ -16,6 +19,7 @@ const STEPS = [
 
 /** 도움말 (오른쪽 위 ?): 처음 온 사람을 위한 팅글 설명 · 쓰는 법 · 단어장 */
 export default function HelpScreen() {
+  const [tour, setTour] = useState(false);
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Text style={styles.headline}>나만의 <TingleWord size={26} />을{'\n'}블록으로 쌓아 보세요</Text>
@@ -41,6 +45,7 @@ export default function HelpScreen() {
           </View>
         </View>
       ))}
+      <Button title="사용법 다시 보기 (움직이는 안내)" variant="secondary" icon="play-circle-outline" onPress={() => setTour(true)} testID="guide-replay" />
       <Text style={styles.tip}>★ 추천 조합에서는 다른 사람이 쌓은 조합을 들어 보고, 마음에 들면 한 번에 담을 수 있어요.</Text>
 
       <Text style={styles.section}>ASMR 단어장</Text>
@@ -58,6 +63,7 @@ export default function HelpScreen() {
       </View>
 
       <Button title="알겠어요" onPress={() => router.back()} style={{ marginTop: space.md }} />
+      <GuideModal visible={tour} steps={FULL_STEPS} onClose={() => setTour(false)} finishLabel="알겠어요" />
     </ScrollView>
   );
 }

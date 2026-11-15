@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BottomTabBar, Tabs } from 'expo-router/tabs';
 import { View, type ColorValue } from 'react-native';
 import { BrandTitle } from '@/components/Brand';
+import { WelcomeGuide } from '@/components/guide/GuideHost';
 import { HeaderActions } from '@/components/HeaderActions';
 import { MiniPlayer } from '@/components/MiniPlayer';
 import type { IconName } from '@/components/ui';
@@ -16,6 +17,7 @@ function tabIcon(name: IconName) {
 
 export default function TabsLayout() {
   return (
+    <>
     <Tabs
       // 탭 바 위에 미니 플레이어
       tabBar={(props) => (
@@ -42,5 +44,8 @@ export default function TabsLayout() {
       <Tabs.Screen name="library" options={{ title: '블록 편집', headerTitle: '블록 편집', tabBarIcon: tabIcon('create') }} />
       <Tabs.Screen name="upload" options={{ title: '블록 판매', headerTitle: 'ASMR 블록 판매', tabBarIcon: tabIcon('cloud-upload') }} />
     </Tabs>
+    {/* 처음 켰을 때 한 번: 담기 → 끌어서 쌓기 → 시간 정하기 → 듣기 */}
+    <WelcomeGuide />
+    </>
   );
 }

@@ -8,6 +8,7 @@ import { ComingSoonModal } from './components/common/ComingSoon';
 import { FeedbackFab, FeedbackModal } from './components/common/Feedback';
 import { InstallModal, listenInstallPrompt } from './components/common/Install';
 import Footer from './components/common/Footer';
+import { GuideModal } from './components/guide/GuideModal';
 import Header from './components/common/Header';
 import AdminPage from './pages/AdminPage';
 import { LoginPage, SignupPage } from './pages/AuthPages';
@@ -77,6 +78,7 @@ function App() {
         <VideoModal />
         <FeedbackModal />
         <InstallModal />
+        <GuideModal />
         <FeedbackFab />
         <ToastContainer position="bottom-center" autoClose={2800} hideProgressBar theme="dark" style={{ marginBottom: 'env(safe-area-inset-bottom)' }} />
       </div>

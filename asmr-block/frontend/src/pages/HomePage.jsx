@@ -7,6 +7,7 @@ import Brick from '../components/brand/Brick';
 import BlockLoader from '../components/brand/BlockLoader';
 import BlockProductCard from '../components/block/BlockProductCard';
 import { AppBadges } from '../components/common/ComingSoon';
+import { useFirstRunGuide } from '../components/guide/GuideModal';
 import AssembleButton from '../components/home/AssembleButton';
 import ComboCard from '../components/playlist/ComboCard';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
@@ -15,6 +16,8 @@ import { TRIGGER_COLOR } from '../lib/blocks';
 /** 웹 첫 화면: 나만의 팅글 → 조합 만들기(가장 중요한 버튼) → 요즘 뜨는 블록 · 추천 조합 → 만드는 법 → 블록 판매 → 앱 받기 */
 function HomePage() {
   useStopPreviewOnLeave();
+  // 처음 온 사람에게 한 번: 담기 → 끌어서 쌓기 → 시간 정하기 → 듣기
+  useFirstRunGuide('welcome');
   const [groups, setGroups] = useState([]);
   const [blocks, setBlocks] = useState(null);
   const [combos, setCombos] = useState(null);

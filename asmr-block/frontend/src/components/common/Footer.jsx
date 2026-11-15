@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { AppBadges } from './ComingSoon';
 import { useFeedback } from './Feedback';
+import { useGuide } from '../guide/GuideModal';
 import { Logo, NAV } from './Header';
 
 function Footer() {
@@ -24,6 +25,7 @@ function Footer() {
         <div>
           <p className="mb-3 text-sm font-bold">안내</p>
           <ul className="space-y-2 text-sm text-muted">
+            <li><button type="button" onClick={() => useGuide.getState().show('full')} className="hover:text-ink" data-testid="footer-guide">사용법 보기</button></li>
             <li><Link to="/guide#glossary" className="hover:text-ink">ASMR 단어장</Link></li>
             <li><Link to="/sell" className="hover:text-ink">크리에이터 안내</Link></li>
             <li><button type="button" onClick={() => useFeedback.getState().open()} className="hover:text-ink">의견 보내기</button></li>

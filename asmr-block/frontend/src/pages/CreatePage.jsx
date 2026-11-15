@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { errorMessage, libraryApi, playlistApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
 import BetaLoginButton from '../components/common/BetaLoginButton';
+import { useFirstRunGuide } from '../components/guide/GuideModal';
 import Board from '../components/editor/Board';
 import BlockShelf, { DragGhost } from '../components/editor/BlockShelf';
 import { useMixPreview, usePreviewClock } from '../components/editor/useMixPreview';
@@ -27,6 +28,8 @@ function CreatePage() {
   const [saving, setSaving] = useState(false);
   const preview = useMixPreview();
   const playing = usePreviewClock((s) => s.t !== null);
+  // 편집기를 처음 열면 한 번: 끌어서 쌓는 법 (화면이 다 뜬 뒤에)
+  useFirstRunGuide('editor', isAuthenticated && ready);
 
   // 처음 열 때 한 번: 새로 만들기 또는 저장된 조합 불러오기
   useEffect(() => {
