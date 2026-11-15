@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import LogoMark from '../components/brand/LogoMark';
+import BetaLoginButton from '../components/common/BetaLoginButton';
 import useAuthStore from '../store/authStore';
 
-function AuthShell({ title, sub, children, footer }) {
+function AuthShell({ title, sub, children, footer, beta }) {
   return (
     <div className="page flex min-h-[78vh] items-center justify-center py-12">
       <div className="w-full max-w-md">
@@ -13,6 +14,12 @@ function AuthShell({ title, sub, children, footer }) {
           <h1 className="mt-4 text-2xl font-black">{title}</h1>
           <p className="mt-1.5 text-sm text-muted">{sub}</p>
         </div>
+        {beta && (
+          <>
+            <BetaLoginButton to={beta} />
+            <p className="my-5 flex items-center gap-3 text-xs text-faint"><span className="h-px flex-1 bg-line" />또는 이메일로<span className="h-px flex-1 bg-line" /></p>
+          </>
+        )}
         <div className="card p-6 sm:p-8">{children}</div>
         <p className="mt-5 text-center text-sm text-muted">{footer}</p>
       </div>
@@ -38,7 +45,7 @@ export function LoginPage() {
   };
 
   return (
-    <AuthShell title="로그인" sub="내 블록함과 조합을 이어서 써요"
+    <AuthShell title="로그인" sub="내 블록함과 조합을 이어서 써요" beta={location.state?.from || '/create'}
       footer={<>처음이세요? <Link to="/signup" className="font-bold text-pink-text">회원가입</Link></>}>
       <form onSubmit={submit} className="space-y-4">
         <label className="block"><span className="label">이메일</span>
@@ -74,7 +81,7 @@ export function SignupPage() {
   };
 
   return (
-    <AuthShell title="회원가입" sub="무료 블록만으로도 바로 시작할 수 있어요"
+    <AuthShell title="회원가입" sub="무료 블록만으로도 바로 시작할 수 있어요" beta="/create"
       footer={<>이미 계정이 있나요? <Link to="/login" className="font-bold text-pink-text">로그인</Link></>}>
       <form onSubmit={submit} className="space-y-4">
         <label className="block"><span className="label">이메일</span>

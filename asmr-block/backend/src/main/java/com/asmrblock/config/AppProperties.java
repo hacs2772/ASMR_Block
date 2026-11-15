@@ -26,7 +26,8 @@ public record AppProperties(
         @Valid @NotNull PlayCount playCount,
         @Valid @NotNull Audio audio,
         @Valid @NotNull Render render,
-        @Valid @NotNull Shop shop) {
+        @Valid @NotNull Shop shop,
+        @Valid @NotNull Beta beta) {
 
     public record Jwt(
             @NotBlank(message = "JWT 비밀키가 없습니다. JWT_SECRET 환경변수를 설정하세요.")
@@ -61,6 +62,13 @@ public record AppProperties(
 
     /** 블록 상점: 판매자가 정할 수 있는 최대 가격(코인). 너무 비싸지지 않게 */
     public record Shop(@Min(0) int sellerMaxPrice) {
+    }
+
+    /**
+     * 베타 기간 설정. quickLogin: "베타로 바로 시작"(가입 없이 손님 계정). 정식 출시 때 반드시 false!
+     * starterBlocks: 손님 계정에 처음부터 담아 주는 무료 블록 수 (인기순)
+     */
+    public record Beta(boolean quickLogin, @Min(0) int starterBlocks) {
     }
 
     /** 완성본(합친 파일) 만들기 설정 */

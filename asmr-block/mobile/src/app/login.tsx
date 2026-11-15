@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { Text } from 'react-native';
 import { AuthForm } from '@/components/AuthForm';
+import { BetaLoginButton } from '@/components/BetaLoginButton';
 import { Button } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { colors } from '@/theme';
@@ -13,6 +14,7 @@ export default function LoginScreen() {
         { key: 'email', label: '이메일', email: true, placeholder: 'email@example.com' },
         { key: 'password', label: '비밀번호', secure: true },
       ]}
+      header={<BetaLoginButton onDone={() => router.back()} style={{ marginBottom: 12 }} />}
       submitLabel="로그인"
       onSubmit={async ({ email = '', password = '' }) => {
         await login(email, password);

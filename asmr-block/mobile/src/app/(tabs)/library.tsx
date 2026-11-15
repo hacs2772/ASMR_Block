@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { BetaLoginButton } from '@/components/BetaLoginButton';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -30,6 +31,7 @@ export default function LibraryScreen() {
     return (
       <View style={styles.screen}>
         <EmptyState icon="albums-outline" title="로그인하면 나만의 조합을 만들 수 있어요" message="담은 블록을 레고처럼 이어 붙여서 나만의 ASMR을 만들어보세요.">
+          <BetaLoginButton style={{ marginTop: space.md }} />
           <Button title="로그인" onPress={() => router.push('/login')} style={{ marginTop: space.md, alignSelf: 'stretch' }} />
         </EmptyState>
       </View>

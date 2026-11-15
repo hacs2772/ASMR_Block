@@ -34,6 +34,32 @@ const useAuthStore = create(
         }
       },
 
+      /**
+       * 베타로 바로 시작: 이 브라우저에 저장된 손님 계정이 있으면 그걸로, 없으면 새로 만들어 로그인.
+       * (정식 출시 때 서버에서 끄면 버튼이 사라짐)
+       */
+      betaLogin: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          const saved = JSON.parse(localStorage.getItem('betaGuest') || 'null');
+          if (saved?.email) {
+            const again = await get().login(saved.email, saved.password);
+            if (again.success) return { success: true };
+          }
+          const response = await authApi.betaLogin();
+          const { accessToken, refreshToken, user, email, password } = response.data;
+          localStorage.setItem('accessToken', accessToken);
+          localStorage.setItem('refreshToken', refreshToken);
+          localStorage.setItem('betaGuest', JSON.stringify({ email, password }));
+          set({ user, isAuthenticated: true, isLoading: false });
+          return { success: true };
+        } catch (error) {
+          const message = error.response?.data?.error?.message || '베타로 시작하지 못했어요.';
+          set({ error: message, isLoading: false });
+          return { success: false, error: message };
+        }
+      },
+
       // 회원가입
       signup: async (data) => {
         set({ isLoading: true, error: null });

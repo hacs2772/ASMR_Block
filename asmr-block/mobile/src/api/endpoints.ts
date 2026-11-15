@@ -1,5 +1,6 @@
 import { api } from './client';
 import type {
+  BetaLoginResponse,
   Block,
   CategoryGroup,
   LoginResponse,
@@ -26,6 +27,10 @@ export const authApi = {
     api<User>('/auth/signup', { method: 'POST', body: { email, password, nickname } }),
   logout: (refreshToken: string) =>
     api<void>('/auth/logout', { method: 'POST', body: { refreshToken } }),
+  /** 베타 기간만: "베타로 바로 시작"을 쓸 수 있는지 */
+  betaStatus: () => api<{ quickLogin: boolean }>('/auth/beta'),
+  /** 베타 기간만: 가입 없이 손님 계정을 만들어 바로 로그인 */
+  betaLogin: () => api<BetaLoginResponse>('/auth/beta-login', { method: 'POST' }),
 };
 
 export const userApi = {

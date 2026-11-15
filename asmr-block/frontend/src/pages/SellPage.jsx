@@ -4,6 +4,7 @@ import { IoCash, IoCloudUpload, IoMusicalNotes, IoShieldCheckmark } from 'react-
 import { toast } from 'react-toastify';
 import { catalogApi, errorMessage, sellerApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
+import BetaLoginButton from '../components/common/BetaLoginButton';
 import BlockProductCard from '../components/block/BlockProductCard';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
 import { colorOf, formatDuration, TALK_LABEL } from '../lib/blocks';
@@ -135,6 +136,7 @@ function SellPage() {
       {!isAuthenticated ? (
         <div className="card mt-10 flex flex-col items-center gap-4 p-10 text-center">
           <p className="text-lg font-bold">로그인하면 내 트리거를 블록으로 올릴 수 있어요</p>
+          <BetaLoginButton className="w-full max-w-sm" />
           <div className="flex gap-2"><Link to="/login" className="btn-pink">로그인</Link><Link to="/signup" className="btn-line">회원가입</Link></div>
         </div>
       ) : (

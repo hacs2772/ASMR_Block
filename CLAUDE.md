@@ -79,6 +79,7 @@ cd asmr-block/mobile && npm run typecheck && npm run lint && npm test
 - 로직은 `__tests__`에 jest 테스트를 추가한다. 화면 흐름은 웹 미리보기(`npx expo export -p web`) + Playwright로 확인.
 
 ## 인증 흐름
+- **베타 기간만** "베타로 바로 시작": `POST /auth/beta-login`이 손님 계정(`베타손님1234`)을 만들고 인기 무료 블록 6개를 담아 줌. 이메일·비밀번호를 기기에 저장(웹 localStorage `betaGuest`, 앱 SecureStore)해 두고 다시 누르면 같은 계정. 설정 `app.beta.quick-login`
 - Access Token: JWT, 30분. 만료/위조 시 보호된 API는 **401** → 클라이언트가 refresh 후 재시도.
 - Refresh Token: 랜덤 문자열, DB에 SHA-256 해시 저장, 14일. 사용할 때마다 새로 발급(rotation), 재사용 감지 시 전부 폐기.
 
@@ -95,5 +96,5 @@ cd asmr-block/mobile && npm run typecheck && npm run lint && npm test
 - [ ] **거의 0원으로 먼저 보여 주기**(사용자가 고른 방향): 도메인 asmrblock.com → Cloudflare Tunnel(내 PC 서버를 api.asmrblock.com으로) → 웹 버전을 Cloudflare Pages(asmrblock.com)에 → 반응 보기. 사업자·스토어 계정·유료 서버는 그 뒤에
 - [ ] EAS Build(TestFlight / Play 내부 테스트)로 앱 아이콘·첫 화면·잠금화면 재생 확인, 광고 SDK(AdMob)로 광고 자리 교체
 - [ ] 파일 저장소 S3/R2 (`StorageService` 구현 추가), 오래된 완성본 정리
-- [ ] 베타 출시 → 수익화: 코인 충전(인앱결제) → 블록 구매 + 구독
+- [ ] 베타 출시 → 수익화: 코인 충전(인앱결제) → 블록 구매 + 구독. **정식 출시 때 `app.beta.quick-login=false`로 "베타로 바로 시작"(손님 계정) 끄기** (웹·앱 버튼은 `GET /auth/beta`가 false면 저절로 숨음)
 - [ ] 추천: 취향 온보딩 → 재생 기록 기반 추천 → 수면 기록/패턴 → AI 조합 생성

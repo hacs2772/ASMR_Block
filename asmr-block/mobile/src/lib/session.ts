@@ -8,6 +8,8 @@ import { Platform } from 'react-native';
  */
 const ACCESS_KEY = 'asmr.accessToken';
 const REFRESH_KEY = 'asmr.refreshToken';
+/** 베타 손님 계정 (로그아웃해도 남겨 둠 → 다시 "베타로 바로 시작"하면 같은 계정) */
+const BETA_KEY = 'asmr.betaGuest';
 
 export type Tokens = { accessToken: string; refreshToken: string };
 
@@ -61,4 +63,16 @@ export const session = {
     cache = null;
     await Promise.all([write(ACCESS_KEY, null), write(REFRESH_KEY, null)]);
   },
+};
+
+export const betaGuest = {
+  async load(): Promise<{ email: string; password: string } | null> {
+    try {
+      const raw = await read(BETA_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  },
+  save: (email: string, password: string) => write(BETA_KEY, JSON.stringify({ email, password })),
 };

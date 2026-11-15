@@ -94,7 +94,7 @@ function Header() {
           ) : (
             <>
               <Link to="/login" className="btn-ghost btn-sm hidden sm:inline-flex">로그인</Link>
-              <Link to="/signup" className="btn-pink btn-sm">시작하기</Link>
+              <Link to="/login" className="btn-pink btn-sm" data-testid="header-start">시작하기</Link>
             </>
           )}
           <button type="button" className="btn-ghost p-2 lg:hidden" onClick={() => setMenuOpen((v) => !v)}

@@ -48,7 +48,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 // 로그인 없이 가능
                 .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login",
-                    "/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll()
+                    "/api/v1/auth/refresh", "/api/v1/auth/logout",
+                    "/api/v1/auth/beta", "/api/v1/auth/beta-login").permitAll()
                 .requestMatchers(HttpMethod.GET,
                     "/api/v1/categories", "/api/v1/tags",
                     "/api/v1/blocks", "/api/v1/blocks/*",

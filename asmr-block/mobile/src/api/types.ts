@@ -38,6 +38,8 @@ export type User = {
 };
 
 export type LoginResponse = { accessToken: string; refreshToken: string; user: User };
+/** 베타 손님 계정: 로그인 응답 + 이 기기에 저장해 둘 이메일·비밀번호 */
+export type BetaLoginResponse = LoginResponse & { email: string; password: string };
 
 /**
  * 블록. price = 코인 (0 무료). owned = 내 블록함에 있음.

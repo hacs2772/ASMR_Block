@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { BetaLoginButton } from '@/components/BetaLoginButton';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { ScrollView, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
@@ -105,6 +106,7 @@ export default function EditorScreen() {
   if (status !== 'signedIn') {
     return (
       <EmptyState icon="lock-closed-outline" title="로그인이 필요해요">
+        <BetaLoginButton style={{ marginTop: space.md }} />
         <Button title="로그인" onPress={() => router.push('/login')} style={{ alignSelf: 'stretch', marginTop: space.md }} />
       </EmptyState>
     );

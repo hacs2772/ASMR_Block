@@ -64,6 +64,12 @@ app:
   shop:
     # 판매자가 올릴 때 정할 수 있는 최대 가격(코인). 너무 비싸지지 않게, 운영하면서 조절
     seller-max-price: ${APP_SHOP_SELLER_MAX_PRICE:100}
+  beta:
+    # 베타 기간에만: "베타로 바로 시작" 버튼 (가입 없이 손님 계정을 만들어 바로 로그인)
+    # ⚠ 정식 출시 때 false로 끄세요 (APP_BETA_QUICK_LOGIN=false)
+    quick-login: ${APP_BETA_QUICK_LOGIN:true}
+    # 손님 계정에 처음부터 담아 주는 무료 블록 수 (인기순) - 바로 조합을 만들어 볼 수 있게
+    starter-blocks: 6
 
 management:
   endpoints:

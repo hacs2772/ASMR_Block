@@ -71,6 +71,8 @@
 | POST | `/auth/login` | - | 로그인 |
 | POST | `/auth/refresh` | - | 토큰 갱신 |
 | POST | `/auth/logout` | - | 로그아웃 (refreshToken 폐기) |
+| GET | `/auth/beta` | - | **베타 기간만**: "베타로 바로 시작"을 쓸 수 있는지 `{ "quickLogin": true }` |
+| POST | `/auth/beta-login` | - | **베타 기간만**: 가입 없이 손님 계정을 만들어 바로 로그인 |
 
 **회원가입 요청**
 ```json
@@ -98,6 +100,11 @@
 ```
 - 갱신 응답: `{ "accessToken": "...", "refreshToken": "...(새 값)" }` → **둘 다 저장**
 - 한 번 쓴 refreshToken을 다시 보내면 탈취로 판단해 그 사용자의 모든 refreshToken 폐기 (401)
+
+**베타로 바로 시작** `POST /auth/beta-login` (요청 본문 없음)
+- 새 손님 계정(닉네임 `베타손님1234`)을 만들고 로그인 응답과 같은 토큰을 줌 + 인기 무료 블록 `app.beta.starter-blocks`개를 내 블록함에 담아 줌
+- 응답에 `email`, `password`도 들어 있음 → 앱/웹이 그 기기에 저장해 두었다가, 로그아웃 뒤 다시 누르면 **같은 계정으로 로그인**
+- ⚠ 정식 출시 때 `app.beta.quick-login=false`(`APP_BETA_QUICK_LOGIN=false`) → 404, 앱/웹은 `GET /auth/beta`가 false면 버튼을 숨김
 
 ---
 

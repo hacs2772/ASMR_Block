@@ -6,6 +6,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -89,5 +95,34 @@ class AuthApiTest extends IntegrationTest {
         postJson("/api/v1/auth/signup",
                 "{\"email\":\"%s\",\"password\":\"password123\",\"nickname\":\"중복\"}".formatted(SEED_USER_EMAIL))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    @DisplayName("베타로 바로 시작: 손님 계정 + 토큰, 받은 이메일·비밀번호로 다시 로그인, 인기 무료 블록이 담겨 있음")
+    void betaQuickLogin() throws Exception {
+        mvc.perform(get("/api/v1/auth/beta"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.quickLogin").value(true));
+
+        String body = json(postJson("/api/v1/auth/beta-login", "")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.data.refreshToken").isNotEmpty())
+                .andExpect(jsonPath("$.data.user.nickname", startsWith("베타손님")))
+                .andExpect(jsonPath("$.data.email", endsWith("@beta.asmrblock.com"))));
+        String email = JsonPath.read(body, "$.data.email");
+        String password = JsonPath.read(body, "$.data.password");
+        String token = JsonPath.read(body, "$.data.accessToken");
+
+        // 담아 준 무료 블록으로 바로 조합을 만들 수 있음
+        getWithToken("/api/v1/me/blocks", token)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.length()", greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$.data[*].price", everyItem(is(0))));
+        // 로그아웃 뒤에도 이 기기에 저장한 이메일·비밀번호로 같은 계정에 다시 로그인
+        assertThat(login(email, password).accessToken()).isNotBlank();
+        // 두 번 누르면 다른 손님 (기기마다 따로)
+        postJson("/api/v1/auth/beta-login", "")
+                .andExpect(jsonPath("$.data.email", not(email)));
     }
 }

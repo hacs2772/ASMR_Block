@@ -64,6 +64,32 @@ function ListenPage() {
     return () => clearInterval(t);
   }, [endsAt, playing]);
 
+  /** 조합 그림을 누르거나 끌면 그 위치(비율)로 이동, 멈춰 있었으면 거기서부터 재생 */
+  const seekTo = (clientX, rect, play) => {
+    const a = audioRef.current;
+    if (!a || !a.duration) return;
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    a.currentTime = ratio * a.duration;
+    setTime({ current: a.currentTime, duration: a.duration });
+    if (play && a.paused) toggle();
+  };
+  const seekHandlers = {
+    onPointerDown: (e) => {
+      const el = e.currentTarget;
+      el.setPointerCapture?.(e.pointerId);
+      const rect = el.getBoundingClientRect();
+      seekTo(e.clientX, rect, false);
+      const move = (ev) => seekTo(ev.clientX, rect, false);
+      const up = (ev) => {
+        seekTo(ev.clientX, rect, true);
+        el.removeEventListener('pointermove', move);
+        el.removeEventListener('pointerup', up);
+      };
+      el.addEventListener('pointermove', move);
+      el.addEventListener('pointerup', up);
+    },
+  };
+
   const toggle = () => {
     const a = audioRef.current;
     if (!a) return;
@@ -86,8 +112,11 @@ function ListenPage() {
   return (
     <div className="page max-w-3xl pt-10">
       <div className="card overflow-hidden">
-        {/* 조합 그림: 첫째 줄 + 레이어드 (블록 폭 = 소리 길이) */}
+        {/* 조합 그림: 첫째 줄 + 레이어드 (블록 폭 = 소리 길이). 누르거나 끌면 그 시간으로 */}
         <div className="studs bg-plate px-6 pb-6 pt-8">
+          <div className={`relative ${ready ? 'cursor-pointer touch-none' : ''}`} {...(ready ? seekHandlers : {})}
+            role={ready ? 'slider' : undefined} aria-label="블록을 눌러 그 시간으로" aria-valuemin={0}
+            aria-valuemax={Math.round(time.duration || 0)} aria-valuenow={Math.round(time.current)} data-testid="listen-strip">
           <div className="flex h-14 overflow-hidden rounded-md">
             {(combo.main?.items || []).flatMap((it) => Array.from({ length: it.repeat }, (_, n) => (
               <span key={`${it.position}-${n}`} className="h-full border-r-2 border-black/40" title={it.title}
@@ -102,7 +131,12 @@ function ListenPage() {
               ))}
             </div>
           )}
-          {ready && <div className="mt-3 h-1 rounded bg-line"><div className="h-1 rounded bg-pink" style={{ width: `${time.duration ? (time.current / time.duration) * 100 : 0}%` }} /></div>}
+          {ready && (
+            <span className="pointer-events-none absolute -bottom-1 -top-1 w-[3px] -translate-x-1/2 rounded bg-white shadow-[0_0_8px_rgba(255,255,255,.7)]"
+              style={{ left: `${time.duration ? (time.current / time.duration) * 100 : 0}%` }} data-testid="listen-playhead" />
+          )}
+          </div>
+          {ready && <p className="mt-3 text-center text-[11px] text-faint">블록을 누르거나 끌면 그 시간으로 가요</p>}
         </div>
 
         <div className="p-6 sm:p-8">

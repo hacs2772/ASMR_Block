@@ -1,5 +1,7 @@
 package com.asmrblock.auth;
 
+import com.asmrblock.auth.AuthDtos.BetaLoginResponse;
+import com.asmrblock.auth.AuthDtos.BetaStatus;
 import com.asmrblock.auth.AuthDtos.LoginRequest;
 import com.asmrblock.auth.AuthDtos.LoginResponse;
 import com.asmrblock.auth.AuthDtos.RefreshTokenRequest;
@@ -28,6 +30,18 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.ok("로그인 성공", authService.login(request));
+    }
+
+    // 베타 기간에만: "베타로 바로 시작" 버튼을 보여줄지
+    @GetMapping("/beta")
+    public ApiResponse<BetaStatus> betaStatus() {
+        return ApiResponse.ok(authService.betaStatus());
+    }
+
+    // 베타 기간에만: 가입 없이 손님 계정을 만들어 바로 로그인 (정식 출시 때 app.beta.quick-login=false)
+    @PostMapping("/beta-login")
+    public ApiResponse<BetaLoginResponse> betaLogin() {
+        return ApiResponse.ok("베타 손님으로 시작했어요.", authService.betaLogin());
     }
 
     // 토큰 갱신 (refreshToken도 새로 바뀜 - 둘 다 저장할 것)

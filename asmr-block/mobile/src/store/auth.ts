@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { authApi, userApi } from '@/api/endpoints';
 import type { User } from '@/api/types';
-import { session } from '@/lib/session';
+import { betaGuest, session } from '@/lib/session';
 
 type AuthState = {
   /** loading: 앱 시작 시 저장된 토큰 확인 중 / guest: 비로그인(둘러보기 가능) / signedIn: 로그인 */
@@ -10,6 +10,8 @@ type AuthState = {
   bootstrap: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, nickname: string) => Promise<void>;
+  /** 베타 기간만: 이 기기의 손님 계정으로 (없으면 새로 만들어) 바로 로그인 */
+  betaLogin: () => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   /** 토큰이 완전히 만료됐을 때 (api client가 호출) */
@@ -44,6 +46,24 @@ export const useAuth = create<AuthState>((set) => ({
     await authApi.signup(email.trim(), password, nickname.trim());
     const res = await authApi.login(email.trim(), password);
     await session.save({ accessToken: res.accessToken, refreshToken: res.refreshToken });
+    set({ status: 'signedIn', user: res.user });
+  },
+
+  betaLogin: async () => {
+    const saved = await betaGuest.load();
+    if (saved) {
+      try {
+        const res = await authApi.login(saved.email, saved.password);
+        await session.save({ accessToken: res.accessToken, refreshToken: res.refreshToken });
+        set({ status: 'signedIn', user: res.user });
+        return;
+      } catch {
+        // 계정이 없어졌으면 새로 만듦
+      }
+    }
+    const res = await authApi.betaLogin();
+    await session.save({ accessToken: res.accessToken, refreshToken: res.refreshToken });
+    await betaGuest.save(res.email, res.password);
     set({ status: 'signedIn', user: res.user });
   },
 

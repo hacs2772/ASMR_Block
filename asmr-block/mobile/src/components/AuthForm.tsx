@@ -10,10 +10,12 @@ type Props = {
   submitLabel: string;
   onSubmit: (values: Record<string, string>) => Promise<void>;
   footer?: React.ReactNode;
+  /** 입력칸 위에 (예: 베타로 바로 시작) */
+  header?: React.ReactNode;
 };
 
 /** 로그인/회원가입 공통 입력 폼 */
-export function AuthForm({ fields, submitLabel, onSubmit, footer }: Props) {
+export function AuthForm({ fields, submitLabel, onSubmit, footer, header }: Props) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -33,6 +35,7 @@ export function AuthForm({ fields, submitLabel, onSubmit, footer }: Props) {
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        {header}
         {fields.map((field) => (
           <View key={field.key} style={styles.field}>
             <Text style={styles.label}>{field.label}</Text>

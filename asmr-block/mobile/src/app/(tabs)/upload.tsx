@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { BetaLoginButton } from '@/components/BetaLoginButton';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import { router } from 'expo-router';
@@ -100,6 +101,7 @@ export default function UploadScreen() {
       <View style={styles.screen}>
         <EmptyState icon="cloud-upload-outline" title="로그인하면 내 트리거를 블록으로 팔 수 있어요"
           message="직접 녹음한 탭핑·바스락·귓속말이면 돼요. 검수 후 블록 상점에 올라가요.">
+          <BetaLoginButton style={{ marginTop: space.md }} />
           <Button title="로그인" onPress={() => router.push('/login')} style={{ marginTop: space.md, alignSelf: 'stretch' }} />
         </EmptyState>
       </View>

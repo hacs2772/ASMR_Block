@@ -19,6 +19,18 @@ export const authApi = {
     return response.data;
   },
 
+  // 베타 기간만: "베타로 바로 시작"을 쓸 수 있는지
+  betaStatus: async () => {
+    const response = await axiosInstance.get('/auth/beta');
+    return response.data;
+  },
+
+  // 베타 기간만: 가입 없이 손님 계정을 만들어 바로 로그인 (email/password도 돌려줌 → 이 브라우저에 저장)
+  betaLogin: async () => {
+    const response = await axiosInstance.post('/auth/beta-login');
+    return response.data;
+  },
+
   // 토큰 갱신
   refresh: async (refreshToken) => {
     const response = await axiosInstance.post('/auth/refresh', { refreshToken });

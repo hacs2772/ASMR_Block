@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import { BlockLoader } from '@/components/BlockLoader';
 import { CollectButton } from '@/components/CollectButton';
 import { playlistApi } from '@/api/endpoints';
@@ -126,6 +127,18 @@ export default function PlayerScreen() {
     setSaved(null);
   };
 
+  /** 위 블록 그림을 누르거나 끌면 그 시간으로 (재생 전이면 재생을 시작하고 그 자리로) */
+  const seekRatio = (ratio: number) => {
+    const total = isCurrent && player.status.duration > 0 ? player.status.duration : r?.duration ?? saved?.duration ?? 0;
+    if (total <= 0) return;
+    if (isCurrent) {
+      player.seekTo(ratio * total);
+      return;
+    }
+    playOrToggle();
+    setTimeout(() => player.seekTo(ratio * total), 400);
+  };
+
   // ---------- 화면 ----------
   if (offline !== '1' && detail.isLoading) return <BlockLoader style={{ marginTop: 80 }} />;
   if (offline !== '1' && detail.isError && !saved) {
@@ -150,7 +163,8 @@ export default function PlayerScreen() {
         }}
       />
 
-      <TimelineArt main={p?.main ?? null} mix={p?.mix ?? null} total={p?.totalDuration ?? 0} fallbackColors={saved?.colors ?? []} />
+      <TimelineArt main={p?.main ?? null} mix={p?.mix ?? null} total={p?.totalDuration ?? 0} fallbackColors={saved?.colors ?? []}
+        progress={canPlay && duration > 0 ? position / duration : null} onSeek={canPlay ? seekRatio : undefined} />
 
       <Text style={styles.title} testID="player-title">{title}</Text>
       <Text style={styles.subtitle}>
@@ -259,8 +273,16 @@ export default function PlayerScreen() {
 }
 
 /** 타임라인 일러스트: 메인 트랙(빈틈없이) + 믹스 트랙(필요한 부분에만), 길이 비율대로 */
-function TimelineArt({ main, mix, total, fallbackColors }: { main: Track | null; mix: Track | null; total: number; fallbackColors: string[] }) {
+function TimelineArt({ main, mix, total, fallbackColors, progress, onSeek }: {
+  main: Track | null; mix: Track | null; total: number; fallbackColors: string[];
+  /** 지금 재생 위치 0~1 (재생 전이면 null) */
+  progress: number | null;
+  /** 블록 그림을 누르거나 끌면 그 위치(0~1)로 */
+  onSeek?: (ratio: number) => void;
+}) {
   const width = 300;
+  const seek = (x: number) => onSeek?.(Math.min(1, Math.max(0, x / width)));
+  const pan = usePanGesture({ runOnJS: true, minDistance: 0, enabled: !!onSeek, onBegin: (e) => seek(e.x), onUpdate: (e) => seek(e.x) });
   const scale = total > 0 ? width / total : 0;
   let cursor = 0;
   const mainBricks = main
@@ -268,7 +290,9 @@ function TimelineArt({ main, mix, total, fallbackColors }: { main: Track | null;
     : fallbackColors.map((color, i) => ({ left: (i * total) / Math.max(1, fallbackColors.length), length: total / Math.max(1, fallbackColors.length), color }));
   return (
     <LinearGradient colors={[colors.cardActive, colors.bg]} style={styles.art}>
-      <View style={{ width, alignSelf: 'center', gap: 10 }}>
+      <GestureDetector gesture={pan}>
+      <View style={{ width, alignSelf: 'center', gap: 10 }} collapsable={false} testID="timeline-art"
+        accessibilityRole={onSeek ? 'adjustable' : undefined} accessibilityLabel="블록을 눌러 그 시간으로">
         {mix && (
           <View style={styles.artLane}>
             {mix.items.map((i, k) => (
@@ -281,7 +305,10 @@ function TimelineArt({ main, mix, total, fallbackColors }: { main: Track | null;
             <View key={k} style={[styles.artBrick, { left: b.left * scale, width: Math.max(4, b.length * scale - 2), backgroundColor: b.color }]} />
           ))}
         </View>
+        {progress !== null && <View pointerEvents="none" style={[styles.artHead, { left: progress * width - 1 }]} />}
       </View>
+      </GestureDetector>
+      {onSeek && <Text style={styles.artHint}>블록을 누르거나 끌면 그 시간으로 가요</Text>}
       <View style={styles.artGround} />
     </LinearGradient>
   );
@@ -299,6 +326,8 @@ const styles = StyleSheet.create({
   artBrick: { position: 'absolute', top: 0, height: 28, borderRadius: 2, borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.45)', borderBottomWidth: 4 },
   progressTrack: { width: '100%', height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden' },
   progressBar: { height: 6, backgroundColor: colors.primary },
+  artHead: { position: 'absolute', top: -4, bottom: -4, width: 3, borderRadius: 2, backgroundColor: '#fff' },
+  artHint: { color: colors.faint, fontSize: 11, textAlign: 'center', marginTop: 6 },
   artGround: { height: 2, backgroundColor: colors.primary, opacity: 0.5, marginTop: 4 },
   title: { color: colors.text, fontSize: 24, fontWeight: '800' },
   subtitle: { color: colors.muted, fontSize: 14, marginTop: 4, marginBottom: space.lg },

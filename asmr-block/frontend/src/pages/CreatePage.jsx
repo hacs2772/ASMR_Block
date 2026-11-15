@@ -4,6 +4,7 @@ import { IoArrowBack, IoCopy, IoMoon, IoTrash } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { errorMessage, libraryApi, playlistApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
+import BetaLoginButton from '../components/common/BetaLoginButton';
 import Board from '../components/editor/Board';
 import BlockShelf, { DragGhost } from '../components/editor/BlockShelf';
 import { useMixPreview, usePreviewClock } from '../components/editor/useMixPreview';
@@ -62,6 +63,7 @@ function CreatePage() {
         <div className="card mx-auto flex max-w-lg flex-col items-center gap-4 p-10 text-center">
           <p className="text-xl font-extrabold">로그인하면 조합을 만들 수 있어요</p>
           <p className="text-sm text-muted">담은 블록을 레고처럼 이어 붙여서 나만의 ASMR을 만들어 보세요.</p>
+          <BetaLoginButton className="w-full" />
           <div className="flex gap-2">
             <Link to="/login" state={{ from: '/create' }} className="btn-pink">로그인</Link>
             <Link to="/signup" className="btn-line">회원가입</Link>

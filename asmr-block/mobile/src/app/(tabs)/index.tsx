@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { BetaLoginButton } from '@/components/BetaLoginButton';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -50,6 +51,7 @@ export default function HomeScreen() {
       {status !== 'signedIn' ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>로그인하면 내가 만든 조합을 여기서 바로 들을 수 있어요</Text>
+          <BetaLoginButton style={{ marginTop: space.md }} />
           <Button title="로그인" onPress={() => router.push('/login')} style={{ alignSelf: 'stretch' }} testID="home-login" />
         </View>
       ) : mine.isLoading ? (
