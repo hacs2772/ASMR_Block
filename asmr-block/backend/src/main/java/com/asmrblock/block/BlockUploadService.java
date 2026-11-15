@@ -41,7 +41,6 @@ public class BlockUploadService {
     static final int MIN_DURATION_SECONDS = 10;
     static final int MAX_DURATION_SECONDS = 20 * 60;
     static final int MAX_FILE_MB = 50;
-    static final int MAX_VIDEO_MB = 200;
     static final int MAX_IMAGE_MB = 10;
 
     private final AudioService audioService;
@@ -57,7 +56,7 @@ public class BlockUploadService {
     public UploadPolicyResponse policy() {
         return new UploadPolicyResponse(properties.shop().sellerMaxPrice(), MAX_FILE_MB,
                 MIN_DURATION_SECONDS, MAX_DURATION_SECONDS, ALLOWED_EXTENSIONS.stream().sorted().toList(),
-                MAX_VIDEO_MB, VIDEO_EXTENSIONS.stream().sorted().toList(),
+                properties.upload().maxVideoMb(), VIDEO_EXTENSIONS.stream().sorted().toList(),
                 MAX_IMAGE_MB, IMAGE_EXTENSIONS.stream().sorted().toList(),
                 stickerService.activeCodes(), BlockDesign.PATTERNS);
     }
@@ -179,7 +178,7 @@ public class BlockUploadService {
         }
         if (present(request.video())) {
             extensionOf(request.video().getOriginalFilename(), VIDEO_EXTENSIONS);
-            checkSize(request.video(), MAX_VIDEO_MB, "영상");
+            checkSize(request.video(), properties.upload().maxVideoMb(), "영상");
         }
         if (present(request.cover())) {
             extensionOf(request.cover().getOriginalFilename(), IMAGE_EXTENSIONS);

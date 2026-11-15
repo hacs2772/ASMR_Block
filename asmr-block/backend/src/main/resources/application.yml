@@ -71,6 +71,13 @@ app:
     quick-login: ${APP_BETA_QUICK_LOGIN:true}
     # 손님 계정에 처음부터 담아 주는 무료 블록 수 (인기순) - 바로 조합을 만들어 볼 수 있게
     starter-blocks: 6
+  admin:
+    # 공개용(public)에서만 씀: 이 이메일·비밀번호로 관리자 계정을 만들거나 비밀번호를 맞춤 (.env.public)
+    email: ${APP_ADMIN_EMAIL:}
+    password: ${APP_ADMIN_PASSWORD:}
+  upload:
+    # 영상 블록 최대 크기(MB). 공개용은 Cloudflare 무료 한도(100MB) 때문에 90
+    max-video-mb: ${APP_UPLOAD_MAX_VIDEO_MB:200}
 
 management:
   endpoints:

@@ -1,6 +1,7 @@
 package com.asmrblock.user;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.Optional;
 
@@ -14,6 +15,9 @@ public interface UserMapper {
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(String email);
+
+    /** 공개용 관리자 계정: 비밀번호를 맞추고 관리자로 */
+    void updateAdminAccount(@Param("id") Long id, @Param("password") String password);
 
     void update(User user);
 

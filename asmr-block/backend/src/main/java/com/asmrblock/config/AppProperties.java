@@ -27,7 +27,9 @@ public record AppProperties(
         @Valid @NotNull Audio audio,
         @Valid @NotNull Render render,
         @Valid @NotNull Shop shop,
-        @Valid @NotNull Beta beta) {
+        @Valid @NotNull Beta beta,
+        @Valid @NotNull Admin admin,
+        @Valid @NotNull Upload upload) {
 
     public record Jwt(
             @NotBlank(message = "JWT 비밀키가 없습니다. JWT_SECRET 환경변수를 설정하세요.")
@@ -69,6 +71,20 @@ public record AppProperties(
      * starterBlocks: 손님 계정에 처음부터 담아 주는 무료 블록 수 (인기순)
      */
     public record Beta(boolean quickLogin, @Min(0) int starterBlocks) {
+    }
+
+    /**
+     * 관리자 계정 (공개용 public 모드): 이메일·비밀번호가 있으면 서버가 켜질 때 이 계정을 만들거나 비밀번호를 맞춤.
+     * 개발용 테스트 계정(password123) 대신 나만 아는 비밀번호로. 비우면 아무것도 안 함
+     */
+    public record Admin(String email, String password) {
+        public boolean configured() {
+            return email != null && !email.isBlank() && password != null && !password.isBlank();
+        }
+    }
+
+    /** 업로드 제한. 공개용은 Cloudflare 무료 요금제가 한 번에 100MB까지만 받아서 영상은 그보다 작게 */
+    public record Upload(@Min(1) int maxVideoMb) {
     }
 
     /** 완성본(합친 파일) 만들기 설정 */

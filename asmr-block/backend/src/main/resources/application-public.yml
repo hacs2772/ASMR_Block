@@ -1,0 +1,27 @@
+# =====================================================
+# 공개용 설정 (SPRING_PROFILES_ACTIVE=public)
+# 내 PC에서 서버를 켜 두고 Cloudflare Tunnel로 asmrblock.com에 연결할 때 (docker-compose.public.yml)
+# - 개발용 샘플 데이터·테스트 계정(password123)은 넣지 않음 (db/seed 안 씀)
+# - 관리자 계정은 .env.public의 APP_ADMIN_EMAIL / APP_ADMIN_PASSWORD로 (AdminAccountInitializer)
+# - JWT_SECRET, DB_PASSWORD도 .env.public에서 (start-public.bat이 처음에 랜덤으로 만들어 줌)
+# =====================================================
+spring:
+  servlet:
+    multipart:
+      # Cloudflare 무료 요금제는 한 번에 100MB까지만 받음
+      max-file-size: 95MB
+      max-request-size: 100MB
+
+app:
+  # 웹은 같은 주소(https://asmrblock.com/api)로 부르므로 다른 주소 허용은 앱 개발용 정도만
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:}
+  upload:
+    max-video-mb: ${APP_UPLOAD_MAX_VIDEO_MB:90}
+
+# API 문서(Swagger)는 공개 사이트에서 숨김
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

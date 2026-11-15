@@ -37,7 +37,8 @@
   - "조합 만들기" 버튼 = 블록 모양(`components/home/AssembleButton.jsx`): 누르면 블록 셋이 날아와 딸깍 조립된 뒤 편집기로. App Store/Google Play 버튼은 **출시 전 안내**(`components/common/ComingSoon.jsx`)
   - 웹 편집기 = 앱과 같은 옆으로 누운 두 줄(`pages/CreatePage.jsx`, `components/editor/`), 계산은 `src/lib/editorLogic.js`(앱 editor.ts와 같은 규칙, jest 테스트). 끌기는 pointer 이벤트(마우스·터치)로, 손가락 위치는 DOM에 직접 넣어 다시 그리지 않음
   - API는 `src/api/api.js` 한 곳. 색은 `tailwind.config.js`(night·card·pink·ink·muted…)만 씀
-- `asmr-block/docker-compose.yml` — DB + 백엔드 + 웹 한 번에 실행
+- `asmr-block/docker-compose.yml` — DB + 백엔드 + 웹 한 번에 실행 (개발용, 테스트 계정·샘플 블록 있음)
+- `asmr-block/docker-compose.public.yml` — **공개용**(asmrblock.com, 내 PC + Cloudflare Tunnel): 프로필 `public`(`application-public.yml`, 샘플·테스트 계정 없음, Swagger 숨김, 영상 90MB), DB·파일 따로, 웹 nginx가 `/api`·`/files`를 백엔드로 넘김(한 주소), `tunnel`(cloudflared, `TUNNEL_TOKEN`). 비밀값은 `.env.public`(gitignore, `start-public.bat`이 `scripts/new-env-public.ps1`로 랜덤 생성). 관리자 계정 = `APP_ADMIN_EMAIL/PASSWORD` → `AdminAccountInitializer`가 켜질 때 만들거나 비밀번호를 맞춤
 - `asmr-block/docs` — API 명세(`api_specification.md`), DB 명세, i18n 가이드
 
 ## 자주 쓰는 명령
@@ -98,7 +99,7 @@ cd asmr-block/mobile && npm run typecheck && npm run lint && npm test
 - [x] 7단계: 베타로 바로 시작(손님 계정), 듣기 화면에서 블록·재생바를 눌러 그 시간으로, 블록 꾸미기(사진·스티커) + 영상 블록(영상도 같이 보기)
 - [x] 6단계: 앱 메뉴 정리(홈 = 내 조합 바로 듣기, ★추천 조합 한 번에 담기 V6, 블록 편집·블록 판매, ? 도움말), 부드러운 끌기·블록함 크기 조절, **실제 웹사이트**(앱과 같은 디자인, 블록 모양 "조합 만들기" + 조립 동작, 앱 받기 = 출시 전 안내, 웹 업로드, 가로 두 줄 웹 편집기)
 - [x] 8단계: 핸드폰 웹 화면 정리(넘침 없음·손가락 끌기 확인), **관리자 페이지**(블록 승인·트리거 종류·스티커, V8)
-- [ ] **거의 0원으로 먼저 보여 주기**(사용자가 고른 방향): 도메인 asmrblock.com → Cloudflare Tunnel(내 PC 서버를 api.asmrblock.com으로) → 웹 버전을 Cloudflare Pages(asmrblock.com)에 → 반응 보기. 사업자·스토어 계정·유료 서버는 그 뒤에
+- [ ] **거의 0원으로 먼저 보여 주기**(사용자가 고른 방향): 공개용 준비 끝(`docker-compose.public.yml` + `start-public.bat`, 웹·API·음원 한 주소 https://asmrblock.com 을 Cloudflare Tunnel로). 남은 것 = 사용자가 도메인 구매 → 터널 토큰 → `.env.public` → 반응 보기 (README "asmrblock.com 으로 다른 사람에게 보여 주기"). 사업자·스토어 계정·유료 서버는 그 뒤에
 - [ ] EAS Build(TestFlight / Play 내부 테스트)로 앱 아이콘·첫 화면·잠금화면 재생 확인, 광고 SDK(AdMob)로 광고 자리 교체
 - [ ] 파일 저장소 S3/R2 (`StorageService` 구현 추가), 오래된 완성본 정리
 - [ ] 베타 출시 → 수익화: 코인 충전(인앱결제) → 블록 구매 + 구독. **정식 출시 때 `app.beta.quick-login=false`로 "베타로 바로 시작"(손님 계정) 끄기** (웹·앱 버튼은 `GET /auth/beta`가 false면 저절로 숨음)

@@ -238,7 +238,7 @@
 | 필드 | 필수 | 설명 |
 |------|------|------|
 | `file` | `video`가 없으면 ✅ | mp3, wav, flac, m4a, aac, ogg, opus, webm / 최대 50MB / 길이 10초~20분 |
-| `video` | | 같이 보는 영상 (선택) mp4, mov, m4v, webm / 최대 200MB. **`file` 없이 영상만 올리면 영상의 소리를 블록 음원으로 씀** (소리 없는 영상이면 400) |
+| `video` | | 같이 보는 영상 (선택) mp4, mov, m4v, webm / 최대 200MB (설정 `app.upload.max-video-mb`, 공개용은 Cloudflare 한도 때문에 90MB). **`file` 없이 영상만 올리면 영상의 소리를 블록 음원으로 씀** (소리 없는 영상이면 400) |
 | `cover` | | 블록 겉면 사진 (선택) jpg, jpeg, png, webp / 최대 10MB → 가로 640px jpg로 |
 | `stickers` | | 겉면 스티커 코드, 쉼표로 최대 3개 (예: `flagjp,signal,bird`, 고를 수 있는 목록은 업로드 규칙 `stickers` = 숨기지 않은 스티커). 없거나 숨긴 코드·4개 이상이면 400 |
 | `pattern` | | 스티커 무늬 `dots`(기본) / `lines` / `none` |

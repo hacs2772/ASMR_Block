@@ -31,7 +31,9 @@ class LocalStorageServiceTest {
                 new AppProperties.Audio("ffmpeg", "ffprobe", -24, Duration.ofMinutes(1)),
                 new AppProperties.Render(1, 1.5, 3),
                 new AppProperties.Shop(100),
-                new AppProperties.Beta(true, 6)));
+                new AppProperties.Beta(true, 6),
+                new AppProperties.Admin(null, null),
+                new AppProperties.Upload(200)));
     }
 
     @Test

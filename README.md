@@ -221,6 +221,43 @@ npx expo start
 - 아이폰 Expo Go가 "signed in" 오류를 내면: 무료 Expo 계정을 만들어 PC에서 `npx.cmd expo login`, 아이폰 Expo Go에서도 같은 계정으로 로그인
 - 공유기 없이 인터넷에 바로 연결된 PC(주소가 192.168.… 이 아님)면 같은 와이파이가 아니어도 열려요. 이때는 윈도우 네트워크 프로필을 **"공용" 그대로** 두고, 안 쓸 땐 서버를 꺼 두세요
 
+### 6. asmrblock.com 으로 다른 사람에게 보여 주기 🌐 (내 PC = 서버)
+
+다른 사람이 핸드폰·컴퓨터로 **https://asmrblock.com** 에 들어오면 내 PC에서 켜 둔 서버를 보게 해요.
+**Cloudflare Tunnel**을 써서 공유기 포트를 열지 않고, 집 IP도 드러나지 않아요. 비용은 도메인값(1년 약 10~11달러)뿐.
+
+```
+다른 사람 핸드폰 ──https──▶ Cloudflare ──터널──▶ 내 PC (docker: tunnel → web → backend → db)
+```
+
+**공개용은 개발용과 따로예요** (`docker-compose.public.yml`, 프로필 `public`)
+- DB·올린 음원이 개발용과 따로 (개발용에서 실험해도 공개 사이트에 안 섞임)
+- **테스트 계정(password123)·샘플 블록 없이** 시작. 관리자 계정은 `.env.public`에 내가 정한 이메일·비밀번호로
+- 웹·API·음원이 한 주소(`https://asmrblock.com`, `/api`, `/files`)로. DB 포트는 밖으로 안 열림, API 문서(Swagger) 숨김
+- 영상 업로드는 **90MB까지** (Cloudflare 무료 요금제가 한 번에 100MB까지만 받음)
+
+**처음 한 번 (순서대로)**
+1. **도메인 사기**: [Cloudflare](https://dash.cloudflare.com) 가입 → Domain Registration → Register Domains → `asmrblock.com` 검색·구매 (www.asmrblock.com 도 같이 따라옴)
+2. **터널 만들기**: Cloudflare 대시보드 → Zero Trust(또는 Networks) → **Tunnels** → Create a tunnel → **Cloudflared** → 이름 `asmrblock-pc`
+   - 처음 Zero Trust에 들어가면 팀 이름과 요금제를 물어요 → **Free(0원)**. 결제 수단 등록을 요구할 수도 있지만 요금은 0원
+   - 설치 화면에서 **Docker** 탭을 누르고, 명령어의 `--token` 뒤에 있는 **긴 글자만 복사** (명령어는 실행하지 않아도 돼요. 우리 `tunnel`이 대신 켜요)
+3. **주소 연결** (같은 터널의 Public Hostname / Published application routes 에서 두 개 추가)
+   - `asmrblock.com` → Type **HTTP**, URL **`web:80`**
+   - `www.asmrblock.com` → Type **HTTP**, URL **`web:80`** (www로 들어오면 asmrblock.com 으로 넘어가요)
+4. **`start-public.bat` 더블클릭** (asmr-block 폴더) → 메모장이 열리면 `CHANGE_ME` 세 곳을 바꾸고 저장
+   - `TUNNEL_TOKEN` = 2번에서 복사한 글자 / `ADMIN_EMAIL` = 관리자 이메일 / `ADMIN_PASSWORD` = **10자 이상, 나만 아는 비밀번호**
+   - 비밀키·DB 비밀번호는 자동으로 랜덤이에요. `.env.public`은 GitHub에 올라가지 않아요
+5. **`start-public.bat` 한 번 더** → 처음엔 몇 분 걸려요 → 휴대폰 **와이파이를 끄고(LTE)** https://asmrblock.com 접속해 보기
+6. 관리자 이메일로 로그인 → 위 메뉴 **관리자** → 진짜 녹음 블록을 몇 개 올리고 승인 (처음엔 상점이 비어 있어요)
+
+**계속 켜 두려면 (PC 설정)**
+- Windows 설정 → 시스템 → 전원 → **절전 모드: 안 함** (화면 꺼짐은 괜찮아요)
+- Docker Desktop 설정 → General → **Start Docker Desktop when you sign in** 켜기
+  → PC를 다시 켜고 로그인하면 공개 서버도 저절로 다시 켜져요 (`restart: unless-stopped`)
+- Windows 업데이트로 재부팅되면 **로그인해야** Docker가 켜져요 (밤사이 꺼질 수 있음)
+- 끄기: `stop-public.bat` (DB·올린 음원은 남아요). 코드가 바뀌면 `start-public.bat`을 다시 실행 (git pull + 다시 빌드)
+- PC가 꺼져 있으면 사이트에 Cloudflare 오류 화면이 보여요. 사람이 많아지면 그때 유료 서버·파일 저장소(R2)로 옮기기
+
 ### (선택) Docker 없이 개발 모드로 실행
 Java 21, Node 22, ffmpeg 가 필요합니다.
 ```bash

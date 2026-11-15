@@ -13,3 +13,7 @@ asmr-block/frontend/build/
 *.iml
 .DS_Store
 *.log
+
+# 공개용 비밀값 (터널 토큰·관리자 비밀번호 등)
+.env.public
+asmr-block/.env.public
