@@ -272,6 +272,17 @@ npx expo start
   ```
   (공개 서버를 통째로 지웠다면 먼저 `start-public.bat`으로 다시 켠 뒤 위 순서대로)
 
+**다른 PC로 옮기기** (예: 집 PC → 회사 PC. Cloudflare 설정은 그대로, 같은 터널 키라 새 PC로 저절로 연결)
+- ⚠ **두 PC를 동시에 켜지 않기**: 같은 터널에 두 곳이 연결되면 방문자가 두 PC로 번갈아 가서, DB가 서로 다른 화면을 보게 돼요
+1. **옛 PC**: 지금 바로 백업(위 명령) → `stop-public.bat` → USB에 복사: `.env.public`, `backups\db`의 **가장 최근 파일 1개**, `backups\media` 폴더 통째로
+2. **새 PC**: Docker Desktop·Git 준비, `netstat -ano | findstr :8088` 이 비어 있는지 확인 (다른 프로그램이 8088을 쓰면 `docker-compose.public.yml`의 `8088`을 다른 번호로)
+3. `git clone -b feature/phase5-sell-and-edit https://github.com/hacs2772/ASMR_Block.git`
+4. USB의 `.env.public` → `asmr-block` 폴더, `media` → `asmr-block\backups\media`, DB 파일 → `asmr-block\backups\db\home.sql.gz` (이름 바꾸기)
+5. `start-public.bat` → 다 켜지면 위 **되살리기** 4줄을 `파일이름` 대신 `home`으로 실행
+6. 휴대폰 LTE로 확인. 완성본·맛보기 소리는 옮기지 않아도 처음 들을 때 저절로 다시 만들어져요 (처음 한 번 조금 걸림)
+7. 새 PC에 **계속 켜 두기** 설정(아래). 앞으로 업데이트·백업은 새 PC에서. 옛 PC에서는 `start-public.bat`을 실행하지 않기 (개발용 `docker compose up`은 괜찮음)
+- 다른 Docker 프로젝트와 같이 써도 돼요 (이름 `asmr-block-public`으로 따로 묶임). 단 `docker system prune --volumes`·`docker volume prune`은 공개용 DB까지 지울 수 있으니 쓰지 않기
+
 **검색에 나오게 하기 (무료, 한 번만)**
 - 주소창에 `asmrblock.com`을 치면 지금도 바로 들어와요. `asmrblock`만 치면 **검색**이 되기 때문에, 검색 엔진에 사이트를 알려 줘야 나와요
 - 준비해 둔 것: 검색 설명·키워드, 링크 공유 카드 그림(`frontend/public/og-image.png`, 카톡에 링크를 붙이면 보임 — `node scripts/make-og-image.js`로 다시 만듦), `robots.txt`, `sitemap.xml`
