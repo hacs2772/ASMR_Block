@@ -187,7 +187,7 @@
 | Method | URL | 인증 | 설명 |
 |------|------|------|------|
 | GET | `/blocks` | - (로그인하면 `owned` 표시) | 목록 (승인된 블록만) |
-| GET | `/blocks/trending` | - | **요즘 뜨는 소리**: 최근 `days`(기본 7)일 재생 수 순, `size` 기본 10 → `recentPlays` 포함 |
+| GET | `/blocks/trending` | - | **요즘 뜨는 소리**: 최근 `days`(기본 7)일 재생 수 순, `size` 기본 10 → `recentPlays` 포함. 재생 기록이 모자라면 많이 들은 순 → 새로 올라온 순으로 채움(`recentPlays` 없음) |
 | GET | `/blocks/upload-policy` | - | **업로드 규칙**: `{ "maxPrice": 100, "maxFileMb": 50, "minSeconds": 10, "maxSeconds": 1200, "extensions": [...], "maxVideoMb": 200, "videoExtensions": [...], "maxImageMb": 10, "imageExtensions": [...], "stickers": ["flagjp", ...], "patterns": ["dots", "lines", "none"] }` |
 | GET | `/blocks/{id}` | - | 상세 (승인 전이면 404) |
 | POST | `/blocks` | 필요 | **음원 업로드 (판매자)** (multipart) → 검수 대기 |
@@ -306,7 +306,7 @@
 |------|------|------|------|
 | GET | `/playlists` | 필요 | 내 플레이리스트 |
 | GET | `/playlists/public` | - | 공개 플레이리스트 (`sort=latest|popular`) |
-| GET | `/playlists/trending` | - | **요즘 뜨는 조합**: 최근 `days`(기본 7)일 재생 수 순, `size` 기본 10 → `recentPlays` 포함 |
+| GET | `/playlists/trending` | - | **요즘 뜨는 조합**: 최근 `days`(기본 7)일 재생 수 순, `size` 기본 10 → `recentPlays` 포함. 모자라면 공개 조합을 많이 들은 순 → 새로 올라온 순으로 채움 |
 | GET | `/playlists/{id}` | 공개면 - / 비공개면 본인 | 상세 |
 | POST | `/playlists` | 필요 | 생성 → 201 |
 | PUT | `/playlists/{id}` | 본인 | 수정 (트랙을 통째로 교체) |

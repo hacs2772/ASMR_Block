@@ -1,11 +1,14 @@
 # =====================================================
 # 공개용 설정 (SPRING_PROFILES_ACTIVE=public)
 # 내 PC에서 서버를 켜 두고 Cloudflare Tunnel로 asmrblock.com에 연결할 때 (docker-compose.public.yml)
-# - 개발용 샘플 데이터·테스트 계정(password123)은 넣지 않음 (db/seed 안 씀)
+# - 개발용 테스트 계정(password123)은 넣지 않음 (db/seed 안 씀). 대신 샘플 블록·조합만 (db/samples, 올린 사람 "ASMR Block 샘플")
 # - 관리자 계정은 .env.public의 APP_ADMIN_EMAIL / APP_ADMIN_PASSWORD로 (AdminAccountInitializer)
 # - JWT_SECRET, DB_PASSWORD도 .env.public에서 (start-public.bat이 처음에 랜덤으로 만들어 줌)
 # =====================================================
 spring:
+  flyway:
+    # 샘플 블록·조합(db/samples)도 넣음 - 로그인 가능한 테스트 계정은 없음 (R__public_samples.sql)
+    locations: classpath:db/migration,classpath:db/samples
   servlet:
     multipart:
       # Cloudflare 무료 요금제는 한 번에 100MB까지만 받음

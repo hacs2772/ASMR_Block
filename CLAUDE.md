@@ -21,7 +21,7 @@
 - **플레이리스트 = 옆으로 누운 레고 블록 두 줄** (왼쪽→오른쪽, 블록 길이 = 소리 길이): **첫째 줄**(`MAIN`, 빈틈없이 순서대로) + **둘째 줄**(`MIX`, 선택, 따로 흐름, `startSeconds` 위치에만·사이는 빈칸·겹침 금지). 이어진 같은 블록은 `repeat`(1~200)로 묶어 저장, 줄별 볼륨, 한 바퀴 최대 10시간
 - **얼마나 들을까요?** `listenMinutes`: 완성본(한 바퀴)을 앱이 그 시간 동안 반복 재생 (긴 파일을 만들지 않음)
 - **편집 중 전체 듣기**: 완성본 없이 앱이 플레이어 2개로 두 줄을 바로 틀어 봄 (`src/audio/useMixPreview.ts`). 저장하면 완성본을 자동으로 만들고 다 되면 자동 재생
-- **카테고리 = 메뉴 트리**: 대분류(`parent_id` NULL) › 소분류. 블록은 소분류에만, 대분류로 검색하면 하위 포함. **요즘 뜨는 소리** = 최근 N일 `play_log` 수
+- **카테고리 = 메뉴 트리**: 대분류(`parent_id` NULL) › 소분류. 블록은 소분류에만, 대분류로 검색하면 하위 포함. **요즘 뜨는 소리·조합** = 최근 N일 `play_log` 수, 모자라면 많이 들은 순 → 새로 올라온 순으로 채움(막 연 사이트도 비지 않게)
 - **완성본(render)**: 서버가 ffmpeg로 두 트랙을 하나의 MP3로 합침 (크로스페이드 균형 트리·adelay·리미터, `progress` 0~100). 구성 해시가 같으면 재사용
 
 ## 구조
@@ -38,7 +38,7 @@
   - 웹 편집기 = 앱과 같은 옆으로 누운 두 줄(`pages/CreatePage.jsx`, `components/editor/`), 계산은 `src/lib/editorLogic.js`(앱 editor.ts와 같은 규칙, jest 테스트). 끌기는 pointer 이벤트(마우스·터치)로, 손가락 위치는 DOM에 직접 넣어 다시 그리지 않음
   - API는 `src/api/api.js` 한 곳. 색은 `tailwind.config.js`(night·card·pink·ink·muted…)만 씀
 - `asmr-block/docker-compose.yml` — DB + 백엔드 + 웹 한 번에 실행 (개발용, 테스트 계정·샘플 블록 있음)
-- `asmr-block/docker-compose.public.yml` — **공개용**(asmrblock.com, 내 PC + Cloudflare Tunnel): 프로필 `public`(`application-public.yml`, 샘플·테스트 계정 없음, Swagger 숨김, 영상 90MB), DB·파일 따로, 웹 nginx가 `/api`·`/files`를 백엔드로 넘김(한 주소), `tunnel`(cloudflared, `TUNNEL_TOKEN`). 비밀값은 `.env.public`(gitignore, `start-public.bat`이 `scripts/new-env-public.ps1`로 랜덤 생성). 관리자 계정 = `APP_ADMIN_EMAIL/PASSWORD` → `AdminAccountInitializer`가 켜질 때 만들거나 비밀번호를 맞춤
+- `asmr-block/docker-compose.public.yml` — **공개용**(asmrblock.com, 내 PC + Cloudflare Tunnel): 프로필 `public`(`application-public.yml`, 테스트 계정 없음, 샘플 블록·조합만 `db/samples/R__public_samples.sql` — 로그인 불가 계정 "ASMR Block 샘플"·전부 무료·id 안 정함·여러 번 실행 안전, Swagger 숨김, 영상 90MB), DB·파일 따로, 웹 nginx가 `/api`·`/files`를 백엔드로 넘김(한 주소), `tunnel`(cloudflared, `TUNNEL_TOKEN`). 비밀값은 `.env.public`(gitignore, `start-public.bat`이 `scripts/new-env-public.ps1`로 랜덤 생성). 관리자 계정 = `APP_ADMIN_EMAIL/PASSWORD` → `AdminAccountInitializer`가 켜질 때 만들거나 비밀번호를 맞춤
 - `asmr-block/docs` — API 명세(`api_specification.md`), DB 명세, i18n 가이드
 
 ## 자주 쓰는 명령

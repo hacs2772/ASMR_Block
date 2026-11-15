@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -56,8 +57,16 @@ public class PlaylistService {
     /** 요즘 뜨는 조합 (최근 days일 재생 수 기준, 공개만) */
     @Transactional(readOnly = true)
     public List<PlaylistSummaryResponse> trending(int days, int size, Long viewerId) {
-        return summaries(playlistMapper.findTrending(Math.min(Math.max(days, 1), 30), Math.min(Math.max(size, 1), 50)),
-                viewerId);
+        int limit = Math.min(Math.max(size, 1), 50);
+        List<Playlist> playlists = new ArrayList<>(playlistMapper.findTrending(Math.min(Math.max(days, 1), 30), limit));
+        // 재생 기록이 모자라면(막 연 사이트) 많이 들은 순 → 새로 올라온 순 공개 조합으로 채움
+        if (playlists.size() < limit) {
+            Set<Long> shown = playlists.stream().map(Playlist::getId).collect(Collectors.toSet());
+            playlistMapper.findPublic("popular", 0, limit + playlists.size()).stream()
+                    .filter(p -> !shown.contains(p.getId()))
+                    .limit(limit - playlists.size()).forEach(playlists::add);
+        }
+        return summaries(playlists, viewerId);
     }
 
     /** 공개 플레이리스트이거나 내 것이면 동 정보까지 채워서 반환 (userId는 비로그인이면 null) */

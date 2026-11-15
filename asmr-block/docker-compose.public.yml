@@ -4,7 +4,7 @@
 #   start-public.bat 을 더블클릭 (처음이면 .env.public 을 만들어 줌)
 #   또는: docker compose -f docker-compose.public.yml --env-file .env.public up -d --build
 #
-#   - 개발용(docker-compose.yml)과 DB·파일이 따로예요. 테스트 계정(password123)·샘플 블록 없이 시작
+#   - 개발용(docker-compose.yml)과 DB·파일이 따로예요. 테스트 계정(password123) 없이, 샘플 블록·조합만 넣고 시작
 #   - 관리자 계정 = .env.public 의 ADMIN_EMAIL / ADMIN_PASSWORD
 #   - 공유기 포트를 열지 않아요. tunnel(cloudflared)이 Cloudflare로 나가는 연결만 만듦
 #   - 내 PC 확인용: http://localhost:8088 (음원 주소는 https://asmrblock.com 기준이라 소리는 터널이 켜져야 나옴)
@@ -48,6 +48,8 @@ services:
       # 웹은 같은 주소에서 부르지만, 브라우저가 Origin을 붙여 보내서 허용 목록에 넣어 둠
       APP_CORS_ALLOWED_ORIGINS: ${PUBLIC_URL},http://localhost:8088
       APP_BETA_QUICK_LOGIN: ${BETA_QUICK_LOGIN:-true}
+      # 샘플 블록 소리 파일(합성음)을 처음 켤 때 만들어 둠 (이미 있으면 건너뜀, 1~2분)
+      APP_GENERATE_SAMPLE_AUDIO: "true"
     volumes:
       - media:/data/media
     depends_on:

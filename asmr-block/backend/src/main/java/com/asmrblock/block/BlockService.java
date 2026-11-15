@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -53,11 +54,22 @@ public class BlockService {
         return PageResponse.of(toResponses(blocks, null, true), page, blockMapper.count(condition));
     }
 
-    /** 요즘 뜨는 소리 (최근 days일 재생 수 기준) */
+    /**
+     * 요즘 뜨는 소리 (최근 days일 재생 수 기준).
+     * 막 연 사이트처럼 재생 기록이 모자라면 많이 들은 순 → 새로 올라온 순으로 나머지를 채움 (recentPlays는 비어 있음)
+     */
     @Transactional(readOnly = true)
     public List<BlockResponse> trending(int days, int size, Long viewerId) {
-        return toResponses(blockMapper.findTrending(Math.min(Math.max(days, 1), 30), Math.min(Math.max(size, 1), 50)),
-                viewerId, false);
+        int limit = Math.min(Math.max(size, 1), 50);
+        List<Block> blocks = new ArrayList<>(blockMapper.findTrending(Math.min(Math.max(days, 1), 30), limit));
+        if (blocks.size() < limit) {
+            Set<Long> shown = blocks.stream().map(Block::getId).collect(Collectors.toSet());
+            BlockSearchCondition popular = condition(null, null, null, null, null, BlockStatus.APPROVED, "popular",
+                    PageQuery.of(0, limit + blocks.size()));
+            blockMapper.search(popular).stream().filter(b -> !shown.contains(b.getId()))
+                    .limit(limit - blocks.size()).forEach(blocks::add);
+        }
+        return toResponses(blocks, viewerId, false);
     }
 
     /** 공개 상세: 승인 전 블록은 없는 것처럼 처리 */
