@@ -8,7 +8,7 @@ import BetaLoginButton from '../components/common/BetaLoginButton';
 import BlockProductCard from '../components/block/BlockProductCard';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
 import { colorOf, formatDuration, TALK_LABEL } from '../lib/blocks';
-import { MAX_STICKERS, PATTERNS, STICKER_CODES, STICKERS } from '../lib/stickers';
+import { MAX_STICKERS, PATTERNS, StickerImage, useStickers } from '../lib/stickers';
 import useAuthStore from '../store/authStore';
 
 const PRICE_STEPS = [0, 10, 20, 30, 50, 100];
@@ -63,6 +63,8 @@ function SellPage() {
   const [cover, setCover] = useState(null);
   const [coverUrl, setCoverUrl] = useState(null);
   const [stickers, setStickers] = useState([]);
+  // 고를 수 있는 스티커 (관리자가 숨긴 것은 빼고, 서버 순서대로)
+  const { active: stickerChoices } = useStickers();
   const [pattern, setPattern] = useState('dots');
   const coverInputRef = useRef(null);
 
@@ -249,12 +251,12 @@ function SellPage() {
               </div>
               <p className="mb-2 mt-4 text-sm font-bold">스티커 <span className="text-xs font-normal text-faint">· 최대 {MAX_STICKERS}개{cover ? ' (사진을 빼면 보여요)' : ''}</span></p>
               <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
-                {STICKER_CODES.map((code) => (
-                  <button key={code} type="button" onClick={() => toggleSticker(code)} data-testid={`sticker-${code}`}
-                    className={`flex flex-col items-center gap-1 rounded-xl border px-1 pb-1.5 pt-2 text-[11px] transition-colors ${
-                      stickers.includes(code) ? 'border-pink bg-pink-soft text-pink-text' : 'border-line bg-card text-muted hover:text-ink'}`}>
-                    <span className="flex h-7 [&>svg]:h-full [&>svg]:w-auto" dangerouslySetInnerHTML={{ __html: STICKERS[code].svg }} />
-                    {STICKERS[code].label}
+                {stickerChoices.map((st) => (
+                  <button key={st.code} type="button" onClick={() => toggleSticker(st.code)} data-testid={`sticker-${st.code}`}
+                    className={`flex min-w-0 flex-col items-center gap-1 rounded-xl border px-1 pb-1.5 pt-2 text-[11px] transition-colors ${
+                      stickers.includes(st.code) ? 'border-pink bg-pink-soft text-pink-text' : 'border-line bg-card text-muted hover:text-ink'}`}>
+                    <span className="flex h-7"><StickerImage sticker={st} className="h-full w-auto max-w-none" /></span>
+                    <span className="w-full truncate text-center">{st.name}</span>
                   </button>
                 ))}
               </div>
@@ -353,6 +355,9 @@ function SellPage() {
                         {u.category?.name || '기타'} · {TALK_LABEL[u.talkType || 'NONE']} · {formatDuration(u.duration)} · {u.price > 0 ? `${u.price}코인` : '무료'}
                         {u.recordedPlace ? ` · ${u.recordedPlace}` : ''}
                       </p>
+                      {u.status === 'REJECTED' && u.reviewNote && (
+                        <p className="mt-1.5 rounded-lg bg-danger/10 px-2.5 py-1.5 text-xs text-danger" data-testid={`review-note-${u.id}`}>돌려보낸 이유: {u.reviewNote}</p>
+                      )}
                     </div>
                     {u.design?.hasVideo && <span className="flex items-center gap-1 text-xs text-muted"><IoVideocam /> 영상</span>}
                     <span className="hidden text-xs text-muted sm:block">담은 사람 {u.collectedCount}명</span>

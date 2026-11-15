@@ -1,6 +1,6 @@
 import React from 'react';
 import { BAR_RHYTHM, shade } from '../../lib/blocks';
-import { STICKERS } from '../../lib/stickers';
+import { StickerImage, useStickers } from '../../lib/stickers';
 
 /**
  * 레고 블록 (앱 Brick.tsx C안과 같은 모양): 각진 모서리 · 진한 테두리 · 위 밝은 띠 · 아래 두께 · 오른쪽 네모 돌기 두 개.
@@ -22,7 +22,8 @@ function Brick({ color, width = 120, height = 44, icon: Icon, label, minutes, ba
   };
   const gap = minutes > 0 ? width / minutes : 0;
   const cover = !bars && design?.coverUrl;
-  const stickers = !bars && !cover ? (design?.stickers || []).filter((k) => STICKERS[k]) : [];
+  const { map: stickerMap } = useStickers();
+  const stickers = !bars && !cover ? (design?.stickers || []).filter((k) => stickerMap[k]) : [];
   const grooves = gap >= 14 && !cover ? Math.floor(minutes - 0.05) : 0;
   const pattern = stickers.length ? `pat-${design.pattern || 'dots'}` : '';
   return (
@@ -46,7 +47,7 @@ function Brick({ color, width = 120, height = 44, icon: Icon, label, minutes, ba
           <>
             {stickers.length > 0 && (
               <div className="brick-stickers">
-                {stickers.map((k) => <span key={k} dangerouslySetInnerHTML={{ __html: STICKERS[k].svg }} />)}
+                {stickers.map((k) => <span key={k}><StickerImage sticker={stickerMap[k]} /></span>)}
               </div>
             )}
             {label && <span className="brick-time">{label}</span>}

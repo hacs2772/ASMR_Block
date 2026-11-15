@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { IoClose, IoMenu, IoPersonCircle, IoStar } from 'react-icons/io5';
+import { IoClose, IoMenu, IoPersonCircle, IoShieldCheckmark, IoStar } from 'react-icons/io5';
 import useAuthStore from '../../store/authStore';
 import LogoMark from '../brand/LogoMark';
 import { useComingSoon } from './ComingSoon';
@@ -31,6 +31,8 @@ function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const userRef = useRef(null);
+  // 관리자 계정으로 로그인했을 때만 "관리자" 메뉴
+  const isAdmin = isAuthenticated && user?.role === 'ADMIN';
 
   // 다른 화면으로 가면 메뉴 닫기
   useEffect(() => { setMenuOpen(false); setUserOpen(false); }, [location.pathname]);
@@ -67,6 +69,16 @@ function Header() {
               )}
             </NavLink>
           ))}
+          {isAdmin && (
+            <NavLink to="/admin" className={linkClass} data-testid="nav-admin">
+              {({ isActive }) => (
+                <>
+                  <IoShieldCheckmark size={14} className="text-pink-text" /> 관리자
+                  {isActive && <span className="absolute inset-x-3 -bottom-[13px] h-[3px] rounded-full bg-pink" />}
+                </>
+              )}
+            </NavLink>
+          )}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
@@ -85,6 +97,7 @@ function Header() {
                   <MenuLink to="/me/combos">내 조합</MenuLink>
                   <MenuLink to="/sell#mine">내가 올린 블록</MenuLink>
                   <MenuLink to="/profile">내 정보</MenuLink>
+                  {isAdmin && <MenuLink to="/admin">관리자 페이지</MenuLink>}
                   <button type="button" onClick={handleLogout} className="block w-full px-4 py-2.5 text-left text-sm text-muted hover:bg-card-active hover:text-ink">
                     로그아웃
                   </button>
@@ -115,6 +128,12 @@ function Header() {
                 <span className={item.strong ? 'text-pink-text' : undefined}>{item.label}</span>
               </NavLink>
             ))}
+            {isAdmin && (
+              <NavLink to="/admin" data-testid="mobile-nav-admin"
+                className={({ isActive }) => `flex items-center gap-2 rounded-lg px-2 py-3 text-base font-semibold ${isActive ? 'text-ink' : 'text-muted'}`}>
+                <IoShieldCheckmark size={14} className="text-pink-text" /> 관리자
+              </NavLink>
+            )}
             <div className="mt-2 flex gap-2 border-t border-line pt-3">
               <button type="button" className="btn-line flex-1" onClick={() => openApp('app')}>앱 받기</button>
               {!isAuthenticated && <Link to="/login" className="btn-line flex-1">로그인</Link>}

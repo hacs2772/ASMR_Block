@@ -1,7 +1,13 @@
 import {
-  IoBagHandle, IoBeaker, IoBonfire, IoBook, IoBrush, IoCafe, IoChatbubbleEllipses, IoColorFill, IoCut, IoDocumentText,
-  IoEar, IoFastFood, IoFingerPrint, IoHandLeft, IoHappy, IoHeart, IoHome, IoKeypad, IoLeaf, IoLocation, IoMap,
-  IoMusicalNote, IoMusicalNotes, IoNotifications, IoPulse, IoRainy, IoRestaurant, IoSparkles, IoTime, IoTrain, IoWater,
+  IoAirplane, IoAlarm, IoBagHandle, IoBasketball, IoBeaker, IoBed, IoBicycle, IoBoat, IoBonfire, IoBook, IoBrush,
+  IoBulb, IoBus, IoBusiness, IoCafe, IoCar, IoChatbubbleEllipses, IoChatbubbles, IoCloud, IoColorFill,
+  IoColorPalette, IoConstruct, IoCut, IoDocumentText, IoEar, IoEgg, IoFastFood, IoFingerPrint, IoFish, IoFitness,
+  IoFlame, IoFlower, IoFootball, IoFootsteps, IoGameController, IoGift, IoGlasses, IoGlobe, IoHammer, IoHandLeft,
+  IoHandRight, IoHappy, IoHeadset, IoHeart, IoHome, IoIceCream, IoKey, IoKeypad, IoLaptop, IoLeaf, IoLibrary,
+  IoLocation, IoMap, IoMedical, IoMic, IoMoon, IoMusicalNote, IoMusicalNotes, IoNotifications, IoNutrition,
+  IoPaperPlane, IoPaw, IoPencil, IoPhonePortrait, IoPizza, IoPlanet, IoPulse, IoRadio, IoRainy, IoRestaurant,
+  IoSchool, IoShirt, IoSnow, IoSparkles, IoStar, IoStorefront, IoSunny, IoThunderstorm, IoTime, IoTimer, IoTrailSign,
+  IoTrain, IoTv, IoUmbrella, IoWatch, IoWater, IoWine,
 } from 'react-icons/io5';
 
 /**
@@ -17,15 +23,32 @@ export const FALLBACK_COLOR = '#9AA0AE';
 
 export const TALK_LABEL = { NONE: '노토킹', WHISPER: '속삭임', TALK: '말하기' };
 
-/** 카테고리에 쓰는 Ionicons 이름 → 웹 아이콘 (서버 V4·V5 마이그레이션에 있는 것만) */
+/**
+ * 카테고리 아이콘: Ionicons 이름 → 웹 아이콘. 관리자 페이지에서 고를 수 있는 목록도 이것 (앱 Ionicons에도 다 있음).
+ * 늘리려면 여기에 추가 (react-icons/io5에 있는 이름만)
+ */
 const ICONS = {
   'bag-handle': IoBagHandle, beaker: IoBeaker, bonfire: IoBonfire, book: IoBook, brush: IoBrush, cafe: IoCafe,
-  'chatbubble-ellipses': IoChatbubbleEllipses, 'color-fill': IoColorFill, cut: IoCut, 'document-text': IoDocumentText,
-  ear: IoEar, 'fast-food': IoFastFood, 'finger-print': IoFingerPrint, 'hand-left': IoHandLeft, happy: IoHappy, heart: IoHeart,
-  home: IoHome, keypad: IoKeypad, leaf: IoLeaf, location: IoLocation, map: IoMap, 'musical-notes': IoMusicalNotes,
-  notifications: IoNotifications, pulse: IoPulse, rainy: IoRainy, restaurant: IoRestaurant, sparkles: IoSparkles,
-  time: IoTime, train: IoTrain, water: IoWater,
+  'chatbubble-ellipses': IoChatbubbleEllipses, 'color-fill': IoColorFill, cut: IoCut,
+  'document-text': IoDocumentText, ear: IoEar, 'fast-food': IoFastFood, 'finger-print': IoFingerPrint,
+  'hand-left': IoHandLeft, happy: IoHappy, heart: IoHeart, home: IoHome, keypad: IoKeypad, leaf: IoLeaf,
+  location: IoLocation, map: IoMap, 'musical-notes': IoMusicalNotes, notifications: IoNotifications, pulse: IoPulse,
+  rainy: IoRainy, restaurant: IoRestaurant, sparkles: IoSparkles, time: IoTime, train: IoTrain, water: IoWater,
+  star: IoStar, moon: IoMoon, sunny: IoSunny, cloud: IoCloud, snow: IoSnow, thunderstorm: IoThunderstorm,
+  flame: IoFlame, flower: IoFlower, paw: IoPaw, fish: IoFish, boat: IoBoat, car: IoCar, bus: IoBus,
+  airplane: IoAirplane, bicycle: IoBicycle, bed: IoBed, wine: IoWine, pizza: IoPizza, 'ice-cream': IoIceCream,
+  egg: IoEgg, nutrition: IoNutrition, shirt: IoShirt, hammer: IoHammer, construct: IoConstruct,
+  'color-palette': IoColorPalette, mic: IoMic, headset: IoHeadset, chatbubbles: IoChatbubbles,
+  'hand-right': IoHandRight, footsteps: IoFootsteps, planet: IoPlanet, globe: IoGlobe,
+  'game-controller': IoGameController, gift: IoGift, key: IoKey, glasses: IoGlasses, bulb: IoBulb, alarm: IoAlarm,
+  timer: IoTimer, 'musical-note': IoMusicalNote, radio: IoRadio, tv: IoTv, 'phone-portrait': IoPhonePortrait,
+  laptop: IoLaptop, watch: IoWatch, umbrella: IoUmbrella, 'trail-sign': IoTrailSign, storefront: IoStorefront,
+  school: IoSchool, library: IoLibrary, business: IoBusiness, medical: IoMedical, fitness: IoFitness,
+  basketball: IoBasketball, football: IoFootball, 'paper-plane': IoPaperPlane, pencil: IoPencil,
 };
+
+/** 관리자 페이지 아이콘 고르기 목록 */
+export const ICON_CHOICES = Object.keys(ICONS);
 
 export const iconOf = (category) => ICONS[category?.icon] || ICONS[category?.parentIcon] || IoMusicalNote;
 export const colorOf = (category) => category?.color || FALLBACK_COLOR;

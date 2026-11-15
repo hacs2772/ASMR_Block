@@ -7,6 +7,7 @@ import { VideoModal } from './components/block/VideoModal';
 import { ComingSoonModal } from './components/common/ComingSoon';
 import Footer from './components/common/Footer';
 import Header from './components/common/Header';
+import AdminPage from './pages/AdminPage';
 import { LoginPage, SignupPage } from './pages/AuthPages';
 import CombosPage from './pages/CombosPage';
 import CreatePage from './pages/CreatePage';
@@ -55,6 +56,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/admin" element={<AdminPage />} />
             {/* 예전 주소 */}
             <Route path="/explore" element={<Navigate to="/shop" replace />} />
             <Route path="/playlists" element={<Navigate to="/me/combos" replace />} />

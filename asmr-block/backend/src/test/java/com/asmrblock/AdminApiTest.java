@@ -20,6 +20,8 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -39,6 +41,16 @@ class AdminApiTest extends IntegrationTest {
         mvc.perform(bearer(multipart("/api/v1/admin/stickers").file(svgFile(SVG)).param("name", "몰래"), user))
                 .andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/admin/categories")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("웹(다른 주소)에서 관리자 화면이 쓰는 PATCH도 CORS로 허용")
+    void corsAllowsPatch() throws Exception {
+        mvc.perform(options("/api/v1/admin/blocks/1/status")
+                        .header("Origin", "http://localhost:3000")
+                        .header("Access-Control-Request-Method", "PATCH"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Methods", containsString("PATCH")));
     }
 
     @Test

@@ -1,8 +1,13 @@
+import React, { useEffect } from 'react';
+import { create } from 'zustand';
+import axiosInstance from '../api/axiosInstance';
+
 /**
- * 블록 겉면 스티커 (C안: 사진이 없을 때 보임). 저작권 걱정 없게 직접 그린 단순한 평면 그림.
- * ⚠ 서버(BlockDesign.STICKERS)·앱(mobile/src/lib/stickers.ts)과 코드·그림이 같아야 함. 추가하면 세 곳을 같이 고칠 것
+ * 블록 겉면 스티커 (C안: 사진이 없을 때 보임).
+ * V8부터 스티커 목록·그림은 서버(GET /stickers)에 있고 관리자 페이지에서 추가함 → 받아 온 것으로 그림.
+ * 아래 BUILTIN은 서버에서 받기 전(또는 못 받을 때) 잠깐 쓰는 기본 16개 (서버 V8 마이그레이션과 같은 그림)
  */
-export const STICKERS = {
+const BUILTIN = {
   flagjp: { label: '일본', svg: '<svg viewBox="0 0 30 22"><rect width="30" height="22" rx="2" fill="#fff"/><circle cx="15" cy="11" r="6" fill="#d7263d"/></svg>' },
   flagkr: { label: '한국', svg: '<svg viewBox="0 0 30 22"><rect width="30" height="22" rx="2" fill="#fff"/><circle cx="15" cy="11" r="5.5" fill="#cd2e3a"/><path d="M9.5 11a5.5 5.5 0 0 0 11 0 2.75 2.75 0 0 0-5.5 0 2.75 2.75 0 0 1-5.5 0z" fill="#0047a0"/><path d="M4 5l3-2M23 3l3 2M4 17l3 2M23 19l3-2" stroke="#222" stroke-width="1.4"/></svg>' },
   signal: { label: '신호등', svg: '<svg viewBox="0 0 22 30"><rect x="9.5" y="20" width="3" height="10" fill="#777"/><rect x="2" y="1" width="18" height="21" rx="4" fill="#222"/><circle cx="11" cy="7" r="3.6" fill="#555"/><circle cx="11" cy="16" r="3.6" fill="#36d18a"/></svg>' },
@@ -21,10 +26,54 @@ export const STICKERS = {
   mic: { label: '마이크', svg: '<svg viewBox="0 0 24 30"><rect x="7" y="2" width="10" height="16" rx="5" fill="#c9ccd6"/><path d="M8 7h8M8 11h8" stroke="#8a8f9c" stroke-width="1.2"/><path d="M4 13a8 8 0 0 0 16 0M12 21v6M7 28h10" stroke="#e8e8ef" stroke-width="2" fill="none" stroke-linecap="round"/></svg>' },
 };
 
-export const STICKER_CODES = Object.keys(STICKERS);
+
 export const PATTERNS = [
   { key: 'dots', label: '점' },
   { key: 'lines', label: '빗금' },
   { key: 'none', label: '없음' },
 ];
 export const MAX_STICKERS = 3;
+
+const builtinList = Object.entries(BUILTIN).map(([code, s]) => ({ code, name: s.label, svg: s.svg, imageUrl: null, active: true }));
+const toMap = (list) => Object.fromEntries(list.map((s) => [s.code, s]));
+
+/** 스티커 목록: list(순서대로, 숨긴 것 포함), map(code → 스티커) */
+export const useStickerStore = create((set) => ({
+  list: builtinList,
+  map: toMap(builtinList),
+  loaded: false,
+  setList: (list) => set({ list, map: toMap(list), loaded: true }),
+}));
+
+let loading = null;
+/** 서버에서 한 번 받아 옴 (force: 관리자 페이지에서 고친 뒤 다시) */
+export function loadStickers(force = false) {
+  if (loading && !force) return loading;
+  loading = axiosInstance.get('/stickers')
+    .then((res) => { useStickerStore.getState().setList(res.data.data || []); })
+    .catch(() => { loading = null; }); // 못 받으면 기본 16개로, 다음에 다시
+  return loading;
+}
+
+/** 스티커 목록 훅 (처음 쓰일 때 서버에서 받아 옴) */
+export function useStickers() {
+  const list = useStickerStore((s) => s.list);
+  const map = useStickerStore((s) => s.map);
+  useEffect(() => { loadStickers(); }, []);
+  return { list, map, active: list.filter((s) => s.active) };
+}
+
+/** SVG 글자 → <img>에 넣을 주소 (img로 그리면 SVG 안의 스크립트가 돌지 않아 안전) */
+export function stickerSrc(sticker) {
+  if (!sticker) return null;
+  if (sticker.imageUrl) return sticker.imageUrl;
+  const svg = /xmlns=/.test(sticker.svg) ? sticker.svg : sticker.svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+/** 스티커 그림 하나 */
+export function StickerImage({ sticker, className = '' }) {
+  const src = stickerSrc(sticker);
+  if (!src) return null;
+  return React.createElement('img', { src, alt: sticker.name || '', className, draggable: false });
+}

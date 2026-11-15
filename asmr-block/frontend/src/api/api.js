@@ -50,3 +50,23 @@ export const playlistApi = {
   requestRender: (id) => data(axiosInstance.post(`/playlists/${id}/render`)),
   render: (id) => data(axiosInstance.get(`/playlists/${id}/render`)),
 };
+
+/** 관리자 페이지 (관리자 계정만, 서버가 ADMIN 권한 확인) */
+const multipart = { headers: { 'Content-Type': 'multipart/form-data' } };
+export const adminApi = {
+  /** 검수 목록 status: PENDING | APPROVED | REJECTED */
+  blocks: (status = 'PENDING', page = 0, size = 30) => data(axiosInstance.get('/admin/blocks', { params: { status, page, size } })),
+  /** 승인·돌려보내기 (note: 돌려보내는 이유, 판매자에게 보임) */
+  setStatus: (id, status, note) => data(axiosInstance.patch(`/admin/blocks/${id}/status`, { status, note })),
+  setPrice: (id, price) => data(axiosInstance.patch(`/admin/blocks/${id}/price`, { price })),
+  /** 트리거 종류: 숨긴 것까지 트리 (응답은 바뀐 뒤 전체 트리) */
+  categories: () => data(axiosInstance.get('/admin/categories')),
+  addCategory: (body) => data(axiosInstance.post('/admin/categories', body)),
+  updateCategory: (id, body) => data(axiosInstance.patch(`/admin/categories/${id}`, body)),
+  orderCategories: (ids) => data(axiosInstance.put('/admin/categories/order', { ids })),
+  /** 스티커 (목록은 공개 GET /stickers, 숨긴 것 포함) */
+  stickers: () => data(axiosInstance.get('/stickers')),
+  addSticker: (form) => data(axiosInstance.post('/admin/stickers', form, multipart)),
+  updateSticker: (code, body) => data(axiosInstance.patch(`/admin/stickers/${code}`, body)),
+  orderStickers: (codes) => data(axiosInstance.put('/admin/stickers/order', { codes })),
+};

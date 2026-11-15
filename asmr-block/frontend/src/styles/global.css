@@ -154,8 +154,11 @@ a:hover .logo-bar, .logo-live .logo-bar { animation: bar-beat 260ms ease-in-out 
 .brick-band { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: var(--b-base); z-index: 2; }
 .brick-stickers { position: absolute; inset: 3px 6px 7px; z-index: 2; display: flex; align-items: center; justify-content: center; gap: 4%; pointer-events: none; }
 .brick-stickers span { display: flex; height: 62%; }
-.brick-stickers svg { height: 100%; width: auto; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35)); }
+.brick-stickers img { height: 100%; width: auto; max-width: none; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35)); }
 .brick-time { position: absolute; right: 6px; bottom: 7px; z-index: 3; color: #fff; font-size: 11px; font-weight: 800; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75); }
 .brick-film { position: absolute; left: 4px; top: 5px; z-index: 4; height: 14px; padding: 0 4px; border-radius: 4px; background: rgba(0, 0, 0, 0.65); color: #fff; font-size: 9px; font-weight: 800; display: flex; align-items: center; }
 .pat-dots { background-image: radial-gradient(rgba(255, 255, 255, 0.18) 1.4px, transparent 1.8px), linear-gradient(180deg, var(--b-top) 0 3px, var(--b-base) 3px); background-size: 9px 9px, auto; }
 .pat-lines { background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.13) 0 2px, transparent 2px 9px), linear-gradient(180deg, var(--b-top) 0 3px, var(--b-base) 3px); }
+
+/* 관리자 페이지: 스티커 미리보기 바탕 (블록 겉면처럼 점 무늬) */
+.pat-dots-light { background-image: radial-gradient(rgba(255, 255, 255, 0.2) 1.4px, transparent 1.8px) !important; background-size: 9px 9px; }
