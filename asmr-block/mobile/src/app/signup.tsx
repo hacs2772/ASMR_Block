@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { AuthForm } from '@/components/AuthForm';
+import { LegalNote } from '@/components/LegalNote';
 import { Button } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 
@@ -17,7 +18,12 @@ export default function SignupScreen() {
         await signup(email, password, nickname);
         router.back();
       }}
-      footer={<Button title="이미 계정이 있어요 · 로그인" variant="ghost" onPress={() => router.replace('/login')} />}
+      footer={(
+        <>
+          <LegalNote action="가입하면" extra="만 14세 미만은 가입할 수 없어요." />
+          <Button title="이미 계정이 있어요 · 로그인" variant="ghost" onPress={() => router.replace('/login')} />
+        </>
+      )}
     />
   );
 }

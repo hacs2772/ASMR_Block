@@ -1,6 +1,8 @@
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BrickStack } from '@/components/Brand';
+import { FeedbackForm } from '@/components/FeedbackForm';
+import { PRIVACY_URL, TERMS_URL } from '@/lib/links';
 import { Glossary, TingleWord } from '@/components/tingle/Tingle';
 import { Button } from '@/components/ui';
 import { colors, radius, space } from '@/theme';
@@ -44,7 +46,18 @@ export default function HelpScreen() {
       <Text style={styles.section}>ASMR 단어장</Text>
       <Glossary />
 
-      <Button title="알겠어요" onPress={() => router.back()} style={{ marginTop: space.xl }} />
+      <Text style={styles.section}>의견</Text>
+      <FeedbackForm />
+
+      <View style={styles.legal}>
+        <Text style={styles.legalLink} onPress={() => void Linking.openURL(TERMS_URL)} accessibilityRole="link">이용약관</Text>
+        <Text style={styles.legalDot}>·</Text>
+        <Text style={[styles.legalLink, { fontWeight: '700' }]} onPress={() => void Linking.openURL(PRIVACY_URL)} accessibilityRole="link">
+          개인정보 처리방침
+        </Text>
+      </View>
+
+      <Button title="알겠어요" onPress={() => router.back()} style={{ marginTop: space.md }} />
     </ScrollView>
   );
 }
@@ -66,4 +79,7 @@ const styles = StyleSheet.create({
   stepTitle: { color: colors.text, fontSize: 15, fontWeight: '700' },
   stepBody: { color: colors.muted, fontSize: 13, lineHeight: 19, marginTop: 2 },
   tip: { color: colors.muted, fontSize: 13, lineHeight: 19 },
+  legal: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginTop: space.md },
+  legalLink: { color: colors.muted, fontSize: 13, textDecorationLine: 'underline' },
+  legalDot: { color: colors.faint, fontSize: 13 },
 });

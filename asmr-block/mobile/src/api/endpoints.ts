@@ -63,6 +63,12 @@ export const stickerApi = {
   list: () => api<Sticker[]>('/stickers'),
 };
 
+/** 의견 보내기 (로그인 없이도 됨, 같은 사람은 10분에 5번까지) */
+export const feedbackApi = {
+  send: (body: { message: string; contact?: string | null; page?: string }) =>
+    api<null>('/feedback', { method: 'POST', body: { client: 'app', ...body } }),
+};
+
 /** 판매자: ASMR 업로드 */
 export const sellerApi = {
   policy: () => api<UploadPolicy>('/blocks/upload-policy'),

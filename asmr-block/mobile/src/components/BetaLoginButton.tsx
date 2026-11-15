@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { authApi } from '@/api/endpoints';
+import { LegalNote } from '@/components/LegalNote';
 import { notify } from '@/lib/dialog';
 import { useAuth } from '@/store/auth';
 import { colors, radius, space } from '@/theme';
@@ -37,6 +38,7 @@ export function BetaLoginButton({ onDone, style }: { onDone?: () => void; style?
         <Text style={styles.text}>베타로 바로 시작 <Text style={styles.sub}>(가입 없이)</Text></Text>
       </Pressable>
       <Text style={styles.note}>베타 기간에만 있는 버튼이에요. 이 휴대폰에서는 다시 눌러도 같은 계정으로 들어와요.</Text>
+      <LegalNote action="누르면" />
     </View>
   );
 }
