@@ -11,7 +11,10 @@ body {
   @apply bg-night text-ink font-sans antialiased;
   min-height: 100vh;
   word-break: keep-all;
+  overflow-wrap: break-word; /* 긴 영문·주소는 넘치지 않게 줄바꿈 */
 }
+/* 핸드폰: 격자 칸이 안의 긴 제목·블록 줄 때문에 화면보다 넓어지지 않게 */
+.grid > * { min-width: 0; }
 ::selection { background: rgba(247, 96, 154, 0.35); }
 :focus-visible { outline: 2px solid #ff85af; outline-offset: 2px; }
 

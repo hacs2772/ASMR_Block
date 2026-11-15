@@ -48,10 +48,10 @@ function ComboCard({ combo, rank, showOwner = true }) {
         </Link>
       </div>
       <div className="flex items-center gap-3 border-t border-line pt-3">
-        <p className="flex flex-1 items-center gap-1 text-xs text-muted">
+        <p className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1 text-xs text-muted">
           <IoStar size={12} className="text-pink-text" />
-          {combo.collect?.collectCount > 0 ? `담은 사람 ${combo.collect.collectCount}명` : '새 조합'}
-          {combo.recentPlays ? <span className="text-faint"> · 이번 주 {combo.recentPlays}번 들음</span> : null}
+          <span className="whitespace-nowrap">{combo.collect?.collectCount > 0 ? `담은 사람 ${combo.collect.collectCount}명` : '새 조합'}</span>
+          {combo.recentPlays ? <span className="whitespace-nowrap text-faint">· 이번 주 {combo.recentPlays}번 들음</span> : null}
         </p>
         <CollectComboButton combo={combo} />
       </div>

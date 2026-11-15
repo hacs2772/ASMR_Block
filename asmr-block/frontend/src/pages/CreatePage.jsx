@@ -116,15 +116,15 @@ function CreatePage() {
       {/* 이름 · 공개 · 저장 */}
       <div className="flex flex-wrap items-center gap-3">
         <Link to="/me/combos" className="btn-ghost p-2" aria-label="내 조합으로"><IoArrowBack size={20} /></Link>
-        <div className="min-w-0 flex-1">
-          <input className="w-full bg-transparent text-2xl font-black tracking-tight outline-none placeholder:text-faint" value={editor.title}
-            onChange={(e) => editor.setTitle(e.target.value)} placeholder={editor.playlistId ? '조합 이름' : '새 조합 (이름은 안 적으면 자동으로)'}
+        <div className="min-w-0 flex-1 basis-60">
+          <input className="w-full bg-transparent text-xl font-black sm:text-2xl tracking-tight outline-none placeholder:text-faint" value={editor.title}
+            onChange={(e) => editor.setTitle(e.target.value)} placeholder={editor.playlistId ? '조합 이름' : '새 조합 (이름은 자동)'}
             maxLength={100} aria-label="조합 이름" data-testid="title-input" />
           <p className="mt-0.5 text-xs text-muted" data-testid="editor-meta">
             한 바퀴 {formatLength(cycle)} · 블록 {blockCount}개 · {editor.listenMinutes > 0 ? `${LISTEN_OPTIONS.find((o) => o.minutes === editor.listenMinutes)?.label} 반복` : '한 바퀴만'}
           </p>
         </div>
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-muted">
+        <label className="ml-auto flex cursor-pointer items-center gap-2 text-sm text-muted">
           <input type="checkbox" className="h-4 w-4 accent-[#F7609A]" checked={editor.isPublic} onChange={(e) => editor.setIsPublic(e.target.checked)} />
           공개 <span className="hidden text-xs text-faint sm:inline">(추천 조합에 올라가요)</span>
         </label>
@@ -140,7 +140,7 @@ function CreatePage() {
         ))}
       </div>
 
-      <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_340px]">
+      <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-3">
           <Board playing={playing} onTogglePlay={() => (playing ? preview.stop() : preview.start(startFrom()))} />
 

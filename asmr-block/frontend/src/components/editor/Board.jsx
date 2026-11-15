@@ -76,12 +76,12 @@ function Board({ playing, onTogglePlay }) {
     <div className="card overflow-hidden bg-plate">
       <div className="flex items-center gap-3 border-b border-line px-4 py-3">
         <button type="button" onClick={onTogglePlay} disabled={main.items.length === 0}
-          className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold disabled:opacity-40 ${
+          className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold disabled:opacity-40 ${
             playing ? 'border-pink bg-pink text-white' : 'border-line-strong bg-pink-soft text-pink-text'}`} data-testid="play-all">
           {playing ? <IoStop /> : <IoPlay />} {playing ? '멈춤' : '전체 듣기'}
         </button>
-        <span className="text-xs text-faint">1칸 = 1분 · 한 바퀴 {formatDuration(total)}</span>
-        <button type="button" onClick={mix.enabled ? hideMix : showMix} className="ml-auto rounded-full border border-line px-3 py-1 text-xs font-semibold text-muted hover:text-ink" data-testid="toggle-mix">
+        <span className="min-w-0 text-xs text-faint">1칸 = 1분<span className="hidden sm:inline"> · 한 바퀴 {formatDuration(total)}</span></span>
+        <button type="button" onClick={mix.enabled ? hideMix : showMix} className="ml-auto shrink-0 whitespace-nowrap rounded-full border border-line px-3 py-1 text-xs font-semibold text-muted hover:text-ink" data-testid="toggle-mix">
           {mix.enabled ? '레이어드 숨기기' : '＋ 레이어드'}
         </button>
       </div>

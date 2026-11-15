@@ -215,7 +215,7 @@ function SellPage() {
               {/* 영상 (선택) */}
               <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl bg-card-active p-3.5">
                 <IoVideocam size={20} className="text-pink-text" />
-                <div className="min-w-0 flex-1 text-sm">
+                <div className="min-w-0 flex-1 basis-52 text-sm">
                   {video ? (
                     <p className="truncate"><b>{video.name}</b> <span className="text-xs text-muted">{(video.size / 1024 / 1024).toFixed(0)}MB{videoDuration ? ` · ${formatDuration(videoDuration)}` : ''}</span></p>
                   ) : (
@@ -224,9 +224,9 @@ function SellPage() {
                   <p className="text-xs text-muted">"진짜 그 장면이구나" 하고 볼 수 있게. 듣는 사람이 "영상도 같이 보기"를 켜면 보여요 · 가볍게 480p로 저장</p>
                 </div>
                 {video ? (
-                  <button type="button" className="btn-ghost btn-sm" onClick={() => { setVideo(null); setVideoDuration(null); }}>빼기</button>
+                  <button type="button" className="btn-ghost btn-sm ml-auto" onClick={() => { setVideo(null); setVideoDuration(null); }}>빼기</button>
                 ) : (
-                  <button type="button" className="btn-line btn-sm" onClick={() => videoInputRef.current?.click()} data-testid="sell-video-pick">영상 고르기</button>
+                  <button type="button" className="btn-line btn-sm ml-auto" onClick={() => videoInputRef.current?.click()} data-testid="sell-video-pick">영상 고르기</button>
                 )}
                 <input ref={videoInputRef} type="file" className="hidden" data-testid="sell-video"
                   accept={policy ? policy.videoExtensions.map((x) => `.${x}`).join(',') : 'video/*'} onChange={(e) => pickVideo(e.target.files?.[0])} />
@@ -238,11 +238,11 @@ function SellPage() {
               <p className="label">블록 꾸미기 <span className="ml-1 text-xs font-normal text-faint">· 사진이 있으면 사진, 없으면 스티커가 블록 겉면에 보여요</span></p>
               <div className="flex flex-wrap items-center gap-3 rounded-xl bg-card-active p-3.5">
                 {coverUrl ? <img src={coverUrl} alt="고른 사진" className="h-12 w-20 rounded-md object-cover" /> : <IoImage size={22} className="text-pink-text" />}
-                <p className="min-w-0 flex-1 text-sm"><b>겉면 사진</b> <span className="text-xs text-faint">(선택) 녹음한 장소나 장면 사진 · {maxImageMb}MB까지</span></p>
+                <p className="min-w-0 flex-1 basis-44 text-sm"><b>겉면 사진</b> <span className="text-xs text-faint">(선택) 녹음한 장소나 장면 사진 · {maxImageMb}MB까지</span></p>
                 {cover ? (
-                  <button type="button" className="btn-ghost btn-sm" onClick={() => { setCover(null); setCoverUrl(null); }}>빼기</button>
+                  <button type="button" className="btn-ghost btn-sm ml-auto" onClick={() => { setCover(null); setCoverUrl(null); }}>빼기</button>
                 ) : (
-                  <button type="button" className="btn-line btn-sm" onClick={() => coverInputRef.current?.click()} data-testid="sell-cover-pick">사진 고르기</button>
+                  <button type="button" className="btn-line btn-sm ml-auto" onClick={() => coverInputRef.current?.click()} data-testid="sell-cover-pick">사진 고르기</button>
                 )}
                 <input ref={coverInputRef} type="file" className="hidden" data-testid="sell-cover"
                   accept={policy ? policy.imageExtensions.map((x) => `.${x}`).join(',') : 'image/*'} onChange={(e) => pickCover(e.target.files?.[0])} />

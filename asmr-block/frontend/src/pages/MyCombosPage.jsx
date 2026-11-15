@@ -34,18 +34,23 @@ function MyCombosPage() {
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {combos.map((c) => (
-              <div key={c.id} className="card flex items-center gap-4 p-4" data-testid={`my-combo-${c.id}`}>
-                <Link to={`/listen/${c.id}`} className="w-24 shrink-0"><ComboBricks colors={c.previewColors} hasMix={c.hasMix} /></Link>
+              <div key={c.id} className="card flex items-center gap-3 p-4 sm:gap-4" data-testid={`my-combo-${c.id}`}>
+                <Link to={`/listen/${c.id}`} className="w-16 shrink-0 sm:w-24"><ComboBricks colors={c.previewColors} hasMix={c.hasMix} /></Link>
                 <div className="min-w-0 flex-1">
                   <Link to={`/listen/${c.id}`} className="block truncate font-bold hover:text-pink-text">{c.title}</Link>
                   <p className="mt-1 truncate text-xs text-muted">
                     {formatLength(c.totalDuration)} · 블록 {c.blockCount}개{c.hasMix ? ' · 레이어드' : ''}
                     {c.listenMinutes > 0 ? ` · ${listenLabel(c.listenMinutes)}` : ''} · {c.collect?.sourceOwner ? `@${c.collect.sourceOwner.nickname} 조합` : c.isPublic ? '공개' : '비공개'}
                   </p>
+                  {/* 핸드폰: 편집·삭제는 제목 아래 작은 글자로 (제목 자리를 넓게) */}
+                  <div className="mt-2 flex gap-4 text-xs font-semibold text-muted sm:hidden">
+                    <Link to={`/create/${c.id}`} className="flex items-center gap-1 hover:text-ink"><IoCreate size={14} /> 블록 편집</Link>
+                    <button type="button" className="flex items-center gap-1 hover:text-danger" onClick={() => remove(c)}><IoTrash size={13} /> 삭제</button>
+                  </div>
                 </div>
-                <Link to={`/create/${c.id}`} className="btn-ghost p-2" aria-label="블록 편집"><IoCreate size={18} /></Link>
-                <button type="button" className="btn-ghost p-2 hover:text-danger" onClick={() => remove(c)} aria-label="삭제"><IoTrash size={17} /></button>
-                <Link to={`/listen/${c.id}`} className="flex h-10 w-10 items-center justify-center rounded-full bg-pink text-white" aria-label="듣기"><IoPlay className="ml-0.5" /></Link>
+                <Link to={`/create/${c.id}`} className="btn-ghost hidden p-2 sm:inline-flex" aria-label="블록 편집"><IoCreate size={18} /></Link>
+                <button type="button" className="btn-ghost hidden p-2 hover:text-danger sm:inline-flex" onClick={() => remove(c)} aria-label="삭제"><IoTrash size={17} /></button>
+                <Link to={`/listen/${c.id}`} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-pink text-white" aria-label="듣기"><IoPlay className="ml-0.5" /></Link>
               </div>
             ))}
           </div>
