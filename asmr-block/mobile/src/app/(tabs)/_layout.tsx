@@ -35,12 +35,12 @@ export default function TabsLayout() {
         headerRight: () => <HeaderActions />,
       }}
     >
-      {/* 아래 탭 5칸: 홈 · 블록 구매 · ★추천 조합 · 블록 편집 · 업로드 (도움말·내 정보는 오른쪽 위) */}
+      {/* 아래 탭 5칸: 홈 · 블록 구매 · ★추천 조합 · 블록 편집 · 블록 판매 (도움말·내 정보는 오른쪽 위) */}
       <Tabs.Screen name="index" options={{ title: '홈', headerTitle: () => <BrandTitle />, tabBarIcon: tabIcon('home') }} />
       <Tabs.Screen name="explore" options={{ title: '블록 구매', headerTitle: '블록 상점', tabBarIcon: tabIcon('storefront') }} />
       <Tabs.Screen name="combos" options={{ title: '추천 조합', headerTitle: '추천 조합', tabBarIcon: tabIcon('star') }} />
       <Tabs.Screen name="library" options={{ title: '블록 편집', headerTitle: '블록 편집', tabBarIcon: tabIcon('create') }} />
-      <Tabs.Screen name="upload" options={{ title: '업로드', headerTitle: 'ASMR 업로드', tabBarIcon: tabIcon('cloud-upload') }} />
+      <Tabs.Screen name="upload" options={{ title: '블록 판매', headerTitle: 'ASMR 블록 판매', tabBarIcon: tabIcon('cloud-upload') }} />
     </Tabs>
   );
 }
