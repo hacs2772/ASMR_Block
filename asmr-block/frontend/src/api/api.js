@@ -69,4 +69,14 @@ export const adminApi = {
   addSticker: (form) => data(axiosInstance.post('/admin/stickers', form, multipart)),
   updateSticker: (code, body) => data(axiosInstance.patch(`/admin/stickers/${code}`, body)),
   orderStickers: (codes) => data(axiosInstance.put('/admin/stickers/order', { codes })),
+  /** 의견: done 없으면 전부, false 새 의견, true 확인함 */
+  feedback: (done, page = 0, size = 50) => data(axiosInstance.get('/admin/feedback', { params: { done, page, size } })),
+  markFeedback: (id, done) => data(axiosInstance.patch(`/admin/feedback/${id}`, { done })),
+  /** 베타 반응 숫자 (사람·조합·재생·블록·새 의견 + 최근 14일) */
+  stats: () => data(axiosInstance.get('/admin/stats')),
+};
+
+/** 의견 보내기 (로그인 없이도 됨) */
+export const feedbackApi = {
+  send: (body) => axiosInstance.post('/feedback', { client: 'web', ...body }).then((res) => res.data),
 };

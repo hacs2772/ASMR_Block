@@ -49,7 +49,8 @@ public class SecurityConfig {
                 // 로그인 없이 가능
                 .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login",
                     "/api/v1/auth/refresh", "/api/v1/auth/logout",
-                    "/api/v1/auth/beta", "/api/v1/auth/beta-login").permitAll()
+                    "/api/v1/auth/beta", "/api/v1/auth/beta-login",
+                    "/api/v1/feedback").permitAll()
                 .requestMatchers(HttpMethod.GET,
                     "/api/v1/categories", "/api/v1/tags", "/api/v1/stickers",
                     "/api/v1/blocks", "/api/v1/blocks/*",

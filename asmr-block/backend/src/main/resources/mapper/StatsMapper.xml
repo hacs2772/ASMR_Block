@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  관리자 통계. "사람" = 활성 일반 회원 (관리자·샘플 계정·탈퇴 제외), 베타 손님 = beta-…@beta.asmrblock.com
+  날짜는 한국 시간 기준 (DB에는 UTC로 저장)
+-->
+<mapper namespace="com.asmrblock.stats.StatsMapper">
+
+    <sql id="people">
+        SELECT id, email, created_at FROM users
+        WHERE is_active = true AND role = 'USER' AND email &lt;&gt; 'samples@asmrblock.invalid'
+    </sql>
+
+    <sql id="kstToday">((NOW() AT TIME ZONE 'Asia/Seoul')::date)</sql>
+    <sql id="kstDate">((x.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')::date)</sql>
+
+    <select id="summary" resultType="map">
+        WITH people AS (<include refid="people"/>),
+             own_combos AS (
+                 SELECT p.* FROM playlist p JOIN people u ON u.id = p.user_id
+             )
+        SELECT
+            (SELECT COUNT(*) FROM people)                                                        AS people_total,
+            (SELECT COUNT(*) FROM people WHERE email LIKE 'beta-%@beta.asmrblock.com')           AS beta_guests,
+            (SELECT COUNT(*) FROM people WHERE email NOT LIKE 'beta-%@beta.asmrblock.com')       AS members,
+            (SELECT COUNT(*) FROM people x WHERE <include refid="kstDate"/> = <include refid="kstToday"/>) AS new_today,
+            (SELECT COUNT(*) FROM people WHERE created_at &gt;= NOW() - INTERVAL '7 days')        AS new_7d,
+            (SELECT COUNT(*) FROM own_combos WHERE source_playlist_id IS NULL)                    AS combos,
+            (SELECT COUNT(*) FROM own_combos WHERE source_playlist_id IS NULL
+                                               AND created_at &gt;= NOW() - INTERVAL '7 days')    AS combos_7d,
+            (SELECT COUNT(*) FROM own_combos WHERE source_playlist_id IS NULL AND is_public = true) AS public_combos,
+            (SELECT COUNT(*) FROM own_combos WHERE source_playlist_id IS NOT NULL)                AS collects,
+            (SELECT COUNT(*) FROM play_log WHERE played_at &gt;= NOW() - INTERVAL '24 hours')     AS plays_24h,
+            (SELECT COUNT(*) FROM play_log WHERE played_at &gt;= NOW() - INTERVAL '7 days')       AS plays_7d,
+            (SELECT COUNT(*) FROM play_log)                                                       AS plays_total,
+            (SELECT COUNT(*) FROM block WHERE is_active = true AND status = 'APPROVED')           AS approved_blocks,
+            (SELECT COUNT(*) FROM block b JOIN users u ON u.id = b.uploader_id
+               WHERE b.is_active = true AND b.status = 'APPROVED' AND u.email = 'samples@asmrblock.invalid') AS sample_blocks,
+            (SELECT COUNT(*) FROM block b JOIN people u ON u.id = b.uploader_id WHERE b.is_active = true) AS user_uploads,
+            (SELECT COUNT(*) FROM block WHERE is_active = true AND status = 'PENDING')            AS pending_blocks,
+            (SELECT COUNT(*) FROM feedback WHERE is_done = false)                                 AS new_feedback
+    </select>
+
+    <!-- 최근 14일 (오늘 포함) 하루하루 -->
+    <select id="daily" resultType="com.asmrblock.stats.StatsDtos$Day">
+        WITH days AS (
+                 SELECT generate_series(<include refid="kstToday"/> - 13, <include refid="kstToday"/>, INTERVAL '1 day')::date AS d
+             ),
+             people AS (<include refid="people"/>),
+             signups AS (SELECT <include refid="kstDate"/> AS d, COUNT(*) AS n FROM people x GROUP BY 1),
+             combos AS (SELECT <include refid="kstDate"/> AS d, COUNT(*) AS n
+                        FROM playlist x JOIN people u ON u.id = x.user_id
+                        WHERE x.source_playlist_id IS NULL GROUP BY 1),
+             plays AS (SELECT ((played_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')::date) AS d, COUNT(*) AS n
+                       FROM play_log GROUP BY 1)
+        SELECT days.d AS date, COALESCE(s.n, 0) AS signups, COALESCE(c.n, 0) AS combos, COALESCE(p.n, 0) AS plays
+        FROM days
+        LEFT JOIN signups s ON s.d = days.d
+        LEFT JOIN combos c ON c.d = days.d
+        LEFT JOIN plays p ON p.d = days.d
+        ORDER BY days.d
+    </select>
+
+</mapper>

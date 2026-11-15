@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { IoFlash } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import authApi from '../../api/authApi';
@@ -36,7 +36,10 @@ function BetaLoginButton({ to, className = '' }) {
         className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-pink bg-pink-soft px-4 py-3.5 text-[15px] font-extrabold text-pink-text transition-colors hover:bg-pink hover:text-white">
         <IoFlash size={18} /> 베타로 바로 시작 <span className="text-xs font-semibold opacity-80">(가입 없이)</span>
       </button>
-      <p className="mt-2 text-center text-[11px] text-faint">베타 기간에만 있는 버튼이에요. 이 브라우저에서는 다시 눌러도 같은 계정으로 들어와요.</p>
+      <p className="mt-2 text-center text-[11px] leading-relaxed text-faint">
+        베타 기간에만 있는 버튼이에요. 이 브라우저에서는 다시 눌러도 같은 계정으로 들어와요.
+        {' '}누르면 <Link to="/terms" className="underline hover:text-ink">이용약관</Link>·<Link to="/privacy" className="underline hover:text-ink">개인정보 처리방침</Link>에 동의하는 거예요.
+      </p>
     </div>
   );
 }

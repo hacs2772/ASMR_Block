@@ -2,8 +2,8 @@
 
 > 최종 수정일: 2026-11-13 / PostgreSQL 16
 >
-> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V8 가 기준입니다.
-> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘 / V5: 트리거 중심 분류(code), 말소리, 녹음한 곳 / V6: 조합 담기 — 복사본의 원본 / V7: 블록 꾸미기(사진·스티커) + 영상 블록 / V8: 스티커 테이블(관리자 페이지에서 추가), 검수 메모)
+> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V9 가 기준입니다.
+> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘 / V5: 트리거 중심 분류(code), 말소리, 녹음한 곳 / V6: 조합 담기 — 복사본의 원본 / V7: 블록 꾸미기(사진·스티커) + 영상 블록 / V8: 스티커 테이블(관리자 페이지에서 추가), 검수 메모 / V9: 의견 보내기)
 > 서버가 시작될 때 Flyway가 자동 적용합니다. **테이블을 바꿀 때는 `V8__설명.sql` 처럼 새 파일을 추가**하세요 (기존 파일 수정 금지).
 > 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 환경에서만 실행).
 
@@ -95,6 +95,17 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | image_key | VARCHAR(500) | PNG 그림 파일 키 (`stickers/xxx.png`, 256px) |
 | sort_order | INTEGER | 고르기 화면 순서 |
 | is_active | BOOLEAN | 숨기면 FALSE: 새로 못 고르지만 이미 붙인 블록에는 그대로 그림 |
+
+## feedback (의견 보내기, V9)
+웹·앱의 "의견 보내기". 관리자 페이지 > 의견에서 봄
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| user_id | BIGINT NULL | 보낸 사람 (로그인 안 했으면 NULL, 탈퇴하면 NULL) |
+| message | VARCHAR(2000) | 의견 |
+| contact | VARCHAR(100) | 답장 받을 곳 (선택) |
+| page / client | VARCHAR | 보낸 화면 (`/create`) / `web`·`app` |
+| is_done | BOOLEAN | 관리자가 확인함 |
 
 ## user_block (내 블록함, V3)
 

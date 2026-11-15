@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { AppBadges } from './ComingSoon';
+import { useFeedback } from './Feedback';
 import { Logo, NAV } from './Header';
 
 function Footer() {
@@ -25,8 +26,9 @@ function Footer() {
           <ul className="space-y-2 text-sm text-muted">
             <li><Link to="/guide#glossary" className="hover:text-ink">ASMR 단어장</Link></li>
             <li><Link to="/sell" className="hover:text-ink">크리에이터 안내</Link></li>
-            <li><span className="text-faint">이용약관 (준비 중)</span></li>
-            <li><span className="text-faint">개인정보 처리방침 (준비 중)</span></li>
+            <li><button type="button" onClick={() => useFeedback.getState().open()} className="hover:text-ink">의견 보내기</button></li>
+            <li><Link to="/terms" className="hover:text-ink">이용약관</Link></li>
+            <li><Link to="/privacy" className="font-bold hover:text-ink">개인정보 처리방침</Link></li>
           </ul>
         </div>
       </div>

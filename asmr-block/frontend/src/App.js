@@ -5,10 +5,12 @@ import 'react-toastify/dist/ReactToastify.css';
 
 import { VideoModal } from './components/block/VideoModal';
 import { ComingSoonModal } from './components/common/ComingSoon';
+import { FeedbackFab, FeedbackModal } from './components/common/Feedback';
 import Footer from './components/common/Footer';
 import Header from './components/common/Header';
 import AdminPage from './pages/AdminPage';
 import { LoginPage, SignupPage } from './pages/AuthPages';
+import { PrivacyPage, TermsPage } from './pages/LegalPages';
 import CombosPage from './pages/CombosPage';
 import CreatePage from './pages/CreatePage';
 import GuidePage from './pages/GuidePage';
@@ -57,6 +59,8 @@ function App() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/admin" element={<AdminPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
             {/* 예전 주소 */}
             <Route path="/explore" element={<Navigate to="/shop" replace />} />
             <Route path="/playlists" element={<Navigate to="/me/combos" replace />} />
@@ -68,6 +72,8 @@ function App() {
         <Footer />
         <ComingSoonModal />
         <VideoModal />
+        <FeedbackModal />
+        <FeedbackFab />
         <ToastContainer position="bottom-center" autoClose={2800} hideProgressBar theme="dark" />
       </div>
     </Router>

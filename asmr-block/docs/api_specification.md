@@ -17,7 +17,7 @@
 6. [내 블록함 (Library)](#6-내-블록함-library)
 7. [플레이리스트 = 레고 블록 두 줄 (Playlist)](#7-플레이리스트--레고-블록-두-줄-playlist)
 8. [완성본 (Render)](#8-완성본-render)
-9. [관리자 (Admin)](#9-관리자-admin) — 블록 검수 · 트리거 종류 · 스티커
+9. [관리자 (Admin)](#9-관리자-admin) — 블록 검수 · 트리거 종류 · 스티커 · 의견·통계
 
 ---
 
@@ -472,6 +472,18 @@
 - **PNG·JPG·WEBP**(2MB까지)면 256px 안으로 줄인 투명 배경 PNG(`stickers/{code}.png`)로 저장
 
 > 웹은 다른 주소(:3000 → :8080)에서 부르므로 CORS 허용 메서드에 `PATCH`가 있어야 함 (GET, POST, PUT, PATCH, DELETE).
+
+### 9.4 의견·통계 - V9 (베타 반응 보기)
+
+| Method | URL | 인증 | 설명 |
+|------|------|------|------|
+| POST | `/feedback` | 없어도 됨 | 의견 보내기 `{ "message": "2~2000자", "contact": "답장 받을 곳(선택)", "page": "/create", "client": "web|app" }` → 201. 로그인했으면 누가 보냈는지도 남음. **같은 계정·같은 IP는 10분에 5번까지** (넘으면 429) |
+| GET | `/admin/feedback?done=false` | 관리자 | 의견 목록 (`done` 없으면 전부, false 새 의견, true 확인함). `who`(닉네임, 비로그인 null), `beta`(베타 손님인지), `page`, `client` |
+| PATCH | `/admin/feedback/{id}` | 관리자 | 확인함 `{ "done": true }` |
+| GET | `/admin/stats` | 관리자 | 숫자 한눈에: `people`(total = 베타 손님 + 가입 회원, newToday·new7d), `activity`(만든 조합·공개 조합·한 번에 담기·재생 24시간/7일/전체), `content`(승인 블록·샘플·사람들이 올린 블록·승인 대기), `newFeedback`, `days`(최근 14일 날짜별 가입·새 조합·재생) |
+
+- 사람 수에서 관리자·샘플 계정·탈퇴한 사람은 뺌. 베타 손님 = `beta-…@beta.asmrblock.com`. 날짜는 한국 시간
+- 재생 = 로그인한 사람의 블록·조합 재생 기록 (같은 사람이 30분 안에 다시 들으면 1번)
 
 ---
 

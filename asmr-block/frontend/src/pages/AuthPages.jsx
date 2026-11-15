@@ -98,6 +98,10 @@ export function SignupPage() {
         </label>
         {error && <p className="text-center text-sm text-danger">{error}</p>}
         <button type="submit" className="btn-pink w-full py-3" disabled={isLoading}>가입하기</button>
+        <p className="text-center text-[11px] leading-relaxed text-faint">
+          가입하면 <Link to="/terms" className="underline hover:text-ink">이용약관</Link>과{' '}
+          <Link to="/privacy" className="underline hover:text-ink">개인정보 처리방침</Link>에 동의하는 거예요. 만 14세 미만은 가입할 수 없어요.
+        </p>
       </form>
     </AuthShell>
   );
