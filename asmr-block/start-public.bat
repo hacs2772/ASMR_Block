@@ -32,7 +32,8 @@ if not errorlevel 1 (
     echo   메모장이 열리면 CHANGE_ME 세 곳을 바꾸고 저장해 주세요:
     echo     TUNNEL_TOKEN   = Cloudflare 터널 토큰
     echo     ADMIN_EMAIL    = 관리자 이메일
-    echo     ADMIN_PASSWORD = 관리자 비밀번호 (10자 이상, 나만 아는 것)
+    echo     ADMIN_PASSWORD = 관리자 비밀번호 - 10자 이상, 나만 아는 것
+    rem  ⚠ 이 if 괄호 묶음 안의 echo에는 괄호를 쓰지 않음 - 괄호가 묶음을 일찍 끝내 버림
     echo   저장한 뒤 이 파일을 다시 실행하면 돼요.
     notepad ".env.public"
     pause
