@@ -144,3 +144,15 @@ a:hover .logo-bar, .logo-live .logo-bar { animation: bar-beat 260ms ease-in-out 
 @media (prefers-reduced-motion: reduce) { .playhead-run { animation: none; } }
 .brick-pop { animation: click-pop 0.32s ease; }
 .drop-slot { position: absolute; border: 2px dashed #ff85af; border-radius: 6px; background: rgba(247, 96, 154, 0.14); }
+
+/* ---------- 블록 꾸미기 (C안: 사진 → 스티커 → 아이콘) ---------- */
+.brick-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+.brick-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.55)); }
+.brick-band { position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: var(--b-base); z-index: 2; }
+.brick-stickers { position: absolute; inset: 3px 6px 7px; z-index: 2; display: flex; align-items: center; justify-content: center; gap: 4%; pointer-events: none; }
+.brick-stickers span { display: flex; height: 62%; }
+.brick-stickers svg { height: 100%; width: auto; filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.35)); }
+.brick-time { position: absolute; right: 6px; bottom: 7px; z-index: 3; color: #fff; font-size: 11px; font-weight: 800; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75); }
+.brick-film { position: absolute; left: 4px; top: 5px; z-index: 4; height: 14px; padding: 0 4px; border-radius: 4px; background: rgba(0, 0, 0, 0.65); color: #fff; font-size: 9px; font-weight: 800; display: flex; align-items: center; }
+.pat-dots { background-image: radial-gradient(rgba(255, 255, 255, 0.18) 1.4px, transparent 1.8px), linear-gradient(180deg, var(--b-top) 0 3px, var(--b-base) 3px); background-size: 9px 9px, auto; }
+.pat-lines { background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.13) 0 2px, transparent 2px 9px), linear-gradient(180deg, var(--b-top) 0 3px, var(--b-base) 3px); }

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IoCheckmarkCircle, IoCube, IoLocation, IoPause, IoPlay } from 'react-icons/io5';
+import { IoCheckmarkCircle, IoCube, IoLocation, IoPause, IoPlay, IoVideocam } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { errorMessage, libraryApi } from '../../api/api';
 import { usePreviewStore } from '../../hooks/usePreview';
 import { colorOf, formatDuration, iconOf, noteOf, TALK_LABEL } from '../../lib/blocks';
 import useAuthStore from '../../store/authStore';
 import Brick from '../brand/Brick';
+import { useVideoModal } from './VideoModal';
 
 /** 상점 블록 폭: 소리 길이에 비례 (너무 짧거나 길어도 카드 안에 들어가게) */
 export const productBrickWidth = (seconds) => Math.round(Math.min(178, Math.max(76, (seconds / 60) * 30)));
@@ -23,12 +24,25 @@ function BlockProductCard({ block, rank, onCollected, preview = false }) {
   const color = colorOf(block.category);
   const group = block.category?.parentName || block.category?.name;
   const canListen = !!(block.fileUrl || block.previewUrl);
+  const openVideo = useVideoModal((s) => s.open);
 
   return (
     <article className="card flex flex-col overflow-hidden transition-colors hover:border-line-strong" data-testid={`block-${block.id}`}>
       <div className="studs relative flex h-28 items-center bg-plate px-4">
         <Brick color={color} width={productBrickWidth(block.duration)} height={48} icon={iconOf(block.category)}
-          label={formatDuration(block.duration)} minutes={block.duration / 60} />
+          label={formatDuration(block.duration)} minutes={block.duration / 60} design={block.design && { ...block.design, hasVideo: false }} />
+        {block.design?.hasVideo && (
+          block.design.videoUrl && !preview ? (
+            <button type="button" onClick={() => openVideo(block)} className="absolute left-3 top-3 flex items-center gap-1 rounded-md bg-black/70 px-2 py-0.5 text-xs font-bold text-white hover:bg-black"
+              data-testid={`watch-${block.id}`}>
+              <IoVideocam size={12} /> 영상 보기
+            </button>
+          ) : (
+            <span className="absolute left-3 top-3 flex items-center gap-1 rounded-md bg-black/70 px-2 py-0.5 text-xs font-bold text-white">
+              <IoVideocam size={12} /> 영상
+            </span>
+          )
+        )}
         <span className={`absolute right-3 top-3 rotate-3 rounded-md px-2 py-0.5 text-xs font-extrabold shadow ${
           paid ? 'bg-warn text-night' : 'bg-success/90 text-night'}`}>
           {paid ? `${block.price}코인` : '무료'}

@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { IoCreate, IoMoon, IoPause, IoPlay, IoStar } from 'react-icons/io5';
+import { IoCreate, IoMoon, IoPause, IoPlay, IoStar, IoVideocam } from 'react-icons/io5';
 import { errorMessage, playlistApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
+import BlockVideoPanel from '../components/playlist/BlockVideoPanel';
 import { CollectComboButton } from '../components/playlist/ComboCard';
 import { colorOf, formatDuration, formatLength, listenLabel } from '../lib/blocks';
 import useAuthStore from '../store/authStore';
@@ -27,6 +28,13 @@ function ListenPage() {
   const [endsAt, setEndsAt] = useState(null);
   const [now, setNow] = useState(Date.now());
   const recorded = useRef(false);
+  // 영상도 같이 보기: 기본은 꺼짐(소리만). 화면을 벗어나거나 잠들기 타이머가 끝나 가면 저절로 꺼짐
+  const [showVideo, setShowVideo] = useState(false);
+  useEffect(() => {
+    const onHide = () => { if (document.hidden) setShowVideo(false); };
+    document.addEventListener('visibilitychange', onHide);
+    return () => document.removeEventListener('visibilitychange', onHide);
+  }, []);
 
   useEffect(() => {
     setCombo(null);
@@ -59,7 +67,7 @@ function ListenPage() {
       const a = audioRef.current;
       if (!a) return;
       if (left <= 0) { a.pause(); a.volume = 1; setEndsAt(null); }
-      else if (left < FADE_SECONDS) a.volume = Math.max(0, left / FADE_SECONDS);
+      else if (left < FADE_SECONDS) { a.volume = Math.max(0, left / FADE_SECONDS); setShowVideo(false); }
     }, 500);
     return () => clearInterval(t);
   }, [endsAt, playing]);
@@ -105,6 +113,7 @@ function ListenPage() {
   if (!combo) return <BlockLoader className="pt-24" label="조합을 불러오는 중" />;
 
   const mine = user && combo.owner?.id === user.id;
+  const videoCount = [...(combo.main?.items || []), ...(combo.mix?.items || [])].filter((i) => i.design?.hasVideo).length;
   const total = combo.totalDuration || 1;
   const ready = render?.status === 'DONE' && render.fileUrl;
   const left = endsAt ? Math.max(0, Math.round((endsAt - now) / 1000)) : null;
@@ -112,6 +121,7 @@ function ListenPage() {
   return (
     <div className="page max-w-3xl pt-10">
       <div className="card overflow-hidden">
+        {showVideo && ready && <BlockVideoPanel combo={combo} currentTime={time.current} playing={playing} />}
         {/* 조합 그림: 첫째 줄 + 레이어드 (블록 폭 = 소리 길이). 누르거나 끌면 그 시간으로 */}
         <div className="studs bg-plate px-6 pb-6 pt-8">
           <div className={`relative ${ready ? 'cursor-pointer touch-none' : ''}`} {...(ready ? seekHandlers : {})}
@@ -146,6 +156,16 @@ function ListenPage() {
             {combo.listenMinutes > 0 ? ` · ${listenLabel(combo.listenMinutes)} 반복 재생` : ''}
           </p>
           {combo.collect?.sourceOwner && <p className="mt-1 text-xs text-pink-text">★ @{combo.collect.sourceOwner.nickname}님의 조합을 담아 왔어요</p>}
+          {videoCount > 0 && ready && (
+            <button type="button" onClick={() => setShowVideo((v) => !v)} aria-pressed={showVideo} data-testid="video-toggle"
+              className="mt-4 inline-flex items-center gap-2 rounded-full border border-line-strong bg-card-active py-1.5 pl-1.5 pr-3.5 text-sm font-bold">
+              <span className={`relative h-5 w-9 rounded-full transition-colors ${showVideo ? 'bg-pink' : 'bg-line-strong'}`}>
+                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${showVideo ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+              </span>
+              <IoVideocam className="text-pink-text" /> 영상도 같이 보기
+              <span className="text-xs font-semibold text-faint">영상 블록 {videoCount}개</span>
+            </button>
+          )}
 
           <div className="mt-6">
             {ready ? (

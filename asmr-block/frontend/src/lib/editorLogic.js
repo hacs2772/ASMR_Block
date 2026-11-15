@@ -26,6 +26,7 @@ export const newKey = () => `b${Date.now().toString(36)}${(counter++).toString(3
 /** 내 블록함 블록 / 서버 트랙 항목 → 편집기 블록 */
 export const editorBlockOf = (b) => ({
   id: b.id ?? b.blockId, title: b.title, duration: b.duration, fileUrl: b.fileUrl, category: b.category, owned: b.owned ?? true,
+  design: b.design || null,
 });
 
 export const brickWidth = (seconds) => Math.max(MIN_BRICK_WIDTH, Math.round(seconds * PX_PER_SECOND));

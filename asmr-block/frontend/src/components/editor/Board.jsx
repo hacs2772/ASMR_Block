@@ -166,7 +166,7 @@ function BoardBrick({ row, item, left, top = 0, width, height, hole, z, enter })
       role="button" aria-label={`${row === 'main' ? '첫째 줄' : '레이어드'} ${item.block.title}`} data-testid={`brick-${row}-${item.block.id}`}>
       <div className={popping ? 'brick-pop' : undefined} style={hole ? { opacity: 0.25, outline: '2px dashed #ff85af', outlineOffset: 1, borderRadius: 6 } : undefined}>
         <Brick color={colorOf(item.block.category)} width={width} height={height} icon={iconOf(item.block.category)} label={label}
-          minutes={item.block.duration / 60} selected={selected} dim={!item.block.owned} />
+          minutes={item.block.duration / 60} selected={selected} dim={!item.block.owned} design={item.block.design} />
       </div>
       {selected && row === 'mix' && <Bubble text={`${formatDuration(item.start)} ~ ${formatDuration(item.start + item.block.duration)}`} />}
     </div>

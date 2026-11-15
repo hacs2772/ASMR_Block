@@ -101,7 +101,8 @@ function Tile({ block }) {
       <div {...handlers} className="cursor-grab select-none pr-2 transition-transform hover:-translate-y-0.5" role="button" tabIndex={0}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); add(); } }}
         aria-label={`${block.title} 넣기`} data-testid={`tile-${block.id}`}>
-        <Brick color={colorOf(block.category)} width={Math.max(width, 60)} height={TILE_H} icon={iconOf(block.category)} minutes={block.duration / 60} />
+        <Brick color={colorOf(block.category)} width={Math.max(width, 60)} height={TILE_H} icon={iconOf(block.category)} minutes={block.duration / 60}
+          design={block.design} />
       </div>
       <p className="mt-1.5 truncate text-xs font-semibold" title={block.title}>{block.title}</p>
       <p className="text-[11px] text-faint">{formatDuration(block.duration)}</p>
@@ -117,7 +118,7 @@ export function DragGhost() {
   return (
     <div ref={(el) => { geo.ghost = el; }} className="drag-ghost left-0 top-0" style={{ transform: 'translate(-999px,-999px)' }} data-testid="drag-ghost">
       <Brick color={colorOf(b.category)} width={drag.width} height={drag.height} icon={iconOf(b.category)} minutes={b.duration / 60}
-        label={drag.width >= 76 ? formatDuration(b.duration) : null} />
+        label={drag.width >= 76 ? formatDuration(b.duration) : null} design={b.design} />
     </div>
   );
 }

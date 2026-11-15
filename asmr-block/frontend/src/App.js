@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Navigate, Route, Routes, useLocation, useParam
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+import { VideoModal } from './components/block/VideoModal';
 import { ComingSoonModal } from './components/common/ComingSoon';
 import Footer from './components/common/Footer';
 import Header from './components/common/Header';
@@ -64,6 +65,7 @@ function App() {
         </main>
         <Footer />
         <ComingSoonModal />
+        <VideoModal />
         <ToastContainer position="bottom-center" autoClose={2800} hideProgressBar theme="dark" />
       </div>
     </Router>

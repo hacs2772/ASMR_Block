@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { IoCash, IoCloudUpload, IoMusicalNotes, IoShieldCheckmark } from 'react-icons/io5';
+import { IoCash, IoCloudUpload, IoImage, IoMusicalNotes, IoShieldCheckmark, IoVideocam } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { catalogApi, errorMessage, sellerApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
@@ -8,6 +8,7 @@ import BetaLoginButton from '../components/common/BetaLoginButton';
 import BlockProductCard from '../components/block/BlockProductCard';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
 import { colorOf, formatDuration, TALK_LABEL } from '../lib/blocks';
+import { MAX_STICKERS, PATTERNS, STICKER_CODES, STICKERS } from '../lib/stickers';
 import useAuthStore from '../store/authStore';
 
 const PRICE_STEPS = [0, 10, 20, 30, 50, 100];
@@ -17,10 +18,10 @@ const STATUS = {
   REJECTED: { label: '거절됨', cls: 'bg-danger/15 text-danger' },
 };
 
-/** 파일의 소리 길이(초)를 브라우저에서 읽어 봄 (미리보기 블록 길이 · 길이 확인용) */
-function readDuration(url) {
+/** 파일의 길이(초)를 브라우저에서 읽어 봄 (미리보기 블록 길이 · 길이 확인용). 영상도 같은 방법 */
+function readDuration(url, isVideo = false) {
   return new Promise((resolve) => {
-    const a = new Audio();
+    const a = isVideo ? document.createElement('video') : new Audio();
     a.preload = 'metadata';
     a.onloadedmetadata = () => resolve(Number.isFinite(a.duration) ? a.duration : null);
     a.onerror = () => resolve(null);
@@ -54,6 +55,16 @@ function SellPage() {
   const [progress, setProgress] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef(null);
+  // 영상(선택): 소리 파일이 없으면 영상의 소리를 블록 음원으로 씀
+  const [video, setVideo] = useState(null);
+  const [videoDuration, setVideoDuration] = useState(null);
+  const videoInputRef = useRef(null);
+  // 블록 꾸미기(C안): 사진이 있으면 사진, 없으면 스티커 + 무늬
+  const [cover, setCover] = useState(null);
+  const [coverUrl, setCoverUrl] = useState(null);
+  const [stickers, setStickers] = useState([]);
+  const [pattern, setPattern] = useState('dots');
+  const coverInputRef = useRef(null);
 
   const maxPrice = policy?.maxPrice ?? 100;
   const maxFileMb = policy?.maxFileMb ?? 50;
@@ -68,6 +79,29 @@ function SellPage() {
     if (hash === '#mine' && mine) document.getElementById('mine')?.scrollIntoView({ behavior: 'smooth' });
   }, [hash, mine]);
   useEffect(() => () => { if (fileUrl) URL.revokeObjectURL(fileUrl); }, [fileUrl]);
+  useEffect(() => () => { if (coverUrl) URL.revokeObjectURL(coverUrl); }, [coverUrl]);
+
+  const maxVideoMb = policy?.maxVideoMb ?? 200;
+  const maxImageMb = policy?.maxImageMb ?? 10;
+  const pickVideo = async (f) => {
+    if (!f) return undefined;
+    if (f.size > maxVideoMb * 1024 * 1024) return toast.error(`영상은 ${maxVideoMb}MB까지 올릴 수 있어요.`);
+    setVideo(f);
+    const url = URL.createObjectURL(f);
+    setVideoDuration(await readDuration(url, true));
+    URL.revokeObjectURL(url);
+    if (!title) setTitle(f.name.replace(/\.[^.]+$/, '').slice(0, 60));
+    return undefined;
+  };
+  const pickCover = (f) => {
+    if (!f) return undefined;
+    if (f.size > maxImageMb * 1024 * 1024) return toast.error(`사진은 ${maxImageMb}MB까지 올릴 수 있어요.`);
+    setCover(f);
+    setCoverUrl(URL.createObjectURL(f));
+    return undefined;
+  };
+  const toggleSticker = (code) => setStickers((list) => (list.includes(code) ? list.filter((c) => c !== code)
+    : list.length >= MAX_STICKERS ? list : [...list, code]));
 
   const pick = async (f) => {
     if (!f) return;
@@ -82,24 +116,31 @@ function SellPage() {
 
   const group = groups.find((g) => g.id === groupId);
   const category = group?.children?.find((c) => c.id === categoryId);
-  const lengthProblem = duration && policy
-    ? (duration < policy.minSeconds ? `${Math.round(policy.minSeconds)}초보다 길어야 해요` : duration > policy.maxSeconds ? `${policy.maxSeconds / 60}분보다 짧아야 해요` : null)
+  // 소리 길이: 소리 파일이 있으면 그것, 없으면 영상
+  const soundLength = file ? duration : videoDuration;
+  const lengthProblem = soundLength && policy
+    ? (soundLength < policy.minSeconds ? `${Math.round(policy.minSeconds)}초보다 길어야 해요` : soundLength > policy.maxSeconds ? `${policy.maxSeconds / 60}분보다 짧아야 해요` : null)
     : null;
-  const missing = !file ? '소리 파일을 골라 주세요' : lengthProblem || (!title.trim() ? '이름을 적어 주세요'
+  const missing = !file && !video ? '소리 파일이나 영상을 골라 주세요' : lengthProblem || (!title.trim() ? '이름을 적어 주세요'
     : !categoryId ? '트리거 종류를 골라 주세요' : !agree ? '직접 녹음했는지 확인해 주세요' : null);
 
   // 상점에서 보일 모습 그대로
   const previewBlock = useMemo(() => ({
-    id: -1, title: title.trim() || '내 블록 이름', description: note, duration: duration || 200, price,
+    id: -1, title: title.trim() || '내 블록 이름', description: note, duration: soundLength || 200, price,
     talkType, recordedPlace: place.trim() || null, owned: true, fileUrl,
     category: category ? { ...category, parentName: group?.name, color: group?.color } : group ? { ...group, parentName: group.name } : null,
     uploader: { nickname: user?.nickname || '나' },
-  }), [title, note, duration, price, talkType, place, category, group, user, fileUrl]);
+    design: { coverUrl, stickers, pattern, hasVideo: !!video, videoUrl: null },
+  }), [title, note, soundLength, price, talkType, place, category, group, user, fileUrl, coverUrl, stickers, pattern, video]);
 
   const submit = async () => {
     if (missing) return;
     const form = new FormData();
-    form.append('file', file);
+    if (file) form.append('file', file);
+    if (video) form.append('video', video);
+    if (cover) form.append('cover', cover);
+    if (stickers.length) form.append('stickers', stickers.join(','));
+    form.append('pattern', pattern);
     form.append('title', title.trim());
     form.append('categoryId', String(categoryId));
     form.append('license', 'OWN');
@@ -112,6 +153,7 @@ function SellPage() {
       await sellerApi.upload(form, setProgress);
       toast.success('올렸어요! 검수가 끝나면 블록 상점에 올라가요.');
       setFile(null); setFileUrl(null); setDuration(null); setTitle(''); setPlace(''); setNote(''); setAgree(false);
+      setVideo(null); setVideoDuration(null); setCover(null); setCoverUrl(null); setStickers([]);
       loadMine();
     } catch (e) {
       toast.error(errorMessage(e, '올리지 못했어요.'));
@@ -144,7 +186,7 @@ function SellPage() {
           <div className="card space-y-7 p-6 sm:p-8">
             {/* 파일 */}
             <div>
-              <p className="label">소리 파일</p>
+              <p className="label">소리 파일 <span className="ml-1 text-xs font-normal text-faint">· 영상만 올려도 돼요 (영상의 소리를 써요)</span></p>
               <button type="button" onClick={() => inputRef.current?.click()}
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)}
                 onDrop={(e) => { e.preventDefault(); setDragOver(false); pick(e.dataTransfer.files?.[0]); }}
@@ -169,6 +211,59 @@ function SellPage() {
               </button>
               <input ref={inputRef} type="file" className="hidden" data-testid="sell-file"
                 accept={policy ? policy.extensions.map((x) => `.${x}`).join(',') : 'audio/*'} onChange={(e) => pick(e.target.files?.[0])} />
+
+              {/* 영상 (선택) */}
+              <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl bg-card-active p-3.5">
+                <IoVideocam size={20} className="text-pink-text" />
+                <div className="min-w-0 flex-1 text-sm">
+                  {video ? (
+                    <p className="truncate"><b>{video.name}</b> <span className="text-xs text-muted">{(video.size / 1024 / 1024).toFixed(0)}MB{videoDuration ? ` · ${formatDuration(videoDuration)}` : ''}</span></p>
+                  ) : (
+                    <p><b>영상도 같이 올리기</b> <span className="text-xs text-faint">(선택)</span></p>
+                  )}
+                  <p className="text-xs text-muted">"진짜 그 장면이구나" 하고 볼 수 있게. 듣는 사람이 "영상도 같이 보기"를 켜면 보여요 · 가볍게 480p로 저장</p>
+                </div>
+                {video ? (
+                  <button type="button" className="btn-ghost btn-sm" onClick={() => { setVideo(null); setVideoDuration(null); }}>빼기</button>
+                ) : (
+                  <button type="button" className="btn-line btn-sm" onClick={() => videoInputRef.current?.click()} data-testid="sell-video-pick">영상 고르기</button>
+                )}
+                <input ref={videoInputRef} type="file" className="hidden" data-testid="sell-video"
+                  accept={policy ? policy.videoExtensions.map((x) => `.${x}`).join(',') : 'video/*'} onChange={(e) => pickVideo(e.target.files?.[0])} />
+              </div>
+            </div>
+
+            {/* 블록 꾸미기 (C안) */}
+            <div>
+              <p className="label">블록 꾸미기 <span className="ml-1 text-xs font-normal text-faint">· 사진이 있으면 사진, 없으면 스티커가 블록 겉면에 보여요</span></p>
+              <div className="flex flex-wrap items-center gap-3 rounded-xl bg-card-active p-3.5">
+                {coverUrl ? <img src={coverUrl} alt="고른 사진" className="h-12 w-20 rounded-md object-cover" /> : <IoImage size={22} className="text-pink-text" />}
+                <p className="min-w-0 flex-1 text-sm"><b>겉면 사진</b> <span className="text-xs text-faint">(선택) 녹음한 장소나 장면 사진 · {maxImageMb}MB까지</span></p>
+                {cover ? (
+                  <button type="button" className="btn-ghost btn-sm" onClick={() => { setCover(null); setCoverUrl(null); }}>빼기</button>
+                ) : (
+                  <button type="button" className="btn-line btn-sm" onClick={() => coverInputRef.current?.click()} data-testid="sell-cover-pick">사진 고르기</button>
+                )}
+                <input ref={coverInputRef} type="file" className="hidden" data-testid="sell-cover"
+                  accept={policy ? policy.imageExtensions.map((x) => `.${x}`).join(',') : 'image/*'} onChange={(e) => pickCover(e.target.files?.[0])} />
+              </div>
+              <p className="mb-2 mt-4 text-sm font-bold">스티커 <span className="text-xs font-normal text-faint">· 최대 {MAX_STICKERS}개{cover ? ' (사진을 빼면 보여요)' : ''}</span></p>
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+                {STICKER_CODES.map((code) => (
+                  <button key={code} type="button" onClick={() => toggleSticker(code)} data-testid={`sticker-${code}`}
+                    className={`flex flex-col items-center gap-1 rounded-xl border px-1 pb-1.5 pt-2 text-[11px] transition-colors ${
+                      stickers.includes(code) ? 'border-pink bg-pink-soft text-pink-text' : 'border-line bg-card text-muted hover:text-ink'}`}>
+                    <span className="flex h-7 [&>svg]:h-full [&>svg]:w-auto" dangerouslySetInnerHTML={{ __html: STICKERS[code].svg }} />
+                    {STICKERS[code].label}
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-xs text-muted">무늬</span>
+                {PATTERNS.map((p) => (
+                  <button key={p.key} type="button" className={`chip px-3 py-1 text-xs ${pattern === p.key ? 'chip-on' : ''}`} onClick={() => setPattern(p.key)}>{p.label}</button>
+                ))}
+              </div>
             </div>
 
             <Field label="이름" hint="상점에 보이는 이름">
@@ -259,6 +354,7 @@ function SellPage() {
                         {u.recordedPlace ? ` · ${u.recordedPlace}` : ''}
                       </p>
                     </div>
+                    {u.design?.hasVideo && <span className="flex items-center gap-1 text-xs text-muted"><IoVideocam /> 영상</span>}
                     <span className="hidden text-xs text-muted sm:block">담은 사람 {u.collectedCount}명</span>
                     <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${STATUS[u.status]?.cls}`}>{STATUS[u.status]?.label}</span>
                   </div>
