@@ -49,7 +49,7 @@ cd asmr-block && docker compose up --build   # 전체 실행 (웹 :3000, API :80
 cd asmr-block/backend && ./gradlew test      # 백엔드 통합 테스트 (Docker 필요)
 cd asmr-block/frontend && CI=true npm run build && CI=true npx react-scripts test --watchAll=false   # 웹 빌드·테스트
 cd asmr-block/mobile && npx expo start       # 앱 (휴대폰 Expo Go로 QR 스캔, 같은 와이파이)
-cd asmr-block/mobile && npm run typecheck && npm run lint && npm test
+cd asmr-block/mobile && npx tsc --noEmit && npx eslint . && npx jest   # CI와 같은 명령 (npm run lint는 scripts/를 안 봄)
 ```
 테스트 계정: `test@asmrblock.com` / `password123` (관리자: `admin@asmrblock.com`)
 
