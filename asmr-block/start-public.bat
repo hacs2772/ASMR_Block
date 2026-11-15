@@ -41,10 +41,12 @@ if not errorlevel 1 (
 )
 
 echo.
-echo [4/4] 공개 서버 켜기 (처음엔 몇 분 걸려요)
-docker compose -f docker-compose.public.yml --env-file .env.public up -d --build
+echo [4/4] 공개 서버 켜기 - 서버가 다 준비될 때까지 기다려요. 처음이나 업데이트 뒤엔 5~10분
+docker compose -f docker-compose.public.yml --env-file .env.public up -d --build --wait --wait-timeout 900
 if errorlevel 1 (
-    echo   켜지 못했어요. 위의 오류 글을 확인해 주세요.
+    echo.
+    echo   서버가 제대로 켜지지 않았어요. 아래 줄을 PowerShell에 붙여 넣으면 원인 글이 보여요:
+    echo   docker compose -f docker-compose.public.yml --env-file .env.public logs --tail 60 backend
     pause
     exit /b 1
 )

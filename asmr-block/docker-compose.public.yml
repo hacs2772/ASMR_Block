@@ -2,7 +2,7 @@
 # ASMR Block 공개용 - 내 PC를 서버로 쓰고 Cloudflare Tunnel로 https://asmrblock.com 에 연결
 #
 #   start-public.bat 을 더블클릭 (처음이면 .env.public 을 만들어 줌)
-#   또는: docker compose -f docker-compose.public.yml --env-file .env.public up -d --build
+#   또는: docker compose -f docker-compose.public.yml --env-file .env.public up -d --build --wait
 #
 #   - 개발용(docker-compose.yml)과 DB·파일이 따로예요. 테스트 계정(password123) 없이, 샘플 블록·조합만 넣고 시작
 #   - 관리자 계정 = .env.public 의 ADMIN_EMAIL / ADMIN_PASSWORD
@@ -60,7 +60,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 30
-      start_period: 120s
+      # 처음 켤 때 샘플 소리 만들기(1~2분) + DB 정리까지 넉넉히 (start-public.bat이 준비될 때까지 기다림)
+      start_period: 600s
 
   web:
     build:
