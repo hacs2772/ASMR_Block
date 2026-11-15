@@ -37,6 +37,7 @@ public class Block {
     private String attribution;
     private Integer playCount;
     private BlockStatus status;
+    private String reviewNote;       // 관리자 검수 메모 (돌려보낸 이유)
     private Boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

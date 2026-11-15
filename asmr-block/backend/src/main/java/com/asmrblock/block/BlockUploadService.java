@@ -8,6 +8,7 @@ import com.asmrblock.block.BlockDtos.UploadPolicyResponse;
 import com.asmrblock.config.AppProperties;
 import com.asmrblock.category.CategoryService;
 import com.asmrblock.common.ApiException;
+import com.asmrblock.sticker.StickerService;
 import com.asmrblock.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +47,7 @@ public class BlockUploadService {
     private final AudioService audioService;
     private final StorageService storageService;
     private final CategoryService categoryService;
+    private final StickerService stickerService;
     private final BlockMapper blockMapper;
     private final BlockService blockService;
     private final TransactionTemplate transactionTemplate;
@@ -57,12 +59,12 @@ public class BlockUploadService {
                 MIN_DURATION_SECONDS, MAX_DURATION_SECONDS, ALLOWED_EXTENSIONS.stream().sorted().toList(),
                 MAX_VIDEO_MB, VIDEO_EXTENSIONS.stream().sorted().toList(),
                 MAX_IMAGE_MB, IMAGE_EXTENSIONS.stream().sorted().toList(),
-                BlockDesign.STICKERS, BlockDesign.PATTERNS);
+                stickerService.activeCodes(), BlockDesign.PATTERNS);
     }
 
     public BlockResponse upload(Long uploaderId, BlockUploadRequest request) {
         validate(request);
-        String stickers = BlockDesign.normalizeStickers(request.stickers());
+        String stickers = stickerService.normalize(request.stickers());
         String pattern = BlockDesign.normalizePattern(request.pattern());
         boolean hasAudio = present(request.file());
         boolean hasVideo = present(request.video());

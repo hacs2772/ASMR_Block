@@ -27,11 +27,11 @@ public class AdminBlockController {
         return ApiResponse.ok(blockService.searchForAdmin(status, PageQuery.of(page, size)));
     }
 
-    // 승인 / 거절
+    // 승인 / 거절 (거절할 때 note에 이유를 적으면 판매자의 "내가 올린 블록"에 보임)
     @PatchMapping("/{blockId}/status")
     public ApiResponse<BlockResponse> updateStatus(@PathVariable Long blockId,
                                                    @Valid @RequestBody BlockStatusRequest request) {
-        return ApiResponse.ok(blockService.updateStatus(blockId, request.status()));
+        return ApiResponse.ok(blockService.updateStatus(blockId, request.status(), request.note()));
     }
 
     // 가격(코인) 정하기. 0이면 무료, 유료가 되면 앞 30초 맛보기 파일을 만듦

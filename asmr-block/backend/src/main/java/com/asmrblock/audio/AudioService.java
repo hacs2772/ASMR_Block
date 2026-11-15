@@ -92,6 +92,15 @@ public class AudioService {
                 output.toString()), audio.processTimeout());
     }
 
+    /** 스티커 그림 (관리자 업로드): 256px 안으로 줄인 투명 배경 PNG */
+    public void stickerImage(Path input, Path output) {
+        ffmpeg.ffmpeg(List.of(
+                "-i", input.toString(),
+                "-vf", "scale=w='min(256,iw)':h='min(256,ih)':force_original_aspect_ratio=decrease",
+                "-frames:v", "1", "-pix_fmt", "rgba",
+                output.toString()), audio.processTimeout());
+    }
+
     public int duration(Path file) {
         return ffmpeg.probeDurationSeconds(file);
     }

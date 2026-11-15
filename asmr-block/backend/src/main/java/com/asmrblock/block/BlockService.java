@@ -90,9 +90,11 @@ public class BlockService {
 
     // 관리자: 검수 상태 변경. 승인되면 올린 사람의 블록함에 들어가고, 유료면 맛보기를 만듦
     @Transactional
-    public BlockResponse updateStatus(Long blockId, BlockStatus status) {
+    public BlockResponse updateStatus(Long blockId, BlockStatus status, String note) {
         findAny(blockId);
-        blockMapper.updateStatus(blockId, status);
+        // 메모는 돌려보낼 때만 남김 (승인하면 지움)
+        String reviewNote = status == BlockStatus.REJECTED && note != null && !note.isBlank() ? note.trim() : null;
+        blockMapper.updateStatus(blockId, status, reviewNote);
         Block block = findAny(blockId);
         if (status == BlockStatus.APPROVED) {
             libraryMapper.insert(block.getUploaderId(), blockId, LibrarySource.CREATOR);

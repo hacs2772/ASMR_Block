@@ -11,14 +11,73 @@
         ORDER BY COALESCE(p.sort_order, c.sort_order), c.parent_id NULLS FIRST, c.sort_order
     </select>
 
+    <!-- 대분류를 숨기면 그 아래 소분류도 못 씀 -->
     <select id="existsCategory" resultType="boolean">
-        SELECT EXISTS(SELECT 1 FROM sound_category WHERE id = #{id} AND is_active = true)
+        SELECT EXISTS(SELECT 1 FROM sound_category c LEFT JOIN sound_category p ON p.id = c.parent_id
+                      WHERE c.id = #{id} AND c.is_active = true AND (p.id IS NULL OR p.is_active = true))
     </select>
 
     <select id="isLeafCategory" resultType="boolean">
-        SELECT EXISTS(SELECT 1 FROM sound_category c WHERE c.id = #{id} AND c.is_active = true
-                      AND NOT EXISTS (SELECT 1 FROM sound_category ch WHERE ch.parent_id = c.id))
+        SELECT EXISTS(SELECT 1 FROM sound_category c LEFT JOIN sound_category p ON p.id = c.parent_id
+                      WHERE c.id = #{id} AND c.is_active = true AND (p.id IS NULL OR p.is_active = true)
+                      AND NOT EXISTS (SELECT 1 FROM sound_category ch WHERE ch.parent_id = c.id AND ch.is_active = true))
     </select>
+
+    <!-- ===== 관리자 ===== -->
+    <select id="findAllForAdmin" resultType="com.asmrblock.category.SoundCategory">
+        SELECT c.*, p.name AS parent_name, p.code AS parent_code,
+               (SELECT COUNT(*) FROM block b WHERE b.category_id = c.id AND b.is_active = true) AS block_count
+        FROM sound_category c
+        LEFT JOIN sound_category p ON p.id = c.parent_id
+        WHERE c.code IS NOT NULL
+        ORDER BY c.parent_id NULLS FIRST, c.sort_order, c.id
+    </select>
+
+    <select id="findAnyById" resultType="com.asmrblock.category.SoundCategory">
+        SELECT c.*, p.name AS parent_name, p.code AS parent_code
+        FROM sound_category c
+        LEFT JOIN sound_category p ON p.id = c.parent_id
+        WHERE c.id = #{id}
+    </select>
+
+    <select id="existsCode" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM sound_category WHERE code = #{code})
+    </select>
+
+    <select id="nextSortOrder" resultType="int">
+        SELECT COALESCE(MAX(sort_order), 0) + 1 FROM sound_category
+        WHERE <choose><when test="parentId == null">parent_id IS NULL</when><otherwise>parent_id = #{parentId}</otherwise></choose>
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sound_category (code, name, color, icon, description, parent_id, sort_order, is_active)
+        VALUES (#{code}, #{name}, #{color}, #{icon}, #{description}, #{parentId}, #{sortOrder}, true)
+    </insert>
+
+    <update id="updateCode">
+        UPDATE sound_category SET code = #{code} WHERE id = #{id}
+    </update>
+
+    <update id="update">
+        UPDATE sound_category
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="color != null">color = #{color},</if>
+            <if test="icon != null">icon = #{icon},</if>
+            <if test="description != null">description = NULLIF(#{description}, ''),</if>
+            <if test="active != null">is_active = #{active},</if>
+            id = id
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateChildrenColor">
+        UPDATE sound_category SET color = #{color} WHERE parent_id = #{parentId}
+    </update>
+
+    <update id="updateSortOrder">
+        UPDATE sound_category SET sort_order = #{sortOrder} WHERE id = #{id}
+    </update>
 
     <select id="findAllTags" resultType="com.asmrblock.category.SoundTag">
         SELECT * FROM sound_tag WHERE is_active = true ORDER BY sort_order

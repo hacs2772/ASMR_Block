@@ -51,7 +51,7 @@ public class SecurityConfig {
                     "/api/v1/auth/refresh", "/api/v1/auth/logout",
                     "/api/v1/auth/beta", "/api/v1/auth/beta-login").permitAll()
                 .requestMatchers(HttpMethod.GET,
-                    "/api/v1/categories", "/api/v1/tags",
+                    "/api/v1/categories", "/api/v1/tags", "/api/v1/stickers",
                     "/api/v1/blocks", "/api/v1/blocks/*",
                     "/api/v1/playlists/public",
                     "/api/v1/playlists/*", "/api/v1/playlists/*/render"  // 공개 플레이리스트 (비공개는 서비스에서 막음)

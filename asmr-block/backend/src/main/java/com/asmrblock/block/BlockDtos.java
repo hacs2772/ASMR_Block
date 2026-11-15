@@ -156,7 +156,7 @@ public final class BlockDtos {
 
     /**
      * 내가 올린 블록 (판매자용). 검수 상태와 함께, 몇 명이 담았는지(collectedCount, 나 제외)
-     * fileUrl: 내 블록이라 항상 전체 음원
+     * fileUrl: 내 블록이라 항상 전체 음원, reviewNote: 돌려보낸 이유 (REJECTED일 때만)
      */
     public record MyUploadResponse(
             Long id,
@@ -167,6 +167,7 @@ public final class BlockDtos {
             TalkType talkType,
             String recordedPlace,
             BlockStatus status,
+            String reviewNote,
             CategoryResponse category,
             DesignResponse design,
             long collectedCount,
@@ -177,14 +178,18 @@ public final class BlockDtos {
             return new MyUploadResponse(block.getId(), block.getTitle(), storage.publicUrl(block.getFileKey()),
                     block.getDuration(), block.getPrice(),
                     block.getTalkType() == null ? TalkType.NONE : block.getTalkType(), block.getRecordedPlace(),
-                    block.getStatus(), CategoryResponse.from(block.getCategory()), DesignResponse.of(block, storage, true),
+                    block.getStatus(), block.getReviewNote(), CategoryResponse.from(block.getCategory()), DesignResponse.of(block, storage, true),
                     collectedCount, block.getPlayCount(), block.getCreatedAt());
         }
     }
 
     public record BlockStatusRequest(
             @NotNull(message = "status는 필수입니다. (APPROVED, REJECTED, PENDING)")
-            BlockStatus status) {
+            BlockStatus status,
+
+            /** 돌려보내는 이유 (REJECTED일 때만 저장, 판매자에게 보임) */
+            @Size(max = 200, message = "이유는 200자 이내로 적어 주세요.")
+            String note) {
     }
 
     /** 관리자: 가격(코인) 정하기. 0이면 무료 */

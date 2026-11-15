@@ -111,7 +111,7 @@
     </select>
 
     <update id="updateStatus">
-        UPDATE block SET status = #{status} WHERE id = #{id}
+        UPDATE block SET status = #{status}, review_note = #{note} WHERE id = #{id}
     </update>
 
     <update id="incrementPlayCount">

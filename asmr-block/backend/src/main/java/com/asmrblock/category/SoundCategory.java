@@ -28,5 +28,6 @@ public class SoundCategory {
     private String parentCode;
     private Integer sortOrder;
     private Boolean isActive;
+    private Integer blockCount;      // 관리자 목록: 이 분류에 달린 블록 수
     private LocalDateTime createdAt;
 }
