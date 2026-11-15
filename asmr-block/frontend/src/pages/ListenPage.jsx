@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { IoCreate, IoMoon, IoPause, IoPlay, IoStar, IoVideocam } from 'react-icons/io5';
 import { errorMessage, playlistApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
+import BetaLoginButton from '../components/common/BetaLoginButton';
 import BlockVideoPanel from '../components/playlist/BlockVideoPanel';
 import { CollectComboButton } from '../components/playlist/ComboCard';
 import { colorOf, formatDuration, formatLength, listenLabel } from '../lib/blocks';
@@ -193,7 +194,10 @@ function ListenPage() {
               </div>
             ) : !isAuthenticated ? (
               <div className="rounded-xl bg-card-active p-5 text-center text-sm text-muted">
-                로그인하면 이 조합을 끊김 없는 완성본으로 들을 수 있어요. <Link to="/login" className="font-bold text-pink-text">로그인</Link>
+                <p>로그인하면 이 조합을 끊김 없는 완성본으로 들을 수 있어요.</p>
+                {/* 베타: 링크로 처음 온 사람도 가입 없이 바로 듣게 (누르면 이 화면 그대로 완성본 만들기 시작) */}
+                <BetaLoginButton className="mx-auto mt-3 max-w-xs" />
+                <p className="mt-3">계정이 있으면 <Link to="/login" state={{ from: `/listen/${id}` }} className="font-bold text-pink-text">로그인</Link></p>
               </div>
             ) : (
               <button type="button" className="btn-pink" onClick={request}>{render?.status === 'FAILED' ? '다시 만들기' : '완성본 만들기'}</button>

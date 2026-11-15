@@ -37,6 +37,7 @@
   - "조합 만들기" 버튼 = 블록 모양(`components/home/AssembleButton.jsx`): 누르면 블록 셋이 날아와 딸깍 조립된 뒤 편집기로. App Store/Google Play 버튼은 **출시 전 안내**(`components/common/ComingSoon.jsx`)
   - 웹 편집기 = 앱과 같은 옆으로 누운 두 줄(`pages/CreatePage.jsx`, `components/editor/`), 계산은 `src/lib/editorLogic.js`(앱 editor.ts와 같은 규칙, jest 테스트). 끌기는 pointer 이벤트(마우스·터치)로, 손가락 위치는 DOM에 직접 넣어 다시 그리지 않음
   - API는 `src/api/api.js` 한 곳. 색은 `tailwind.config.js`(night·card·pink·ink·muted…)만 씀
+  - 검색·공유: `public/index.html`(설명·og 태그, 그림 `public/og-image.png` = `node scripts/make-og-image.js [Pretendard woff2 폴더]`), `public/robots.txt`·`sitemap.xml`(주소 https://asmrblock.com). 링크로 처음 온 비로그인 사람에게는 듣기 화면에도 "베타로 바로 시작"
 - `asmr-block/docker-compose.yml` — DB + 백엔드 + 웹 한 번에 실행 (개발용, 테스트 계정·샘플 블록 있음)
 - `asmr-block/docker-compose.public.yml` — **공개용**(asmrblock.com, 내 PC + Cloudflare Tunnel): 프로필 `public`(`application-public.yml`, 테스트 계정 없음, 샘플 블록·조합만 `db/samples/R__public_samples.sql` — 로그인 불가 계정 "ASMR Block 샘플"·전부 무료·id 안 정함·여러 번 실행 안전, Swagger 숨김, 영상 90MB), DB·파일 따로, 웹 nginx가 `/api`·`/files`를 백엔드로 넘김(한 주소), `tunnel`(cloudflared, `TUNNEL_TOKEN`). 비밀값은 `.env.public`(gitignore, `start-public.bat`이 `scripts/new-env-public.ps1`로 랜덤 생성). 관리자 계정 = `APP_ADMIN_EMAIL/PASSWORD` → `AdminAccountInitializer`가 켜질 때 만들거나 비밀번호를 맞춤
 - `asmr-block/docs` — API 명세(`api_specification.md`), DB 명세, i18n 가이드

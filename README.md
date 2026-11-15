@@ -251,6 +251,13 @@ npx expo start
 5. **`start-public.bat` 한 번 더** → 처음엔 몇 분 걸려요 → 휴대폰 **와이파이를 끄고(LTE)** https://asmrblock.com 접속해 보기
 6. 관리자 이메일로 로그인 → 위 메뉴 **관리자** → 진짜 녹음 블록을 올리고 승인 (샘플 옆에 같이 보여요)
 
+**검색에 나오게 하기 (무료, 한 번만)**
+- 주소창에 `asmrblock.com`을 치면 지금도 바로 들어와요. `asmrblock`만 치면 **검색**이 되기 때문에, 검색 엔진에 사이트를 알려 줘야 나와요
+- 준비해 둔 것: 검색 설명·키워드, 링크 공유 카드 그림(`frontend/public/og-image.png`, 카톡에 링크를 붙이면 보임 — `node scripts/make-og-image.js`로 다시 만듦), `robots.txt`, `sitemap.xml`
+- **Google Search Console** (search.google.com/search-console): 도메인 `asmrblock.com` 추가 → Cloudflare로 자동 확인 → Sitemaps에 `https://asmrblock.com/sitemap.xml`
+- **네이버 서치어드바이저** (searchadvisor.naver.com, 한국 사용자는 네이버를 많이 씀): 사이트 등록 `https://asmrblock.com` → 소유 확인은 **HTML 태그**(받은 `naver-site-verification` 값을 `frontend/public/index.html`에 넣고 `start-public.bat` 다시 실행) → 요청 > 사이트맵 제출
+- 검색 결과에 나오기까지 며칠~2주쯤 걸려요
+
 **계속 켜 두려면 (PC 설정)**
 - Windows 설정 → 시스템 → 전원 → **절전 모드: 안 함** (화면 꺼짐은 괜찮아요)
 - Docker Desktop 설정 → General → **Start Docker Desktop when you sign in** 켜기

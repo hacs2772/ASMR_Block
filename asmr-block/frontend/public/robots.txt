@@ -1,0 +1,8 @@
+# ASMR Block - 검색 엔진 안내
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /me/
+Disallow: /profile
+
+Sitemap: https://asmrblock.com/sitemap.xml
