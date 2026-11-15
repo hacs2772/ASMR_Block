@@ -10,7 +10,7 @@
 #   - 내 PC 확인용: http://localhost:8088 (음원 주소는 https://asmrblock.com 기준이라 소리는 터널이 켜져야 나옴)
 #
 # 끄기: docker compose -f docker-compose.public.yml --env-file .env.public down
-# ⚠ down -v 는 공개용 DB·올린 음원까지 지워요 (되돌릴 수 없음)
+# ⚠ down -v 는 공개용 DB·올린 음원까지 지워요 (되돌릴 수 없음, backups 폴더의 백업으로만 되살릴 수 있음)
 # =====================================================
 name: asmr-block-public
 
@@ -74,6 +74,28 @@ services:
       - "127.0.0.1:8088:80"   # 내 PC에서만 확인용
     depends_on:
       - backend
+
+  # 자동 백업: 켜질 때 한 번 + 하루에 한 번 → asmr-block/backups 폴더 (DB 14일치 + 올린 파일)
+  # 가끔 backups 폴더를 USB나 클라우드 드라이브에도 복사해 두세요 (PC 고장 대비)
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/backup-loop.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: asmrblock
+      PGDATABASE: asmrblock
+      PGPASSWORD: ${DB_PASSWORD:?.env.public 에 DB_PASSWORD 가 없어요}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      TZ: Asia/Seoul
+    volumes:
+      - ./scripts/backup-loop.sh:/backup-loop.sh:ro
+      - ./backups:/backups
+      - media:/media
+    depends_on:
+      # 서버가 DB 정리(마이그레이션)까지 끝낸 뒤에 첫 백업
+      backend:
+        condition: service_healthy
 
   tunnel:
     image: cloudflare/cloudflared:latest

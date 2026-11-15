@@ -58,5 +58,6 @@ echo.
 echo  이 창은 닫아도 서버는 계속 켜져 있어요.
 echo  PC를 다시 켜면 Docker Desktop 이 켜질 때 저절로 다시 켜져요.
 echo  끄려면: stop-public.bat
+echo  자동 백업: 켜질 때와 하루에 한 번 backups 폴더에 저장돼요. 가끔 USB나 클라우드에도 복사해 두세요.
 echo.
 pause

@@ -237,6 +237,7 @@ npx expo start
 - 베타 참여자가 둘러볼 수 있게 **샘플 블록 20개·샘플 조합 5개**가 들어 있어요 (올린 사람 "ASMR Block 샘플", 소개에 "샘플 소리" — 컴퓨터로 만든 합성음, 전부 무료). 진짜 블록이 모이면 관리자 페이지 → 블록 승인 → 승인됨에서 "돌려보내기"로 내려요
 - 웹·API·음원이 한 주소(`https://asmrblock.com`, `/api`, `/files`)로. DB 포트는 밖으로 안 열림, API 문서(Swagger) 숨김
 - 영상 업로드는 **90MB까지** (Cloudflare 무료 요금제가 한 번에 100MB까지만 받음)
+- **개인정보 처리방침·이용약관**(`/privacy`, `/terms`, 베타판), 어디서나 **의견 보내기**, 관리자 페이지 **통계·의견** 탭, **자동 백업**
 
 **처음 한 번 (순서대로)**
 1. **도메인 사기**: [Cloudflare](https://dash.cloudflare.com) 가입 → Domain Registration → Register Domains → `asmrblock.com` 검색·구매 (www.asmrblock.com 도 같이 따라옴)
@@ -251,6 +252,24 @@ npx expo start
    - 비밀키·DB 비밀번호는 자동으로 랜덤이에요. `.env.public`은 GitHub에 올라가지 않아요
 5. **`start-public.bat` 한 번 더** → 처음엔 몇 분 걸려요 → 휴대폰 **와이파이를 끄고(LTE)** https://asmrblock.com 접속해 보기
 6. 관리자 이메일로 로그인 → 위 메뉴 **관리자** → 진짜 녹음 블록을 올리고 승인 (샘플 옆에 같이 보여요)
+
+**자동 백업 (공개용에 들어 있음)**
+- `backup`이 **켜질 때 한 번 + 하루에 한 번** `asmr-block\backups` 폴더에 저장해요
+  - `backups\db\asmrblock-날짜.sql.gz`: 가입자·조합·의견 등 DB 전체 (**14일치**만 남김, `.env.public`의 `BACKUP_KEEP_DAYS`로 바꿈)
+  - `backups\media\`: 올린 소리(원본·서비스용)·영상·사진·스티커 (완성본·맛보기·샘플 소리는 다시 만들 수 있어서 뺌)
+- 백업도 같은 PC 안에 있으니, **가끔 backups 폴더를 USB나 클라우드 드라이브에 복사**해 두세요. 개인정보가 들어 있으니 남에게 주지 마세요
+- 지금 바로 한 번 백업 (asmr-block 폴더 PowerShell):
+  ```bash
+  docker compose -f docker-compose.public.yml --env-file .env.public exec backup sh /backup-loop.sh once
+  ```
+- **되살리기** (사고가 났을 때, 순서대로 PowerShell에 붙여 넣기. `파일이름`은 backups\db 안의 파일):
+  ```bash
+  docker compose -f docker-compose.public.yml --env-file .env.public stop backend
+  docker compose -f docker-compose.public.yml --env-file .env.public exec -T backup sh -c "gunzip -c /backups/db/파일이름.sql.gz | psql -q -v ON_ERROR_STOP=1"
+  docker compose -f docker-compose.public.yml --env-file .env.public exec -T backup sh -c "cp -a /backups/media/. /media/"
+  docker compose -f docker-compose.public.yml --env-file .env.public start backend
+  ```
+  (공개 서버를 통째로 지웠다면 먼저 `start-public.bat`으로 다시 켠 뒤 위 순서대로)
 
 **검색에 나오게 하기 (무료, 한 번만)**
 - 주소창에 `asmrblock.com`을 치면 지금도 바로 들어와요. `asmrblock`만 치면 **검색**이 되기 때문에, 검색 엔진에 사이트를 알려 줘야 나와요

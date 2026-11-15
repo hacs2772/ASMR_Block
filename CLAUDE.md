@@ -17,6 +17,7 @@
 - **영상 블록(V7)**: "진짜 그 장소·그 장면이구나" 하고 보는 용도(유튜브처럼 보는 게 아님). 올릴 때 선택, **480p·24fps·소리 없는 mp4**로 줄여 저장(원본 영상은 보관 안 함), 영상만 올리면 영상의 소리를 블록 음원으로. 들을 때 **기본은 소리만**, "영상도 같이 보기"를 켜면 지금 나오는 블록 영상(영상 없는 블록이면 겉면 그림). **화면이 꺼지거나 앱을 벗어나면, 잠들기 타이머 마지막 20초에는 영상이 꺼짐**. 유료 블록 영상 주소(`design.videoUrl`)는 산 사람만
 - **블록**: 3~4분짜리 ASMR 소리. 판매자가 업로드(가격은 판매자가 정하되 `app.shop.seller-max-price` 이하) → 관리자 승인(APPROVED) → 공개. `price` = 코인(0 무료)
 - **관리자 페이지(V8, 웹 `/admin`)**: 관리자 계정으로 로그인하면 위 메뉴에 "관리자" (`user.role === 'ADMIN'`, 서버도 `/api/v1/admin/**` ADMIN 확인). 블록 승인·돌려보내기(이유 `review_note` → 판매자 "내가 올린 블록"), **트리거 종류**(묶음 색·소분류 아이콘 추가·고치기·숨기기·순서), **스티커**(SVG 검사·PNG 256px 추가·숨기기·순서). 바꾸면 앱·웹에 바로(앱 업데이트 없이). 분류·스티커는 지우지 않고 숨김. 아이콘 고르기 목록 = 웹 `lib/blocks.js` `ICONS`(앱 Ionicons에도 있는 이름만)
+- **베타 운영(V9)**: 웹 `/privacy`·`/terms`(베타판 쉬운 말, 연락처 help@asmrblock.com, `pages/LegalPages.jsx`), 가입·베타 버튼 아래 동의 안내. **의견 보내기**: 웹 오른쪽 아래 버튼·바닥글(`components/common/Feedback.jsx`), 앱 도움말(`components/FeedbackForm.tsx`) → `POST /feedback`(로그인 없이도, 10분에 5번). 관리자 페이지 **통계**(`GET /admin/stats`, 관리자·샘플 계정 빼고 한국 시간, 최근 14일)·**의견** 탭
 - **블록 상점 → 내 블록함**: 듣는 사람은 상점에서 블록을 담고(`user_block`), 편집기에는 **담은 블록만**. 같은 블록 복제는 무료. 무료는 바로 담기, 유료는 구매(코인 + 구독, 준비 중) — 사기 전엔 앞 30초 맛보기(`preview_key`)만, 원본 `fileUrl`은 내 것일 때만
 - **플레이리스트 = 옆으로 누운 레고 블록 두 줄** (왼쪽→오른쪽, 블록 길이 = 소리 길이): **첫째 줄**(`MAIN`, 빈틈없이 순서대로) + **둘째 줄**(`MIX`, 선택, 따로 흐름, `startSeconds` 위치에만·사이는 빈칸·겹침 금지). 이어진 같은 블록은 `repeat`(1~200)로 묶어 저장, 줄별 볼륨, 한 바퀴 최대 10시간
 - **얼마나 들을까요?** `listenMinutes`: 완성본(한 바퀴)을 앱이 그 시간 동안 반복 재생 (긴 파일을 만들지 않음)
@@ -39,7 +40,7 @@
   - API는 `src/api/api.js` 한 곳. 색은 `tailwind.config.js`(night·card·pink·ink·muted…)만 씀
   - 검색·공유: `public/index.html`(설명·og 태그, 그림 `public/og-image.png` = `node scripts/make-og-image.js [Pretendard woff2 폴더]`), `public/robots.txt`·`sitemap.xml`(주소 https://asmrblock.com). 링크로 처음 온 비로그인 사람에게는 듣기 화면에도 "베타로 바로 시작"
 - `asmr-block/docker-compose.yml` — DB + 백엔드 + 웹 한 번에 실행 (개발용, 테스트 계정·샘플 블록 있음)
-- `asmr-block/docker-compose.public.yml` — **공개용**(asmrblock.com, 내 PC + Cloudflare Tunnel): 프로필 `public`(`application-public.yml`, 테스트 계정 없음, 샘플 블록·조합만 `db/samples/R__public_samples.sql` — 로그인 불가 계정 "ASMR Block 샘플"·전부 무료·id 안 정함·여러 번 실행 안전, Swagger 숨김, 영상 90MB), DB·파일 따로, 웹 nginx가 `/api`·`/files`를 백엔드로 넘김(한 주소), `tunnel`(cloudflared, `TUNNEL_TOKEN`). 비밀값은 `.env.public`(gitignore, `start-public.bat`이 `scripts/new-env-public.ps1`로 랜덤 생성). 관리자 계정 = `APP_ADMIN_EMAIL/PASSWORD` → `AdminAccountInitializer`가 켜질 때 만들거나 비밀번호를 맞춤
+- `asmr-block/docker-compose.public.yml` — **공개용**(asmrblock.com, 내 PC + Cloudflare Tunnel): 프로필 `public`(`application-public.yml`, 테스트 계정 없음, 샘플 블록·조합만 `db/samples/R__public_samples.sql` — 로그인 불가 계정 "ASMR Block 샘플"·전부 무료·id 안 정함·여러 번 실행 안전, Swagger 숨김, 영상 90MB), DB·파일 따로, 웹 nginx가 `/api`·`/files`를 백엔드로 넘김(한 주소), `tunnel`(cloudflared, `TUNNEL_TOKEN`). 비밀값은 `.env.public`(gitignore, `start-public.bat`이 `scripts/new-env-public.ps1`로 랜덤 생성). 관리자 계정 = `APP_ADMIN_EMAIL/PASSWORD` → `AdminAccountInitializer`가 켜질 때 만들거나 비밀번호를 맞춤. `backup` 서비스(`scripts/backup-loop.sh`)가 켜질 때+하루 한 번 `backups/`에 DB(pg_dump, 14일)·올린 파일 복사 (되살리기는 README)
 - `asmr-block/docs` — API 명세(`api_specification.md`), DB 명세, i18n 가이드
 
 ## 자주 쓰는 명령
@@ -53,7 +54,7 @@ cd asmr-block/mobile && npm run typecheck && npm run lint && npm test
 테스트 계정: `test@asmrblock.com` / `password123` (관리자: `admin@asmrblock.com`)
 
 ## 백엔드 규칙
-- **DB 변경은 새 Flyway 파일로만**: `src/main/resources/db/migration/V{n}__설명.sql`. 이미 있는 V 파일은 절대 수정하지 않는다. (지금 V8까지 있음 → 다음은 V9)
+- **DB 변경은 새 Flyway 파일로만**: `src/main/resources/db/migration/V{n}__설명.sql`. 이미 있는 V 파일은 절대 수정하지 않는다. (지금 V9까지 있음 → 다음은 V10)
 - 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 프로필에서만 실행). 여러 번 실행돼도 안전하게 `ON CONFLICT` 사용.
 - 응답은 항상 `ApiResponse` 형식(`success`, `message`, `data`, `error{code,message}`). 오류는 `ApiException.notFound/badRequest/...` 로 던진다.
 - 요청/응답 DTO는 record로, 기능 패키지의 `*Dtos.java` 안에 모은다. 컨트롤러에서 `Map`으로 응답을 만들지 않는다.
@@ -100,6 +101,7 @@ cd asmr-block/mobile && npm run typecheck && npm run lint && npm test
 - [x] 7단계: 베타로 바로 시작(손님 계정), 듣기 화면에서 블록·재생바를 눌러 그 시간으로, 블록 꾸미기(사진·스티커) + 영상 블록(영상도 같이 보기)
 - [x] 6단계: 앱 메뉴 정리(홈 = 내 조합 바로 듣기, ★추천 조합 한 번에 담기 V6, 블록 편집·블록 판매, ? 도움말), 부드러운 끌기·블록함 크기 조절, **실제 웹사이트**(앱과 같은 디자인, 블록 모양 "조합 만들기" + 조립 동작, 앱 받기 = 출시 전 안내, 웹 업로드, 가로 두 줄 웹 편집기)
 - [x] 8단계: 핸드폰 웹 화면 정리(넘침 없음·손가락 끌기 확인), **관리자 페이지**(블록 승인·트리거 종류·스티커, V8)
+- [x] 9단계: **asmrblock.com 공개**(내 PC + Cloudflare Tunnel, 샘플 블록·조합, 구글·네이버 등록) + 베타 운영(약관·개인정보 처리방침, 의견 보내기, 관리자 통계, 자동 백업, V9)
 - [ ] **거의 0원으로 먼저 보여 주기**(사용자가 고른 방향): 공개용 준비 끝(`docker-compose.public.yml` + `start-public.bat`, 웹·API·음원 한 주소 https://asmrblock.com 을 Cloudflare Tunnel로). 남은 것 = 사용자가 도메인 구매 → 터널 토큰 → `.env.public` → 반응 보기 (README "asmrblock.com 으로 다른 사람에게 보여 주기"). 사업자·스토어 계정·유료 서버는 그 뒤에
 - [ ] EAS Build(TestFlight / Play 내부 테스트)로 앱 아이콘·첫 화면·잠금화면 재생 확인, 광고 SDK(AdMob)로 광고 자리 교체
 - [ ] 파일 저장소 S3/R2 (`StorageService` 구현 추가), 오래된 완성본 정리
