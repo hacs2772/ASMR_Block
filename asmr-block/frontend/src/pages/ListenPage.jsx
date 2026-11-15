@@ -159,8 +159,8 @@ function ListenPage() {
           {videoCount > 0 && ready && (
             <button type="button" onClick={() => setShowVideo((v) => !v)} aria-pressed={showVideo} data-testid="video-toggle"
               className="mt-4 inline-flex items-center gap-2 rounded-full border border-line-strong bg-card-active py-1.5 pl-1.5 pr-3.5 text-sm font-bold">
-              <span className={`relative h-5 w-9 rounded-full transition-colors ${showVideo ? 'bg-pink' : 'bg-line-strong'}`}>
-                <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform ${showVideo ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
+              <span className={`relative block h-5 w-9 shrink-0 rounded-full transition-colors ${showVideo ? 'bg-pink' : 'bg-line-strong'}`}>
+                <span className={`absolute left-0 top-0.5 block h-4 w-4 rounded-full bg-white transition-transform ${showVideo ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
               </span>
               <IoVideocam className="text-pink-text" /> 영상도 같이 보기
               <span className="text-xs font-semibold text-faint">영상 블록 {videoCount}개</span>
