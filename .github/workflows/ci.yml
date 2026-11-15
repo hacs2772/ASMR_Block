@@ -71,6 +71,10 @@ jobs:
           cache: npm
           cache-dependency-path: asmr-block/frontend/package-lock.json
       - run: npm ci
+      - name: 테스트 (편집기 계산)
+        run: npx react-scripts test --watchAll=false
+        env:
+          CI: true
       - name: 빌드
         run: npm run build
         env:

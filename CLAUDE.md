@@ -9,7 +9,7 @@
 - **분류 = 트리거 묶음 10개**(V5, `sound_category.code`: tap·scratch·crinkle·whisper·slime·cut·rain·nature·place·noise, 소분류는 `tap.tapping`처럼). 파형 모양 규칙은 `mobile/src/lib/waveform.ts`(웹 시안과 같음)
 - **정체성 = Block**: 상점 카드는 음악 앱처럼 보이지 않게 **레고 바닥판 위의 블록 상품**(블록 길이 = 소리 길이, 위에 길이·아이콘, 가격표, "블록 담기")으로 보여준다 (`mobile/src/components/BlockCard.tsx`). 홈 머리글은 분홍 블록 로고 + ASMR Block
 - **색**: 앱 `src/theme.ts` = 어두운 밤 바탕 + 분홍(`primary`) 하나. 화면에서 색 숫자를 직접 쓰지 않는다
-- **앱 큰 메뉴**(사용자가 실기기로 써 보고 정함): 아래 탭 5칸 = **홈** · **블록 구매**(블록 상점) · **★추천 조합** · **블록 편집** · **업로드**(판매자). **내 정보**와 **? 도움말**은 오른쪽 위 아이콘(`components/HeaderActions.tsx`)
+- **앱 큰 메뉴**(사용자가 실기기로 써 보고 정함): 아래 탭 5칸 = **홈** · **블록 구매**(블록 상점) · **★추천 조합** · **블록 편집** · **블록 판매**(크리에이터 업로드, 화면 이름 "ASMR 블록 판매"). **내 정보**와 **? 도움말**은 오른쪽 위 아이콘(`components/HeaderActions.tsx`)
   - **홈은 단순하게**: 맨 위 = **내 조합 바로 듣기**(가장 최근 조합 크게 + 나머지, 완성본이 없으면 플레이어가 만들고 자동 재생) → 요즘 팅글 많이 오는 블록 → 광고 자리. 팅글 설명·쓰는 법·단어장은 홈에 두지 않고 `/help`로, 남의 조합은 추천 조합 탭으로
   - **추천 조합 = 조합 한 번에 담기**(V6, `POST /playlists/{id}/collect`): 남의 공개 조합의 블록은 내 블록함에, 조합은 내 조합(비공개 복사본, `source_playlist_id`)으로. 아직 없는 유료 블록이 있으면 402
   - 트리거 고르기(첫 조합 쌓아 주기)는 블록 편집 탭의 접힌 "트리거로 빠르게 시작"에
@@ -28,7 +28,12 @@
 - `asmr-block/mobile` — **메인 클라이언트**. Expo SDK 58 / React Native 0.88 / TypeScript / Expo Router
   - 작업 전 `asmr-block/mobile/AGENTS.md`(Expo 규칙)를 따른다: 패키지는 `npx expo install`, 화면은 `src/app/`
   - 서버 상태는 TanStack Query, 앱 상태는 zustand(`src/store`), 재생은 `src/audio/PlayerProvider`(전역 1개)
-- `asmr-block/frontend` — React 18 (CRA) 웹. 확인/관리용
+- `asmr-block/frontend` — React 18 (CRA) + Tailwind **웹사이트** (앱과 같은 밤 화면 + 분홍, 레고 블록). 데이터는 앱과 같은 서버
+  - 메뉴: 블록 상점(`/shop`) · ★추천 조합(`/combos`) · **조합 만들기**(`/create`, 가장 중요한 버튼) · 블록 판매(`/sell`, 웹 업로드) · 팅글 가이드(`/guide`), 듣기 `/listen/:id`, 내 조합 `/me/combos`
+  - 왼쪽 위 로고 = 앱 아이콘 그림(`components/brand/LogoMark.jsx`, 블록 셋 + 소리 막대). 블록 = `components/brand/Brick.jsx`(앱 C안과 같은 모양, `bars`를 주면 소리 막대가 움직임)
+  - "조합 만들기" 버튼 = 블록 모양(`components/home/AssembleButton.jsx`): 누르면 블록 셋이 날아와 딸깍 조립된 뒤 편집기로. App Store/Google Play 버튼은 **출시 전 안내**(`components/common/ComingSoon.jsx`)
+  - 웹 편집기 = 앱과 같은 옆으로 누운 두 줄(`pages/CreatePage.jsx`, `components/editor/`), 계산은 `src/lib/editorLogic.js`(앱 editor.ts와 같은 규칙, jest 테스트). 끌기는 pointer 이벤트(마우스·터치)로, 손가락 위치는 DOM에 직접 넣어 다시 그리지 않음
+  - API는 `src/api/api.js` 한 곳. 색은 `tailwind.config.js`(night·card·pink·ink·muted…)만 씀
 - `asmr-block/docker-compose.yml` — DB + 백엔드 + 웹 한 번에 실행
 - `asmr-block/docs` — API 명세(`api_specification.md`), DB 명세, i18n 가이드
 
@@ -36,7 +41,7 @@
 ```bash
 cd asmr-block && docker compose up --build   # 전체 실행 (웹 :3000, API :8080, Swagger /swagger-ui.html)
 cd asmr-block/backend && ./gradlew test      # 백엔드 통합 테스트 (Docker 필요)
-cd asmr-block/frontend && npm run build      # 웹 빌드 확인
+cd asmr-block/frontend && CI=true npm run build && CI=true npx react-scripts test --watchAll=false   # 웹 빌드·테스트
 cd asmr-block/mobile && npx expo start       # 앱 (휴대폰 Expo Go로 QR 스캔, 같은 와이파이)
 cd asmr-block/mobile && npm run typecheck && npm run lint && npm test
 ```
@@ -84,8 +89,9 @@ cd asmr-block/mobile && npm run typecheck && npm run lint && npm test
 - [x] 2.5단계: 레고 타임라인(드래그·반복·복제·확대/축소, 10시간), 메뉴 트리, 요즘 뜨는 소리, 완성본 진행률
 - [x] 3단계: 블록 상점·내 블록함(무료 담기, 유료 30초 맛보기), 작은 레고 블록 편집기(두 줄·시간 말풍선·전체 보기 슬라이더), 얼마나 들을까요
 - [x] 4단계: 메뉴 정리(홈·구매·편집·업로드), 판매자 업로드(가격 상한)·내가 올린 블록, 요즘 뜨는 조합·광고 자리, 편집 중 전체 듣기, 한 화면 편집
-- [x] 5단계: "나만의 팅글" — 트리거 분류(V5)·말소리·녹음한 곳, 밤 화면 + 분홍, 홈 트리거 고르기(첫 조합 → 편집기), 파형 블록 카드 상점, 업로드 미리보기 카드 (웹 시안: 디자인만, 실제 웹은 아직)
+- [x] 5단계: "나만의 팅글" — 트리거 분류(V5)·말소리·녹음한 곳, 밤 화면 + 분홍, 홈 트리거 고르기(첫 조합 → 편집기), 파형 블록 카드 상점, 업로드 미리보기 카드
 - [x] 실기기 확인: 사용자의 윈도우 PC(Docker) + 아이폰 Expo Go에서 앱 열림 (README "윈도우 PC + 아이폰" 참고)
+- [x] 6단계: 앱 메뉴 정리(홈 = 내 조합 바로 듣기, ★추천 조합 한 번에 담기 V6, 블록 편집·블록 판매, ? 도움말), 부드러운 끌기·블록함 크기 조절, **실제 웹사이트**(앱과 같은 디자인, 블록 모양 "조합 만들기" + 조립 동작, 앱 받기 = 출시 전 안내, 웹 업로드, 가로 두 줄 웹 편집기)
 - [ ] **거의 0원으로 먼저 보여 주기**(사용자가 고른 방향): 도메인 asmrblock.com → Cloudflare Tunnel(내 PC 서버를 api.asmrblock.com으로) → 웹 버전을 Cloudflare Pages(asmrblock.com)에 → 반응 보기. 사업자·스토어 계정·유료 서버는 그 뒤에
 - [ ] EAS Build(TestFlight / Play 내부 테스트)로 앱 아이콘·첫 화면·잠금화면 재생 확인, 광고 SDK(AdMob)로 광고 자리 교체
 - [ ] 파일 저장소 S3/R2 (`StorageService` 구현 추가), 오래된 완성본 정리

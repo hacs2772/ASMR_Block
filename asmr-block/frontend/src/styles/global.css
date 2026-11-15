@@ -2,81 +2,145 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 기본 스타일 */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* =====================================================
+   ASMR Block 웹 — 앱과 같은 어두운 밤 바탕 + 분홍 하나
+   ===================================================== */
 
+html { color-scheme: dark; }
 body {
-  font-family: 'Noto Sans KR', sans-serif;
-  background-color: #0f0f0f;
-  color: #ffffff;
+  @apply bg-night text-ink font-sans antialiased;
   min-height: 100vh;
+  word-break: keep-all;
 }
+::selection { background: rgba(247, 96, 154, 0.35); }
+:focus-visible { outline: 2px solid #ff85af; outline-offset: 2px; }
 
-/* 스크롤바 스타일 */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #0e0e14; }
+::-webkit-scrollbar-thumb { background: #31313d; border-radius: 4px; }
 
-::-webkit-scrollbar-track {
-  background: #1a1a1a;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #444;
-}
-
-/* 커스텀 클래스 */
 @layer components {
-  .btn-primary {
-    @apply bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
-  }
+  .page { @apply mx-auto w-full max-w-page px-4 sm:px-6; }
 
-  .btn-secondary {
-    @apply bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
-  }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-pink { @apply btn bg-pink text-white hover:bg-[#ff74a8]; }
+  .btn-line { @apply btn border border-line-strong text-ink hover:bg-card-active; }
+  .btn-ghost { @apply btn text-muted hover:text-ink; }
+  .btn-sm { @apply px-3 py-1.5 text-xs rounded-lg; }
 
-  .btn-outline {
-    @apply border border-gray-600 hover:bg-gray-800 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
-  }
+  .input { @apply w-full rounded-xl border border-line bg-card px-4 py-3 text-sm text-ink placeholder-faint outline-none transition-colors focus:border-pink; }
+  .label { @apply mb-1.5 block text-sm font-bold text-ink; }
+  .card { @apply rounded-2xl border border-line bg-card; }
 
-  .input-field {
-    @apply w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary transition-colors duration-200;
-  }
+  .chip { @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-line px-3.5 py-1.5 text-sm font-semibold text-muted transition-colors hover:text-ink; }
+  .chip-on { @apply border-pink bg-pink-soft text-pink-text; }
 
-  .card {
-    @apply bg-gray-900 rounded-xl p-4 border border-gray-800;
-  }
-
-  /* 블록 아이템 스타일 */
-  .block-item {
-    @apply rounded-lg p-3 cursor-pointer transition-all duration-200 hover:scale-105;
-  }
+  .eyebrow { @apply mb-1 text-xs font-bold text-pink-text; }
+  .h-section { @apply text-2xl font-extrabold tracking-tight text-ink sm:text-3xl; }
 }
 
-/* 오디오 플레이어 스타일 */
-.audio-progress {
-  @apply h-1 bg-gray-700 rounded-full overflow-hidden;
+/* ---------- 레고 블록 (앱 Brick C안) ---------- */
+.brick { position: relative; flex-shrink: 0; }
+.brick-face {
+  position: absolute; inset: 0; z-index: 1; overflow: hidden;
+  border-radius: 4px; border: 1.5px solid var(--b-edge);
+  background: linear-gradient(180deg, var(--b-top) 0 3px, var(--b-base) 3px);
+  box-shadow: inset 0 -5px 0 var(--b-bottom), 0 3px 0 rgba(0, 0, 0, 0.45);
+}
+.brick-stud {
+  position: absolute; z-index: 0; right: -6px; width: 7px; height: 26%;
+  border: 1.5px solid var(--b-edge); border-left: 0; border-radius: 0 2px 2px 0; background: var(--b-base);
+}
+.brick-groove {
+  position: absolute; top: 3px; bottom: 5px; width: 2px; margin-left: -1px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0 1px, rgba(255, 255, 255, 0.16) 1px 2px);
+}
+.brick-label {
+  position: absolute; inset: 3px 6px 5px; display: flex; align-items: center; justify-content: center; gap: 4px;
+  color: #fff; font-size: 12px; font-weight: 800; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+.brick-selected .brick-face { outline: 2px solid #fff; outline-offset: 1px; }
+.brick-bars {
+  position: absolute; inset: 3px 14% 5px; display: flex; align-items: center; justify-content: space-between;
+}
+.brick-bars i {
+  display: block; width: 12%; max-width: 6px; min-width: 2px; border-radius: 9px; background: var(--b-bar);
+  animation: bar-beat var(--spd, 400ms) ease-in-out infinite alternate; transform-origin: center;
+}
+@keyframes bar-beat { from { transform: scaleY(1); } to { transform: scaleY(var(--low, 0.4)); } }
+
+/* 로고: 마우스를 올리면 막대가 춤춤 */
+.logo-bar { transform-box: fill-box; transform-origin: center; }
+a:hover .logo-bar, .logo-live .logo-bar { animation: bar-beat 260ms ease-in-out infinite alternate; --low: 0.35; }
+
+/* ---------- 조합 만들기 버튼: 블록 모양 ---------- */
+.make-btn { position: relative; display: inline-flex; padding-right: 8px; cursor: pointer; border: 0; background: none; }
+.make-btn .make-face {
+  position: relative; z-index: 1; display: flex; align-items: center; gap: 14px;
+  height: 64px; padding: 0 22px 6px 18px; border-radius: 6px;
+  border: 2px solid #8a1e48; color: #fff; font-size: 19px; font-weight: 900; letter-spacing: -0.3px;
+  background: linear-gradient(180deg, #ff9cc1 0 4px, #f7609a 4px);
+  box-shadow: inset 0 -7px 0 #c93c74, 0 5px 0 rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.make-btn .make-stud {
+  position: absolute; z-index: 0; right: 0; width: 11px; height: 17px;
+  border: 2px solid #8a1e48; border-left: 0; border-radius: 0 3px 3px 0; background: #f7609a;
+  transition: transform 0.15s ease;
+}
+.make-btn:hover .make-face { transform: translateY(-2px); box-shadow: inset 0 -7px 0 #c93c74, 0 7px 0 rgba(0, 0, 0, 0.5); }
+.make-btn:hover .make-stud { transform: translateY(-2px); }
+.make-btn:active .make-face { transform: translateY(3px); box-shadow: inset 0 -4px 0 #c93c74, 0 2px 0 rgba(0, 0, 0, 0.5); }
+.make-btn:active .make-stud { transform: translateY(3px); }
+.make-bars { display: flex; align-items: center; gap: 3px; height: 26px; }
+.make-bars i { width: 4px; border-radius: 3px; background: #fff; opacity: 0.92; animation: bar-beat var(--spd) ease-in-out infinite alternate; }
+
+/* 조합 만들기를 누르면: 블록 셋이 사방에서 날아와 딸깍 조립 */
+.assemble-overlay {
+  position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+  background: rgba(10, 10, 15, 0.86); backdrop-filter: blur(4px); animation: fade-in 0.18s ease both;
+}
+.assemble-row { display: flex; }
+.assemble-row > * { animation: fly-in 0.62s cubic-bezier(0.2, 0.9, 0.25, 1.25) both; }
+.assemble-row > *:nth-child(1) { --fx: -46vw; --fy: -30vh; --fr: -38deg; animation-delay: 0.02s; }
+.assemble-row > *:nth-child(2) { --fx: 0; --fy: 48vh; --fr: 26deg; animation-delay: 0.14s; }
+.assemble-row > *:nth-child(3) { --fx: 46vw; --fy: -26vh; --fr: 42deg; animation-delay: 0.26s; }
+.assemble-click { animation: click-pop 0.3s ease 0.86s both; }
+.assemble-text { color: #ECECF1; font-weight: 800; font-size: 18px; animation: fade-up 0.35s ease 0.7s both; }
+@keyframes fly-in {
+  0% { transform: translate(var(--fx), var(--fy)) rotate(var(--fr)) scale(0.7); opacity: 0; }
+  60% { opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+@keyframes click-pop { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* 블록 로딩: 떨어졌다 딸깍 붙기를 반복 */
+.loader-row { display: flex; }
+.loader-row > * { animation: snap 1.5s cubic-bezier(0.3, 1.6, 0.5, 1) infinite; }
+.loader-row > *:nth-child(1) { --sx: -14px; }
+.loader-row > *:nth-child(3) { --sx: 14px; }
+@keyframes snap { 0%, 12% { transform: translateX(var(--sx, 0)); } 34%, 78% { transform: none; } 100% { transform: translateX(var(--sx, 0)); } }
+
+/* 바닥판 점 무늬 (상점 카드) */
+.studs { background-image: radial-gradient(circle at center, #1d1d28 2.2px, transparent 2.6px); background-size: 14px 14px; }
+
+/* 끄는 블록 */
+.drag-ghost { position: fixed; z-index: 80; pointer-events: none; transform-origin: 30% 50%; transition: transform 0.05s ease-out; filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.55)); }
+.slide { transition: left 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.15), opacity 0.15s; }
+.drop-in { animation: drop-in 0.42s cubic-bezier(0.25, 1.6, 0.5, 1) both; }
+@keyframes drop-in { from { transform: translateY(-22px) scale(0.86); opacity: 0; } to { transform: none; opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .brick-bars i, .make-bars i, .logo-bar, .loader-row > * { animation: none !important; }
+  .assemble-row > *, .assemble-click, .assemble-text, .drop-in { animation-duration: 0.01ms !important; animation-delay: 0s !important; }
+  .slide { transition: none; }
 }
 
-.audio-progress-bar {
-  @apply h-full bg-primary transition-all duration-100;
-}
-
-/* 드래그 앤 드롭 스타일 */
-.dragging {
-  @apply opacity-50 scale-105;
-}
-
-.drag-over {
-  @apply border-2 border-dashed border-primary;
-}
+/* 첫 화면 바닥판: 재생선이 왼쪽에서 오른쪽으로 지나감 */
+.playhead-run { left: 16px; animation: playhead 9s linear infinite; box-shadow: 0 0 10px rgba(247, 96, 154, 0.8); }
+@keyframes playhead { from { left: 16px; } to { left: calc(100% - 18px); } }
+@media (prefers-reduced-motion: reduce) { .playhead-run { animation: none; } }
+.brick-pop { animation: click-pop 0.32s ease; }
+.drop-slot { position: absolute; border: 2px dashed #ff85af; border-radius: 6px; background: rgba(247, 96, 154, 0.14); }
