@@ -51,6 +51,15 @@
             "backgroundColor": "#0A0A0F"
           }
         }
+      ],
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "블록 겉면 사진과 같이 보는 영상을 고르려면 사진 보관함을 열어야 해요.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {

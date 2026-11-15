@@ -6,7 +6,7 @@ jest.mock('@/api/endpoints', () => ({ catalogApi: {}, libraryApi: {} }));
 
 const block = (id: number, duration: number): Block => ({
   id, title: `블록 ${id}`, description: null, fileUrl: null, previewUrl: null, price: 0, owned: true, duration,
-  talkType: 'NONE', recordedPlace: null, license: 'OWN', attribution: null, status: 'APPROVED', category: null,
+  talkType: 'NONE', recordedPlace: null, design: null, license: 'OWN', attribution: null, status: 'APPROVED', category: null,
   tags: [], uploader: { id: 1, nickname: 'tester' }, playCount: 0, recentPlays: null,
 });
 

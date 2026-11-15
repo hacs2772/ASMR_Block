@@ -270,7 +270,7 @@ function DraggableBrick({ row, itemKey, block, hole, z, left, top, width, height
       >
         <Animated.View style={motion}>
           <Brick color={block.category?.color ?? categoryFallbackColor} width={width} height={height} icon={icon}
-            title={block.title} minutes={block.duration / 60} selected={selected} hole={hole} dimmed={!block.owned} />
+            title={block.title} minutes={block.duration / 60} selected={selected} hole={hole} dimmed={!block.owned} design={block.design} />
         </Animated.View>
         {selected && timeLabel && <Bubble text={timeLabel} />}
       </View>

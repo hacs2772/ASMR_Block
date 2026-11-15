@@ -4,9 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppState, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import { BlockLoader } from '@/components/BlockLoader';
+import { BlockVideoPanel } from '@/components/BlockVideoPanel';
 import { CollectButton } from '@/components/CollectButton';
 import { playlistApi } from '@/api/endpoints';
 import type { PlaylistDetail, Render, Track } from '@/api/types';
@@ -32,6 +33,14 @@ export default function PlayerScreen() {
   const { status: authStatus, user } = useAuth();
   const player = usePlayer();
   const [saved, setSaved] = useState<SavedTrack | null>(null);
+  // 영상도 같이 보기: 기본은 꺼짐(소리만). 화면이 꺼지거나 앱을 벗어나면, 잠들기 타이머가 끝나 가면 저절로 꺼짐
+  const [showVideo, setShowVideo] = useState(false);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => { if (state !== 'active') setShowVideo(false); });
+    return () => sub.remove();
+  }, []);
+  const sleepEnding = player.sleepRemainingMs !== null && player.sleepRemainingMs < 20_000;
+  const videoOn = showVideo && !sleepEnding;
 
   const detail = useQuery({ queryKey: ['playlist', playlistId], queryFn: () => playlistApi.get(playlistId), enabled: offline !== '1' });
   const render = useQuery({
@@ -147,6 +156,7 @@ export default function PlayerScreen() {
 
   const title = p?.title ?? saved?.title ?? '';
   const canPlay = (r?.status === 'DONE' && !!r.fileUrl) || !!saved;
+  const videoCount = [...(p?.main?.items ?? []), ...(p?.mix?.items ?? [])].filter((i) => i.design?.hasVideo).length;
   const status = player.status;
   const position = isCurrent ? status.currentTime : 0;
   const duration = isCurrent && status.duration > 0 ? status.duration : r?.duration ?? saved?.duration ?? p?.totalDuration ?? 0;
@@ -163,6 +173,7 @@ export default function PlayerScreen() {
         }}
       />
 
+      {videoOn && p && isCurrent && <BlockVideoPanel playlist={p} position={position} playing={status.playing} />}
       <TimelineArt main={p?.main ?? null} mix={p?.mix ?? null} total={p?.totalDuration ?? 0} fallbackColors={saved?.colors ?? []}
         progress={canPlay && duration > 0 ? position / duration : null} onSeek={canPlay ? seekRatio : undefined} />
 
@@ -172,6 +183,14 @@ export default function PlayerScreen() {
           ? `${p.owner.nickname} · 한 바퀴 ${formatMinutes(p.totalDuration)}${p.listenMinutes > 0 ? ` · ${sleepOptionLabel(p.listenMinutes)} 반복 재생` : ''}${p.mix ? ' · 레이어드' : ''}`
           : '휴대폰에 저장된 완성본'}
       </Text>
+      {videoCount > 0 && canPlay && (
+        <View style={styles.videoRow}>
+          <Ionicons name="videocam" size={16} color={colors.primaryText} />
+          <Text style={styles.videoLabel}>영상도 같이 보기 <Text style={styles.videoHint}>· 영상 블록 {videoCount}개</Text></Text>
+          <Switch value={videoOn} onValueChange={setShowVideo} disabled={!isCurrent || sleepEnding}
+            trackColor={{ true: colors.primary, false: colors.border }} thumbColor="#fff" accessibilityLabel="영상도 같이 보기" testID="video-toggle" />
+        </View>
+      )}
       {p?.collect.sourceOwner && (
         <Text style={styles.source}>★ @{p.collect.sourceOwner.nickname}님의 조합을 담아 왔어요</Text>
       )}
@@ -315,6 +334,12 @@ function TimelineArt({ main, mix, total, fallbackColors, progress, onSeek }: {
 }
 
 const styles = StyleSheet.create({
+  videoRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.card, borderRadius: radius.md,
+    paddingHorizontal: space.md, paddingVertical: 6, marginBottom: space.md,
+  },
+  videoLabel: { flex: 1, color: colors.text, fontSize: 14, fontWeight: '700' },
+  videoHint: { color: colors.faint, fontSize: 12, fontWeight: '400' },
   source: { color: colors.primaryText, fontSize: 12, textAlign: 'center', marginTop: -10, marginBottom: space.md },
   collectRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.md, marginBottom: space.lg },
   collectInfo: { color: colors.muted, fontSize: 12 },

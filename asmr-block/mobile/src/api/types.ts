@@ -13,6 +13,17 @@ export type Category = {
   parentId: number | null;
   parentName: string | null;
 };
+/**
+ * 블록 겉면과 영상 (C안): coverUrl 사진 → 없으면 stickers(최대 3개) + pattern → 둘 다 없으면 트리거 아이콘.
+ * hasVideo: 같이 보는 영상이 있는지, videoUrl: 480p·소리 없음 (유료는 내 것일 때만)
+ */
+export type BlockDesign = {
+  coverUrl: string | null;
+  stickers: string[];
+  pattern: 'dots' | 'lines' | 'none';
+  hasVideo: boolean;
+  videoUrl: string | null;
+};
 /** 메뉴 트리: 대분류(트리거 묶음) + 소분류 */
 export type CategoryGroup = {
   id: number;
@@ -57,6 +68,7 @@ export type Block = {
   talkType: TalkType;
   /** 녹음한 곳 (선택) */
   recordedPlace: string | null;
+  design: BlockDesign | null;
   license: 'CC0' | 'CC_BY' | 'OWN' | 'CREATOR';
   attribution: string | null;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -88,6 +100,7 @@ export type TrackItem = {
   totalDuration: number;
   playable: boolean;
   category: Category | null;
+  design: BlockDesign | null;
 };
 
 export type Track = {
@@ -150,7 +163,10 @@ export type PlaylistSummary = {
 };
 
 /** 업로드 규칙 (판매 최대 가격 등) */
-export type UploadPolicy = { maxPrice: number; maxFileMb: number; minSeconds: number; maxSeconds: number; extensions: string[] };
+export type UploadPolicy = {
+  maxPrice: number; maxFileMb: number; minSeconds: number; maxSeconds: number; extensions: string[];
+  maxVideoMb: number; videoExtensions: string[]; maxImageMb: number; imageExtensions: string[]; stickers: string[]; patterns: string[];
+};
 
 /** 판매자: 내가 올린 블록 */
 export type MyUpload = {
@@ -163,6 +179,7 @@ export type MyUpload = {
   recordedPlace: string | null;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   category: Category | null;
+  design: BlockDesign | null;
   /** 담은 사람 수 (나 제외) */
   collectedCount: number;
   playCount: number;

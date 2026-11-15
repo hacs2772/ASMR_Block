@@ -2,16 +2,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { BetaLoginButton } from '@/components/BetaLoginButton';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 import { BlockLoader } from '@/components/BlockLoader';
 import { catalogApi, sellerApi } from '@/api/endpoints';
-import type { Block, MyUpload, TalkType } from '@/api/types';
+import type { Block, BlockDesign, MyUpload, TalkType } from '@/api/types';
 import { BlockCard } from '@/components/BlockCard';
 import { Button, Chip, EmptyState } from '@/components/ui';
 import { notify } from '@/lib/dialog';
 import { formatDuration } from '@/lib/format';
+import { MAX_STICKERS, PATTERNS, STICKER_CODES, STICKERS } from '@/lib/stickers';
 import { useAuth } from '@/store/auth';
 import { categoryFallbackColor, colors, radius, space, talkLabel } from '@/theme';
 
@@ -19,6 +22,13 @@ const PRICE_STEPS = [10, 20, 30, 50, 100];
 const TALKS: TalkType[] = ['NONE', 'WHISPER', 'TALK'];
 
 type PickedFile = DocumentPicker.DocumentPickerAsset;
+type PickedMedia = ImagePicker.ImagePickerAsset;
+
+/** 사진·영상을 FormData에 (웹 미리보기는 File, 휴대폰은 uri) */
+function appendMedia(form: FormData, field: string, media: PickedMedia, fallbackName: string, fallbackType: string) {
+  if (Platform.OS === 'web' && media.file) form.append(field, media.file);
+  else form.append(field, { uri: media.uri, name: media.fileName ?? fallbackName, type: media.mimeType ?? fallbackType } as unknown as Blob);
+}
 
 /**
  * ASMR 업로드 (크리에이터): 휴대폰의 녹음 파일 → 이름·트리거·말소리·녹음한 곳·한 줄 소개·가격 → 올리기
@@ -42,6 +52,12 @@ export default function UploadScreen() {
   const [place, setPlace] = useState('');
   const [note, setNote] = useState('');
   const [ownRecording, setOwnRecording] = useState(false);
+  // 영상(선택): 소리 파일이 없으면 영상의 소리를 블록 음원으로 씀
+  const [video, setVideo] = useState<PickedMedia | null>(null);
+  // 블록 꾸미기(C안): 사진이 있으면 사진, 없으면 스티커 + 무늬
+  const [cover, setCover] = useState<PickedMedia | null>(null);
+  const [stickers, setStickers] = useState<string[]>([]);
+  const [pattern, setPattern] = useState<BlockDesign['pattern']>('dots');
 
   const maxPrice = policy.data?.maxPrice ?? 100;
   const maxFileMb = policy.data?.maxFileMb ?? 50;
@@ -59,8 +75,26 @@ export default function UploadScreen() {
     if (!title.trim()) setTitle(picked.name.replace(/\.[^.]+$/, '').slice(0, 100));
   };
 
+  const pickMedia = async (kind: 'videos' | 'images') => {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: [kind], quality: 0.8, allowsEditing: kind === 'images', aspect: [16, 9] });
+    if (result.canceled || !result.assets[0]) return;
+    const picked = result.assets[0];
+    const maxMb = kind === 'videos' ? policy.data?.maxVideoMb ?? 200 : policy.data?.maxImageMb ?? 10;
+    if (picked.fileSize && picked.fileSize > maxMb * 1024 * 1024) {
+      notify('파일이 너무 커요', `${maxMb}MB까지 올릴 수 있어요.`);
+      return;
+    }
+    if (kind === 'videos') setVideo(picked);
+    else setCover(picked);
+  };
+  const toggleSticker = (code: string) => setStickers((list) => (list.includes(code) ? list.filter((c) => c !== code)
+    : list.length >= MAX_STICKERS ? list : [...list, code]));
+
   const reset = () => {
     setFile(null);
+    setVideo(null);
+    setCover(null);
+    setStickers([]);
     setTitle('');
     setGroupId(null);
     setCategoryId(null);
@@ -74,8 +108,14 @@ export default function UploadScreen() {
   const upload = useMutation({
     mutationFn: () => {
       const form = new FormData();
-      if (Platform.OS === 'web' && file?.file) form.append('file', file.file);
-      else form.append('file', { uri: file!.uri, name: file!.name, type: file!.mimeType ?? 'audio/mpeg' } as unknown as Blob);
+      if (file) {
+        if (Platform.OS === 'web' && file.file) form.append('file', file.file);
+        else form.append('file', { uri: file.uri, name: file.name, type: file.mimeType ?? 'audio/mpeg' } as unknown as Blob);
+      }
+      if (video) appendMedia(form, 'video', video, 'video.mp4', 'video/mp4');
+      if (cover) appendMedia(form, 'cover', cover, 'cover.jpg', 'image/jpeg');
+      if (stickers.length) form.append('stickers', stickers.join(','));
+      form.append('pattern', pattern);
       form.append('title', title.trim());
       form.append('categoryId', String(categoryId));
       form.append('license', 'OWN');
@@ -93,7 +133,7 @@ export default function UploadScreen() {
     onError: (e) => notify('올리지 못했어요', (e as Error).message),
   });
 
-  const missing = !file ? '소리 파일을 골라주세요' : !title.trim() ? '이름을 적어주세요' : !categoryId ? '트리거 종류를 골라주세요'
+  const missing = !file && !video ? '소리 파일이나 영상을 골라주세요' : !title.trim() ? '이름을 적어주세요' : !categoryId ? '트리거 종류를 골라주세요'
     : !ownRecording ? '직접 녹음한 소리인지 확인해주세요' : null;
 
   if (status !== 'signedIn') {
@@ -125,6 +165,42 @@ export default function UploadScreen() {
             </Text>
           </View>
         </Pressable>
+
+        {/* 영상 (선택) */}
+        <Pressable accessibilityRole="button" accessibilityLabel="영상 고르기" onPress={() => (video ? setVideo(null) : pickMedia('videos'))}
+          style={[styles.fileBox, { marginTop: space.sm }]} testID="pick-video">
+          <Ionicons name={video ? 'videocam' : 'videocam-outline'} size={20} color={video ? colors.primary : colors.muted} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.fileName} numberOfLines={1}>{video ? `${video.fileName ?? '영상'} · 눌러서 빼기` : '영상도 같이 올리기 (선택)'}</Text>
+            <Text style={styles.fileMeta}>“진짜 그 장면이구나” 하고 보는 용도 · 영상만 올리면 영상의 소리를 써요 · 가볍게 480p로 저장</Text>
+          </View>
+        </Pressable>
+
+        <Text style={styles.label}>블록 꾸미기 <Text style={styles.labelHint}>· 사진이 있으면 사진, 없으면 스티커</Text></Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="겉면 사진 고르기" onPress={() => (cover ? setCover(null) : pickMedia('images'))}
+          style={styles.fileBox} testID="pick-cover">
+          {cover ? <Image source={{ uri: cover.uri }} style={styles.coverThumb} /> : <Ionicons name="image-outline" size={20} color={colors.muted} />}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.fileName} numberOfLines={1}>{cover ? '겉면 사진 · 눌러서 빼기' : '겉면 사진 고르기 (선택)'}</Text>
+            <Text style={styles.fileMeta}>녹음한 장소나 장면 사진이면 좋아요</Text>
+          </View>
+        </Pressable>
+        <Text style={[styles.hint, { marginTop: space.sm }]}>스티커 최대 {MAX_STICKERS}개{cover ? ' (사진을 빼면 보여요)' : ''}</Text>
+        <View style={styles.stickerGrid}>
+          {STICKER_CODES.map((code) => {
+            const on = stickers.includes(code);
+            return (
+              <Pressable key={code} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => toggleSticker(code)}
+                style={[styles.sticker, on && styles.stickerOn]} testID={`sticker-${code}`}>
+                <SvgXml xml={STICKERS[code].svg} width={30} height={24} />
+                <Text style={[styles.stickerLabel, on && { color: colors.primaryText }]}>{STICKERS[code].label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <View style={[styles.chips, { marginTop: space.sm }]}>
+          {PATTERNS.map((p) => <Chip key={p.key} label={`무늬 ${p.label}`} small active={pattern === p.key} onPress={() => setPattern(p.key)} />)}
+        </View>
 
         <Text style={styles.label}>이름</Text>
         <TextInput style={styles.input} value={title} onChangeText={setTitle} maxLength={100}
@@ -173,7 +249,8 @@ export default function UploadScreen() {
 
         <Text style={styles.label}>상점에서는 이렇게 보여요</Text>
         <BlockCard block={previewBlock({ title, note, price, talkType, place, nickname: user?.nickname ?? '나',
-          category: group?.children.find((c) => c.id === categoryId) ?? null, groupName: group?.name ?? null })}
+          category: group?.children.find((c) => c.id === categoryId) ?? null, groupName: group?.name ?? null,
+          design: { coverUrl: cover?.uri ?? null, stickers, pattern, hasVideo: !!video, videoUrl: null } })}
           previewing={false} onPreview={() => {}} showNote style={styles.preview} />
 
         <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: ownRecording }} onPress={() => setOwnRecording(!ownRecording)}
@@ -198,11 +275,11 @@ export default function UploadScreen() {
 /** 올리기 전 미리보기용 블록 (아직 서버에 없음) */
 function previewBlock(f: {
   title: string; note: string; price: number; talkType: TalkType; place: string; nickname: string;
-  category: Block['category']; groupName: string | null;
+  category: Block['category']; groupName: string | null; design: BlockDesign;
 }): Block {
   return {
     id: 7, title: f.title.trim() || '이름 없음', description: f.note.trim() || null, fileUrl: null, previewUrl: null,
-    price: f.price, owned: false, duration: 200, talkType: f.talkType, recordedPlace: f.place.trim() || null,
+    price: f.price, owned: false, duration: 200, talkType: f.talkType, recordedPlace: f.place.trim() || null, design: f.design,
     license: 'OWN', attribution: null, status: 'PENDING',
     category: f.category ? { ...f.category, parentName: f.groupName } : null,
     tags: [], uploader: { id: 0, nickname: f.nickname }, playCount: 0, recentPlays: null,
@@ -235,6 +312,14 @@ function UploadRow({ upload }: { upload: MyUpload }) {
 }
 
 const styles = StyleSheet.create({
+  coverThumb: { width: 48, height: 28, borderRadius: 4 },
+  stickerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+  sticker: {
+    width: 64, alignItems: 'center', gap: 2, paddingTop: 6, paddingBottom: 4, borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card,
+  },
+  stickerOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  stickerLabel: { color: colors.muted, fontSize: 10 },
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space.lg, paddingBottom: space.xl, gap: space.md },
   card: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.lg, gap: space.sm },

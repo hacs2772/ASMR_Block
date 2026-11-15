@@ -1,4 +1,5 @@
 import type { AudioPlayer } from 'expo-audio';
+import type { VideoPlayer } from 'expo-video';
 
 /**
  * expo-audio 플레이어는 볼륨/반복을 속성 대입으로 바꾸는 API입니다 (player.volume = 0.5).
@@ -10,4 +11,9 @@ export function setPlayerVolume(player: AudioPlayer, volume: number) {
 
 export function setPlayerLoop(player: AudioPlayer, loop: boolean) {
   player.loop = loop;
+}
+
+/** expo-video 플레이어 위치 옮기기 (속성 대입이라 여기서만) */
+export function seekVideo(player: VideoPlayer, seconds: number) {
+  player.currentTime = Math.max(0, seconds);
 }

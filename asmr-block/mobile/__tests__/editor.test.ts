@@ -88,7 +88,7 @@ describe('저장 형식', () => {
   it('불러오면 반복은 블록 여러 개로 펼침', () => {
     const item = (blockId: number, duration: number, repeat: number, startSeconds: number | null): TrackItem => ({
       position: 1, blockId, title: 't', fileUrl: null, owned: true, price: 0, duration, repeat, startSeconds,
-      totalDuration: duration * repeat, playable: true, category: null,
+      totalDuration: duration * repeat, playable: true, category: null, design: null,
     });
     const { main: m, mix: x } = itemsFromDetail({
       main: { role: 'MAIN', volume: 1, duration: 540, items: [item(1, 180, 3, null)] },

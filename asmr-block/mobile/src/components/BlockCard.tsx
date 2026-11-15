@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { Block } from '@/api/types';
+import { BlockVideoModal } from '@/components/BlockVideoModal';
 import { Brick } from '@/components/editor/Brick';
 import { useCategoryIcon } from '@/components/editor/useCategoryIcon';
 import { formatDuration } from '@/lib/format';
@@ -40,6 +41,8 @@ export function BlockCard({ block, previewing, onPreview, rank, showNote, right,
   const color = block.category?.color ?? categoryFallbackColor;
   const taste = block.price > 0 && !block.owned;
   const canPreview = !!(block.fileUrl ?? block.previewUrl);
+  const [watching, setWatching] = useState(false);
+  const closeVideo = () => { setWatching(false); if (previewing) onPreview(); };
   const group = block.category?.parentName ?? block.category?.name ?? '기타';
   return (
     <View style={[styles.card, style]} testID={`block-${block.id}`}>
@@ -55,7 +58,15 @@ export function BlockCard({ block, previewing, onPreview, rank, showNote, right,
           ))}
         </View>
         <Brick color={color} width={productBrickWidth(block.duration)} height={BRICK_H} icon={iconOf(block.category)}
-          title={formatDuration(block.duration)} minutes={block.duration / 60} labelMinWidth={60} style={styles.product} />
+          title={formatDuration(block.duration)} minutes={block.duration / 60} labelMinWidth={60} style={styles.product}
+          design={block.design && { ...block.design, hasVideo: false }} />
+        {block.design?.hasVideo && (
+          <Pressable accessibilityRole="button" accessibilityLabel={`${block.title} 영상 보기`} disabled={!block.design.videoUrl}
+            onPress={() => { setWatching(true); if (!previewing && canPreview) onPreview(); }} hitSlop={6} style={styles.video} testID={`watch-${block.id}`}>
+            <Ionicons name="videocam" size={11} color={colors.white} />
+            <Text style={styles.videoText}>{block.design.videoUrl ? '영상 보기' : '영상'}</Text>
+          </Pressable>
+        )}
         <View style={[styles.tag, block.price === 0 && styles.tagFree]}>
           <View style={styles.tagHole} />
           <Text style={[styles.tagText, block.price === 0 && { color: colors.success }]}>{block.price > 0 ? `${block.price}코인` : '무료'}</Text>
@@ -89,11 +100,19 @@ export function BlockCard({ block, previewing, onPreview, rank, showNote, right,
         {showNote && noteOf(block) ? <Text style={styles.note} numberOfLines={2}>{noteOf(block)}</Text> : null}
         {right ? <View style={styles.foot}>{right}</View> : null}
       </View>
+      {block.design?.videoUrl ? (
+        <BlockVideoModal title={block.title} videoUrl={block.design.videoUrl} visible={watching} onClose={closeVideo} />
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  video: {
+    position: 'absolute', left: 8, top: 8, flexDirection: 'row', alignItems: 'center', gap: 3,
+    paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.7)',
+  },
+  videoText: { color: colors.white, fontSize: 10, fontWeight: '800' },
   card: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
   plate: { height: 92, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   studs: { position: 'absolute', left: 10, right: 10, top: 10, bottom: 10, justifyContent: 'space-between' },

@@ -31,7 +31,7 @@ export function DragGhost({ origin }: { origin: { x: number; y: number } }) {
       style={[styles.ghost, { transform: [{ translateX }, { translateY }, { translateY: rise }, { rotate }, { scale }] }]}
     >
       <Brick color={source.block.category?.color ?? categoryFallbackColor} width={width} height={height}
-        icon={iconOf(source.block.category)} title={source.block.title} minutes={source.block.duration / 60} />
+        icon={iconOf(source.block.category)} title={source.block.title} minutes={source.block.duration / 60} design={source.block.design} />
     </Animated.View>
   );
 }

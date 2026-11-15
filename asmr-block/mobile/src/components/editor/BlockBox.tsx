@@ -196,7 +196,7 @@ function Tile({ block }: { block: Block }) {
       <GestureDetector gesture={gesture}>
         <View collapsable={false} accessibilityRole="button" accessibilityLabel={`${block.title} 넣기`} testID={`tile-${block.id}`}>
           <Brick color={block.category?.color ?? categoryFallbackColor} width={width} height={TILE_HEIGHT}
-            icon={iconOf(block.category)} title={block.title} minutes={block.duration / 60} />
+            icon={iconOf(block.category)} title={block.title} minutes={block.duration / 60} design={block.design} />
         </View>
       </GestureDetector>
       <Text style={styles.tileName} numberOfLines={2}>{block.title} <Text style={styles.tileTime}>{formatDuration(block.duration)}</Text></Text>

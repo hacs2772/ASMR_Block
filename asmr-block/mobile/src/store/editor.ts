@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Block, Category, ItemRequest, PlaylistDetail, PlaylistSaveRequest, TrackItem } from '@/api/types';
+import type { Block, BlockDesign, Category, ItemRequest, PlaylistDetail, PlaylistSaveRequest, TrackItem } from '@/api/types';
 
 /**
  * 블록 편집기 상태 — 옆으로 누운 레고 블록이 왼쪽 → 오른쪽으로 흐름
@@ -39,11 +39,13 @@ export type EditorBlock = {
   category: Category | null;
   /** 내 블록함에 있는지 (없는 블록이 있으면 저장할 수 없음) */
   owned: boolean;
+  /** 블록 겉면(사진·스티커)과 영상 */
+  design?: BlockDesign | null;
 };
 
 /** 내 블록함의 블록 → 편집기 블록 */
 export const editorBlockOf = (b: Block): EditorBlock => ({
-  id: b.id, title: b.title, duration: b.duration, fileUrl: b.fileUrl, category: b.category, owned: true,
+  id: b.id, title: b.title, duration: b.duration, fileUrl: b.fileUrl, category: b.category, owned: true, design: b.design,
 });
 export type MainItem = { key: string; block: EditorBlock };
 export type MixItem = { key: string; block: EditorBlock; start: number };
@@ -198,7 +200,7 @@ const initialState = (): EditorState => ({
 });
 
 const toBlock = (i: TrackItem): EditorBlock => ({
-  id: i.blockId, title: i.title, duration: i.duration, fileUrl: i.fileUrl, category: i.category, owned: i.owned,
+  id: i.blockId, title: i.title, duration: i.duration, fileUrl: i.fileUrl, category: i.category, owned: i.owned, design: i.design,
 });
 
 /** 저장된 반복(repeat)은 편집기에서는 블록 여러 개로 펼쳐서 보여줌 */
