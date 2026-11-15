@@ -2,9 +2,9 @@
 
 > 최종 수정일: 2026-11-13 / PostgreSQL 16
 >
-> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V6 가 기준입니다.
-> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘 / V5: 트리거 중심 분류(code), 말소리, 녹음한 곳 / V6: 조합 담기 — 복사본의 원본)
-> 서버가 시작될 때 Flyway가 자동 적용합니다. **테이블을 바꿀 때는 `V7__설명.sql` 처럼 새 파일을 추가**하세요 (기존 파일 수정 금지).
+> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V7 가 기준입니다.
+> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘 / V5: 트리거 중심 분류(code), 말소리, 녹음한 곳 / V6: 조합 담기 — 복사본의 원본 / V7: 블록 꾸미기(사진·스티커) + 영상 블록)
+> 서버가 시작될 때 Flyway가 자동 적용합니다. **테이블을 바꿀 때는 `V8__설명.sql` 처럼 새 파일을 추가**하세요 (기존 파일 수정 금지).
 > 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 환경에서만 실행).
 
 ---
@@ -72,6 +72,9 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | preview_key | VARCHAR(500) | 유료 블록 맛보기(앞 30초) 키 `previews/{id}-30s.mp3` (V3) |
 | talk_type | VARCHAR(10) | 말소리 `NONE`(노토킹) / `WHISPER`(속삭임) / `TALK`(말하기) (V5) |
 | recorded_place | VARCHAR(60) | 녹음한 곳 (선택, 예: 도쿄 신주쿠역 앞) (V5) |
+| thumbnail_key | VARCHAR(500) | **블록 겉면 사진** (V7부터 크리에이터가 올림, 가로 640px jpg) |
+| stickers / sticker_pattern | VARCHAR | 겉면 스티커 코드 최대 3개(쉼표) + 무늬 `dots`·`lines`·`none` (V7, 사진이 없을 때 보임) |
+| video_key | VARCHAR(500) | 같이 보는 영상 (V7, 480p · 소리 없음 mp4) |
 | category_id | FK → sound_category | |
 | uploader_id | FK → users | |
 | license | VARCHAR(30) | `CC0` / `CC_BY`(출처 표기 필요) / `OWN`(직접 녹음) / `CREATOR` |

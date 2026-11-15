@@ -174,7 +174,7 @@
 |------|------|------|------|
 | GET | `/blocks` | - (로그인하면 `owned` 표시) | 목록 (승인된 블록만) |
 | GET | `/blocks/trending` | - | **요즘 뜨는 소리**: 최근 `days`(기본 7)일 재생 수 순, `size` 기본 10 → `recentPlays` 포함 |
-| GET | `/blocks/upload-policy` | - | **업로드 규칙**: `{ "maxPrice": 100, "maxFileMb": 50, "minSeconds": 10, "maxSeconds": 1200, "extensions": [...] }` |
+| GET | `/blocks/upload-policy` | - | **업로드 규칙**: `{ "maxPrice": 100, "maxFileMb": 50, "minSeconds": 10, "maxSeconds": 1200, "extensions": [...], "maxVideoMb": 200, "videoExtensions": [...], "maxImageMb": 10, "imageExtensions": [...], "stickers": ["flagjp", ...], "patterns": ["dots", "lines", "none"] }` |
 | GET | `/blocks/{id}` | - | 상세 (승인 전이면 404) |
 | POST | `/blocks` | 필요 | **음원 업로드 (판매자)** (multipart) → 검수 대기 |
 | GET | `/me/uploads` | 필요 | **내가 올린 블록** (검수 상태 무관, 최신순, 페이지) |
@@ -190,7 +190,7 @@
   "description": "굳은 왁스를 바삭바삭 깨는 소리",
   "fileUrl": null,
   "previewUrl": "http://localhost:8080/files/previews/14-30s.mp3",
-  "thumbnailUrl": null,
+  "design": { "coverUrl": null, "stickers": ["flagjp", "signal", "bird"], "pattern": "dots", "hasVideo": true, "videoUrl": null },
   "duration": 180,
   "price": 30,
   "owned": false,
@@ -217,12 +217,17 @@
 | `talkType` | 말소리: `NONE` 노토킹(말소리 없음) / `WHISPER` 속삭임 / `TALK` 말하기 |
 | `recordedPlace` | 녹음한 곳 (선택, 없으면 `null`). 블록에 작게 표시 |
 | `uploader.nickname` | 크리에이터 (앱에서 `@닉네임`처럼 표시) |
+| `design` | **블록 겉면**(V7, C안): `coverUrl`(크리에이터 사진, 있으면 이것) → 없으면 `stickers`(최대 3개) + `pattern`(dots·lines·none) → 둘 다 없으면 트리거 아이콘. `hasVideo`: 같이 보는 영상이 있는지(“영상” 표시), `videoUrl`: 480p·소리 없는 mp4 — 무료이거나 `owned`일 때만 (플레이리스트 트랙 항목에도 같은 `design`) |
 
 ### 5.1 음원 업로드 `POST /blocks` (multipart/form-data)
 
 | 필드 | 필수 | 설명 |
 |------|------|------|
-| `file` | ✅ | mp3, wav, flac, m4a, aac, ogg, opus, webm / 최대 50MB / 길이 10초~20분 |
+| `file` | `video`가 없으면 ✅ | mp3, wav, flac, m4a, aac, ogg, opus, webm / 최대 50MB / 길이 10초~20분 |
+| `video` | | 같이 보는 영상 (선택) mp4, mov, m4v, webm / 최대 200MB. **`file` 없이 영상만 올리면 영상의 소리를 블록 음원으로 씀** (소리 없는 영상이면 400) |
+| `cover` | | 블록 겉면 사진 (선택) jpg, jpeg, png, webp / 최대 10MB → 가로 640px jpg로 |
+| `stickers` | | 겉면 스티커 코드, 쉼표로 최대 3개 (예: `flagjp,signal,bird`, 목록은 업로드 규칙 `stickers`). 없는 코드·4개 이상이면 400 |
+| `pattern` | | 스티커 무늬 `dots`(기본) / `lines` / `none` |
 | `title` | ✅ | 100자 이내 |
 | `description` | | 1000자 이내 |
 | `categoryId` | ✅ | **소분류** id (대분류면 400) |
@@ -235,6 +240,7 @@
 | `recordedPlace` | | 녹음한 곳 (60자 이내, 앞뒤 공백 정리, 비우면 없음) |
 
 서버 처리: 원본 보관 → **44.1kHz 스테레오 MP3, 음량 -24 LUFS로 변환** → `status: PENDING` 으로 등록 (관리자 승인 후 공개).
+영상은 "진짜 그 장소·그 장면이구나" 하고 보는 용도라 **480p · 24fps · 소리 없는 mp4**로 줄여서 저장 (원본 영상은 보관하지 않음). 사진·영상도 승인 때 같이 확인.
 승인되면 **올린 사람의 블록함에 자동으로** 들어갑니다.
 
 **내가 올린 블록 (MyUploadResponse)** - `GET /me/uploads`

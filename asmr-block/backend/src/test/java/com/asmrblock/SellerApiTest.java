@@ -110,4 +110,75 @@ class SellerApiTest extends IntegrationTest {
                 .andExpect(jsonPath("$.data[1].id").value(3))
                 .andExpect(jsonPath("$.data[*].id", not(hasItem(2))));
     }
+
+    @Test
+    @DisplayName("블록 꾸미기: 겉면 사진 + 스티커·무늬, 사진은 640px jpg로, 없는 스티커·4개 이상은 400")
+    void uploadWithDesign() throws Exception {
+        String token = newUser().accessToken();
+        mvc.perform(bearer(multipart("/api/v1/blocks")
+                        .file(new MockMultipartFile("file", "tap.mp3", "audio/mpeg", TestAudio.sineMp3(12, 500)))
+                        .file(new MockMultipartFile("cover", "desk.png", "image/png", TestAudio.testPng())), token)
+                        .param("title", "사진 꾸민 블록").param("categoryId", String.valueOf(leafCategoryId())).param("license", "OWN")
+                        .param("stickers", "flagjp, signal ,bird").param("pattern", "lines"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.design.coverUrl").value(org.hamcrest.Matchers.containsString("/covers/")))
+                .andExpect(jsonPath("$.data.design.stickers[0]").value("flagjp"))
+                .andExpect(jsonPath("$.data.design.stickers.length()").value(3))
+                .andExpect(jsonPath("$.data.design.pattern").value("lines"))
+                .andExpect(jsonPath("$.data.design.hasVideo").value(false));
+
+        mvc.perform(bearer(multipart("/api/v1/blocks")
+                        .file(new MockMultipartFile("file", "tap.mp3", "audio/mpeg", TestAudio.sineMp3(12, 500))), token)
+                        .param("title", "x").param("categoryId", String.valueOf(leafCategoryId())).param("license", "OWN")
+                        .param("stickers", "unicorn"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.message").value("없는 스티커예요: unicorn"));
+        mvc.perform(bearer(multipart("/api/v1/blocks")
+                        .file(new MockMultipartFile("file", "tap.mp3", "audio/mpeg", TestAudio.sineMp3(12, 500))), token)
+                        .param("title", "x").param("categoryId", String.valueOf(leafCategoryId())).param("license", "OWN")
+                        .param("stickers", "bird,tree,moon,wax"))
+                .andExpect(status().isBadRequest());
+        // 업로드 규칙에 스티커 목록과 영상·사진 크기가 들어 있음
+        mvc.perform(get("/api/v1/blocks/upload-policy"))
+                .andExpect(jsonPath("$.data.stickers", hasItem("flagjp")))
+                .andExpect(jsonPath("$.data.maxVideoMb").value(200))
+                .andExpect(jsonPath("$.data.videoExtensions", hasItem("mp4")));
+    }
+
+    @Test
+    @DisplayName("영상 블록: 영상만 올리면 소리는 영상에서 뽑고, 영상은 480p·소리 없는 mp4로. 유료면 산 사람만 영상 주소")
+    void uploadVideoBlock() throws Exception {
+        String token = newUser().accessToken();
+        String body = json(mvc.perform(bearer(multipart("/api/v1/blocks")
+                        .file(new MockMultipartFile("video", "wax.mp4", "video/mp4", TestAudio.testVideo(12, true))), token)
+                        .param("title", "왁스 부수기 영상").param("categoryId", String.valueOf(leafCategoryId())).param("license", "OWN")
+                        .param("price", "10"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.duration").value(12))
+                .andExpect(jsonPath("$.data.design.hasVideo").value(true)));
+        long id = ((Number) com.jayway.jsonpath.JsonPath.read(body, "$.data.id")).longValue();
+        // 올린 사람은 내가 올린 블록에서 영상까지 확인
+        getWithToken("/api/v1/me/uploads", token)
+                .andExpect(jsonPath("$.data.content[0].design.videoUrl").value(org.hamcrest.Matchers.containsString("/videos/")));
+        patchJson("/api/v1/admin/blocks/" + id + "/status", "{\"status\":\"APPROVED\"}", admin().accessToken())
+                .andExpect(status().isOk());
+        getWithToken("/api/v1/blocks/" + id, token)
+                .andExpect(jsonPath("$.data.design.videoUrl").value(org.hamcrest.Matchers.containsString("/videos/")));
+        // 아직 안 산 사람: "영상" 표시만, 주소는 없음
+        getWithToken("/api/v1/blocks/" + id, newUser().accessToken())
+                .andExpect(jsonPath("$.data.design.hasVideo").value(true))
+                .andExpect(jsonPath("$.data.design.videoUrl").doesNotExist());
+
+        // 소리 없는 영상만 올리면 소리 파일을 같이 올리라고 알려 줌
+        mvc.perform(bearer(multipart("/api/v1/blocks")
+                        .file(new MockMultipartFile("video", "silent.mp4", "video/mp4", TestAudio.testVideo(12, false))), token)
+                        .param("title", "소리 없는 영상").param("categoryId", String.valueOf(leafCategoryId())).param("license", "OWN"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.message").value("영상에서 소리를 찾지 못했어요. 소리 파일을 같이 올려 주세요."));
+        // 음원도 영상도 없으면 400
+        mvc.perform(bearer(multipart("/api/v1/blocks"), token)
+                        .param("title", "빈 블록").param("categoryId", String.valueOf(leafCategoryId())).param("license", "OWN"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.message").value("음원 파일이나 영상 파일 중 하나는 올려 주세요."));
+    }
 }

@@ -144,6 +144,6 @@ class BlockApiTest extends IntegrationTest {
         mvc.perform(bearer(multipart("/api/v1/blocks"), user.accessToken())
                         .param("title", "파일 없음").param("categoryId", "1").param("license", "OWN"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"));
+                .andExpect(jsonPath("$.error.message").value("음원 파일이나 영상 파일 중 하나는 올려 주세요."));
     }
 }

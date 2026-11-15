@@ -1,5 +1,6 @@
 package com.asmrblock.playlist;
 
+import com.asmrblock.block.BlockDtos.DesignResponse;
 import com.asmrblock.category.CategoryDtos.CategoryResponse;
 import com.asmrblock.render.RenderResponse;
 import com.asmrblock.storage.StorageService;
@@ -133,7 +134,8 @@ public final class PlaylistDtos {
             boolean playable,
             boolean owned,
             Integer price,
-            CategoryResponse category) {
+            CategoryResponse category,
+            DesignResponse design) {
     }
 
     public record TrackResponse(
@@ -154,7 +156,8 @@ public final class PlaylistDtos {
                                 block.getDuration(),
                                 pb.getRepeatCount(), layer.getRole() == LayerRole.MIX ? pb.getStartSeconds() : null,
                                 pb.totalSeconds(), block.isPlayable(), owned, block.getPrice(),
-                                CategoryResponse.from(block.getCategory()));
+                                CategoryResponse.from(block.getCategory()),
+                                DesignResponse.of(block, storage, owned || !block.isPaid()));
                     }).toList());
         }
     }

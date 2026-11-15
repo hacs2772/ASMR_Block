@@ -69,6 +69,29 @@ public class AudioService {
                 output.toString()), audio.processTimeout());
     }
 
+    /**
+     * 블록 영상: "진짜 그 장소·그 장면이구나" 하고 보는 용도라 화질보다 가볍게.
+     * 480p · 24fps · 소리 없음(소리는 블록 음원) · 휴대폰에서 바로 재생되는 mp4
+     */
+    public void blockVideo(Path input, Path output) {
+        ffmpeg.ffmpeg(List.of(
+                "-i", input.toString(),
+                "-an", "-map", "0:v:0",
+                "-vf", "scale=-2:'min(480,ih)':flags=bicubic,fps=24",
+                "-c:v", "libx264", "-preset", "veryfast", "-crf", "32", "-pix_fmt", "yuv420p",
+                "-movflags", "+faststart",
+                output.toString()), audio.processTimeout());
+    }
+
+    /** 블록 겉면 사진: 가로 최대 640px jpg (블록 모양에 맞게 자르는 건 화면에서) */
+    public void coverImage(Path input, Path output) {
+        ffmpeg.ffmpeg(List.of(
+                "-i", input.toString(),
+                "-vf", "scale='min(640,iw)':-2",
+                "-frames:v", "1", "-q:v", "4",
+                output.toString()), audio.processTimeout());
+    }
+
     public int duration(Path file) {
         return ffmpeg.probeDurationSeconds(file);
     }

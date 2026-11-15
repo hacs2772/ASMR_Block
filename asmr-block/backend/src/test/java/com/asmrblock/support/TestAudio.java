@@ -33,6 +33,43 @@ public final class TestAudio {
         }
     }
 
+    /** seconds초짜리 작은 테스트 영상(mp4, 화면 + 사인파 소리). withSound=false면 소리 없는 영상 */
+    public static byte[] testVideo(int seconds, boolean withSound) {
+        java.util.List<String> args = new java.util.ArrayList<>(java.util.List.of("ffmpeg", "-nostdin", "-loglevel", "error", "-y",
+                "-f", "lavfi", "-i", "testsrc=size=640x360:rate=10:duration=" + seconds));
+        if (withSound) {
+            args.addAll(java.util.List.of("-f", "lavfi", "-i", "sine=frequency=440:duration=" + seconds, "-c:a", "aac", "-shortest"));
+        }
+        args.addAll(java.util.List.of("-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p"));
+        return make(args, ".mp4");
+    }
+
+    /** 작은 PNG 사진 */
+    public static byte[] testPng() {
+        return make(java.util.List.of("ffmpeg", "-nostdin", "-loglevel", "error", "-y",
+                "-f", "lavfi", "-i", "color=c=0x58A6F2:size=900x500", "-frames:v", "1"), ".png");
+    }
+
+    private static byte[] make(java.util.List<String> args, String suffix) {
+        try {
+            Path file = Files.createTempFile("test-media-", suffix);
+            java.util.List<String> all = new java.util.ArrayList<>(args);
+            all.add(file.toString());
+            Process process = new ProcessBuilder(all).redirectErrorStream(true).start();
+            if (!process.waitFor(60, TimeUnit.SECONDS) || process.exitValue() != 0) {
+                throw new IllegalStateException("테스트 파일 생성 실패: " + new String(process.getInputStream().readAllBytes()));
+            }
+            byte[] bytes = Files.readAllBytes(file);
+            Files.deleteIfExists(file);
+            return bytes;
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
+        }
+    }
+
     /** 파일 길이(초, 소수점) */
     public static double durationOf(Path file) {
         try {

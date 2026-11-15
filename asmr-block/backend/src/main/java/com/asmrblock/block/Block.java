@@ -21,7 +21,10 @@ public class Block {
     private String description;
     private String fileKey;          // 서비스용 음원 (samples/rain.mp3, blocks/xxx.mp3)
     private String masterFileKey;    // 업로드 원본
-    private String thumbnailKey;
+    private String thumbnailKey;     // 블록 겉면 사진 (V7부터 크리에이터가 올림)
+    private String stickers;         // 겉면 스티커 코드 (쉼표로, 최대 3개)
+    private String stickerPattern;   // 스티커 무늬 dots | lines | none
+    private String videoKey;         // 같이 보는 영상 (480p, 소리 없음)
     private String previewKey;       // 유료 블록 맛보기(앞 30초) 파일
     private Integer duration;        // 재생 시간 (초)
     private Integer price;           // 가격 (코인, 0이면 무료)

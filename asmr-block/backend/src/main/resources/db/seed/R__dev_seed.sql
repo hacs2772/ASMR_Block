@@ -64,6 +64,15 @@ ON CONFLICT (id) DO UPDATE SET
     license = EXCLUDED.license, status = EXCLUDED.status, play_count = EXCLUDED.play_count,
     price = EXCLUDED.price, talk_type = EXCLUDED.talk_type, recorded_place = EXCLUDED.recorded_place, is_active = TRUE;
 
+-- 블록 꾸미기 샘플 (V7): 사진이 없으면 스티커 + 무늬로 겉면을 꾸밈 (나머지는 트리거 아이콘)
+UPDATE block SET stickers = v.stickers, sticker_pattern = v.pattern
+FROM (VALUES
+    (1, 'rain,moon', 'lines'), (2, 'wave', 'dots'), (3, 'mountain,tree,bird', 'lines'), (5, 'keyboard', 'dots'),
+    (6, 'moon', 'none'), (14, 'wax', 'dots'), (15, 'flagjp,signal,bird', 'dots'), (16, 'soap', 'lines'),
+    (17, 'tree,keyboard', 'none'), (18, 'mic,brush', 'dots'), (21, 'wax', 'lines')
+) AS v(id, stickers, pattern)
+WHERE block.id = v.id;
+
 -- 3) 블록-태그 (태그 id: 1 부드러운, 2 날카로운, 3 바삭한, 4 둔탁한, 5 습한, 6 리드미컬한)
 INSERT INTO block_tag (block_id, tag_id) VALUES
     (1, 1), (1, 5),

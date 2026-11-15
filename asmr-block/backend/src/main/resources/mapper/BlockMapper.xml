@@ -56,10 +56,10 @@
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO block (title, description, file_key, master_file_key, thumbnail_key, duration, price,
-                           talk_type, recorded_place,
+                           talk_type, recorded_place, stickers, sticker_pattern, video_key,
                            category_id, uploader_id, license, source_url, attribution, status)
         VALUES (#{title}, #{description}, #{fileKey}, #{masterFileKey}, #{thumbnailKey}, #{duration}, #{price},
-                #{talkType}, #{recordedPlace},
+                #{talkType}, #{recordedPlace}, #{stickers}, COALESCE(#{stickerPattern}, 'dots'), #{videoKey},
                 #{categoryId}, #{uploaderId}, #{license}, #{sourceUrl}, #{attribution}, #{status})
     </insert>
 

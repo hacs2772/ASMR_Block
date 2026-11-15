@@ -32,12 +32,12 @@ public final class BlockDtos {
             String description,
             String fileUrl,
             String previewUrl,
-            String thumbnailUrl,
             Integer duration,
             Integer price,
             boolean owned,
             TalkType talkType,
             String recordedPlace,
+            DesignResponse design,
             License license,
             String sourceUrl,
             String attribution,
@@ -57,9 +57,9 @@ public final class BlockDtos {
                     block.getId(), block.getTitle(), block.getDescription(),
                     canHear || !block.isPaid() ? fullUrl : null,
                     block.isPaid() ? storage.publicUrl(block.getPreviewKey()) : fullUrl,
-                    storage.publicUrl(block.getThumbnailKey()),
                     block.getDuration(), block.getPrice(), owned,
                     block.getTalkType() == null ? TalkType.NONE : block.getTalkType(), block.getRecordedPlace(),
+                    DesignResponse.of(block, storage, canHear || !block.isPaid()),
                     block.getLicense(), block.getSourceUrl(), block.getAttribution(), block.getStatus(),
                     CategoryResponse.from(block.getCategory()),
                     tags == null ? List.of() : tags,
@@ -71,10 +71,39 @@ public final class BlockDtos {
     public record UploaderResponse(Long id, String nickname) {
     }
 
+    /**
+     * 블록 겉면과 영상 (C안: 사진이 있으면 사진, 없으면 스티커 + 무늬, 둘 다 없으면 트리거 아이콘).
+     * videoUrl: 같이 보는 영상(480p, 소리 없음). 유료 블록은 내 것일 때만 주고, hasVideo로 "영상" 표시만
+     */
+    public record DesignResponse(String coverUrl, List<String> stickers, String pattern, boolean hasVideo, String videoUrl) {
+
+        public static DesignResponse of(Block block, StorageService storage, boolean canWatch) {
+            return new DesignResponse(
+                    storage.publicUrl(block.getThumbnailKey()),
+                    BlockDesign.stickerList(block.getStickers()),
+                    block.getStickerPattern() == null ? "dots" : block.getStickerPattern(),
+                    block.getVideoKey() != null,
+                    canWatch ? storage.publicUrl(block.getVideoKey()) : null);
+        }
+    }
+
     /** 음원 업로드 (multipart/form-data). 업로드 후 관리자 승인 전까지 PENDING */
     public record BlockUploadRequest(
-            @NotNull(message = "음원 파일(file)은 필수입니다.")
+            /** 음원 파일. 영상(video)만 올리면 영상의 소리를 뽑아 씀 → file이나 video 중 하나는 꼭 */
             MultipartFile file,
+
+            /** 같이 보는 영상 (선택, 480p·소리 없음으로 줄여서 저장) */
+            MultipartFile video,
+
+            /** 블록 겉면 사진 (선택) */
+            MultipartFile cover,
+
+            /** 겉면 스티커 코드, 쉼표로 최대 3개 (선택, 사진이 없을 때 보임) */
+            @Size(max = 100, message = "스티커가 너무 많아요.")
+            String stickers,
+
+            /** 스티커 무늬 dots | lines | none (생략하면 dots) */
+            String pattern,
 
             @NotBlank(message = "제목은 필수입니다.")
             @Size(max = 100, message = "제목은 100자 이내여야 합니다.")
@@ -116,7 +145,13 @@ public final class BlockDtos {
             int maxFileMb,
             int minSeconds,
             int maxSeconds,
-            List<String> extensions) {
+            List<String> extensions,
+            int maxVideoMb,
+            List<String> videoExtensions,
+            int maxImageMb,
+            List<String> imageExtensions,
+            List<String> stickers,
+            List<String> patterns) {
     }
 
     /**
@@ -133,6 +168,7 @@ public final class BlockDtos {
             String recordedPlace,
             BlockStatus status,
             CategoryResponse category,
+            DesignResponse design,
             long collectedCount,
             Integer playCount,
             LocalDateTime createdAt) {
@@ -141,7 +177,7 @@ public final class BlockDtos {
             return new MyUploadResponse(block.getId(), block.getTitle(), storage.publicUrl(block.getFileKey()),
                     block.getDuration(), block.getPrice(),
                     block.getTalkType() == null ? TalkType.NONE : block.getTalkType(), block.getRecordedPlace(),
-                    block.getStatus(), CategoryResponse.from(block.getCategory()),
+                    block.getStatus(), CategoryResponse.from(block.getCategory()), DesignResponse.of(block, storage, true),
                     collectedCount, block.getPlayCount(), block.getCreatedAt());
         }
     }

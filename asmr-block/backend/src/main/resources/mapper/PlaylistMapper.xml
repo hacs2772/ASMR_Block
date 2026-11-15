@@ -24,6 +24,10 @@
                 <result property="price" column="block_price"/>
                 <result property="status" column="block_status"/>
                 <result property="isActive" column="block_active"/>
+                <result property="thumbnailKey" column="block_cover"/>
+                <result property="stickers" column="block_stickers"/>
+                <result property="stickerPattern" column="block_pattern"/>
+                <result property="videoKey" column="block_video"/>
                 <association property="category" javaType="com.asmrblock.category.SoundCategory">
                     <id property="id" column="cat_id"/>
                     <result property="name" column="cat_name"/>
@@ -149,6 +153,8 @@
                pb.id AS pb_id, pb.block_id, pb.sort_order, pb.repeat_count, pb.start_seconds,
                b.title AS block_title, b.file_key, b.duration AS block_duration, b.price AS block_price,
                b.status AS block_status, b.is_active AS block_active,
+               b.thumbnail_key AS block_cover, b.stickers AS block_stickers, b.sticker_pattern AS block_pattern,
+               b.video_key AS block_video,
                c.id AS cat_id, c.name AS cat_name, c.code AS cat_code, c.color AS cat_color, c.icon AS cat_icon,
                c.parent_id AS cat_parent_id, pc.name AS cat_parent_name, pc.code AS cat_parent_code
         FROM playlist_layer l
