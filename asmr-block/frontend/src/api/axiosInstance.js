@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { currentLang } from '../locales';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api/v1';
 
@@ -10,9 +11,10 @@ const axiosInstance = axios.create({
   },
 });
 
-// 요청 인터셉터 - 토큰 추가
+// 요청 인터셉터 - 토큰 + 화면 언어 (서버가 오류 문장·트리거 이름·블록/조합 영어 제목을 그 언어로)
 axiosInstance.interceptors.request.use(
   (config) => {
+    config.headers['Accept-Language'] = currentLang();
     const token = localStorage.getItem('accessToken');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

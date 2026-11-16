@@ -19,6 +19,7 @@
             <association property="block" javaType="com.asmrblock.block.Block">
                 <id property="id" column="block_id"/>
                 <result property="title" column="block_title"/>
+                <result property="titleEn" column="block_title_en"/>
                 <result property="fileKey" column="file_key"/>
                 <result property="duration" column="block_duration"/>
                 <result property="price" column="block_price"/>
@@ -31,11 +32,13 @@
                 <association property="category" javaType="com.asmrblock.category.SoundCategory">
                     <id property="id" column="cat_id"/>
                     <result property="name" column="cat_name"/>
+                    <result property="nameEn" column="cat_name_en"/>
                     <result property="code" column="cat_code"/>
                     <result property="color" column="cat_color"/>
                     <result property="icon" column="cat_icon"/>
                     <result property="parentId" column="cat_parent_id"/>
                     <result property="parentName" column="cat_parent_name"/>
+                    <result property="parentNameEn" column="cat_parent_name_en"/>
                     <result property="parentCode" column="cat_parent_code"/>
                 </association>
             </association>
@@ -60,8 +63,8 @@
 
     <!-- 담아 온 복사본. 이미 같은 원본을 담았으면 아무것도 넣지 않음 (id가 비어 있음) -->
     <insert id="insertCopy" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO playlist (user_id, title, description, total_duration, is_public, listen_minutes, source_playlist_id)
-        VALUES (#{userId}, #{title}, #{description}, #{totalDuration}, #{isPublic}, #{listenMinutes}, #{sourcePlaylistId})
+        INSERT INTO playlist (user_id, title, description, title_en, description_en, total_duration, is_public, listen_minutes, source_playlist_id)
+        VALUES (#{userId}, #{title}, #{description}, #{titleEn}, #{descriptionEn}, #{totalDuration}, #{isPublic}, #{listenMinutes}, #{sourcePlaylistId})
         ON CONFLICT (user_id, source_playlist_id) WHERE source_playlist_id IS NOT NULL DO NOTHING
     </insert>
 
@@ -81,7 +84,11 @@
     </update>
 
     <update id="update">
-        UPDATE playlist SET title = #{title}, description = #{description},
+        <!-- 영어 화면에서 이름을 안 바꾸고 저장하면(= 영어 이름 그대로 옴) 원래 이름·영어 이름을 그대로 둠, 바꾸면 영어 이름은 비움 -->
+        UPDATE playlist SET title = CASE WHEN #{title} = title_en THEN title ELSE #{title} END,
+                            title_en = CASE WHEN #{title} = title_en OR #{title} = title THEN title_en ELSE NULL END,
+                            description = CASE WHEN #{description} = description_en THEN description ELSE #{description} END,
+                            description_en = CASE WHEN #{description} = description_en OR #{description} = description THEN description_en ELSE NULL END,
                             total_duration = #{totalDuration}, is_public = #{isPublic},
                             listen_minutes = #{listenMinutes}
         WHERE id = #{id}
@@ -159,12 +166,12 @@
     <select id="findLayers" resultMap="LayerMap">
         SELECT l.id AS layer_id, l.playlist_id, l.role, l.volume,
                pb.id AS pb_id, pb.block_id, pb.sort_order, pb.repeat_count, pb.start_seconds,
-               b.title AS block_title, b.file_key, b.duration AS block_duration, b.price AS block_price,
+               b.title AS block_title, b.title_en AS block_title_en, b.file_key, b.duration AS block_duration, b.price AS block_price,
                b.status AS block_status, b.is_active AS block_active,
                b.thumbnail_key AS block_cover, b.stickers AS block_stickers, b.sticker_pattern AS block_pattern,
                b.video_key AS block_video,
-               c.id AS cat_id, c.name AS cat_name, c.code AS cat_code, c.color AS cat_color, c.icon AS cat_icon,
-               c.parent_id AS cat_parent_id, pc.name AS cat_parent_name, pc.code AS cat_parent_code
+               c.id AS cat_id, c.name AS cat_name, c.name_en AS cat_name_en, c.code AS cat_code, c.color AS cat_color, c.icon AS cat_icon,
+               c.parent_id AS cat_parent_id, pc.name AS cat_parent_name, pc.name_en AS cat_parent_name_en, pc.code AS cat_parent_code
         FROM playlist_layer l
         JOIN playlist_block pb ON pb.layer_id = l.id
         JOIN block b ON b.id = pb.block_id

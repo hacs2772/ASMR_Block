@@ -178,7 +178,7 @@ public class RenderService {
 
     private static String truncate(String message) {
         if (message == null) {
-            return "알 수 없는 오류";
+            return "알 수 없는 오류"; // i18n-ok (기록용, 화면에 안 나감)
         }
         return message.length() <= 1000 ? message : message.substring(0, 1000);
     }

@@ -17,7 +17,7 @@ import { usePlayer, type NowPlaying } from '@/audio/PlayerProvider';
 import { formatRemaining, sleepOptionLabel, SLEEP_OPTIONS_MIN } from '@/audio/sleepTimer';
 import { Button, Chip, EmptyState, IconButton } from '@/components/ui';
 import { confirm, notify } from '@/lib/dialog';
-import { SITE_URL } from '@/lib/links';
+import { shareLinks } from '@/lib/share';
 import { formatDuration, formatMinutes } from '@/lib/format';
 import { useAuth } from '@/store/auth';
 import { categoryFallbackColor, colors, radius, space } from '@/theme';
@@ -186,7 +186,7 @@ export default function PlayerScreen() {
         return;
       }
     }
-    const url = `${SITE_URL}/s/${shareId}`;
+    const url = shareLinks.combo(shareId);
     const message = `${t('player.shareMessage', { title: p.title })}\n${url}`;
     try {
       await Share.share(Platform.OS === 'ios' ? { message: t('player.shareMessage', { title: p.title }), url } : { message, title: p.title });

@@ -28,6 +28,8 @@ export type BlockDesign = {
 export type Sticker = {
   code: string;
   name: string;
+  /** 관리자가 적은 영어 이름 (V15, 없으면 사전 → name) */
+  nameEn?: string | null;
   svg: string | null;
   imageUrl: string | null;
   active: boolean;

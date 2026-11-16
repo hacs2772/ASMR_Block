@@ -1,6 +1,6 @@
 # ASMR Block - API 명세서
 
-> 최종 수정일: 2026-11-13
+> 최종 수정일: 2026-11-16
 > Base URL: `/api/v1`
 > 서버를 켜면 **http://localhost:8080/swagger-ui.html** 에서 모든 API를 직접 호출해볼 수 있습니다.
 > (로그인 API로 받은 `accessToken`을 오른쪽 위 **Authorize** 에 붙여넣으면 로그인이 필요한 API도 호출 가능)
@@ -43,6 +43,21 @@
 | 404 | 없음 | `NOT_FOUND` |
 | 409 | 중복 (이메일) | `CONFLICT` |
 | 413 | 업로드 파일이 너무 큼 (50MB) | `FILE_TOO_LARGE` |
+
+### 언어 (영어판 3단계, V15)
+서버가 **요청 언어**에 맞춰 글을 보내요. 웹·앱은 화면 언어를 모든 요청에 `Accept-Language: ko|en`으로 붙여요.
+1. 주소에 `?lang=en` / `?lang=ko` (공유 링크 `/s/…?lang=en`처럼 헤더를 못 붙일 때)
+2. `Accept-Language` 맨 앞이 영어(`en`, `en-US` …)면 영어, 그 밖(한국어·다른 언어·없음)은 **한국어**
+3. **관리자 API(`/admin/**`)는 언제나 한국어** (운영자 화면, 고칠 때 한국어 칸을 영어로 덮어쓰지 않게)
+
+영어 요청이면 바뀌는 것:
+- `message`·`error.message`: 서버 문장 표(`backend/src/main/resources/i18n/messages_en.tsv`)로 영어. 숫자가 든 문장(`블록은 하루에 20개까지…`)도, 입력 검사 여러 개가 쉼표로 이어진 것도. 표에 없으면 한국어 그대로
+- 트리거(분류) `name`·`description`, 스티커 `name`, 블록 `title`·`description`·`recordedPlace`, 조합 `title`·`description`: **영어 이름이 있으면 영어**(`name_en` 등, 없으면 원래 글). 지금 영어 이름이 있는 것 = 트리거 38개·기본 스티커 16개·샘플 블록·샘플 조합. 크리에이터가 쓴 글은 그대로
+- 알림 `message`(영어 문장), 돌려보낸 이유 중 서버가 쓴 앞부분(`신고로 내려졌어요: …` → `Taken down after a report: …`)
+- 블록 제목 검색(`keyword`)은 영어 제목으로도 찾아짐
+- 조합을 저장할 때 받은 영어 제목·설명을 그대로 보내면 한국어 원래 글은 안 바뀜(영어도 그대로). 새로 쓰면 그 글이 두 언어 모두에
+
+> 새 안내·오류 문장을 코드에 쓰면 `messages_en.tsv`에 영어도 넣어야 해요 — 빠뜨리면 `ServerMessagesTest`가 실패 (화면에 안 나가는 줄은 `// i18n-ok`)
 
 ### 인증
 - 헤더: `Authorization: Bearer {accessToken}`
@@ -163,6 +178,7 @@
 
 - `code`: 분류 코드 (소분류는 `대분류.이름` 형태). `groupCode`: 대분류 코드 — 앱·웹이 **파형 모양**과 트리거 필터에 씀
 - 위 표는 처음 넣은 분류예요. **관리자 페이지에서 추가·숨기기·순서 변경**을 하면 이 API에 바로 반영돼요 (9장). 숨긴 분류와 숨긴 묶음 아래 소분류는 빠짐
+- 영어 요청이면 `name`·`description`·`parentName`이 영어 이름(`Tapping & Typing`, V15) — 관리자가 영어 이름을 비운 분류는 한국어 이름
 
 **스티커 그림** `GET /stickers` (V8) - 블록 겉면(`design.stickers`)을 그릴 때 씀. 관리자가 추가하면 **앱 업데이트 없이** 바로 보임
 ```json
@@ -175,6 +191,7 @@
 - 그림은 `svg`(SVG 글자) 또는 `imageUrl`(PNG, 최대 256px) 중 하나. 웹은 `<img>`로, 앱은 react-native-svg / Image로 그림
 - `active: false` = 숨긴 스티커: **새로 고를 수 없지만**(업로드 규칙 `stickers`에서 빠짐, 업로드하면 400) 이미 붙인 블록에는 그대로 그림. 그래서 숨긴 것도 목록에 있음
 - 서버에서 못 받을 때(오프라인 등) 앱·웹은 기본 16개(V8에 넣은 그림)로 그림
+- `nameEn`: 관리자가 적은 영어 이름(V15, 없으면 `null`). 영어 요청이면 `name`도 영어 이름. 앱·웹은 `?lang=ko`로 받아 한국어 `name` + `nameEn`을 두고 화면 언어로 고름
 
 ---
 
@@ -470,22 +487,23 @@
 
 | Method | URL | 설명 |
 |------|------|------|
-| GET | `/admin/categories` | 숨긴 것까지 트리. 각 분류에 `active`, `sortOrder`, `blockCount`(직접 달린 블록 수) |
-| POST | `/admin/categories` | 추가 (201) `{ "parentId": null, "name": "먹방·씹기", "color": "#E879F9", "icon": "pizza", "description": "…", "code": "mukbang" }` |
-| PATCH | `/admin/categories/{id}` | 보낸 것만 고침 `{ "name", "color", "icon", "description", "active" }` |
+| GET | `/admin/categories` | 숨긴 것까지 트리. 각 분류에 `active`, `sortOrder`, `blockCount`(직접 달린 블록 수), 영어 `nameEn`·`descriptionEn`(V15) |
+| POST | `/admin/categories` | 추가 (201) `{ "parentId": null, "name": "먹방·씹기", "nameEn": "Mukbang", "color": "#E879F9", "icon": "pizza", "description": "…", "descriptionEn": "…", "code": "mukbang" }` |
+| PATCH | `/admin/categories/{id}` | 보낸 것만 고침 `{ "name", "nameEn", "color", "icon", "description", "descriptionEn", "active" }` — `nameEn`·`descriptionEn`을 빈 글자로 보내면 지움 |
 | PUT | `/admin/categories/order` | 같은 줄 순서 `{ "ids": [12, 9, 10] }` (묶음끼리 또는 한 묶음의 소분류끼리, 섞으면 400) |
 
 - `parentId` 없음 = **트리거 묶음**(대분류): `color` 필수 → 블록 색. 있음 = 그 묶음의 **소분류**: 색은 묶음을 따름(따로 보내면 400), `icon`(Ionicons 이름) → 블록 아이콘
 - `code`(선택, 영문 소문자 2~20자): 비우면 자동(묶음 `g12`, 소분류 `묶음코드.c13`), 소분류는 `묶음코드.적은코드`. 같은 코드면 409. 만든 뒤에는 못 바꿈 (앱·웹 파형 모양에 씀)
 - 소분류 아래에 또 만들면 400. 묶음 색을 바꾸면 소분류 색도 같이 바뀜
 - 숨긴 분류, 숨긴 묶음 아래 소분류로는 **업로드할 수 없음**(400). 이미 달린 블록은 그대로 보임
+- 영어 이름 `nameEn` 30자·영어 설명 `descriptionEn` 120자까지 (영어 화면에 보임, 비우면 기본 영어 이름이나 한국어 이름)
 
 ### 9.3 스티커 - V8
 
 | Method | URL | 설명 |
 |------|------|------|
-| POST | `/admin/stickers` | 추가 (multipart, 201) `name`(10자) + `file`. 응답 `StickerResponse`, 코드는 자동(`s`+6자) |
-| PATCH | `/admin/stickers/{code}` | `{ "name": "등대", "active": false }` 보낸 것만 (숨기기·다시 보이기) |
+| POST | `/admin/stickers` | 추가 (multipart, 201) `name`(10자) + `nameEn`(선택, 20자) + `file`. 응답 `StickerResponse`, 코드는 자동(`s`+6자) |
+| PATCH | `/admin/stickers/{code}` | `{ "name": "등대", "nameEn": "Lighthouse", "active": false }` 보낸 것만 (숨기기·다시 보이기, `nameEn` 빈 글자 = 지움) |
 | PUT | `/admin/stickers/order` | `{ "codes": ["sn92uqc", "flagjp"] }` 앞에서부터, 안 보낸 것은 그 뒤 |
 
 - 목록은 공개 `GET /stickers` (숨긴 것 포함, 4장)
@@ -585,6 +603,7 @@ API(`/api/v1`) 밖의 주소예요. 웹 nginx가 `/s/`를 백엔드로 넘겨요
 - 사이트 주소 = 설정 `app.site.url`(공개용 `APP_SITE_URL` = `PUBLIC_URL`), 비우면 요청 주소 기준
 - 웹 듣기 화면·앱 플레이어의 **공유하기**: 휴대폰은 공유 창, 아니면 링크 복사. 담아 온 복사본이면 원래 조합 링크, 내 비공개 조합이면 "공개로 바꾸고 공유할까요?"를 먼저 물어봄
 - 블록 카드의 작은 공유 아이콘 = `/s/b/{id}`, 크리에이터 페이지의 공유하기 = `/s/c/{id}` (웹 `lib/share.js` · 앱 `lib/share.ts`)
+- **영어**: `?lang=en`이면 미리보기 글이 영어(`5 blocks · 24 min loop · Tapping & Typing | Tingles stacked by @닉네임`, 영어 조합·블록 이름, 링크 글 `Listen to the combo`), `<html lang="en">`·`og:locale en_US`, 사람도 영어 화면(`/listen/{id}?lang=en`)으로. 웹·앱은 화면이 영어일 때 공유 링크에 `?lang=en`을 붙임
 
 ---
 

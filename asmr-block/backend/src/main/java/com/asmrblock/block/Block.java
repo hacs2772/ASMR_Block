@@ -19,6 +19,8 @@ public class Block {
     private Long id;
     private String title;
     private String description;
+    private String titleEn;          // 영어 제목·소개·녹음한 곳 (V15, 지금은 샘플만 — 영어 화면에서, 비면 원래 글)
+    private String descriptionEn;
     private String fileKey;          // 서비스용 음원 (samples/rain.mp3, blocks/xxx.mp3)
     private String masterFileKey;    // 업로드 원본
     private String thumbnailKey;     // 블록 겉면 사진 (V7부터 크리에이터가 올림)
@@ -30,6 +32,7 @@ public class Block {
     private Integer price;           // 가격 (코인, 0이면 무료)
     private TalkType talkType;       // 말소리 (노토킹 / 속삭임 / 말하기)
     private String recordedPlace;    // 녹음한 곳 (선택)
+    private String recordedPlaceEn;
     private Long categoryId;
     private Long uploaderId;
     private License license;

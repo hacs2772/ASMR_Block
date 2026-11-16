@@ -24,14 +24,15 @@
     </select>
 
     <insert id="insert">
-        INSERT INTO sticker (code, name, svg, image_key, sort_order, is_active)
-        VALUES (#{code}, #{name}, #{svg}, #{imageKey}, #{sortOrder}, #{isActive})
+        INSERT INTO sticker (code, name, name_en, svg, image_key, sort_order, is_active)
+        VALUES (#{code}, #{name}, #{nameEn}, #{svg}, #{imageKey}, #{sortOrder}, #{isActive})
     </insert>
 
     <update id="update">
         UPDATE sticker
         <set>
             <if test="name != null">name = #{name},</if>
+            <if test="nameEn != null">name_en = NULLIF(#{nameEn}, ''),</if>
             <if test="active != null">is_active = #{active},</if>
             code = code
         </set>

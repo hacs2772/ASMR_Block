@@ -175,3 +175,39 @@ SELECT setval('block_id_seq',          GREATEST((SELECT MAX(id) FROM block), 1))
 SELECT setval('playlist_id_seq',       GREATEST((SELECT MAX(id) FROM playlist), 1));
 SELECT setval('playlist_layer_id_seq', GREATEST((SELECT MAX(id) FROM playlist_layer), 1));
 SELECT setval('playlist_block_id_seq', GREATEST((SELECT MAX(id) FROM playlist_block), 1));
+
+-- 영어 제목·소개·녹음한 곳 (V15, 영어 화면에서 보임)
+UPDATE block SET title_en = v.title_en, description_en = v.description_en, recorded_place_en = v.place_en
+FROM (VALUES
+    (1, 'Gentle rain', '[Synthetic test audio] Steady rain outside the window', NULL),
+    (2, 'Night sea waves', '[Synthetic test audio] Waves rolling in every 8 seconds', 'Gyeongpo Beach, Gangneung'),
+    (3, 'Forest wind', '[Synthetic test audio] Wind that rises and falls', 'Jirisan forest trail'),
+    (4, 'Clock ticking', '[Synthetic test audio] A second hand going tick-tock', NULL),
+    (5, 'Keyboard typing', '[Synthetic test audio] Typing with little pauses', NULL),
+    (6, 'Singing bowl', '[Synthetic test audio] A singing bowl ringing every 10 seconds', NULL),
+    (7, 'Slow heartbeat', '[Synthetic test audio] A heartbeat at 60 beats a minute', NULL),
+    (8, 'Calm breathing', '[Synthetic test audio] Slow breaths in and out, every 5 seconds', NULL),
+    (9, 'Sizzling pan', '[Synthetic test audio] Food sizzling in a pan', NULL),
+    (10, 'Electric fan', '[Synthetic test audio] A low humming fan', NULL),
+    (11, 'Pink noise', '[Synthetic test audio] Pink noise for sleep', NULL),
+    (12, 'Brown noise', '[Synthetic test audio] Low, deep brown noise', NULL),
+    (14, 'Wax cracking', '[Synthetic test audio] Crunching through hardened wax', NULL),
+    (15, 'Japanese crossing signal', '[Synthetic test audio] The "cuckoo-cuckoo" crosswalk signal and street sounds', 'Outside Shinjuku Station, Tokyo'),
+    (16, 'Soap cutting', '[Synthetic test audio] Slicing a firm bar of soap', NULL),
+    (17, 'Wooden desk tapping', '[Synthetic test audio] Fingernails tapping on a wooden desk', 'A studio in Mangwon-dong, Seoul'),
+    (18, 'Mic brushing', '[Synthetic test audio] A soft brush sweeping the mic', NULL),
+    (19, 'Plastic crinkles', '[Synthetic test audio] Thin plastic slowly scrunched and smoothed', NULL),
+    (20, 'Whispered counting', '[Synthetic test audio] Soft whispers like counting numbers', NULL),
+    (21, 'Slime squishing', '[Synthetic test audio] Squishing soft slime', 'Basak Workshop, Mangwon-dong')
+) AS v(id, title_en, description_en, place_en)
+WHERE block.id = v.id;
+
+UPDATE playlist SET title_en = v.title_en, description_en = v.description_en
+FROM (VALUES
+    (1, 'Rainy night work session', 'Keyboard between the rain (main row only, public)'),
+    (2, 'Bedtime routine', 'Breathing → heartbeat → singing bowl → waves, with gentle rain throughout (private)'),
+    (3, 'Rain dripping in the mountains', 'Forest wind with rain mixed in here and there (public)'),
+    (4, 'Wax-crunch tingles', 'Trending wax cracking + soap cutting (public)'),
+    (5, 'Tapping + rain for sleepless nights', 'Tapping and keyboard in a row, with rain layered underneath (public)')
+) AS v(id, title_en, description_en)
+WHERE playlist.id = v.id;

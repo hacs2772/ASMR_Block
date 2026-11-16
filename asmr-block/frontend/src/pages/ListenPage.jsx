@@ -4,6 +4,7 @@ import { IoCreate, IoMoon, IoPause, IoPlay, IoStar, IoVideocam } from 'react-ico
 import { Trans, useTranslation } from 'react-i18next';
 import { errorMessage, playlistApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
+import useLangChange from '../locales/useLangChange';
 import BetaLoginButton from '../components/common/BetaLoginButton';
 import BlockVideoPanel from '../components/playlist/BlockVideoPanel';
 import { CollectComboButton } from '../components/playlist/ComboCard';
@@ -59,6 +60,8 @@ function ListenPage() {
     setCombo(null);
     playlistApi.get(id).then((c) => { setCombo(c); setRender(c.render); }).catch((e) => setError(errorMessage(e)));
   }, [id]);
+  // 언어를 바꾸면 조합·블록 이름만 새 언어로 (듣던 소리는 그대로)
+  useLangChange(() => { playlistApi.get(id).then(setCombo).catch(() => {}); });
 
   const request = useCallback(async () => {
     setRequesting(true);

@@ -17,12 +17,13 @@
     </select>
 
     <select id="topTriggers" resultType="com.asmrblock.creator.CreatorTrigger">
-        SELECT COALESCE(p.code, c.code) AS code, COALESCE(p.name, c.name) AS name
+        SELECT COALESCE(p.code, c.code) AS code, COALESCE(p.name, c.name) AS name,
+               CASE WHEN p.id IS NULL THEN c.name_en ELSE p.name_en END AS name_en
         FROM block b
         JOIN sound_category c ON c.id = b.category_id
         LEFT JOIN sound_category p ON p.id = c.parent_id
         WHERE b.uploader_id = #{userId} AND b.status = 'APPROVED' AND b.is_active = true AND b.is_listed = true
-        GROUP BY COALESCE(p.code, c.code), COALESCE(p.name, c.name)
+        GROUP BY COALESCE(p.code, c.code), COALESCE(p.name, c.name), CASE WHEN p.id IS NULL THEN c.name_en ELSE p.name_en END
         ORDER BY COUNT(*) DESC, MIN(b.created_at)
         LIMIT 3
     </select>

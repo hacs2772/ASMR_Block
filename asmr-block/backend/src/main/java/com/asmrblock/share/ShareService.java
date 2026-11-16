@@ -8,6 +8,7 @@ import com.asmrblock.common.ApiException;
 import com.asmrblock.config.AppProperties;
 import com.asmrblock.creator.CreatorDtos.CreatorResponse;
 import com.asmrblock.creator.CreatorService;
+import com.asmrblock.i18n.Lang;
 import com.asmrblock.playlist.Playlist;
 import com.asmrblock.playlist.PlaylistBlock;
 import com.asmrblock.playlist.PlaylistLayer;
@@ -39,6 +40,28 @@ public class ShareService {
 
     private static final String DEFAULT_TITLE = "ASMR Block — 나만의 팅글을 블록으로";
     private static final String DEFAULT_DESCRIPTION = "좋아하는 트리거 블록만 골라 딸깍 이어 붙이는, 나만의 ASMR 만들기";
+    private static final String DEFAULT_TITLE_EN = "ASMR Block — your own tingles, block by block";
+    private static final String DEFAULT_DESCRIPTION_EN = "Pick the trigger blocks you love and click them together into your own ASMR";
+
+    /*
+     * 영어판: 영어 화면에서 공유한 링크는 끝에 ?lang=en (카톡은 주소마다 미리보기를 따로 기억하니 언어마다 주소가 달라야 함).
+     * 그 요청은 Lang이 en → 미리보기 글·이름(영어 이름이 있으면)·넘어가는 주소(?lang=en)가 영어
+     */
+    private static String t(String ko, String en) {
+        return Lang.english() ? en : ko;
+    }
+
+    private static String withLang(String url) {
+        return Lang.english() ? url + (url.contains("?") ? "&" : "?") + "lang=en" : url;
+    }
+
+    private static String defaultTitle() {
+        return t(DEFAULT_TITLE, DEFAULT_TITLE_EN);
+    }
+
+    private static String defaultDescription() {
+        return t(DEFAULT_DESCRIPTION, DEFAULT_DESCRIPTION_EN);
+    }
 
     /** 공개 조합 (아니거나 없으면 비어 있음) */
     public Optional<Playlist> publicPlaylist(Long id) {
@@ -60,12 +83,13 @@ public class ShareService {
         String site = siteUrl();
         Optional<Playlist> found = publicPlaylist(id);
         if (found.isEmpty()) {
-            return html(DEFAULT_TITLE, DEFAULT_DESCRIPTION, site + "/og-image.png", site + "/listen/" + id, site + "/s/" + id, "조합 들으러 가기");
+            return html(defaultTitle(), defaultDescription(), site + "/og-image.png", site + "/listen/" + id, site + "/s/" + id,
+                    t("조합 들으러 가기", "Listen to the combo"));
         }
         Playlist p = found.get();
         long version = p.getUpdatedAt() == null ? 0 : p.getUpdatedAt().toEpochSecond(ZoneOffset.UTC);
-        return html(p.getTitle() + " · ASMR Block", describe(p), site + "/s/" + id + "/card.png?v=" + version,
-                site + "/listen/" + id, site + "/s/" + id, "조합 들으러 가기");
+        return html(Lang.pick(p.getTitle(), p.getTitleEn()) + " · ASMR Block", describe(p), site + "/s/" + id + "/card.png?v=" + version,
+                site + "/listen/" + id, site + "/s/" + id, t("조합 들으러 가기", "Listen to the combo"));
     }
 
     /** 공유할 수 있는 블록 (승인·활성). 아니면 비어 있음 */
@@ -78,12 +102,13 @@ public class ShareService {
         String site = siteUrl();
         Optional<Block> found = sharedBlock(id);
         if (found.isEmpty()) {
-            return html(DEFAULT_TITLE, DEFAULT_DESCRIPTION, site + "/og-image.png", site + "/shop", site + "/s/b/" + id, "블록 상점으로 가기");
+            return html(defaultTitle(), defaultDescription(), site + "/og-image.png", site + "/shop", site + "/s/b/" + id,
+                    t("블록 상점으로 가기", "Go to the Block Shop"));
         }
         Block b = found.get();
         long version = b.getUpdatedAt() == null ? 0 : b.getUpdatedAt().toEpochSecond(ZoneOffset.UTC);
-        return html(b.getTitle() + " · ASMR Block", describeBlock(b), site + "/s/b/" + id + "/card.png?v=" + version,
-                site + "/creator/" + b.getUploaderId() + "?block=" + id, site + "/s/b/" + id, "블록 들으러 가기");
+        return html(Lang.pick(b.getTitle(), b.getTitleEn()) + " · ASMR Block", describeBlock(b), site + "/s/b/" + id + "/card.png?v=" + version,
+                site + "/creator/" + b.getUploaderId() + "?block=" + id, site + "/s/b/" + id, t("블록 들으러 가기", "Listen to the block"));
     }
 
     public byte[] blockCard(Long id) {
@@ -96,15 +121,17 @@ public class ShareService {
         String target = site + "/creator/" + userId;
         try {
             CreatorResponse c = creatorService.get(userId);
-            StringBuilder d = new StringBuilder("블록 ").append(c.blockCount()).append("개");
+            StringBuilder d = new StringBuilder(Lang.english()
+                    ? c.blockCount() + (c.blockCount() == 1 ? " block" : " blocks") : "블록 " + c.blockCount() + "개");
             if (!c.triggers().isEmpty()) {
                 d.append(" · ").append(String.join("·", c.triggers()));
             }
-            d.append(" | 좋아하는 트리거만 골라 쌓는 나만의 ASMR");
-            return html("@" + c.nickname() + "의 ASMR 블록 · ASMR Block", d.toString(),
-                    site + "/s/c/" + userId + "/card.png?v=" + c.blockCount(), target, site + "/s/c/" + userId, "블록 보러 가기");
+            d.append(t(" | 좋아하는 트리거만 골라 쌓는 나만의 ASMR", " | Build your own ASMR from the triggers you love"));
+            return html(t("@" + c.nickname() + "의 ASMR 블록 · ASMR Block", "ASMR blocks by @" + c.nickname() + " · ASMR Block"), d.toString(),
+                    site + "/s/c/" + userId + "/card.png?v=" + c.blockCount(), target, site + "/s/c/" + userId, t("블록 보러 가기", "See the blocks"));
         } catch (ApiException e) {
-            return html(DEFAULT_TITLE, DEFAULT_DESCRIPTION, site + "/og-image.png", site + "/shop", site + "/s/c/" + userId, "블록 상점으로 가기");
+            return html(defaultTitle(), defaultDescription(), site + "/og-image.png", site + "/shop", site + "/s/c/" + userId,
+                    t("블록 상점으로 가기", "Go to the Block Shop"));
         }
     }
 
@@ -116,7 +143,9 @@ public class ShareService {
     }
 
     /** og·twitter 태그 + 사람은 바로 target으로 넘김 */
-    private String html(String title, String description, String image, String target, String self, String linkText) {
+    private String html(String title, String description, String image, String rawTarget, String rawSelf, String linkText) {
+        String target = withLang(rawTarget);
+        String self = withLang(rawSelf);
         String t = escape(title);
         String d = escape(description);
         String l = escape(target);
@@ -124,14 +153,14 @@ public class ShareService {
         String i = escape(image);
         return """
                 <!doctype html>
-                <html lang="ko"><head>
+                <html lang="%8$s"><head>
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1">
                 <title>%1$s</title>
                 <meta name="description" content="%2$s">
                 <meta property="og:type" content="website">
                 <meta property="og:site_name" content="ASMR Block">
-                <meta property="og:locale" content="ko_KR">
+                <meta property="og:locale" content="%9$s">
                 <meta property="og:title" content="%1$s">
                 <meta property="og:description" content="%2$s">
                 <meta property="og:url" content="%4$s">
@@ -149,35 +178,38 @@ public class ShareService {
                 <p><a href="%3$s">%7$s</a></p>
                 <script>location.replace(%6$s)</script>
                 </body></html>
-                """.formatted(t, d, l, u, i, jsString(target), escape(linkText));
+                """.formatted(t, d, l, u, i, jsString(target), escape(linkText), Lang.current(), Lang.english() ? "en_US" : "ko_KR");
     }
 
     /** "탭핑 · 3분 20초 · 노토킹 | @닉네임 · 도쿄 신주쿠역 앞" */
     static String describeBlock(Block b) {
         StringBuilder sb = new StringBuilder();
         if (b.getCategory() != null) {
-            String group = b.getCategory().getParentName() != null ? b.getCategory().getParentName() : b.getCategory().getName();
+            String group = b.getCategory().getParentName() != null
+                    ? Lang.pick(b.getCategory().getParentName(), b.getCategory().getParentNameEn())
+                    : Lang.pick(b.getCategory().getName(), b.getCategory().getNameEn());
             if (group != null) {
                 sb.append(group).append(" · ");
             }
         }
         int seconds = b.getDuration() == null ? 0 : b.getDuration();
-        sb.append(seconds / 60).append("분");
+        sb.append(seconds / 60).append(t("분", " min"));
         if (seconds % 60 > 0) {
-            sb.append(" ").append(seconds % 60).append("초");
+            sb.append(" ").append(seconds % 60).append(t("초", " sec"));
         }
         if (b.getTalkType() != null) {
             sb.append(" · ").append(switch (b.getTalkType()) {
-                case NONE -> "노토킹";
-                case WHISPER -> "속삭임";
-                case TALK -> "말하기";
+                case NONE -> t("노토킹", "No talking");
+                case WHISPER -> t("속삭임", "Whisper");
+                case TALK -> t("말하기", "Talking");
             });
         }
         if (b.getUploaderNickname() != null) {
             sb.append(" | @").append(b.getUploaderNickname());
         }
-        if (b.getRecordedPlace() != null && !b.getRecordedPlace().isBlank()) {
-            sb.append(" · ").append(b.getRecordedPlace());
+        String place = Lang.pick(b.getRecordedPlace(), b.getRecordedPlaceEn());
+        if (place != null && !place.isBlank()) {
+            sb.append(" · ").append(place);
         }
         return sb.toString();
     }
@@ -190,18 +222,20 @@ public class ShareService {
             for (PlaylistBlock pb : layer.getBlocks()) {
                 blocks += Math.max(1, pb.getRepeatCount() == null ? 1 : pb.getRepeatCount());
                 if (pb.getBlock() != null && pb.getBlock().getCategory() != null && pb.getBlock().getCategory().getName() != null) {
-                    triggers.add(pb.getBlock().getCategory().getName());
+                    triggers.add(Lang.pick(pb.getBlock().getCategory().getName(), pb.getBlock().getCategory().getNameEn()));
                 }
             }
         }
         int minutes = (int) Math.max(1, Math.round((p.getTotalDuration() == null ? 0 : p.getTotalDuration()) / 60.0));
         String names = String.join("·", triggers.stream().limit(3).toList());
-        StringBuilder sb = new StringBuilder("블록 ").append(blocks).append("개 · 한 바퀴 ").append(minutes).append("분");
+        StringBuilder sb = new StringBuilder(Lang.english()
+                ? blocks + (blocks == 1 ? " block · " : " blocks · ") + minutes + " min loop"
+                : "블록 " + blocks + "개 · 한 바퀴 " + minutes + "분");
         if (!names.isEmpty()) {
             sb.append(" · ").append(names);
         }
         if (p.getOwnerNickname() != null) {
-            sb.append(" | @").append(p.getOwnerNickname()).append("님이 쌓은 나만의 팅글");
+            sb.append(Lang.english() ? " | Tingles stacked by @" + p.getOwnerNickname() : " | @" + p.getOwnerNickname() + "님이 쌓은 나만의 팅글");
         }
         return sb.toString();
     }

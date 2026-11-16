@@ -87,7 +87,7 @@ export const adminApi = {
   updateCategory: (id, body) => data(axiosInstance.patch(`/admin/categories/${id}`, body)),
   orderCategories: (ids) => data(axiosInstance.put('/admin/categories/order', { ids })),
   /** 스티커 (목록은 공개 GET /stickers, 숨긴 것 포함) */
-  stickers: () => data(axiosInstance.get('/stickers')),
+  stickers: () => data(axiosInstance.get('/stickers', { params: { lang: 'ko' } })),
   addSticker: (form) => data(axiosInstance.post('/admin/stickers', form, multipart)),
   updateSticker: (code, body) => data(axiosInstance.patch(`/admin/stickers/${code}`, body)),
   orderStickers: (codes) => data(axiosInstance.put('/admin/stickers/order', { codes })),

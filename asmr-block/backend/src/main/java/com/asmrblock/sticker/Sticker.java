@@ -18,6 +18,7 @@ public class Sticker {
 
     private String code;
     private String name;
+    private String nameEn;           // 영어 이름 (V15, 비면 name)
     private String svg;
     private String imageKey;
     private Integer sortOrder;

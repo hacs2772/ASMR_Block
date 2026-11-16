@@ -23,19 +23,23 @@ export const TRIGGER_COLOR = {
 export const FALLBACK_COLOR = '#9AA0AE';
 
 /**
- * 분류 이름 (지금 언어). 한국어는 서버 이름 그대로(관리자가 바꾼 이름), 영어는 사전(cat.코드)에서 — 관리자가 새로 만든 건 서버 이름.
+ * 분류 이름 (지금 언어). 한국어는 서버 이름 그대로(관리자가 바꾼 이름).
+ * 영어: 서버가 영어 이름을 줬으면(V15 name_en, 관리자가 적은 것) 그것 → 아니면(언어를 바꾸기 전에 받은 한국어 등) 사전(cat.코드) → 서버 이름.
  * 묶음 이름: 블록의 category(소분류)면 groupCode(서버 블록 응답) · parentName, 묶음 자체면 code
  */
 const catKey = (code) => `cat.${String(code).replace(/\./g, '__')}`;
 const isEn = () => i18n.language === 'en';
-export const categoryName = (code, fallback) => (code && isEn() ? i18n.t(catKey(code), { defaultValue: fallback || '' }) : fallback || '');
+const HANGUL = /[가-힣]/; // i18n-ok (한국어인지 가리는 글자 범위)
+/** 영어 화면: 서버 글이 이미 영어면 그대로, 한국어면 사전 */
+const englishOr = (server, key) => (server && !HANGUL.test(server) ? server : i18n.t(key, { defaultValue: server || '' }));
+export const categoryName = (code, fallback) => (code && isEn() ? englishOr(fallback, catKey(code)) : fallback || '');
 export const categoryLabel = (cat) => (cat ? categoryName(cat.code, cat.name) : '');
 /** 소분류 코드 'tap.tapping'의 앞부분 = 묶음 코드 */
 const groupCodeOf = (cat) => cat.groupCode || cat.parentCode || (cat.code ? String(cat.code).split('.')[0] : null);
 export const groupLabel = (cat) => (!cat ? '' : cat.parentName || cat.groupCode || cat.parentCode
   ? categoryName(groupCodeOf(cat), cat.parentName) : categoryName(cat.code, cat.name));
 export const groupDescription = (group) => (group?.code && isEn()
-  ? i18n.t(`catDesc.${group.code}`, { defaultValue: group.description || '' }) : group?.description || '');
+  ? englishOr(group.description, `catDesc.${group.code}`) : group?.description || '');
 
 /** 말소리 종류 (NONE 노토킹 / WHISPER 속삭임 / TALK 말하기) → 지금 언어 이름 */
 export const TALK_TYPES = ['NONE', 'WHISPER', 'TALK'];

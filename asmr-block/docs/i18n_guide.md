@@ -1,7 +1,7 @@
 # ASMR Block - 다국어 가이드 (한국어 · English)
 
 > 최종 수정일: 2026-11-16
-> 1단계 **웹사이트 영어판** 끝 → 2단계 **앱 영어판** 끝 → 3단계 서버 글(오류 메시지·알림 문장·공유 미리보기·트리거 이름)
+> 1단계 **웹사이트 영어판** 끝 → 2단계 **앱 영어판** 끝 → 3단계 **서버 글**(오류 메시지·알림 문장·공유 미리보기·트리거/스티커/샘플 영어 이름) 끝
 
 ---
 
@@ -53,10 +53,9 @@ const { t } = useTranslation();
 ## 4. 분류(트리거) 이름
 
 - 한국어: 서버 이름 그대로 (관리자가 바꾼 이름)
-- 영어: 코드로 사전에서 `cat.tap`, `cat.tap__tapping` (점은 `__`), 설명은 `catDesc.tap`
+- 영어: **서버가 영어 이름을 줬으면 그것**(3단계 `name_en`, 관리자가 적은 것) → 아니면(언어를 바꾸기 전에 받은 한국어 등) 코드로 사전에서 `cat.tap`, `cat.tap__tapping` (점은 `__`), 설명은 `catDesc.tap` → 그래도 없으면 서버 이름
 - 함수: `lib/blocks.js` `categoryLabel(cat)`·`groupLabel(cat)`(블록 응답의 `groupCode` 사용)·`groupDescription(group)`
-- 관리자가 새로 만든 분류는 사전에 없으니 서버 이름 (3단계에서 DB에 영어 이름 칸 추가 예정)
-- 스티커도 같은 방식: `stickers.{code}` → `stickerName(sticker)`
+- 스티커: 목록을 `?lang=ko`로 받아 한국어 `name` + `nameEn`을 두고 `stickerName(sticker)` = 영어면 `nameEn` → 사전 `stickers.{code}` → `name` (관리자 화면이 이름을 고칠 때 영어가 한국어 칸에 들어가지 않게)
 
 ## 5. 안전 검사 (CI가 자동으로)
 
@@ -91,6 +90,26 @@ const { t } = useTranslation();
 - 좁은 칸: 영어가 길면 `numberOfLines`로 잘리니, 꼭 보여야 하는 줄은 두 줄 허용(블록 카드 트리거 줄)하거나 영어를 짧게
 - `'audio/*'` 같은 글자 속 `/*`는 주석이 아님 — 검사는 줄 처음·공백·`{ ( , ;` 뒤의 `/*`만 주석으로 봄
 
-## 7. 다음 단계
+## 7. 서버 (3단계)
 
-- **3단계 서버**: 오류 메시지(`Accept-Language` 또는 계정 언어), 알림 문장(지금은 `title`·`actor`·`count`로 웹·앱이 영어 문장을 만듦), 공유 미리보기(og 태그) 영어, 트리거·스티커 영어 이름을 DB에(`name_en`), 베타 손님 첫 블록·샘플 블록 영어 제목
+웹·앱은 모든 요청에 화면 언어를 `Accept-Language: ko|en`으로 붙이고(웹 `api/axiosInstance.js`, 앱 `api/client.ts`), 서버가 그 언어로 글을 보내요.
+
+| 무엇 | 어디 |
+|------|------|
+| 요청 언어 정하기 | `backend/…/i18n/LangFilter` — 주소 `?lang=en|ko` → `Accept-Language` 맨 앞이 영어면 en → 그 밖은 ko. **관리자 API(`/api/v1/admin/**`)는 늘 한국어**. 요청 동안 `Lang.current()`·`Lang.english()`·`Lang.pick(한국어, 영어)` |
+| 안내·오류 문장 | 코드는 한국어 그대로 쓰고 `ApiResponse`(ok·message·error)가 `Messages.tr()`로 영어로. 표 = `src/main/resources/i18n/messages_en.tsv`(탭으로 나눔: `한국어⇥English`), 숫자 자리는 `{0}`(`블록은 하루에 {0}개까지…`), 쉼표로 이은 입력 검사 여러 개도 하나씩 |
+| 영어 이름 (V15) | `sound_category.name_en·description_en`, `sticker.name_en`, `block.title_en·description_en·recorded_place_en`, `playlist.title_en·description_en`. 응답을 만들 때 `Lang.pick`으로 고름 (DB 원래 글은 그대로라 저장해도 한국어가 안 덮임). 기본 트리거 38개·스티커 16개는 V15, 샘플 블록·조합은 `db/samples/R__public_samples.sql`·`db/seed/R__dev_seed.sql` |
+| 관리자 | 트리거 종류·스티커 고치기에 **영어 이름** 칸 (`nameEn`·`descriptionEn`, 빈 칸 = 지움). 관리자 화면은 한국어라 `name`은 늘 한국어 원래 이름 |
+| 조합 저장 | 영어 화면에서 받은 영어 제목을 그대로 저장하면 한국어 제목·영어 제목 모두 그대로 (`PlaylistMapper.update`의 CASE). 제목을 새로 쓰면 그 제목이 두 언어 모두에 |
+| 공유 미리보기 | `ShareService`가 `?lang=en`이면 og 글·`<html lang>`·`og:locale`·링크 글이 영어, 사람도 `…?lang=en` 화면으로. 웹·앱은 영어 화면이면 공유 링크에 `?lang=en` (`lib/share`) |
+| 알림 문장 | `NotificationService.englishMessage` (웹·앱 사전 `notif.msg.*`와 같은 문장), 돌려보낸 이유 중 서버가 쓴 앞부분(`신고로 내려졌어요: …`)도 |
+| 언어를 바꾸면 | 웹: `App.js` `LangKeyed`가 화면을 새로 그려 다시 받음. 하던 것이 있는 화면(편집기·듣기·블록 판매·관리자)은 그대로 두고 `locales/useLangChange`로 이름만 다시. 앱: `_layout.tsx`가 `languageChanged` → `queryClient.invalidateQueries()` (편집기는 처음 한 번만 불러와서 쌓던 것은 그대로) |
+| 검사 | `ServerMessagesTest`(코드의 한국어 문장이 모두 표에 있음 — **새 문장을 쓰고 영어를 빠뜨리면 실패**, 화면에 안 나가는 줄은 `// i18n-ok` · 영어 쪽에 한국어 없음 · `{0}` 자리가 같음), `EnglishApiTest`(오류·이름·관리자·공유·알림·담아 온 조합 저장), 웹 `blocks.test.js`·앱 `labels.test.ts`·`client.test.ts`, E2E `web-english`·`app` |
+
+- 그대로 두는 것: 크리에이터가 쓴 글(블록 이름·소개·녹음한 곳·닉네임·조합 이름) — 영어 이름은 샘플만. 개발자용 내부 오류·로그
+- 새 관리자 분류·스티커: 관리자 페이지에서 영어 이름을 적으면 앱 업데이트 없이 영어 화면에 바로
+
+## 8. 다음에 할 수 있는 것
+
+- 크리에이터가 블록을 올릴 때 영어 제목도 적기(선택) → `title_en`
+- 영어 화면 사람에게 영어 블록을 먼저 보여 주기

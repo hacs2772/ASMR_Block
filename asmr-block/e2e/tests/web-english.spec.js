@@ -92,3 +92,17 @@ test('주소에 ?lang=en 을 붙이면 영어 (공유 링크용), 기본 한국�
   await page.goto('/guide?lang=en');
   await expect(page.getByRole('heading', { name: 'What are tingles?' })).toBeVisible();
 });
+
+test('서버 글도 화면 언어로: 언어를 바꾸면 듣기 화면의 조합 이름이 바로 바뀌고, 서버 오류 문장도 영어', async ({ page }) => {
+  await page.goto('/listen/1');
+  await expect(page.getByTestId('listen-title')).toHaveText('비 오는 밤 작업용');
+  await page.locator('footer').getByTestId('lang-en').click();
+  await expect(page.getByTestId('listen-title')).toHaveText('Rainy night work session');
+
+  // 없는 계정으로 로그인 → 서버가 보낸 오류 문장이 영어 (시드 계정은 로그인 잠금이 걸리지 않게 안 씀)
+  await page.goto('/login');
+  await page.getByTestId('login-email').fill(`nobody-${Date.now()}@e2e.asmrblock.com`);
+  await page.getByTestId('login-password').fill('wrong-password');
+  await page.getByTestId('login-password').press('Enter');
+  await expect(page.getByText('The email or password is incorrect.').first()).toBeVisible();
+});

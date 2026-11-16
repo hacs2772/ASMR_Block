@@ -56,6 +56,9 @@ export function setLang(code) {
   i18n.changeLanguage(code);
 }
 
+/** 지금 화면 언어 ('ko' | 'en') — 서버에 Accept-Language로 보냄 */
+export const currentLang = () => (i18n.language === 'en' ? 'en' : 'ko');
+
 /** 숫자·날짜 표시용 (ko-KR / en-US) */
 export const localeOf = (lng = i18n.language) => (lng === 'en' ? 'en-US' : 'ko-KR');
 

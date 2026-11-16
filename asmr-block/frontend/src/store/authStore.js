@@ -1,10 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import authApi from '../api/authApi';
-import i18n, { LANG_KEY, setLang } from '../locales';
-
-/** 지금 화면 언어 (계정에 저장하는 값: ko · en) */
-const currentLang = () => (i18n.language === 'en' ? 'en' : 'ko');
+import i18n, { currentLang, LANG_KEY, setLang } from '../locales';
 
 /**
  * 화면 언어 ↔ 계정 언어 맞추기 (나중에 알림·메일을 그 언어로 보내려고).

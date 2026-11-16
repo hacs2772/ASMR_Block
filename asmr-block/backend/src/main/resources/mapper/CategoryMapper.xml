@@ -4,7 +4,7 @@
 <mapper namespace="com.asmrblock.category.CategoryMapper">
 
     <select id="findAllCategories" resultType="com.asmrblock.category.SoundCategory">
-        SELECT c.*, p.name AS parent_name, p.code AS parent_code
+        SELECT c.*, p.name AS parent_name, p.name_en AS parent_name_en, p.code AS parent_code
         FROM sound_category c
         LEFT JOIN sound_category p ON p.id = c.parent_id
         WHERE c.is_active = true
@@ -25,7 +25,7 @@
 
     <!-- ===== 관리자 ===== -->
     <select id="findAllForAdmin" resultType="com.asmrblock.category.SoundCategory">
-        SELECT c.*, p.name AS parent_name, p.code AS parent_code,
+        SELECT c.*, p.name AS parent_name, p.name_en AS parent_name_en, p.code AS parent_code,
                (SELECT COUNT(*) FROM block b WHERE b.category_id = c.id AND b.is_active = true) AS block_count
         FROM sound_category c
         LEFT JOIN sound_category p ON p.id = c.parent_id
@@ -34,7 +34,7 @@
     </select>
 
     <select id="findAnyById" resultType="com.asmrblock.category.SoundCategory">
-        SELECT c.*, p.name AS parent_name, p.code AS parent_code
+        SELECT c.*, p.name AS parent_name, p.name_en AS parent_name_en, p.code AS parent_code
         FROM sound_category c
         LEFT JOIN sound_category p ON p.id = c.parent_id
         WHERE c.id = #{id}
@@ -50,8 +50,8 @@
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO sound_category (code, name, color, icon, description, parent_id, sort_order, is_active)
-        VALUES (#{code}, #{name}, #{color}, #{icon}, #{description}, #{parentId}, #{sortOrder}, true)
+        INSERT INTO sound_category (code, name, name_en, color, icon, description, description_en, parent_id, sort_order, is_active)
+        VALUES (#{code}, #{name}, #{nameEn}, #{color}, #{icon}, #{description}, #{descriptionEn}, #{parentId}, #{sortOrder}, true)
     </insert>
 
     <update id="updateCode">
@@ -65,6 +65,8 @@
             <if test="color != null">color = #{color},</if>
             <if test="icon != null">icon = #{icon},</if>
             <if test="description != null">description = NULLIF(#{description}, ''),</if>
+            <if test="nameEn != null">name_en = NULLIF(#{nameEn}, ''),</if>
+            <if test="descriptionEn != null">description_en = NULLIF(#{descriptionEn}, ''),</if>
             <if test="active != null">is_active = #{active},</if>
             id = id
         </set>

@@ -132,7 +132,7 @@ public class AuthService {
         User user = User.builder()
                 .email(email)
                 .password(passwordEncoder.encode(password))
-                .nickname((english ? "Guest" : "베타손님") + (1000 + random.nextInt(9000)))
+                .nickname((english ? "Guest" : "베타손님") + (1000 + random.nextInt(9000))) // i18n-ok (저장되는 이름)
                 .language(english ? "en" : "ko")
                 .role(Role.USER)
                 .isActive(true)

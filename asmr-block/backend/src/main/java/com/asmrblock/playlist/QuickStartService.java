@@ -79,7 +79,7 @@ public class QuickStartService {
         libraryService.addFree(userId, picks.stream().map(Block::getId).toList());
 
         String title = request.title() != null && !request.title().isBlank()
-                ? request.title().trim() : ("나의 첫 팅글 · " + String.join("·", names));
+                ? request.title().trim() : ("나의 첫 팅글 · " + String.join("·", names)); // i18n-ok (저장되는 조합 이름 — 영어 화면은 영어 이름을 보냄)
         if (title.length() > 100) {
             title = title.substring(0, 100);
         }

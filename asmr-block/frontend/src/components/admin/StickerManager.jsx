@@ -38,9 +38,10 @@ function StickerManager() {
       toast.success(s.active ? `"${s.name}" 숨겼어요. 이미 붙인 블록에는 그대로 보여요.` : `"${s.name}" 다시 고를 수 있어요.`);
     } catch (e) { toast.error(errorMessage(e)); }
   };
-  const rename = async (s, name) => {
+  /** 이름 + 영어 이름 (영어를 비우면 지움 → 영어 화면은 기본 영어 이름이나 한국어 이름) */
+  const rename = async (s, name, nameEn) => {
     try {
-      await adminApi.updateSticker(s.code, { name });
+      await adminApi.updateSticker(s.code, { name, nameEn });
       await refresh();
       setEditing(null);
     } catch (e) { toast.error(errorMessage(e)); }
@@ -55,6 +56,7 @@ function StickerManager() {
         <p className="max-w-xl text-sm text-muted">
           판매자가 블록 겉면에 붙이는 그림이에요. 올리면 앱·웹의 블록 판매 화면에 바로 나와요(앱 업데이트 필요 없음).
           숨기면 새로 고를 수 없지만, 이미 붙인 블록에는 그대로 보여요. 지금 고를 수 있는 스티커 {activeCount}개.
+          영어 이름은 영어 화면에 보여요.
         </p>
         {!adding && <button type="button" className="btn-pink btn-sm" onClick={() => setAdding(true)} data-testid="add-sticker"><IoAdd /> 스티커 추가</button>}
       </div>
@@ -68,9 +70,12 @@ function StickerManager() {
               <StickerImage sticker={s} className="h-10 w-auto max-w-[80%] drop-shadow" />
             </div>
             {editing === s.code ? (
-              <RenameInput initial={s.name} onSave={(name) => rename(s, name)} onCancel={() => setEditing(null)} />
+              <RenameInput initial={s.name} initialEn={s.nameEn} onSave={(name, nameEn) => rename(s, name, nameEn)} onCancel={() => setEditing(null)} />
             ) : (
-              <p className="w-full truncate text-center text-sm font-bold">{s.name}{!s.active && <span className="ml-1 text-[10px] text-muted">숨김</span>}</p>
+              <>
+                <p className="w-full truncate text-center text-sm font-bold">{s.name}{!s.active && <span className="ml-1 text-[10px] text-muted">숨김</span>}</p>
+                <p className="-mt-1.5 w-full truncate text-center text-[11px] text-muted" data-testid={`sticker-en-${s.code}`}>EN {s.nameEn || '—'}</p>
+              </>
             )}
             <p className="text-[10px] text-faint">{s.code} · {s.svg ? 'SVG' : 'PNG'}</p>
             <div className="flex">
@@ -89,12 +94,16 @@ function StickerManager() {
   );
 }
 
-function RenameInput({ initial, onSave, onCancel }) {
+function RenameInput({ initial, initialEn, onSave, onCancel }) {
   const [name, setName] = useState(initial);
+  const [nameEn, setNameEn] = useState(initialEn || '');
+  const cls = 'w-full min-w-0 rounded-lg border border-line bg-night px-2 py-1 text-xs';
+  const esc = (e) => e.key === 'Escape' && onCancel();
   return (
-    <form className="flex w-full gap-1" onSubmit={(e) => { e.preventDefault(); if (name.trim()) onSave(name.trim()); }}>
-      <input className="w-full min-w-0 rounded-lg border border-line bg-night px-2 py-1 text-xs" value={name} maxLength={10}
-        onChange={(e) => setName(e.target.value)} autoFocus onKeyDown={(e) => e.key === 'Escape' && onCancel()} aria-label="스티커 이름" />
+    <form className="flex w-full flex-col gap-1" onSubmit={(e) => { e.preventDefault(); if (name.trim()) onSave(name.trim(), nameEn.trim()); }}>
+      <input className={cls} value={name} maxLength={10} onChange={(e) => setName(e.target.value)} autoFocus onKeyDown={esc} aria-label="스티커 이름" />
+      <input className={cls} value={nameEn} maxLength={20} onChange={(e) => setNameEn(e.target.value)} onKeyDown={esc}
+        placeholder="영어 이름 (선택)" aria-label="영어 이름" data-testid="sticker-rename-en" />
       <button type="submit" className="btn-pink px-2 py-1 text-xs">저장</button>
     </form>
   );
@@ -103,6 +112,7 @@ function RenameInput({ initial, onSave, onCancel }) {
 /** 스티커 추가: 이름 + 그림 파일, 블록 위에 어떻게 보일지 미리보기 */
 function AddSticker({ onAdded, onCancel }) {
   const [name, setName] = useState('');
+  const [nameEn, setNameEn] = useState('');
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -120,6 +130,7 @@ function AddSticker({ onAdded, onCancel }) {
     if (!file) return toast.error('그림 파일을 골라 주세요.');
     const form = new FormData();
     form.append('name', name.trim());
+    if (nameEn.trim()) form.append('nameEn', nameEn.trim());
     form.append('file', file);
     setSaving(true);
     try {
@@ -139,6 +150,10 @@ function AddSticker({ onAdded, onCancel }) {
           <label className="block">
             <span className="label">이름 <span className="text-xs font-normal text-faint">(판매 화면에 보여요, 10자까지)</span></span>
             <input className="input" value={name} onChange={(e) => setName(e.target.value)} maxLength={10} required placeholder="예: 등대" data-testid="sticker-name" />
+          </label>
+          <label className="block">
+            <span className="label">영어 이름 <span className="text-xs font-normal text-faint">(영어 화면, 선택, 20자까지)</span></span>
+            <input className="input" value={nameEn} onChange={(e) => setNameEn(e.target.value)} maxLength={20} placeholder="e.g. Lighthouse" data-testid="sticker-name-en" />
           </label>
           <div>
             <span className="label">그림 파일</span>

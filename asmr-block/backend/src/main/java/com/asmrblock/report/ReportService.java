@@ -101,12 +101,12 @@ public class ReportService {
                 hide(type, id, note);
                 if (reportMapper.updateStatus(type.name(), id, "OPEN", "HIDDEN") == 0) {
                     // 신고 없이 관리자가 바로 숨긴 것도 "숨긴 것"에 보이게
-                    reportMapper.insert(type.name(), id, Reason.OTHER.name(), note == null ? "관리자가 숨김" : note, null, "HIDDEN");
+                    reportMapper.insert(type.name(), id, Reason.OTHER.name(), note == null ? "관리자가 숨김" : note, null, "HIDDEN"); // i18n-ok (관리자 기록)
                 }
                 if (Boolean.TRUE.equals(request.banOwner()) && type != TargetType.USER && owner != null) {
                     userMapper.updateUploadBanned(owner, true);
                     reportMapper.insert(TargetType.USER.name(), owner, Reason.OTHER.name(),
-                            "신고된 " + (type == TargetType.BLOCK ? "블록" : "조합") + " #" + id + "로 업로드 막음", null, "HIDDEN");
+                            "신고된 " + (type == TargetType.BLOCK ? "블록" : "조합") + " #" + id + "로 업로드 막음", null, "HIDDEN"); // i18n-ok (관리자 기록)
                 }
                 yield Boolean.TRUE.equals(request.banOwner()) && type != TargetType.USER ? "숨기고, 올린 사람의 업로드도 막았어요." : "숨겼어요.";
             }

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import 'react-toastify/dist/ReactToastify.css';
 
 import { VideoModal } from './components/block/VideoModal';
@@ -40,6 +41,17 @@ function EditorRedirect() {
   return <Navigate to={playlistId ? `/create/${playlistId}` : '/create'} replace />;
 }
 
+/**
+ * 언어를 바꾸면 화면을 새로 그려서 서버 글(블록·조합 이름, 트리거 이름, 오류 문장)을 새 언어로 다시 받음.
+ * 하던 것이 있는 화면(편집기·듣기·블록 판매·관리자)은 그대로 두고 그 화면이 useLangChange로 필요한 것만 다시 받음
+ */
+const KEEP_ON_LANG_CHANGE = /^\/(create|listen|sell|admin)(\/|$)/;
+function LangKeyed({ children }) {
+  const { i18n } = useTranslation();
+  const { pathname } = useLocation();
+  return <React.Fragment key={KEEP_ON_LANG_CHANGE.test(pathname) ? 'keep' : i18n.language}>{children}</React.Fragment>;
+}
+
 listenInstallPrompt();
 
 function App() {
@@ -52,6 +64,7 @@ function App() {
       <div className="flex min-h-screen flex-col bg-night">
         <Header />
         <main className="flex-1">
+          <LangKeyed>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/shop" element={<ShopPage />} />
@@ -77,6 +90,7 @@ function App() {
             <Route path="/editor/:playlistId" element={<EditorRedirect />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </LangKeyed>
         </main>
         <Footer />
         <ComingSoonModal />

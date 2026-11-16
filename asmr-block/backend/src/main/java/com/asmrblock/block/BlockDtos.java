@@ -2,6 +2,8 @@ package com.asmrblock.block;
 
 import com.asmrblock.category.CategoryDtos.CategoryResponse;
 import com.asmrblock.category.CategoryDtos.TagResponse;
+import com.asmrblock.i18n.Lang;
+import com.asmrblock.i18n.Messages;
 import com.asmrblock.storage.StorageService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -54,11 +56,13 @@ public final class BlockDtos {
                                          boolean owned, boolean canHear) {
             String fullUrl = storage.publicUrl(block.getFileKey());
             return new BlockResponse(
-                    block.getId(), block.getTitle(), block.getDescription(),
+                    // 영어 화면이면 영어 제목·소개·녹음한 곳 (있을 때, V15 — 지금은 샘플 블록만)
+                    block.getId(), Lang.pick(block.getTitle(), block.getTitleEn()), Lang.pick(block.getDescription(), block.getDescriptionEn()),
                     canHear || !block.isPaid() ? fullUrl : null,
                     block.isPaid() ? storage.publicUrl(block.getPreviewKey()) : fullUrl,
                     block.getDuration(), block.getPrice(), owned,
-                    block.getTalkType() == null ? TalkType.NONE : block.getTalkType(), block.getRecordedPlace(),
+                    block.getTalkType() == null ? TalkType.NONE : block.getTalkType(),
+                    Lang.pick(block.getRecordedPlace(), block.getRecordedPlaceEn()),
                     DesignResponse.of(block, storage, canHear || !block.isPaid()),
                     block.getLicense(), block.getSourceUrl(), block.getAttribution(), block.getStatus(),
                     CategoryResponse.from(block.getCategory()),
@@ -190,7 +194,8 @@ public final class BlockDtos {
             return new MyUploadResponse(block.getId(), block.getTitle(), storage.publicUrl(block.getFileKey()),
                     block.getDuration(), block.getPrice(),
                     block.getTalkType() == null ? TalkType.NONE : block.getTalkType(), block.getRecordedPlace(),
-                    block.getStatus(), block.getReviewNote(), CategoryResponse.from(block.getCategory()), DesignResponse.of(block, storage, true),
+                    // 돌려보낸 이유: "신고로 내려졌어요: …"처럼 서버가 적은 문장은 영어 화면이면 영어로 (관리자가 쓴 글은 그대로)
+                    block.getStatus(), Messages.tr(block.getReviewNote()), CategoryResponse.from(block.getCategory()), DesignResponse.of(block, storage, true),
                     collectedCount, block.getPlayCount(), block.getCreatedAt());
         }
     }

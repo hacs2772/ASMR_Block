@@ -71,7 +71,8 @@ export const catalogApi = {
 
 /** 블록 겉면 스티커 그림 (로그인 없이, 숨긴 것 포함) */
 export const stickerApi = {
-  list: () => api<Sticker[]>('/stickers'),
+  /** lang=ko: name은 늘 한국어 원래 이름, 영어는 nameEn (화면에서 stickerName으로 고름) */
+  list: () => api<Sticker[]>('/stickers?lang=ko'),
 };
 
 /** 의견 보내기 (로그인 없이도 됨, 같은 사람은 10분에 5번까지) */

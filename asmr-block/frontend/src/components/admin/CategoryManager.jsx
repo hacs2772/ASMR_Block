@@ -49,6 +49,7 @@ function CategoryManager() {
         <p className="max-w-xl text-sm text-muted">
           <b className="text-ink">트리거 묶음</b>의 색이 블록 색, <b className="text-ink">소분류</b>의 아이콘이 블록 아이콘이 돼요.
           고치면 앱·웹에 바로 보여요(앱 업데이트 필요 없음). 블록이 달려 있을 수 있어서 지우지 않고 숨겨요.
+          <b className="text-ink">영어 이름</b>은 영어 화면에 보여요(비우면 기본 영어 이름이나 한국어 이름).
         </p>
         <button type="button" className="btn-pink btn-sm" onClick={() => setForm({ kind: 'new-group' })} data-testid="add-group">
           <IoAdd /> 트리거 묶음 추가
@@ -68,6 +69,7 @@ function CategoryManager() {
               <div className="min-w-0 flex-1">
                 <p className="font-extrabold">{g.name} {!g.active && <HiddenBadge />}</p>
                 <p className="truncate text-xs text-faint">{g.code} · 소분류 {g.children.length}개 · 블록 {g.blockCount + g.children.reduce((n, c) => n + c.blockCount, 0)}개{g.description ? ` · ${g.description}` : ''}</p>
+                <EnglishLine name={g.nameEn} description={g.descriptionEn} />
               </div>
               <RowActions first={gi === 0} last={gi === tree.length - 1} active={g.active}
                 onUp={() => move(tree, gi, -1)} onDown={() => move(tree, gi, 1)} onToggle={() => toggle(g)}
@@ -86,6 +88,7 @@ function CategoryManager() {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold">{c.name} {!c.active && <HiddenBadge />}</p>
                       <p className="truncate text-[11px] text-faint">{c.code} · 아이콘 {c.icon} · 블록 {c.blockCount}개</p>
+                      <EnglishLine name={c.nameEn} />
                     </div>
                     <RowActions small first={ci === 0} last={ci === g.children.length - 1} active={c.active}
                       onUp={() => move(g.children, ci, -1)} onDown={() => move(g.children, ci, 1)} onToggle={() => toggle(c)}
@@ -111,6 +114,15 @@ function CategoryManager() {
         ))}
       </div>
     </div>
+  );
+}
+
+/** 영어 화면에 보이는 이름 (없으면 안내) */
+function EnglishLine({ name, description }) {
+  return (
+    <p className="truncate text-[11px] text-faint" data-testid="category-en">
+      EN {name ? <span className="text-muted">{name}{description ? ` · ${description}` : ''}</span> : '영어 이름 없음'}
+    </p>
   );
 }
 
@@ -140,13 +152,16 @@ function CategoryForm({ initial, isGroup, parentColor, parentCode, onSave, onCan
   const [color, setColor] = useState(initial?.color || COLOR_PRESETS[0]);
   const [icon, setIcon] = useState(initial?.icon || 'musical-notes');
   const [description, setDescription] = useState(initial?.description || '');
+  const [nameEn, setNameEn] = useState(initial?.nameEn || '');
+  const [descriptionEn, setDescriptionEn] = useState(initial?.descriptionEn || '');
   const [saving, setSaving] = useState(false);
   const brickColor = isGroup ? color : parentColor;
 
   const submit = async (e) => {
     e.preventDefault();
-    const body = { name: name.trim(), icon };
-    if (isGroup) Object.assign(body, { color, description: description.trim() });
+    // 영어 이름·설명: 빈 칸으로 저장하면 지움 (영어 화면은 기본 영어 이름이나 한국어 이름)
+    const body = { name: name.trim(), nameEn: nameEn.trim(), icon };
+    if (isGroup) Object.assign(body, { color, description: description.trim(), descriptionEn: descriptionEn.trim() });
     if (!editing && code.trim()) body.code = code.trim();
     setSaving(true);
     await onSave(body);
@@ -165,6 +180,11 @@ function CategoryForm({ initial, isGroup, parentColor, parentCode, onSave, onCan
           <input className="input" value={name} onChange={(e) => setName(e.target.value)} maxLength={20} required
             placeholder={isGroup ? '예: 먹방·씹기' : '예: 등대·뱃고동'} data-testid="category-name" />
         </label>
+        <label className="block">
+          <span className="label">영어 이름 <span className="text-xs font-normal text-faint">(영어 화면, 선택)</span></span>
+          <input className="input" value={nameEn} onChange={(e) => setNameEn(e.target.value)} maxLength={30}
+            placeholder={isGroup ? 'e.g. Mukbang & Chewing' : 'e.g. Lighthouse horn'} data-testid="category-name-en" />
+        </label>
         {!editing && (
           <label className="block">
             <span className="label">영문 코드 <span className="text-xs font-normal text-faint">(선택, 비우면 자동)</span></span>
@@ -180,6 +200,13 @@ function CategoryForm({ initial, isGroup, parentColor, parentCode, onSave, onCan
             <span className="label">한 줄 설명 <span className="text-xs font-normal text-faint">(선택)</span></span>
             <input className="input" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={100}
               placeholder="예: 씹는 소리, 바삭한 소리" />
+          </label>
+        )}
+        {isGroup && (
+          <label className="block sm:col-span-2">
+            <span className="label">영어 설명 <span className="text-xs font-normal text-faint">(영어 화면, 선택)</span></span>
+            <input className="input" value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} maxLength={120}
+              placeholder="e.g. Chewing and crunchy sounds" data-testid="category-desc-en" />
           </label>
         )}
       </div>

@@ -33,8 +33,9 @@ export const PATTERNS = [{ key: 'dots' }, { key: 'lines' }, { key: 'none' }];
 export const patternLabel = (key) => i18n.t(`stickers.pattern.${key}`);
 
 /** 스티커 이름: 기본 16개는 지금 언어로, 관리자가 새로 넣은 건 서버 이름 그대로 */
+/** 스티커 이름 (지금 언어): 영어면 관리자가 적은 영어 이름(nameEn) → 사전 → 한국어 이름 */
 export const stickerName = (sticker) => (!sticker ? '' : i18n.language === 'en'
-  ? i18n.t(`stickers.${sticker.code}`, { defaultValue: sticker.name || '' }) : sticker.name || '');
+  ? sticker.nameEn || i18n.t(`stickers.${sticker.code}`, { defaultValue: sticker.name || '' }) : sticker.name || '');
 export const MAX_STICKERS = 3;
 
 const builtinList = Object.entries(BUILTIN).map(([code, s]) => ({ code, name: s.label, svg: s.svg, imageUrl: null, active: true }));
@@ -52,7 +53,8 @@ let loading = null;
 /** 서버에서 한 번 받아 옴 (force: 관리자 페이지에서 고친 뒤 다시) */
 export function loadStickers(force = false) {
   if (loading && !force) return loading;
-  loading = axiosInstance.get('/stickers')
+  // lang=ko: name은 늘 한국어 원래 이름, 영어는 nameEn (화면에서 stickerName으로 고름)
+  loading = axiosInstance.get('/stickers', { params: { lang: 'ko' } })
     .then((res) => { useStickerStore.getState().setList(res.data.data || []); })
     .catch(() => { loading = null; }); // 못 받으면 기본 16개로, 다음에 다시
   return loading;

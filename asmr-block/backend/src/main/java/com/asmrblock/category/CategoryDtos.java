@@ -1,5 +1,6 @@
 package com.asmrblock.category;
 
+import com.asmrblock.i18n.Lang;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
@@ -23,8 +24,10 @@ public final class CategoryDtos {
                 return null;
             }
             String groupCode = category.getParentId() == null ? category.getCode() : category.getParentCode();
-            return new CategoryResponse(category.getId(), category.getName(), category.getCode(), groupCode,
-                    category.getColor(), category.getIcon(), category.getParentId(), category.getParentName());
+            // 영어 화면이면 영어 이름 (있을 때, V15)
+            return new CategoryResponse(category.getId(), Lang.pick(category.getName(), category.getNameEn()), category.getCode(), groupCode,
+                    category.getColor(), category.getIcon(), category.getParentId(),
+                    Lang.pick(category.getParentName(), category.getParentNameEn()));
         }
     }
 
@@ -42,12 +45,12 @@ public final class CategoryDtos {
      * 대분류면 children에 소분류
      */
     public record AdminCategoryResponse(
-            Long id, String code, String name, String color, String icon, String description,
+            Long id, String code, String name, String nameEn, String color, String icon, String description, String descriptionEn,
             Long parentId, int sortOrder, boolean active, int blockCount, List<AdminCategoryResponse> children) {
 
         public static AdminCategoryResponse of(SoundCategory c, List<AdminCategoryResponse> children) {
-            return new AdminCategoryResponse(c.getId(), c.getCode(), c.getName(), c.getColor(), c.getIcon(),
-                    c.getDescription(), c.getParentId(), c.getSortOrder() == null ? 0 : c.getSortOrder(),
+            return new AdminCategoryResponse(c.getId(), c.getCode(), c.getName(), c.getNameEn(), c.getColor(), c.getIcon(),
+                    c.getDescription(), c.getDescriptionEn(), c.getParentId(), c.getSortOrder() == null ? 0 : c.getSortOrder(),
                     Boolean.TRUE.equals(c.getIsActive()), c.getBlockCount() == null ? 0 : c.getBlockCount(), children);
         }
     }
@@ -74,7 +77,14 @@ public final class CategoryDtos {
             String icon,
 
             @Size(max = 100, message = "설명은 100자 이내로 적어 주세요.")
-            String description) {
+            String description,
+
+            /** 영어 이름·설명 (선택, 영어 화면에서 보임 — 비우면 한국어 이름) */
+            @Size(max = 30, message = "영어 이름은 30자 이내로 적어 주세요.")
+            String nameEn,
+
+            @Size(max = 120, message = "영어 설명은 120자 이내로 적어 주세요.")
+            String descriptionEn) {
     }
 
     /** 관리자: 트리거 종류 고치기 / 숨기기 (보낸 것만 바뀜, 코드는 못 바꿈) */
@@ -90,6 +100,13 @@ public final class CategoryDtos {
 
             @Size(max = 100, message = "설명은 100자 이내로 적어 주세요.")
             String description,
+
+            /** 영어 이름·설명 (빈 글자면 지움) */
+            @Size(max = 30, message = "영어 이름은 30자 이내로 적어 주세요.")
+            String nameEn,
+
+            @Size(max = 120, message = "영어 설명은 120자 이내로 적어 주세요.")
+            String descriptionEn,
 
             Boolean active) {
     }

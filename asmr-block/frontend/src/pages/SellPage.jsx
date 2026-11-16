@@ -12,6 +12,7 @@ import { useStopPreviewOnLeave } from '../hooks/usePreview';
 import { categoryLabel, colorOf, formatDuration, talkLabel, TALK_TYPES } from '../lib/blocks';
 import { MAX_STICKERS, PATTERNS, patternLabel, StickerImage, stickerName, useStickers } from '../lib/stickers';
 import { canTrim, initialRange, trimParams } from '../lib/trim';
+import useLangChange from '../locales/useLangChange';
 import useAuthStore from '../store/authStore';
 import { RecordingGuideLink } from './RecordingGuidePage';
 
@@ -85,6 +86,11 @@ function SellPage() {
   }, []);
   const loadMine = () => sellerApi.mine().then((p) => setMine(p.content)).catch(() => setMine([]));
   useEffect(() => { if (isAuthenticated) loadMine(); }, [isAuthenticated]);
+  // 언어를 바꾸면 트리거 이름·내가 올린 블록만 새 언어로 (고른 파일·적은 글은 그대로)
+  useLangChange(() => {
+    catalogApi.categories().then(setGroups).catch(() => {});
+    if (isAuthenticated) loadMine();
+  });
   useEffect(() => {
     if (hash === '#mine' && mine) document.getElementById('mine')?.scrollIntoView({ behavior: 'smooth' });
   }, [hash, mine]);

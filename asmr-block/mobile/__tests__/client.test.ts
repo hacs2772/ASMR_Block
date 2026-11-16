@@ -1,5 +1,6 @@
 import { __resetClientForTests, api, ApiError, setSessionExpiredHandler } from '@/api/client';
 import { session } from '@/lib/session';
+import i18n from '@/locales';
 
 jest.mock('@/lib/config', () => ({ API_URL: 'http://api.test/api/v1' }));
 jest.mock('@/lib/session', () => {
@@ -62,5 +63,15 @@ describe('API 클라이언트', () => {
 
     fetchMock.mockImplementationOnce(() => Promise.reject(new TypeError('Network request failed')));
     await expect(api('/blocks')).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
+  });
+
+  it('화면 언어를 Accept-Language로 보냄 (서버가 오류 문장·이름을 그 언어로)', async () => {
+    fetchMock.mockImplementation(() => json(200, { success: true, data: null }));
+    await api('/blocks');
+    expect((fetchMock.mock.calls[0][1].headers as Record<string, string>)['Accept-Language']).toBe('ko');
+    await i18n.changeLanguage('en');
+    await api('/blocks');
+    expect((fetchMock.mock.calls[1][1].headers as Record<string, string>)['Accept-Language']).toBe('en');
+    await i18n.changeLanguage('ko');
   });
 });

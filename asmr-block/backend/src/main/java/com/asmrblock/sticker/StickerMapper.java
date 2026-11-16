@@ -21,7 +21,7 @@ public interface StickerMapper {
 
     void insert(Sticker sticker);
 
-    void update(@Param("code") String code, @Param("name") String name, @Param("active") Boolean active);
+    void update(@Param("code") String code, @Param("name") String name, @Param("nameEn") String nameEn, @Param("active") Boolean active);
 
     void updateSortOrder(@Param("code") String code, @Param("sortOrder") int sortOrder);
 }

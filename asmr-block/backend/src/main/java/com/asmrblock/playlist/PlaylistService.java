@@ -134,6 +134,7 @@ public class PlaylistService {
 
         Playlist copy = Playlist.builder()
                 .userId(userId).title(source.getTitle()).description(source.getDescription())
+                .titleEn(source.getTitleEn()).descriptionEn(source.getDescriptionEn())
                 .totalDuration(source.getTotalDuration()).isPublic(false).listenMinutes(source.getListenMinutes())
                 .playCount(0).sourcePlaylistId(source.getId())
                 .build();

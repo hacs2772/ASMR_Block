@@ -9,4 +9,5 @@ import lombok.Setter;
 public class CreatorTrigger {
     private String code;
     private String name;
+    private String nameEn;           // 영어 이름 (V15)
 }

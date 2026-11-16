@@ -2,6 +2,7 @@ package com.asmrblock.playlist;
 
 import com.asmrblock.block.BlockDtos.DesignResponse;
 import com.asmrblock.category.CategoryDtos.CategoryResponse;
+import com.asmrblock.i18n.Lang;
 import com.asmrblock.render.RenderResponse;
 import com.asmrblock.storage.StorageService;
 import jakarta.validation.Valid;
@@ -151,7 +152,7 @@ public final class PlaylistDtos {
                         PlaylistBlock pb = blocks.get(i);
                         var block = pb.getBlock();
                         boolean owned = ownedBlockIds.contains(block.getId());
-                        return new TrackItemResponse(i + 1, block.getId(), block.getTitle(),
+                        return new TrackItemResponse(i + 1, block.getId(), Lang.pick(block.getTitle(), block.getTitleEn()),
                                 owned || !block.isPaid() ? storage.publicUrl(block.getFileKey()) : null,
                                 block.getDuration(),
                                 pb.getRepeatCount(), layer.getRole() == LayerRole.MIX ? pb.getStartSeconds() : null,
@@ -181,7 +182,8 @@ public final class PlaylistDtos {
         public static PlaylistDetailResponse from(Playlist playlist, RenderResponse render, StorageService storage,
                                                   Set<Long> ownedBlockIds, Long collectedId) {
             return new PlaylistDetailResponse(
-                    playlist.getId(), playlist.getTitle(), playlist.getDescription(), playlist.getIsPublic(),
+                    playlist.getId(), Lang.pick(playlist.getTitle(), playlist.getTitleEn()),
+                    Lang.pick(playlist.getDescription(), playlist.getDescriptionEn()), playlist.getIsPublic(),
                     playlist.getPlayCount(), playlist.getTotalDuration(), playlist.getListenMinutes(),
                     new OwnerResponse(playlist.getUserId(), playlist.getOwnerNickname()),
                     playlist.layer(LayerRole.MAIN).map(l -> TrackResponse.from(l, storage, ownedBlockIds)).orElse(null),
@@ -212,7 +214,8 @@ public final class PlaylistDtos {
             List<PlaylistBlock> mainBlocks = playlist.layer(LayerRole.MAIN)
                     .map(PlaylistLayer::getBlocks).orElse(List.of());
             return new PlaylistSummaryResponse(
-                    playlist.getId(), playlist.getTitle(), playlist.getDescription(), playlist.getIsPublic(),
+                    playlist.getId(), Lang.pick(playlist.getTitle(), playlist.getTitleEn()),
+                    Lang.pick(playlist.getDescription(), playlist.getDescriptionEn()), playlist.getIsPublic(),
                     playlist.getPlayCount(), playlist.getTotalDuration(), playlist.getListenMinutes(),
                     new OwnerResponse(playlist.getUserId(), playlist.getOwnerNickname()),
                     playlist.getLayers().stream().mapToInt(l -> l.getBlocks().size()).sum(),

@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { Trans, useTranslation } from 'react-i18next';
 import { errorMessage, libraryApi, playlistApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
+import useLangChange from '../locales/useLangChange';
 import BetaLoginButton from '../components/common/BetaLoginButton';
 import { useFirstRunGuide } from '../components/guide/GuideModal';
 import Board from '../components/editor/Board';
@@ -46,6 +47,9 @@ function CreatePage() {
     }
     libraryApi.mine().then(setLibrary).catch(() => setLibrary([]));
   }, [id, isAuthenticated, navigate]);
+
+  // 언어를 바꾸면 내 블록함 이름만 새 언어로 (쌓던 블록·이름은 그대로)
+  useLangChange(() => { if (isAuthenticated) libraryApi.mine().then(setLibrary).catch(() => {}); });
 
   // 저장하지 않고 나가면 물어봄 + 선택한 블록은 Delete 키로 빼기
   useEffect(() => {

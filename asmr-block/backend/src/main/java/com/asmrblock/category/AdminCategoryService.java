@@ -63,6 +63,8 @@ public class AdminCategoryService {
                 .color(parent == null ? request.color() : Objects.requireNonNullElse(parent.getColor(), DEFAULT_COLOR))
                 .icon(request.icon())
                 .description(blank(request.description()) ? null : request.description().trim())
+                .nameEn(blank(request.nameEn()) ? null : request.nameEn().trim())
+                .descriptionEn(blank(request.descriptionEn()) ? null : request.descriptionEn().trim())
                 .parentId(parent == null ? null : parent.getId())
                 .sortOrder(categoryMapper.nextSortOrder(parent == null ? null : parent.getId()))
                 .build();
@@ -87,7 +89,9 @@ public class AdminCategoryService {
             throw ApiException.badRequest("이름을 적어 주세요.");
         }
         categoryMapper.update(id, name, request.color(), request.icon(),
-                request.description() == null ? null : request.description().trim(), request.active());
+                request.description() == null ? null : request.description().trim(),
+                request.nameEn() == null ? null : request.nameEn().trim(),
+                request.descriptionEn() == null ? null : request.descriptionEn().trim(), request.active());
         if (group && request.color() != null) {
             categoryMapper.updateChildrenColor(id, request.color());
         }

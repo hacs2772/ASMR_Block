@@ -35,8 +35,8 @@ public record AppProperties(
         @Valid @NotNull Cleanup cleanup) {
 
     public record Jwt(
-            @NotBlank(message = "JWT 비밀키가 없습니다. JWT_SECRET 환경변수를 설정하세요.")
-            @Size(min = 32, message = "JWT 비밀키는 32자 이상이어야 합니다.")
+            @NotBlank(message = "JWT 비밀키가 없습니다. JWT_SECRET 환경변수를 설정하세요.") // i18n-ok (켤 때 설정 검사)
+            @Size(min = 32, message = "JWT 비밀키는 32자 이상이어야 합니다.") // i18n-ok (켤 때 설정 검사)
             String secret,
             @NotNull Duration accessTokenValidity) {
     }

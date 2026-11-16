@@ -27,6 +27,8 @@ public class Playlist {
     private Long userId;
     private String title;
     private String description;
+    private String titleEn;          // 영어 제목·소개 (V15, 지금은 샘플 조합만 — 내가 이름을 고치면 비움)
+    private String descriptionEn;
     private Integer totalDuration;   // 총 재생 시간 (초)
     private Boolean isPublic;
     private Boolean isHidden;        // 관리자가 숨긴 조합 (V13, 남에게는 안 보임)

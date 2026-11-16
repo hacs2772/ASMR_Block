@@ -85,6 +85,10 @@ test.describe('앱 영어판', () => {
     await expect(page.getByTestId('tab-hot')).toHaveText('Trending');
     expect(await offscreen(page)).toEqual([]);
 
+    // 서버 글도 영어 (조합 영어 제목, V15)
+    await page.goto('/player/1');
+    await expect(page.getByText('Rainy night work session').first()).toBeVisible();
+
     await page.goto('/upload');
     await expect(page.getByText('Sell ASMR blocks').first()).toBeVisible();
     await page.getByTestId('upload-recording-guide').click();

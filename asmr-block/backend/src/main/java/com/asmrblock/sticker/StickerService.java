@@ -82,6 +82,7 @@ public class StickerService {
         String extension = extensionOf(file.getOriginalFilename());
         String code = newCode();
         Sticker sticker = Sticker.builder().code(code).name(request.name().trim())
+                .nameEn(request.nameEn() == null || request.nameEn().isBlank() ? null : request.nameEn().trim())
                 .sortOrder(stickerMapper.nextSortOrder()).isActive(true).build();
         if (extension.equals("svg")) {
             sticker.setSvg(SvgCheck.clean(bytesOf(file)));
@@ -104,7 +105,7 @@ public class StickerService {
         if (name != null && name.isEmpty()) {
             throw ApiException.badRequest("스티커 이름을 적어 주세요.");
         }
-        stickerMapper.update(code, name, request.active());
+        stickerMapper.update(code, name, request.nameEn() == null ? null : request.nameEn().trim(), request.active());
         return StickerResponse.from(find(code), storageService);
     }
 

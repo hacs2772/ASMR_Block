@@ -1,6 +1,6 @@
 import { API_URL } from '@/lib/config';
 import { session, type Tokens } from '@/lib/session';
-import i18n from '@/locales';
+import i18n, { currentLang } from '@/locales';
 
 /** 서버가 보낸 오류 (ApiResponse.error) */
 export class ApiError extends Error {
@@ -57,7 +57,8 @@ function refreshOnce(): Promise<boolean> {
 
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = 'GET', body, retryOnUnauthorized = true } = options;
-  const headers: Record<string, string> = { Accept: 'application/json' };
+  // 화면 언어: 서버가 오류 문장·트리거 이름·블록/조합 영어 제목을 그 언어로
+  const headers: Record<string, string> = { Accept: 'application/json', 'Accept-Language': currentLang() };
   // 파일 업로드(FormData)는 경계값이 붙은 Content-Type을 fetch가 직접 정함
   const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
   if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';

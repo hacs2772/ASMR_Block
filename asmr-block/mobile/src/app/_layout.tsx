@@ -10,7 +10,7 @@ import { StartupScreen } from '@/components/BlockLoader';
 import { useAuth } from '@/store/auth';
 import { colors } from '@/theme';
 import { useTranslation } from 'react-i18next';
-import { loadLang } from '@/locales';
+import i18n, { loadLang } from '@/locales';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -34,6 +34,13 @@ export default function RootLayout() {
   useEffect(() => {
     const timer = setTimeout(() => setIntroDone(true), STARTUP_MIN_MS);
     return () => clearTimeout(timer);
+  }, []);
+
+  // 언어를 바꾸면 서버 글(블록·조합 이름, 트리거 이름)을 새 언어로 다시 받음 (편집 중인 조합은 그대로 — 편집기는 처음 한 번만 불러옴)
+  useEffect(() => {
+    const refetch = () => { void queryClient.invalidateQueries(); };
+    i18n.on('languageChanged', refetch);
+    return () => i18n.off('languageChanged', refetch);
   }, []);
 
   useEffect(() => {

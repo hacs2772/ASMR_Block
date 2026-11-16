@@ -131,3 +131,39 @@ UPDATE playlist p SET total_duration = GREATEST(
               JOIN playlist_block pb ON pb.layer_id = l.id JOIN block b ON b.id = pb.block_id
               WHERE l.playlist_id = p.id AND l.role = 'MIX'), 0))
 WHERE p.user_id = (SELECT id FROM users WHERE email = 'samples@asmrblock.invalid');
+
+-- 5) 영어 제목·소개 (V15, 영어 화면에서 보임). 샘플이라 우리가 정함 — 여러 번 실행해도 같은 값
+UPDATE block b SET title_en = v.title_en, description_en = v.description_en
+FROM (VALUES
+    ('samples/rain.mp3', 'Gentle rain', 'Steady rain outside the window · sample sound'),
+    ('samples/waves.mp3', 'Night sea waves', 'Waves rolling in every 8 seconds · sample sound'),
+    ('samples/wind.mp3', 'Forest wind', 'Wind that rises and falls · sample sound'),
+    ('samples/clock.mp3', 'Clock ticking', 'A second hand going tick-tock · sample sound'),
+    ('samples/typing.mp3', 'Keyboard typing', 'Typing with little pauses · sample sound'),
+    ('samples/singing_bowl.mp3', 'Singing bowl', 'A singing bowl ringing every 10 seconds · sample sound'),
+    ('samples/heartbeat.mp3', 'Slow heartbeat', 'A heartbeat at 60 beats a minute · sample sound'),
+    ('samples/breathing.mp3', 'Calm breathing', 'Slow breaths in and out, every 5 seconds · sample sound'),
+    ('samples/sizzle.mp3', 'Sizzling pan', 'Food sizzling in a pan · sample sound'),
+    ('samples/fan.mp3', 'Electric fan', 'A low humming fan · sample sound'),
+    ('samples/pink_noise.mp3', 'Pink noise', 'Soft noise for falling asleep · sample sound'),
+    ('samples/brown_noise.mp3', 'Brown noise', 'Low, deep brown noise · sample sound'),
+    ('samples/wax_crack.mp3', 'Wax cracking', 'Crunching through hardened wax · sample sound'),
+    ('samples/japan_crossing.mp3', 'Japanese crossing signal', 'The cuckoo crosswalk signal and street sounds · sample sound'),
+    ('samples/soap_cutting.mp3', 'Soap cutting', 'Slicing a firm bar of soap · sample sound'),
+    ('samples/tapping.mp3', 'Wooden desk tapping', 'Fingernails tapping on a wooden desk · sample sound'),
+    ('samples/brushing.mp3', 'Mic brushing', 'A soft brush sweeping the mic · sample sound'),
+    ('samples/crinkle.mp3', 'Plastic crinkles', 'Thin plastic slowly scrunched and smoothed · sample sound'),
+    ('samples/whisper.mp3', 'Whispered counting', 'Soft whispers like counting numbers · sample sound'),
+    ('samples/slime.mp3', 'Slime squishing', 'Squishing soft slime · sample sound')
+) AS v(file_key, title_en, description_en), users u
+WHERE u.email = 'samples@asmrblock.invalid' AND b.uploader_id = u.id AND b.file_key = v.file_key;
+
+UPDATE playlist p SET title_en = v.title_en, description_en = v.description_en
+FROM (VALUES
+    ('비 오는 밤 작업용', 'Rainy night work session', 'Keyboard typing between the rain'),
+    ('잠들기 전 루틴', 'Bedtime routine', 'Breathing → heartbeat → singing bowl → waves, with gentle rain throughout'),
+    ('산에서 빗물 떨어지는 소리', 'Rain dripping in the mountains', 'Rain layered over the forest wind'),
+    ('왁뿌 팅글 모음', 'Wax-crunch tingles', 'Wax cracking + soap cutting'),
+    ('잠 안 올 때 탭핑 + 빗소리', 'Tapping + rain for sleepless nights', 'Tapping and keyboard in a row, with rain layered underneath')
+) AS v(title, title_en, description_en), users u
+WHERE u.email = 'samples@asmrblock.invalid' AND p.user_id = u.id AND p.title = v.title;

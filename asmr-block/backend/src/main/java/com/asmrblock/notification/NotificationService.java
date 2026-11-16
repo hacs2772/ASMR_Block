@@ -4,6 +4,8 @@ import com.asmrblock.block.Block;
 import com.asmrblock.common.ApiException;
 import com.asmrblock.common.PageQuery;
 import com.asmrblock.common.PageResponse;
+import com.asmrblock.i18n.Lang;
+import com.asmrblock.i18n.Messages;
 import com.asmrblock.notification.NotificationDtos.NotificationResponse;
 import com.asmrblock.notification.NotificationDtos.NotificationSummary;
 import com.asmrblock.notification.NotificationDtos.Settings;
@@ -148,7 +150,7 @@ public class NotificationService {
         String people = n.getCount() > 1
                 ? (actor == null ? n.getCount() + "명이" : actor + " 외 " + (n.getCount() - 1) + "명이")
                 : (actor == null ? "누군가" : actor + "이");
-        String message = switch (n.getType()) {
+        String message = Lang.english() ? englishMessage(n, title) : switch (n.getType()) {
             case BLOCK_APPROVED -> title + " 블록이 승인돼서 블록 상점에 올라갔어요";
             case BLOCK_REJECTED -> title + " 블록을 돌려보냈어요";
             case BLOCK_COLLECTED -> people + " " + title + " 블록을 담았어요";
@@ -159,9 +161,23 @@ public class NotificationService {
             case BLOCK_REJECTED -> new Target("UPLOADS", n.getBlockId());
             case COMBO_COLLECTED -> n.getPlaylistId() == null ? null : new Target("COMBO", n.getPlaylistId());
         };
-        return new NotificationResponse(n.getId(), n.getType(), message, n.getNote(), target, n.isRead(),
+        // 돌려보낸 이유도 서버가 적은 문장("신고로 내려졌어요: …")이면 영어로
+        return new NotificationResponse(n.getId(), n.getType(), message, Messages.tr(n.getNote()), target, n.isRead(),
                 n.getUpdatedAt() == null ? null : n.getUpdatedAt().atOffset(ZoneOffset.UTC),
                 n.getTitle(), n.getActorNickname(), Math.max(1, n.getCount()));
+    }
+
+    /** 영어 알림 문장 (웹·앱 사전 notif.msg.*와 같음) */
+    static String englishMessage(Notification n, String title) {
+        String actor = n.getActorNickname() == null ? null : "@" + n.getActorNickname();
+        int others = Math.max(0, n.getCount() - 1);
+        String people = actor == null ? "Someone" : others > 0 ? actor + " and " + others + (others == 1 ? " other" : " others") : actor;
+        return switch (n.getType()) {
+            case BLOCK_APPROVED -> title + " was approved and is now in the Block Shop";
+            case BLOCK_REJECTED -> title + " was sent back";
+            case BLOCK_COLLECTED -> people + " added your block " + title;
+            case COMBO_COLLECTED -> people + " saved your combo " + title;
+        };
     }
 
     private static String cut(String value, int max) {

@@ -37,7 +37,8 @@ public interface CategoryMapper {
     void updateCode(@Param("id") Long id, @Param("code") String code);
 
     void update(@Param("id") Long id, @Param("name") String name, @Param("color") String color,
-                @Param("icon") String icon, @Param("description") String description, @Param("active") Boolean active);
+                @Param("icon") String icon, @Param("description") String description,
+                @Param("nameEn") String nameEn, @Param("descriptionEn") String descriptionEn, @Param("active") Boolean active);
 
     /** 대분류 색을 바꾸면 소분류 색도 같이 (블록 색 = 대분류) */
     void updateChildrenColor(@Param("parentId") Long parentId, @Param("color") String color);

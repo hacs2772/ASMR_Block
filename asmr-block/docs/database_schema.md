@@ -1,9 +1,9 @@
 # ASMR Block - 데이터베이스 명세서
 
-> 최종 수정일: 2026-11-13 / PostgreSQL 16
+> 최종 수정일: 2026-11-16 / PostgreSQL 16
 >
-> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V12 가 기준입니다.
-> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘 / V5: 트리거 중심 분류(code), 말소리, 녹음한 곳 / V6: 조합 담기 — 복사본의 원본 / V7: 블록 꾸미기(사진·스티커) + 영상 블록 / V8: 스티커 테이블(관리자 페이지에서 추가), 검수 메모 / V9: 의견 보내기 / V10: 베타 지표 — 쓴 날, 오래 들음 / V11: 블록 상점에 보이는지 `block.is_listed` / V12: 완성본을 마지막으로 쓴 때 `audio_render.last_used_at`)
+> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V15 가 기준입니다.
+> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘 / V5: 트리거 중심 분류(code), 말소리, 녹음한 곳 / V6: 조합 담기 — 복사본의 원본 / V7: 블록 꾸미기(사진·스티커) + 영상 블록 / V8: 스티커 테이블(관리자 페이지에서 추가), 검수 메모 / V9: 의견 보내기 / V10: 베타 지표 — 쓴 날, 오래 들음 / V11: 블록 상점에 보이는지 `block.is_listed` / V12: 완성본을 마지막으로 쓴 때 `audio_render.last_used_at` / V13: 신고·숨기기 / V14: 알림함 / V15: 영어 이름 `*_en` — 트리거·스티커·블록·조합)
 > 서버가 시작될 때 Flyway가 자동 적용합니다. **테이블을 바꿀 때는 `V8__설명.sql` 처럼 새 파일을 추가**하세요 (기존 파일 수정 금지).
 > 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 환경에서만 실행).
 
@@ -55,7 +55,7 @@ audio_render                           완성본 (구성 해시로 재사용, �
 
 | 테이블 | 주요 컬럼 | 기본 데이터 (운영 DB에도 들어감) |
 |------|------|------|
-| sound_category | name, **code**(V5, `tap` / `tap.tapping`), color(HEX), icon(앱 아이콘 이름, 소분류마다), sort_order, is_active, **parent_id**(대분류면 NULL), description | V5부터 대분류 = **트리거 묶음 10개** (탭핑·타건 · 스크래칭·브러싱 · 바스락 · 귓속말·입소리 · 슬라임·왁스 · 커팅·부수기 · 빗소리·물 · 자연·바람 · 거리·장소 · 노이즈·명상) + 소분류 28개. 옛 분류 행은 지우지 않고 이름·부모만 바꿔 블록 연결 유지. **V8부터 관리자 페이지에서 추가·고치기·숨기기(is_active)·순서(sort_order)** |
+| sound_category | name, **code**(V5, `tap` / `tap.tapping`), color(HEX), icon(앱 아이콘 이름, 소분류마다), sort_order, is_active, **parent_id**(대분류면 NULL), description, **name_en**(30자)·**description_en**(120자) (V15, 영어 화면 — 비면 name) | V5부터 대분류 = **트리거 묶음 10개** (탭핑·타건 · 스크래칭·브러싱 · 바스락 · 귓속말·입소리 · 슬라임·왁스 · 커팅·부수기 · 빗소리·물 · 자연·바람 · 거리·장소 · 노이즈·명상) + 소분류 28개. 옛 분류 행은 지우지 않고 이름·부모만 바꿔 블록 연결 유지. **V8부터 관리자 페이지에서 추가·고치기·숨기기(is_active)·순서(sort_order)** |
 | sound_tag | name, sort_order, is_active | 부드러운, 날카로운, 바삭한, 둔탁한, 습한, 리드미컬한 |
 
 ## block (ASMR 블록)
@@ -83,6 +83,7 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | play_count | INTEGER | 30분 내 중복 제외 |
 | status | VARCHAR(20) | `PENDING` → `APPROVED` / `REJECTED` (승인된 것만 공개) |
 | is_active | BOOLEAN | **블록은 삭제하지 않고 비활성화** (남의 플레이리스트가 깨지지 않도록) |
+| title_en / description_en / recorded_place_en | VARCHAR(100) / TEXT / VARCHAR(60) | 영어 화면에 보이는 제목·소개·녹음한 곳 (V15, 지금은 샘플 블록만, 비면 원래 글) |
 
 ## sticker (블록 겉면 스티커, V8)
 관리자 페이지에서 추가·숨김·순서 변경. 앱·웹은 `GET /stickers`로 받아 그림 (앱 업데이트 필요 없음)
@@ -95,6 +96,7 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | image_key | VARCHAR(500) | PNG 그림 파일 키 (`stickers/xxx.png`, 256px) |
 | sort_order | INTEGER | 고르기 화면 순서 |
 | is_active | BOOLEAN | 숨기면 FALSE: 새로 못 고르지만 이미 붙인 블록에는 그대로 그림 |
+| name_en | VARCHAR(20) | 영어 이름 (V15, 비면 앱·웹 사전 → name) |
 
 ## feedback (의견 보내기, V9)
 웹·앱의 "의견 보내기". 관리자 페이지 > 의견에서 봄
@@ -178,6 +180,7 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | id | BIGSERIAL PK | |
 | user_id | FK → users (CASCADE) | |
 | title / description | | |
+| title_en / description_en | VARCHAR(100) / TEXT | 영어 화면 제목·소개 (V15, 샘플 조합, 담아 오면 같이 복사). 저장할 때 영어 제목을 그대로 보내면 한국어 제목은 그대로, 제목을 새로 쓰면 영어 제목은 비워짐 |
 | total_duration | INTEGER | 초 = max(메인 트랙 길이, 믹스 트랙 끝), 최대 10시간 |
 | is_public | BOOLEAN | 공개면 비로그인도 조회 가능 |
 | listen_minutes | INTEGER | 얼마나 들을까요? 0 = 한 바퀴만, 그 외 분 (0~600, V3) |

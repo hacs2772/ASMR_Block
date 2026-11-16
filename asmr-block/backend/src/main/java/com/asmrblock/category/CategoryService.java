@@ -3,6 +3,7 @@ package com.asmrblock.category;
 import com.asmrblock.category.CategoryDtos.CategoryResponse;
 import com.asmrblock.category.CategoryDtos.CategoryTreeResponse;
 import com.asmrblock.category.CategoryDtos.TagResponse;
+import com.asmrblock.i18n.Lang;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,8 +30,8 @@ public class CategoryService {
                         Collectors.mapping(CategoryResponse::from, Collectors.toList())));
         return all.stream()
                 .filter(c -> c.getParentId() == null)
-                .map(c -> new CategoryTreeResponse(c.getId(), c.getName(), c.getCode(), c.getColor(), c.getIcon(),
-                        c.getDescription(), children.getOrDefault(c.getId(), List.of())))
+                .map(c -> new CategoryTreeResponse(c.getId(), Lang.pick(c.getName(), c.getNameEn()), c.getCode(), c.getColor(), c.getIcon(),
+                        Lang.pick(c.getDescription(), c.getDescriptionEn()), children.getOrDefault(c.getId(), List.of())))
                 .toList();
     }
 

@@ -8,19 +8,21 @@
         <association property="category" javaType="com.asmrblock.category.SoundCategory">
             <id property="id" column="cat_id"/>
             <result property="name" column="cat_name"/>
+            <result property="nameEn" column="cat_name_en"/>
             <result property="code" column="cat_code"/>
             <result property="color" column="cat_color"/>
             <result property="icon" column="cat_icon"/>
             <result property="parentId" column="cat_parent_id"/>
             <result property="parentName" column="cat_parent_name"/>
+            <result property="parentNameEn" column="cat_parent_name_en"/>
             <result property="parentCode" column="cat_parent_code"/>
         </association>
     </resultMap>
 
     <sql id="selectBlock">
         SELECT b.*,
-               c.id AS cat_id, c.name AS cat_name, c.code AS cat_code, c.color AS cat_color, c.icon AS cat_icon,
-               c.parent_id AS cat_parent_id, pc.name AS cat_parent_name, pc.code AS cat_parent_code,
+               c.id AS cat_id, c.name AS cat_name, c.name_en AS cat_name_en, c.code AS cat_code, c.color AS cat_color, c.icon AS cat_icon,
+               c.parent_id AS cat_parent_id, pc.name AS cat_parent_name, pc.name_en AS cat_parent_name_en, pc.code AS cat_parent_code,
                u.nickname AS uploader_nickname
         FROM block b
         LEFT JOIN sound_category c ON c.id = b.category_id
@@ -46,6 +48,7 @@
             <!-- 이름, 녹음한 곳, 크리에이터 닉네임으로 찾기 -->
             <if test="keyword != null">
                 AND (b.title ILIKE '%' || #{keyword} || '%'
+                     OR b.title_en ILIKE '%' || #{keyword} || '%'
                      OR b.recorded_place ILIKE '%' || #{keyword} || '%'
                      OR EXISTS (SELECT 1 FROM users ku WHERE ku.id = b.uploader_id AND ku.nickname ILIKE '%' || #{keyword} || '%'))
             </if>
