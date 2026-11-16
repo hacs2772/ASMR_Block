@@ -101,7 +101,8 @@ public record AppProperties(
      * uploadDraftsPerHour = 한 사람이 1시간에 먼저 올리기(구간 고르기), uploadsPerDay = 한 사람이 하루에 블록 올리기
      */
     public record Limits(@Min(1) int betaLoginPerHourPerIp, @Min(1) int betaLoginPerDay, @Min(1) int signupPerHourPerIp,
-                         @Min(1) int uploadDraftsPerHour, @Min(1) int uploadsPerDay) {
+                         @Min(1) int uploadDraftsPerHour, @Min(1) int uploadsPerDay,
+                         @Min(1) int loginFailsPerEmail, @Min(1) int loginFailsPerIp) {
     }
 
     /** 정리: 아무도 renderKeepDays일 동안 안 들은 완성본 파일을 지움 (다시 들으면 저절로 다시 만듦). cron = 한국 시간 */

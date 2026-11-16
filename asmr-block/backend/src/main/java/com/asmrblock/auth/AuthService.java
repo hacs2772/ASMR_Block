@@ -67,11 +67,35 @@ public class AuthService {
         return userMapper.findById(user.getId()).orElseThrow();
     }
 
+    static final Duration LOGIN_FAIL_WINDOW = Duration.ofMinutes(15);
+    static final String LOGIN_LOCKED = "비밀번호를 여러 번 틀려서 잠깐 막았어요. 15분 뒤에 다시 해 주세요.";
+
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        User user = userMapper.findByEmail(normalizeEmail(request.email()))
+        return login(request, null);
+    }
+
+    /** 로그인. 15분 동안 같은 이메일·같은 접속 주소로 너무 많이 틀리면 429 (비밀번호 마구 넣어 보기 막기) */
+    @Transactional
+    public LoginResponse login(LoginRequest request, String clientIp) {
+        String email = normalizeEmail(request.email());
+        String emailKey = "login-fail:email:" + email;
+        String ipKey = "login-fail:ip:" + clientIp;
+        rateLimiter.ensureUnder(emailKey, properties.limits().loginFailsPerEmail(), LOGIN_FAIL_WINDOW, LOGIN_LOCKED);
+        if (clientIp != null) {
+            rateLimiter.ensureUnder(ipKey, properties.limits().loginFailsPerIp(), LOGIN_FAIL_WINDOW, LOGIN_LOCKED);
+        }
+        User user = userMapper.findByEmail(email)
                 .filter(u -> passwordEncoder.matches(request.password(), u.getPassword()))
-                .orElseThrow(() -> ApiException.unauthorized("이메일 또는 비밀번호가 일치하지 않습니다."));
+                .orElse(null);
+        if (user == null) {
+            rateLimiter.record(emailKey);
+            if (clientIp != null) {
+                rateLimiter.record(ipKey);
+            }
+            throw ApiException.unauthorized("이메일 또는 비밀번호가 일치하지 않습니다.");
+        }
+        rateLimiter.clear(emailKey);
 
         return new LoginResponse(
                 jwtTokenProvider.createAccessToken(user.getId(), user.getRole().name()),

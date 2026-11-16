@@ -21,7 +21,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "app.limits.beta-login-per-day=1000",
         "app.limits.signup-per-hour-per-ip=2",
         "app.limits.upload-drafts-per-hour=2",
-        "app.limits.uploads-per-day=2"})
+        "app.limits.uploads-per-day=2",
+        "app.limits.login-fails-per-email=3",
+        "app.limits.login-fails-per-ip=5"})
 class LimitsApiTest extends IntegrationTest {
 
     private ResultActions betaLogin(String ip) throws Exception {
@@ -66,6 +68,39 @@ class LimitsApiTest extends IntegrationTest {
         signup("10.0.1.1").andExpect(status().isCreated());
         signup("10.0.1.1").andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.error.message").value("가입이 너무 많이 몰렸어요. 잠시 후 다시 시도해 주세요."));
+    }
+
+    private ResultActions loginFrom(String ip, String email, String password) throws Exception {
+        return mvc.perform(post("/api/v1/auth/login").header("CF-Connecting-IP", ip).contentType("application/json")
+                .content("{\"email\":\"%s\",\"password\":\"%s\"}".formatted(email, password)));
+    }
+
+    @Test
+    @DisplayName("로그인: 같은 이메일로 정한 수만큼 틀리면 맞는 비밀번호도 15분 막힘, 한 주소에서 여러 계정을 틀려도 막힘")
+    void loginFailures() throws Exception {
+        String email = UUID.randomUUID() + "@test.com";
+        mvc.perform(post("/api/v1/auth/signup").header("CF-Connecting-IP", "10.0.3.1").contentType("application/json")
+                .content("{\"email\":\"%s\",\"password\":\"password123\",\"nickname\":\"잠금\"}".formatted(email)))
+                .andExpect(status().isCreated());
+        // 맞히면 실패 기록이 지워짐
+        loginFrom("10.0.3.2", email, "wrong-password").andExpect(status().isUnauthorized());
+        loginFrom("10.0.3.2", email, "password123").andExpect(status().isOk());
+        for (int i = 0; i < 3; i++) {
+            loginFrom("10.0.3.3", email, "wrong-password").andExpect(status().isUnauthorized());
+        }
+        loginFrom("10.0.3.4", email, "password123").andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.error.message").value("비밀번호를 여러 번 틀려서 잠깐 막았어요. 15분 뒤에 다시 해 주세요."));
+
+        // 한 주소에서 여러 계정을 틀리기: 주소 한도(5) → 그 주소에서는 맞는 계정도 잠깐 막힘, 다른 주소는 괜찮음
+        String other = UUID.randomUUID() + "@test.com";
+        mvc.perform(post("/api/v1/auth/signup").header("CF-Connecting-IP", "10.0.3.5").contentType("application/json")
+                .content("{\"email\":\"%s\",\"password\":\"password123\",\"nickname\":\"다른\"}".formatted(other)))
+                .andExpect(status().isCreated());
+        for (int i = 0; i < 5; i++) {
+            loginFrom("10.0.3.6", UUID.randomUUID() + "@test.com", "x-password").andExpect(status().isUnauthorized());
+        }
+        loginFrom("10.0.3.6", other, "password123").andExpect(status().isTooManyRequests());
+        loginFrom("10.0.3.7", other, "password123").andExpect(status().isOk());
     }
 
     @Test

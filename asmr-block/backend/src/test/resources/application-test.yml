@@ -16,3 +16,5 @@ app:
     signup-per-hour-per-ip: 10000
     upload-drafts-per-hour: 10000
     uploads-per-day: 10000
+    login-fails-per-email: 10000
+    login-fails-per-ip: 10000

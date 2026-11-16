@@ -35,7 +35,7 @@ class LocalStorageServiceTest {
                 new AppProperties.Admin(null, null),
                 new AppProperties.Upload(200),
                 new AppProperties.Site(null),
-                new AppProperties.Limits(100, 100, 100, 100, 100),
+                new AppProperties.Limits(100, 100, 100, 100, 100, 100, 100),
                 new AppProperties.Cleanup(30, "0 40 4 * * *")));
     }
 

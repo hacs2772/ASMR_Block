@@ -38,8 +38,31 @@ public class FfmpegRunner {
         List<String> command = new ArrayList<>();
         command.add(ffmpegPath);
         command.addAll(List.of("-nostdin", "-hide_banner", "-loglevel", "error", "-y"));
-        command.addAll(args);
+        command.addAll(localFilesOnly(args));
         run(command, timeout, onProgress);
+    }
+
+    /**
+     * 보안: 모든 입력(-i) 앞에 "-protocol_whitelist file" → 올린 파일 안에 숨긴 인터넷 주소·다른 프로토콜을
+     * ffmpeg가 따라가지 못하게 (재생목록으로 위장한 파일로 서버 안쪽을 엿보는 공격 막기)
+     */
+    static List<String> localFilesOnly(List<String> args) {
+        List<String> out = new ArrayList<>(args.size() + 8);
+        for (String arg : args) {
+            if ("-i".equals(arg)) {
+                out.add("-protocol_whitelist");
+                out.add("file");
+            }
+            out.add(arg);
+        }
+        return out;
+    }
+
+    /** 파일 형식 이름 (ffprobe format_name, 예: "mp3", "mov,mp4,m4a,3gp,3g2,mj2") */
+    public String probeFormat(Path file) {
+        return run(List.of(ffprobePath, "-v", "error", "-protocol_whitelist", "file",
+                "-show_entries", "format=format_name", "-of", "csv=p=0", file.toString()), Duration.ofSeconds(30),
+                seconds -> { }).trim();
     }
 
     /** 오디오 길이(초, 반올림) */
@@ -49,7 +72,7 @@ public class FfmpegRunner {
 
     /** 오디오 길이(초, 소수점) */
     public double probeDuration(Path file) {
-        String output = run(List.of(ffprobePath, "-v", "error",
+        String output = run(List.of(ffprobePath, "-v", "error", "-protocol_whitelist", "file",
                 "-show_entries", "format=duration", "-of", "csv=p=0", file.toString()), Duration.ofSeconds(30),
                 seconds -> { });
         try {

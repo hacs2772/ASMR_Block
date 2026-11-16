@@ -30,8 +30,8 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ApiResponse.ok("로그인 성공", authService.login(request));
+    public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest http) {
+        return ApiResponse.ok("로그인 성공", authService.login(request, ClientIp.of(http)));
     }
 
     // 베타 기간에만: "베타로 바로 시작" 버튼을 보여줄지

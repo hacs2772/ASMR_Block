@@ -18,6 +18,36 @@ public class RateLimiter {
 
     private final Map<String, Deque<Instant>> recent = new ConcurrentHashMap<>();
 
+    /** 기록하지 않고 확인만: window 동안 limit번 넘게 기록됐으면 429 (로그인 실패처럼 "틀렸을 때만 셈"에 씀) */
+    public void ensureUnder(String key, int limit, Duration window, String message) {
+        Deque<Instant> times = recent.get(key);
+        if (times == null) {
+            return;
+        }
+        Instant from = Instant.now().minus(window);
+        synchronized (times) {
+            while (!times.isEmpty() && times.peekFirst().isBefore(from)) {
+                times.pollFirst();
+            }
+            if (times.size() >= limit) {
+                throw ApiException.tooManyRequests(message);
+            }
+        }
+    }
+
+    /** 한 번 기록 (ensureUnder와 같이 씀) */
+    public void record(String key) {
+        Deque<Instant> times = recent.computeIfAbsent(key, k -> new ArrayDeque<>());
+        synchronized (times) {
+            times.addLast(Instant.now());
+        }
+    }
+
+    /** 기록 지우기 (로그인 성공하면 그 이메일의 실패 기록을 지움) */
+    public void clear(String key) {
+        recent.remove(key);
+    }
+
     /** key로 window 동안 limit번까지. 넘으면 429와 message */
     public void check(String key, int limit, Duration window, String message) {
         Instant now = Instant.now();

@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 import java.util.Locale;
 import java.util.function.IntConsumer;
 
@@ -43,6 +44,7 @@ public class AudioService {
      * 자르기는 -ss가 아니라 atrim 필터로 (ffmpeg 6.1에서 -ss로 중간부터 읽고 loudnorm으로 파일 끝까지 가면 멈추는 문제가 있음)
      */
     public int normalize(Path input, Path output, Trim trim) {
+        requireFormat(input, SOUND_FORMATS);
         String filter = String.format(Locale.ROOT, "loudnorm=I=%.1f:TP=-2:LRA=11,aresample=44100", audio.targetLufs());
         if (trim != null) {
             double fade = Math.min(TRIM_FADE_SECONDS, trim.length() / 4);
@@ -57,6 +59,7 @@ public class AudioService {
 
     /** 원본 보관용: 다시 인코딩하지 않고 고른 구간만 잘라 냄 (형식 그대로, 경계는 몇 ms 차이 날 수 있음) */
     public void trimCopy(Path input, Path output, Trim trim) {
+        requireFormat(input, SOUND_FORMATS);
         ffmpeg.ffmpeg(List.of("-ss", seconds(trim.start()), "-i", input.toString(), "-t", seconds(trim.length()),
                 "-vn", "-map", "0:a:0", "-c", "copy", output.toString()), audio.processTimeout());
     }
@@ -69,6 +72,7 @@ public class AudioService {
      * @param pcmFile 잠깐 쓰는 파일 (부르는 쪽에서 지움)
      */
     public Waveform waveform(Path input, Path pcmFile, int buckets) {
+        requireFormat(input, SOUND_FORMATS);
         ffmpeg.ffmpeg(List.of("-i", input.toString(), "-vn", "-map", "0:a:0", "-af", "aeval=abs(val(0))", "-ac", "1",
                 "-ar", String.valueOf(WAVE_RATE), "-f", "s16le", "-c:a", "pcm_s16le", pcmFile.toString()), audio.processTimeout());
         try {
@@ -167,6 +171,7 @@ public class AudioService {
      * 영상은 소리를 빼고(-an) 다시 인코딩하니 -ss로 빠르고 정확하게 (loudnorm 멈춤 문제는 소리에만 있음)
      */
     public void blockVideo(Path input, Path output, Trim trim) {
+        requireFormat(input, VIDEO_FORMATS);
         List<String> args = new java.util.ArrayList<>();
         if (trim != null) {
             args.addAll(List.of("-ss", seconds(trim.start())));
@@ -186,6 +191,7 @@ public class AudioService {
 
     /** 블록 겉면 사진: 가로 최대 640px jpg (블록 모양에 맞게 자르는 건 화면에서) */
     public void coverImage(Path input, Path output) {
+        requireFormat(input, IMAGE_FORMATS);
         ffmpeg.ffmpeg(List.of(
                 "-i", input.toString(),
                 "-vf", "scale='min(640,iw)':-2",
@@ -195,11 +201,40 @@ public class AudioService {
 
     /** 스티커 그림 (관리자 업로드): 256px 안으로 줄인 투명 배경 PNG */
     public void stickerImage(Path input, Path output) {
+        requireFormat(input, IMAGE_FORMATS);
         ffmpeg.ffmpeg(List.of(
                 "-i", input.toString(),
                 "-vf", "scale=w='min(256,iw)':h='min(256,ih)':force_original_aspect_ratio=decrease",
                 "-frames:v", "1", "-pix_fmt", "rgba",
                 output.toString()), audio.processTimeout());
+    }
+
+    /**
+     * 보안: 올린 파일이 진짜 소리·영상·사진 형식인지 (ffprobe가 알아낸 형식 이름으로).
+     * 확장자는 mp3인데 속은 재생목록(hls)·이어 붙이기 목록(concat)·글자 파일 같은 것이면 처리하지 않음
+     */
+    static final Set<String> SOUND_FORMATS = Set.of("mp3", "wav", "flac", "ogg", "mov", "mp4", "m4a", "3gp", "3g2", "mj2",
+            "aac", "matroska", "webm", "aiff", "amr", "avi", "caf", "w64");
+    static final Set<String> VIDEO_FORMATS = Set.of("mov", "mp4", "m4a", "3gp", "3g2", "mj2", "matroska", "webm", "avi");
+    static final Set<String> IMAGE_FORMATS = Set.of("image2", "jpeg_pipe", "png_pipe", "webp_pipe", "gif");
+
+    void requireFormat(Path input, Set<String> allowed) {
+        String format = ffmpeg.probeFormat(input);
+        if (!isAllowed(format, allowed)) {
+            throw new AudioProcessingException("올릴 수 없는 파일 형식이에요: " + (format.isBlank() ? "알 수 없음" : format));
+        }
+    }
+
+    static boolean isAllowed(String formatName, Set<String> allowed) {
+        if (formatName == null || formatName.isBlank()) {
+            return false;
+        }
+        for (String part : formatName.split(",")) {
+            if (allowed.contains(part.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public int duration(Path file) {

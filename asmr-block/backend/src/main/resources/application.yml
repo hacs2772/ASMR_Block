@@ -82,6 +82,9 @@ app:
     signup-per-hour-per-ip: ${APP_LIMIT_SIGNUP_PER_HOUR_PER_IP:20}
     upload-drafts-per-hour: ${APP_LIMIT_UPLOAD_DRAFTS_PER_HOUR:30}
     uploads-per-day: ${APP_LIMIT_UPLOADS_PER_DAY:20}
+    # 비밀번호 마구 넣어 보기 막기: 15분 동안 같은 이메일로 10번, 같은 접속 주소에서 30번 틀리면 잠깐 막음 (맞히면 그 이메일 기록은 지움)
+    login-fails-per-email: ${APP_LIMIT_LOGIN_FAILS_PER_EMAIL:10}
+    login-fails-per-ip: ${APP_LIMIT_LOGIN_FAILS_PER_IP:30}
   cleanup:
     # 아무도 이만큼 안 들은 완성본(합친 MP3)은 지움 → 다시 들으면 저절로 다시 만듦 (디스크 아끼기)
     render-keep-days: ${APP_CLEANUP_RENDER_KEEP_DAYS:30}
