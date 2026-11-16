@@ -12,7 +12,17 @@ public final class StatsDtos {
      * 관리자: 베타 반응 한눈에 (샘플 계정·관리자·탈퇴한 사람은 사람 수에서 뺌, 날짜는 한국 시간)
      * days: 최근 14일 하루하루 (가입, 새 조합, 재생)
      */
-    public record StatsResponse(People people, Activity activity, Content content, long newFeedback, List<Day> days) {
+    public record StatsResponse(People people, Activity activity, Content content, long newFeedback, List<Day> days,
+                                Funnel funnel) {
+    }
+
+    /**
+     * 어디서 그만두는지: 최근 days일 안에 들어온 사람(joined) 중 각 단계까지 간 사람 수 (단계마다 따로 셈)
+     * collected = 블록을 직접 담음(베타 손님이 처음 받은 블록 빼고), hasCombo = 내 조합이 생김(madeCombo 직접 만듦 + collectedCombo 추천 조합 담음),
+     * listened = 조합을 틀어 봄, listened10m = 10분 넘게 들음, cameBack = 들어온 다음 날 이후 다시 옴 (canComeBack = 어제까지 들어온 사람, 비율의 분모)
+     */
+    public record Funnel(int days, long joined, long collected, long hasCombo, long madeCombo, long collectedCombo,
+                         long listened, long listened10m, long cameBack, long canComeBack) {
     }
 
     /** 사람: 전체 = 베타 손님 + 가입 회원 */

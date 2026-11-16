@@ -226,4 +226,15 @@ public final class PlaylistDtos {
                     playlist.getCreatedAt());
         }
     }
+
+    /** 오래 들음 기록: 듣기 화면이 minutes분 넘게 재생했을 때 (지금은 10분에 한 번) */
+    public record ListenedRequest(
+            @jakarta.validation.constraints.Min(value = 1, message = "1분 이상이어야 해요.")
+            @jakarta.validation.constraints.Max(value = 600, message = "600분까지만 적을 수 있어요.")
+            int minutes) {
+    }
+
+    /** counted: 새로 셌으면 true (같은 조합·같은 시간은 6시간에 한 번) */
+    public record ListenedResponse(boolean counted) {
+    }
 }

@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { Pressable, StyleSheet, Text, View, type AccessibilityActionEvent } from 'react-native';
 import { GestureDetector, usePanGesture, useTapGesture } from 'react-native-gesture-handler';
 import { usePlayer } from '@/audio/PlayerProvider';
+import { seekVideo } from '@/audio/playerControls';
 import { formatDuration } from '@/lib/format';
 import { clock, FADE_SECONDS, fitPeaks, moveHandle, nearestHandle, timeAt, type Handle, type TrimRange } from '@/lib/trim';
 import { colors, radius, space } from '@/theme';
@@ -17,8 +19,28 @@ type Props = {
   onChange: (range: TrimRange) => void;
   min: number;
   max: number;
+  /** 영상이면 위에 화면을 보여 줌 (소리와 같은 구간으로 같이 잘림) */
+  video?: boolean;
 };
-type Live = Omit<Props, 'uri' | 'peaks'> & { width: number };
+type Live = Omit<Props, 'uri' | 'peaks' | 'video'> & { width: number };
+
+/** 영상 화면: 소리 없이, 재생 중엔 소리 위치를 따라가고 멈춰 있으면 손잡이를 옮긴 곳의 장면 */
+function TrimVideo({ uri, time, playing }: { uri: string; time: number; playing: boolean }) {
+  const player = useVideoPlayer(uri, (v) => {
+    v.muted = true;
+    v.loop = false;
+  });
+  useEffect(() => {
+    if (playing) {
+      if (Math.abs(player.currentTime - time) > 0.4) seekVideo(player, time);
+      player.play();
+    } else {
+      player.pause();
+      seekVideo(player, time);
+    }
+  }, [player, time, playing]);
+  return <VideoView player={player} style={styles.video} contentFit="contain" nativeControls={false} />;
+}
 
 const TRACK_H = 76;
 const HANDLE_W = 30;
@@ -46,9 +68,16 @@ function useDragGesture(mode: Handle, live: RefObject<Live>) {
  * 업로드 "구간 고르기": 파형 위 손잡이 두 개(시작·끝)를 끌거나, 가운데를 끌어 구간째 옮김. 빈 곳을 누르면 가까운 손잡이가 그리로.
  * ±1초 버튼, ▶ 고른 부분 듣기 · 끝 5초 듣기. 계산은 lib/trim.ts (웹 lib/trim.js와 같은 규칙)
  */
-export function Trimmer({ uri, duration, peaks, range, onChange, min, max }: Props) {
+export function Trimmer({ uri, duration, peaks, range, onChange: setRange, min, max, video = false }: Props) {
   const [width, setWidth] = useState(0);
-  const live = useRef<Live>({ range, onChange, duration, min, max, width });
+  // 영상: 손잡이를 옮긴 곳의 장면을 보여 줌
+  const [scrub, setScrub] = useState(range.start);
+  const live = useRef<Live>({ range, onChange: setRange, duration, min, max, width });
+  const onChange = useCallback((next: TrimRange) => {
+    const prev = live.current.range;
+    setScrub(next.end !== prev.end && next.start === prev.start ? next.end : next.start);
+    setRange(next);
+  }, [setRange]);
   useEffect(() => { live.current = { range, onChange, duration, min, max, width }; });
 
   const player = useAudioPlayer(uri, { updateInterval: 100 });
@@ -99,10 +128,11 @@ export function Trimmer({ uri, duration, peaks, range, onChange, min, max }: Pro
       <View style={styles.header}>
         <Text style={styles.title}>구간 고르기</Text>
         <Text style={styles.meta}>
-          고른 길이 <Text style={styles.length} testID="trim-length">{formatDuration(range.end - range.start)}</Text> · 전체 {formatDuration(duration)}
+          고른 길이 <Text style={styles.length} testID="trim-length">{formatDuration(Math.round(range.end - range.start))}</Text> · 전체 {formatDuration(Math.round(duration))}
         </Text>
       </View>
 
+      {video && <TrimVideo uri={uri} time={playing ? status.currentTime : scrub} playing={playing} />}
       <View style={styles.track} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
         <GestureDetector gesture={tap}>
           <View style={styles.bars} collapsable={false} testID="trim-track">
@@ -150,7 +180,9 @@ export function Trimmer({ uri, duration, peaks, range, onChange, min, max }: Pro
           <Text style={[styles.actionText, { color: colors.muted }]}>끝 5초 듣기</Text>
         </Pressable>
       </View>
-      <Text style={styles.hint}>손잡이를 끌어 시작과 끝을 고르고, 가운데를 끌면 구간째 옮겨져요. 잘린 앞뒤 {FADE_SECONDS}초는 부드럽게 커지고 작아져요.</Text>
+      <Text style={styles.hint}>
+        손잡이를 끌어 시작과 끝을 고르고, 가운데를 끌면 구간째 옮겨져요.{video ? ' 영상은 소리와 같은 구간으로 같이 잘려요.' : ''} 잘린 앞뒤 {FADE_SECONDS}초는 부드럽게 커지고 작아져요.
+      </Text>
     </View>
   );
 }
@@ -175,6 +207,7 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: 14, fontWeight: '800' },
   meta: { color: colors.muted, fontSize: 12 },
   length: { color: colors.primaryText, fontWeight: '800' },
+  video: { width: '100%', aspectRatio: 16 / 9, borderRadius: radius.sm, backgroundColor: '#000' },
   track: { height: TRACK_H, marginHorizontal: HANDLE_W / 2 - 4, borderRadius: radius.sm, backgroundColor: colors.plate },
   bars: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 2 },
   dim: { position: 'absolute', top: 0, bottom: 0, backgroundColor: 'rgba(10,10,15,0.55)' },

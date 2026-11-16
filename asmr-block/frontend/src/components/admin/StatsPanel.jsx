@@ -10,14 +10,15 @@ const dayLabel = (iso) => { const [, m, d] = iso.split('-'); return `${Number(m)
 function StatsPanel({ onOpenFeedback }) {
   const [stats, setStats] = useState(null);
   const [table, setTable] = useState(false);
+  const [funnelDays, setFunnelDays] = useState(14);
 
   useEffect(() => {
-    adminApi.stats().then(setStats).catch((e) => { toast.error(errorMessage(e)); setStats(false); });
-  }, []);
+    adminApi.stats(funnelDays).then(setStats).catch((e) => { toast.error(errorMessage(e)); setStats(false); });
+  }, [funnelDays]);
   if (stats === null) return <BlockLoader small label="불러오는 중" />;
   if (!stats) return <p className="card p-8 text-center text-sm text-muted">숫자를 불러오지 못했어요.</p>;
 
-  const { people, activity, content, newFeedback, days } = stats;
+  const { people, activity, content, newFeedback, days, funnel } = stats;
   const series = [
     { key: 'signups', title: '새로 온 사람', unit: '명' },
     { key: 'combos', title: '새로 만든 조합', unit: '개' },
@@ -48,6 +49,8 @@ function StatsPanel({ onOpenFeedback }) {
           새 의견 {newFeedback}개가 기다리고 있어요 <span aria-hidden="true">→</span>
         </button>
       )}
+
+      {funnel && <Funnel funnel={funnel} days={funnelDays} onDays={setFunnelDays} />}
 
       <div className="mt-8 flex items-center justify-between gap-3">
         <h2 className="text-lg font-extrabold">최근 14일</h2>
@@ -80,6 +83,74 @@ function StatsPanel({ onOpenFeedback }) {
         </div>
       )}
     </div>
+  );
+}
+
+const FUNNEL_DAYS = [7, 14, 30];
+const pct = (n, of) => (of > 0 ? Math.round((n / of) * 100) : 0);
+
+/**
+ * 어디서 그만두나요: 최근 N일 안에 들어온 사람이 각 단계까지 간 비율 (단계마다 따로 셈, 막대 하나 = 한 단계).
+ * 앞 단계보다 가장 많이 줄어든 곳에 표시. "다시 옴"은 어제까지 들어온 사람 중 비율
+ */
+function Funnel({ funnel, days, onDays }) {
+  const f = funnel;
+  const steps = [
+    { key: 'joined', title: '들어옴', note: '가입·베타 손님', value: f.joined, of: f.joined },
+    { key: 'collected', title: '블록을 직접 담음', note: '처음 받은 블록 빼고', value: f.collected, of: f.joined },
+    { key: 'hasCombo', title: '내 조합이 생김', note: `직접 만듦 ${f.madeCombo} · 추천 조합 담음 ${f.collectedCombo}`, value: f.hasCombo, of: f.joined },
+    { key: 'listened', title: '조합을 틀어 봄', value: f.listened, of: f.joined },
+    { key: 'listened10m', title: '10분 넘게 들음', note: '잠들 때까지 들었는지', value: f.listened10m, of: f.joined },
+    { key: 'cameBack', title: '다음 날 이후 다시 옴', note: `어제까지 들어온 ${f.canComeBack}명 중`, value: f.cameBack, of: f.canComeBack },
+  ];
+  // 앞 단계보다 가장 많이 줄어든 곳 (들어옴~10분, 5명 이상일 때만)
+  let worst = null;
+  if (f.joined >= 5) {
+    let drop = 0;
+    for (let i = 1; i < 5; i += 1) {
+      const d = steps[i - 1].value - steps[i].value;
+      if (d > drop) { drop = d; worst = steps[i].key; }
+    }
+  }
+
+  return (
+    <section className="mt-8" data-testid="funnel">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-extrabold">어디서 그만두나요?</h2>
+        <div className="flex gap-1.5">
+          {FUNNEL_DAYS.map((d) => (
+            <button key={d} type="button" className={`chip px-3 py-1 text-xs ${days === d ? 'chip-on' : ''}`} onClick={() => onDays(d)}
+              aria-pressed={days === d}>최근 {d}일</button>
+          ))}
+        </div>
+      </div>
+      <p className="mt-1 text-xs text-muted">최근 {f.days}일 안에 들어온 사람이 어디까지 써 봤는지예요. 단계마다 따로 세서, 앞 단계보다 많을 수도 있어요.</p>
+      <div className="card mt-3 divide-y divide-line">
+        {steps.map((s) => {
+          const p = pct(s.value, s.of);
+          return (
+            <div key={s.key} className="px-4 py-3" data-testid={`funnel-${s.key}`}>
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1.5 sm:grid-cols-[180px_minmax(0,1fr)_96px]">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold">{s.title}</p>
+                {s.note && <p className="truncate text-[11px] text-faint">{s.note}</p>}
+              </div>
+              <p className="text-right text-sm [font-variant-numeric:tabular-nums] sm:order-last">
+                <b>{fmt(s.value)}명</b> <span className="text-muted">{s.key === 'joined' ? '' : `${p}%`}</span>
+              </p>
+              <div className="col-span-2 h-2.5 overflow-hidden rounded-full bg-card-active sm:col-span-1" aria-hidden="true">
+                <div className="h-full rounded-full bg-pink" style={{ width: `${s.of > 0 ? Math.max(s.value > 0 ? 2 : 0, p) : 0}%` }} />
+              </div>
+              </div>
+              {worst === s.key && (
+                <p className="mt-1.5 text-[11px] font-bold text-warn sm:pl-[196px]">↑ 앞 단계에서 여기로 올 때 가장 많이 그만둬요</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {f.joined < 5 && <p className="mt-2 text-[11px] text-faint">아직 사람이 적어서 비율이 크게 흔들려요. 10명쯤 모이면 볼 만해져요.</p>}
+    </section>
   );
 }
 

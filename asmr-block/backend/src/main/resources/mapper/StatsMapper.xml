@@ -42,6 +42,36 @@
             (SELECT COUNT(*) FROM feedback WHERE is_done = false)                                 AS new_feedback
     </select>
 
+    <!--
+      어디서 그만두는지: 최근 #{days}일 안에 들어온 사람(가입·베타 손님) 중 각 단계까지 간 사람 수 (단계마다 따로 셈)
+      - 블록을 직접 담음: 베타 손님이 처음에 받은 블록(가입과 같은 순간)은 빼고, 그 뒤에 담은 무료 블록
+      - 다시 옴: 들어온 날(한국 날짜) 다음 날 이후에 한 번이라도 썼음 (V10부터 기록). can_come_back = 어제까지 들어온 사람
+    -->
+    <select id="funnel" resultType="map">
+        WITH cohort AS (
+                 SELECT p.id, p.created_at,
+                        ((p.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')::date) AS joined_day
+                 FROM (<include refid="people"/>) p
+                 WHERE p.created_at &gt;= NOW() - (#{days} * INTERVAL '1 day')
+             )
+        SELECT
+            (SELECT COUNT(*) FROM cohort) AS joined,
+            (SELECT COUNT(*) FROM cohort c WHERE EXISTS (
+                SELECT 1 FROM user_block ub WHERE ub.user_id = c.id AND ub.source = 'FREE' AND ub.acquired_at &gt; c.created_at)) AS collected,
+            (SELECT COUNT(*) FROM cohort c WHERE EXISTS (SELECT 1 FROM playlist p WHERE p.user_id = c.id)) AS has_combo,
+            (SELECT COUNT(*) FROM cohort c WHERE EXISTS (
+                SELECT 1 FROM playlist p WHERE p.user_id = c.id AND p.source_playlist_id IS NULL)) AS made_combo,
+            (SELECT COUNT(*) FROM cohort c WHERE EXISTS (
+                SELECT 1 FROM playlist p WHERE p.user_id = c.id AND p.source_playlist_id IS NOT NULL)) AS collected_combo,
+            (SELECT COUNT(*) FROM cohort c WHERE EXISTS (
+                SELECT 1 FROM play_log l WHERE l.user_id = c.id AND l.target_type = 'PLAYLIST')) AS listened,
+            (SELECT COUNT(*) FROM cohort c WHERE EXISTS (
+                SELECT 1 FROM listen_log l WHERE l.user_id = c.id AND l.minutes &gt;= 10)) AS listened_10m,
+            (SELECT COUNT(*) FROM cohort c WHERE EXISTS (
+                SELECT 1 FROM user_activity_day a WHERE a.user_id = c.id AND a.day &gt; c.joined_day)) AS came_back,
+            (SELECT COUNT(*) FROM cohort c WHERE c.joined_day &lt; <include refid="kstToday"/>) AS can_come_back
+    </select>
+
     <!-- 최근 14일 (오늘 포함) 하루하루 -->
     <select id="daily" resultType="com.asmrblock.stats.StatsDtos$Day">
         WITH days AS (

@@ -1,4 +1,5 @@
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus, type AudioStatus } from 'expo-audio';
+import { createListenMeter, LISTEN_MINUTES, type ListenMeter } from '@/lib/listen';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 import { playlistApi } from '@/api/endpoints';
@@ -54,6 +55,34 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [sleepEndsAt, setSleepEndsAt] = useState<number | null>(null);
   const [sleepRemainingMs, setSleepRemainingMs] = useState<number | null>(null);
   const recordedPlaylist = useRef<number | null>(null);
+  // 오래 들음: 같은 조합을 10분 넘게 재생하면 한 번 알림 (관리자 통계 "잠들 때까지 들었는지")
+  const meter = useRef<{ playlistId: number | null; meter: ListenMeter }>({ playlistId: null, meter: createListenMeter() });
+  const playingId = status.playing ? nowPlaying?.playlistId ?? null : null;
+  useEffect(() => {
+    const now = Date.now();
+    const m = meter.current;
+    if (playingId !== null && m.playlistId !== playingId) {
+      m.meter.pause(now);
+      meter.current = { playlistId: playingId, meter: createListenMeter() };
+    }
+    const check = () => {
+      const cur = meter.current;
+      if (cur.playlistId !== null && cur.meter.check(Date.now()) && useAuth.getState().status === 'signedIn') {
+        playlistApi.listened(cur.playlistId, LISTEN_MINUTES).catch(() => undefined);
+      }
+    };
+    if (playingId === null) {
+      meter.current.meter.pause(now);
+      check();
+      return undefined;
+    }
+    meter.current.meter.play(now);
+    const timer = setInterval(check, 15_000);
+    return () => {
+      clearInterval(timer);
+      check();
+    };
+  }, [playingId]);
 
   useEffect(() => {
     setAudioModeAsync({

@@ -34,11 +34,12 @@ export const sellerApi = {
     onUploadProgress: (e) => onProgress?.(e.total ? Math.round((e.loaded / e.total) * 100) : 0),
   })),
   mine: () => data(axiosInstance.get('/me/uploads', { params: { size: 100 } })),
-  /** 구간 고르기: 소리 파일을 먼저 올려 길이·파형(peaks)을 받음 → 올리기 때 draftId + trimStart/trimEnd */
-  draft: (file, onProgress) => {
+  /** 구간 고르기: 소리 파일이나 영상(kind=video)을 먼저 올려 길이·파형(peaks)을 받음 → 올리기 때 draftId + trimStart/trimEnd */
+  draft: (file, onProgress, kind = 'audio') => {
     const form = new FormData();
     form.append('file', file);
     return data(axiosInstance.post('/blocks/upload-drafts', form, {
+      params: { kind },
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 5 * 60 * 1000,
       onUploadProgress: (e) => onProgress?.(e.total ? Math.round((e.loaded / e.total) * 100) : 0),
@@ -55,6 +56,8 @@ export const playlistApi = {
   update: (id, body) => data(axiosInstance.put(`/playlists/${id}`, body)),
   remove: (id) => data(axiosInstance.delete(`/playlists/${id}`)),
   recordPlay: (id) => data(axiosInstance.post(`/playlists/${id}/play`)),
+  /** 오래 들음 (듣기 화면이 10분 넘게 재생하면 한 번) → 관리자 통계 */
+  listened: (id, minutes) => data(axiosInstance.post(`/playlists/${id}/listened`, { minutes })),
   /** 조합 한 번에 담기: 블록은 내 블록함에, 조합은 내 조합(비공개 복사본)으로 */
   collect: (id) => data(axiosInstance.post(`/playlists/${id}/collect`)),
   requestRender: (id) => data(axiosInstance.post(`/playlists/${id}/render`)),
@@ -83,7 +86,8 @@ export const adminApi = {
   feedback: (done, page = 0, size = 50) => data(axiosInstance.get('/admin/feedback', { params: { done, page, size } })),
   markFeedback: (id, done) => data(axiosInstance.patch(`/admin/feedback/${id}`, { done })),
   /** 베타 반응 숫자 (사람·조합·재생·블록·새 의견 + 최근 14일) */
-  stats: () => data(axiosInstance.get('/admin/stats')),
+  /** funnelDays: "어디서 그만두는지"를 볼 기간 (최근 며칠 안에 들어온 사람) */
+  stats: (funnelDays = 14) => data(axiosInstance.get('/admin/stats', { params: { funnelDays } })),
 };
 
 /** 의견 보내기 (로그인 없이도 됨) */

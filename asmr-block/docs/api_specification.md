@@ -235,23 +235,26 @@
 
 ### 5.0 구간 고르기용 먼저 올리기 `POST /blocks/upload-drafts` (multipart/form-data, 로그인 필요)
 
-길게 녹음한 파일에서 쓸 부분만 고를 수 있게, 소리 파일(`file`, 형식·크기는 5.1과 같음)을 먼저 받아 **길이와 파형**을 돌려줍니다.
-화면은 파형 위 손잡이로 구간을 고르고, 올리기(5.1)에서 `draftId` + `trimStart`/`trimEnd`를 보냅니다 (같은 파일을 두 번 보내지 않음).
+길게 녹음한 파일에서 쓸 부분만 고를 수 있게, 소리 파일이나 영상(`file`, 형식·크기는 5.1의 `file`·`video`와 같음)을 먼저 받아 **길이와 파형**을 돌려줍니다.
+영상이면 쿼리 `?kind=video` (기본 `audio`). 화면은 파형 위 손잡이로 구간을 고르고, 올리기(5.1)에서 `draftId` + `trimStart`/`trimEnd`를 보냅니다 (같은 파일을 두 번 보내지 않음).
 ```json
-{ "draftId": "9df1094f-...", "duration": 612.48, "peaks": [0.02, 0.31, 0.95, ...] }
+{ "draftId": "9df1094f-...", "kind": "video", "duration": 612.48, "peaks": [0.02, 0.31, 0.95, ...] }
 ```
 - `peaks`: 400칸, 칸마다 소리 크기 0~1 (가장 큰 칸 = 1, 작은 소리도 보이게 살짝 키움)
 - 서버 임시 폴더에 **6시간**만, 한 사람당 최근 3개까지 (서버를 다시 켜면 비워짐 → 올리기에서 400 "파일을 다시 골라 주세요")
-- 읽을 수 없는 파일은 400
+- 읽을 수 없는 파일은 400, 소리 없는 영상은 400 "영상에서 소리를 찾지 못했어요…"
 
 ### 5.1 음원 업로드 `POST /blocks` (multipart/form-data)
 
 | 필드 | 필수 | 설명 |
 |------|------|------|
-| `file` | `video`·`draftId`가 없으면 ✅ | mp3, wav, flac, m4a, aac, ogg, opus, webm / 최대 50MB / 길이 10초~20분 (구간을 고르면 고른 길이로 봄) |
-| `draftId` | | **구간 고르기**로 먼저 올려 둔 소리(5.0). `file` 대신 (둘 다 주면 400). 내 것만, 한 번 올리기에 성공하면 지워짐 |
-| `trimStart`, `trimEnd` | | **고른 구간**(초, 소수점). 둘 다 주면 그 부분만 블록으로, 앞뒤 0.5초는 서서히 커지고 작아짐. 고른 길이 10초~20분, 시작 < 끝, 끝이 파일보다 길면 파일 끝까지 (그래서 10초가 안 되면 400). 전체를 고른 것과 같으면 자르지 않음. 영상만 올릴 때는 400 |
-| `video` | | 같이 보는 영상 (선택) mp4, mov, m4v, webm / 최대 200MB (설정 `app.upload.max-video-mb`, 공개용은 Cloudflare 한도 때문에 90MB). **`file` 없이 영상만 올리면 영상의 소리를 블록 음원으로 씀** (소리 없는 영상이면 400) |
+| `file` | | **소리만** 올릴 때: mp3, wav, flac, m4a, aac, ogg, opus, webm / 최대 50MB / 길이 10초~20분 (구간을 고르면 고른 길이로 봄) |
+| `draftId` | | **구간 고르기**로 먼저 올려 둔 소리나 영상(5.0). 내 것만, 한 번 올리기에 성공하면 지워짐 |
+| `trimStart`, `trimEnd` | | **고른 구간**(초, 소수점). 둘 다 주면 그 부분만 블록으로 (영상이면 **화면도 같은 구간**), 앞뒤 0.5초는 서서히 커지고 작아짐. 고른 길이 10초~20분, 시작 < 끝, 끝이 파일보다 길면 파일 끝까지 (그래서 10초가 안 되면 400). 전체를 고른 것과 같으면 자르지 않음 |
+| `video` | | **영상**을 올릴 때: mp4, mov, m4v, webm / 최대 200MB (설정 `app.upload.max-video-mb`, 공개용은 Cloudflare 한도 때문에 90MB). **소리는 영상에서 뽑아 씀** (소리 없는 영상이면 400) |
+
+> **`file` · `video` · `draftId` 중 딱 하나** (없거나 둘 이상이면 400). 소리 따로 + 영상 따로는 받지 않아요 — 싱크가 어긋날 수 있어서. 영상은 소리와 같은 파일·같은 구간에서 만들어요.
+
 | `cover` | | 블록 겉면 사진 (선택) jpg, jpeg, png, webp / 최대 10MB → 가로 640px jpg로 |
 | `stickers` | | 겉면 스티커 코드, 쉼표로 최대 3개 (예: `flagjp,signal,bird`, 고를 수 있는 목록은 업로드 규칙 `stickers` = 숨기지 않은 스티커). 없거나 숨긴 코드·4개 이상이면 400 |
 | `pattern` | | 스티커 무늬 `dots`(기본) / `lines` / `none` |
@@ -325,6 +328,7 @@
 | PUT | `/playlists/{id}` | 본인 | 수정 (트랙을 통째로 교체) |
 | DELETE | `/playlists/{id}` | 본인 | 삭제 |
 | POST | `/playlists/{id}/play` | 필요 | 재생 기록 (블록과 같은 규칙) |
+| POST | `/playlists/{id}/listened` | 필요 | **오래 들음** `{ "minutes": 10 }` (1~600) → `{ "counted": true }`. 듣기 화면이 10분 넘게 재생하면 한 번 보냄, 같은 조합·같은 분은 6시간에 한 번만 셈. 볼 수 없는 조합이면 403 (V10, 관리자 통계용) |
 | POST | `/playlists/{id}/collect` | 필요 | **조합 한 번에 담기** (7.4) |
 
 ### 7.1 저장 요청 (생성/수정 동일)
@@ -493,7 +497,16 @@
 | POST | `/feedback` | 없어도 됨 | 의견 보내기 `{ "message": "2~2000자", "contact": "답장 받을 곳(선택)", "page": "/create", "client": "web|app" }` → 201. 로그인했으면 누가 보냈는지도 남음. **같은 계정·같은 IP는 10분에 5번까지** (넘으면 429) |
 | GET | `/admin/feedback?done=false` | 관리자 | 의견 목록 (`done` 없으면 전부, false 새 의견, true 확인함). `who`(닉네임, 비로그인 null), `beta`(베타 손님인지), `page`, `client` |
 | PATCH | `/admin/feedback/{id}` | 관리자 | 확인함 `{ "done": true }` |
-| GET | `/admin/stats` | 관리자 | 숫자 한눈에: `people`(total = 베타 손님 + 가입 회원, newToday·new7d), `activity`(만든 조합·공개 조합·한 번에 담기·재생 24시간/7일/전체), `content`(승인 블록·샘플·사람들이 올린 블록·승인 대기), `newFeedback`, `days`(최근 14일 날짜별 가입·새 조합·재생) |
+| GET | `/admin/stats?funnelDays=14` | 관리자 | 숫자 한눈에: `people`(total = 베타 손님 + 가입 회원, newToday·new7d), `activity`(만든 조합·공개 조합·한 번에 담기·재생 24시간/7일/전체), `content`(승인 블록·샘플·사람들이 올린 블록·승인 대기), `newFeedback`, `days`(최근 14일 날짜별 가입·새 조합·재생), **`funnel`**(아래) |
+
+**어디서 그만두나요 (`funnel`, V10)**: 최근 `funnelDays`일(1~90, 기본 14) 안에 들어온 사람 중 각 단계까지 간 사람 수 (단계마다 따로 셈)
+```json
+{ "days": 14, "joined": 20, "collected": 9, "hasCombo": 6, "madeCombo": 5, "collectedCombo": 1,
+  "listened": 4, "listened10m": 2, "cameBack": 3, "canComeBack": 15 }
+```
+- `collected`: 블록을 직접 담음 (베타 손님이 처음 받은 블록 = 가입과 같은 순간이라 뺌)
+- `hasCombo` = 직접 만듦(`madeCombo`) 또는 추천 조합 담음(`collectedCombo`) / `listened`: 조합을 틀어 봄 / `listened10m`: 10분 넘게 들음
+- `cameBack`: 들어온 날(한국 날짜) 다음 날 이후 다시 씀 — 로그인한 API 요청이 있으면 그날을 `user_activity_day`에 남김 (V10부터). 비율의 분모는 `canComeBack`(어제까지 들어온 사람)
 
 - 사람 수에서 관리자·샘플 계정·탈퇴한 사람은 뺌. 베타 손님 = `beta-…@beta.asmrblock.com`. 날짜는 한국 시간
 - 재생 = 로그인한 사람의 블록·조합 재생 기록 (같은 사람이 30분 안에 다시 들으면 1번)

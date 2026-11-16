@@ -89,10 +89,10 @@ public final class BlockDtos {
 
     /** 음원 업로드 (multipart/form-data). 업로드 후 관리자 승인 전까지 PENDING */
     public record BlockUploadRequest(
-            /** 음원 파일. 영상(video)만 올리면 영상의 소리를 뽑아 씀 → file이나 video 중 하나는 꼭 */
+            /** 소리 파일. file · video · draftId 중 하나만 */
             MultipartFile file,
 
-            /** 같이 보는 영상 (선택, 480p·소리 없음으로 줄여서 저장) */
+            /** 영상 (소리는 영상에서 뽑고, 영상은 480p·소리 없음으로 줄여서 저장). file · video · draftId 중 하나만 */
             MultipartFile video,
 
             /** 블록 겉면 사진 (선택) */
@@ -138,17 +138,17 @@ public final class BlockDtos {
             @Size(max = 60, message = "녹음한 곳은 60자 이내여야 합니다.")
             String recordedPlace,
 
-            /** 먼저 올려 둔 소리 파일(POST /blocks/upload-drafts)을 쓸 때. file 대신 */
+            /** 먼저 올려 둔 소리 파일이나 영상(POST /blocks/upload-drafts)을 쓸 때. file · video 대신 */
             @Size(max = 64)
             String draftId,
 
-            /** 구간 고르기 (선택, 초): 둘 다 주면 그 부분만 블록으로. 앞뒤 0.5초는 부드럽게 */
+            /** 구간 고르기 (선택, 초): 둘 다 주면 그 부분만 블록으로 (영상이면 화면도 같은 구간). 앞뒤 0.5초는 부드럽게 */
             Double trimStart,
             Double trimEnd) {
     }
 
-    /** 구간 고르기용으로 먼저 올린 소리: 올리기 때 draftId로. peaks = 파형(칸마다 0~1, 400칸) */
-    public record UploadDraftResponse(String draftId, double duration, float[] peaks) {
+    /** 구간 고르기용으로 먼저 올린 소리나 영상(kind = audio | video): 올리기 때 draftId로. peaks = 파형(칸마다 0~1, 400칸) */
+    public record UploadDraftResponse(String draftId, String kind, double duration, float[] peaks) {
     }
 
     /** 업로드 규칙 (앱이 화면에 안내하고, 서버도 같은 값으로 검사) */

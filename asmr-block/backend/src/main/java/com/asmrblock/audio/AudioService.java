@@ -159,13 +159,29 @@ public class AudioService {
      * 480p · 24fps · 소리 없음(소리는 블록 음원) · 휴대폰에서 바로 재생되는 mp4
      */
     public void blockVideo(Path input, Path output) {
-        ffmpeg.ffmpeg(List.of(
-                "-i", input.toString(),
+        blockVideo(input, output, null);
+    }
+
+    /**
+     * blockVideo + 구간 자르기: 소리(normalize의 atrim)와 같은 구간을 잘라 싱크가 맞음.
+     * 영상은 소리를 빼고(-an) 다시 인코딩하니 -ss로 빠르고 정확하게 (loudnorm 멈춤 문제는 소리에만 있음)
+     */
+    public void blockVideo(Path input, Path output, Trim trim) {
+        List<String> args = new java.util.ArrayList<>();
+        if (trim != null) {
+            args.addAll(List.of("-ss", seconds(trim.start())));
+        }
+        args.addAll(List.of("-i", input.toString()));
+        if (trim != null) {
+            args.addAll(List.of("-t", seconds(trim.length())));
+        }
+        args.addAll(List.of(
                 "-an", "-map", "0:v:0",
                 "-vf", "scale=-2:'min(480,ih)':flags=bicubic,fps=24",
                 "-c:v", "libx264", "-preset", "veryfast", "-crf", "32", "-pix_fmt", "yuv420p",
                 "-movflags", "+faststart",
-                output.toString()), audio.processTimeout());
+                output.toString()));
+        ffmpeg.ffmpeg(args, audio.processTimeout());
     }
 
     /** 블록 겉면 사진: 가로 최대 640px jpg (블록 모양에 맞게 자르는 건 화면에서) */

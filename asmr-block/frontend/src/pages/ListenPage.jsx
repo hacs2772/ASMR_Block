@@ -7,6 +7,7 @@ import BetaLoginButton from '../components/common/BetaLoginButton';
 import BlockVideoPanel from '../components/playlist/BlockVideoPanel';
 import { CollectComboButton } from '../components/playlist/ComboCard';
 import { colorOf, formatDuration, formatLength, listenLabel } from '../lib/blocks';
+import { createListenMeter, LISTEN_MINUTES } from '../lib/listen';
 import { positionState, sleepStep } from '../lib/sleep';
 import useAuthStore from '../store/authStore';
 
@@ -29,6 +30,19 @@ function ListenPage() {
   const [endsAt, setEndsAt] = useState(null);
   const [now, setNow] = useState(Date.now());
   const recorded = useRef(false);
+  // 오래 들음: 10분 넘게 재생하면 한 번 알림 (관리자 통계 "잠들 때까지 들었는지")
+  const meter = useRef(createListenMeter());
+  const checkListened = useCallback(() => {
+    if (meter.current.check(Date.now()) && useAuthStore.getState().isAuthenticated) {
+      playlistApi.listened(id, LISTEN_MINUTES).catch(() => {});
+    }
+  }, [id]);
+  useEffect(() => { meter.current = createListenMeter(); }, [id]);
+  useEffect(() => {
+    if (!playing) return undefined;
+    const t = setInterval(checkListened, 15000);
+    return () => clearInterval(t);
+  }, [playing, checkListened]);
   // 영상도 같이 보기: 기본은 꺼짐(소리만). 화면을 벗어나거나 잠들기 타이머가 끝나 가면 저절로 꺼짐
   const [showVideo, setShowVideo] = useState(false);
   useEffect(() => {
@@ -83,7 +97,7 @@ function ListenPage() {
     return () => clearInterval(t);
   }, [endsAt, playing, applySleep]);
   useEffect(() => {
-    const back = () => { if (!document.hidden) { setNow(Date.now()); applySleep(); } };
+    const back = () => { if (!document.hidden) { setNow(Date.now()); applySleep(); checkListened(); } };
     document.addEventListener('visibilitychange', back);
     window.addEventListener('pageshow', back);
     window.addEventListener('focus', back);
@@ -92,7 +106,7 @@ function ListenPage() {
       window.removeEventListener('pageshow', back);
       window.removeEventListener('focus', back);
     };
-  }, [applySleep]);
+  }, [applySleep, checkListened]);
 
   /** 조합 그림을 누르거나 끌면 그 위치(비율)로 이동, 멈춰 있었으면 거기서부터 재생 */
   const seekTo = (clientX, rect, play) => {
@@ -188,6 +202,8 @@ function ListenPage() {
   };
   const setPlayback = (state) => {
     setPlaying(state === 'playing');
+    if (state === 'playing') meter.current.play(Date.now());
+    else { meter.current.pause(Date.now()); checkListened(); }
     try { if ('mediaSession' in navigator) navigator.mediaSession.playbackState = state; } catch { /* 괜찮음 */ }
   };
 

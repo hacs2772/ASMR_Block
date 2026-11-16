@@ -10,7 +10,7 @@ const KEY_STEP = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1, Page
  * ±1초 버튼, 손잡이에서 ←/→ 1초(Shift 10초). ▶ 고른 부분 듣기 · 끝 5초 듣기 (재생선은 DOM에 직접, 다시 그리지 않음)
  * 계산은 lib/trim.js (앱 lib/trim.ts와 같은 규칙)
  */
-function Trimmer({ src, duration, peaks, range, onChange, min, max }) {
+function Trimmer({ src, duration, peaks, range, onChange, min, max, video = false }) {
   const trackRef = useRef(null);
   const audioRef = useRef(null);
   const headRef = useRef(null);
@@ -81,19 +81,32 @@ function Trimmer({ src, duration, peaks, range, onChange, min, max }) {
     let mode = which;
     if (which === 'track') {
       mode = nearestHandle(rangeRef.current, t);
-      onChange(moveHandle(rangeRef.current, mode, t, rules));
+      const next = moveHandle(rangeRef.current, mode, t, rules);
+      onChange(next);
+      showFrame(next, mode);
     }
     dragRef.current = { mode, offset: mode === 'move' ? t - rangeRef.current.start : 0 };
     trackRef.current.setPointerCapture?.(e.pointerId);
+  };
+  // 영상이면 멈춰 있을 때 손잡이를 옮기는 곳의 장면을 보여 줌
+  const showFrame = (next, mode) => {
+    const a = audioRef.current;
+    if (video && a && a.paused) a.currentTime = mode === 'end' ? next.end : next.start;
   };
   const onMove = (e) => {
     const drag = dragRef.current;
     if (!drag) return;
     const t = timeOf(e);
-    onChange(moveHandle(rangeRef.current, drag.mode, drag.mode === 'move' ? t - drag.offset : t, rules));
+    const next = moveHandle(rangeRef.current, drag.mode, drag.mode === 'move' ? t - drag.offset : t, rules);
+    onChange(next);
+    showFrame(next, drag.mode);
   };
   const endDrag = () => { dragRef.current = null; };
-  const step = (which, seconds) => onChange(moveHandle(range, which, range[which] + seconds, rules));
+  const step = (which, seconds) => {
+    const next = moveHandle(range, which, range[which] + seconds, rules);
+    onChange(next);
+    showFrame(next, which);
+  };
   const onKey = (which) => (e) => {
     const dir = KEY_STEP[e.key];
     if (!dir) return;
@@ -114,6 +127,10 @@ function Trimmer({ src, duration, peaks, range, onChange, min, max }) {
         </p>
       </div>
 
+      {video && (
+        <video ref={audioRef} src={src} preload="auto" playsInline onPause={() => setPlaying(false)}
+          className="mb-3 aspect-video w-full rounded-lg bg-black object-contain" data-testid="trim-video" />
+      )}
       <div ref={trackRef} className="relative h-20 cursor-pointer touch-none select-none rounded-lg bg-plate"
         onPointerDown={begin('track')} onPointerMove={onMove} onPointerUp={endDrag} onPointerCancel={endDrag} data-testid="trim-track">
         <svg viewBox={`0 0 ${bars.length} 100`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
@@ -154,9 +171,9 @@ function Trimmer({ src, duration, peaks, range, onChange, min, max }) {
         <button type="button" className="btn-ghost btn-sm" onClick={() => play(Math.max(range.start, range.end - 5))}>끝 5초 듣기</button>
       </div>
       <p className="mt-2 text-[11px] leading-relaxed text-faint">
-        손잡이를 끌어 시작과 끝을 고르고, 가운데를 끌면 구간째 옮겨져요. 잘린 앞뒤 {FADE_SECONDS}초는 부드럽게 커지고 작아져요.
+        손잡이를 끌어 시작과 끝을 고르고, 가운데를 끌면 구간째 옮겨져요.{video ? ' 영상은 소리와 같은 구간으로 같이 잘려요.' : ''} 잘린 앞뒤 {FADE_SECONDS}초는 부드럽게 커지고 작아져요.
       </p>
-      <audio ref={audioRef} src={src} preload="auto" onPause={() => setPlaying(false)} />
+      {!video && <audio ref={audioRef} src={src} preload="auto" onPause={() => setPlaying(false)} />}
     </div>
   );
 }

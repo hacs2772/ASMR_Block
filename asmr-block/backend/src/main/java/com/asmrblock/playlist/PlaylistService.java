@@ -1,5 +1,6 @@
 package com.asmrblock.playlist;
 
+import com.asmrblock.activity.ActivityService;
 import com.asmrblock.block.Block;
 import com.asmrblock.block.BlockService;
 import com.asmrblock.common.ApiException;
@@ -37,6 +38,7 @@ public class PlaylistService {
     private final BlockService blockService;
     private final PlayCountService playCountService;
     private final LibraryService libraryService;
+    private final ActivityService activityService;
 
     // ===================== 조회 =====================
 
@@ -169,6 +171,16 @@ public class PlaylistService {
     @Transactional
     public void deleteAllOf(Long userId) {
         playlistMapper.deleteByUserId(userId);
+    }
+
+    /** 오래 들음: 볼 수 있는 조합만 (새로 셌으면 true) */
+    @Transactional
+    public boolean recordListened(Long id, Long userId, int minutes) {
+        Playlist playlist = find(id);
+        if (!playlist.isViewableBy(userId)) {
+            throw ApiException.forbidden("비공개 플레이리스트입니다.");
+        }
+        return activityService.recordListen(userId, id, minutes);
     }
 
     // 재생 기록 (로그인 사용자만, 30분 내 중복 재생은 세지 않음)

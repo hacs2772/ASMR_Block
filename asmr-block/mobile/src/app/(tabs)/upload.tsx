@@ -24,13 +24,15 @@ import { categoryFallbackColor, colors, radius, space, talkLabel } from '@/theme
 const PRICE_STEPS = [10, 20, 30, 50, 100];
 const TALKS: TalkType[] = ['NONE', 'WHISPER', 'TALK'];
 
-type PickedFile = DocumentPicker.DocumentPickerAsset;
 type PickedMedia = ImagePicker.ImagePickerAsset;
+type Kind = 'audio' | 'video';
+/** 고른 소리 파일이나 영상 (휴대폰은 uri, 웹 미리보기는 File) */
+type Source = { uri: string; name: string; mimeType: string; size: number | null; webFile?: File | null };
 
-/** 소리 파일을 FormData에 (웹 미리보기는 File, 휴대폰은 uri) */
-function appendAudio(form: FormData, file: PickedFile) {
-  if (Platform.OS === 'web' && file.file) form.append('file', file.file);
-  else form.append('file', { uri: file.uri, name: file.name, type: file.mimeType ?? 'audio/mpeg' } as unknown as Blob);
+/** 소리 파일·영상을 FormData에 */
+function appendSource(form: FormData, field: string, src: Source) {
+  if (Platform.OS === 'web' && src.webFile) form.append(field, src.webFile);
+  else form.append(field, { uri: src.uri, name: src.name, type: src.mimeType } as unknown as Blob);
 }
 
 /** 사진·영상을 FormData에 (웹 미리보기는 File, 휴대폰은 uri) */
@@ -52,7 +54,9 @@ export default function UploadScreen() {
   const categories = useQuery({ queryKey: ['categories'], queryFn: catalogApi.categories, staleTime: Infinity });
   const mine = useQuery({ queryKey: ['my-uploads'], queryFn: sellerApi.mine, enabled: status === 'signedIn' });
 
-  const [file, setFile] = useState<PickedFile | null>(null);
+  // 올릴 것: 소리만(audio) 또는 영상(video, 소리는 영상에서 · 고른 구간으로 소리·화면을 같이 잘라 싱크가 맞음)
+  const [kind, setKind] = useState<Kind>('audio');
+  const [file, setFile] = useState<Source | null>(null);
   // 구간 고르기: 파일을 고르면 먼저 올려서 파형을 받음 (그동안 이름·트리거를 적으면 돼요)
   const [draft, setDraft] = useState<UploadDraft | null>(null);
   const [draftPending, setDraftPending] = useState(false);
@@ -66,8 +70,6 @@ export default function UploadScreen() {
   const [place, setPlace] = useState('');
   const [note, setNote] = useState('');
   const [ownRecording, setOwnRecording] = useState(false);
-  // 영상(선택): 소리 파일이 없으면 영상의 소리를 블록 음원으로 씀
-  const [video, setVideo] = useState<PickedMedia | null>(null);
   // 블록 꾸미기(C안): 사진이 있으면 사진, 없으면 스티커 + 무늬
   const [cover, setCover] = useState<PickedMedia | null>(null);
   const [stickers, setStickers] = useState<string[]>([]);
@@ -77,16 +79,42 @@ export default function UploadScreen() {
 
   const maxPrice = policy.data?.maxPrice ?? 100;
   const maxFileMb = policy.data?.maxFileMb ?? 50;
+  const maxVideoMb = policy.data?.maxVideoMb ?? 200;
   const minSeconds = policy.data?.minSeconds ?? 10;
   const maxSeconds = policy.data?.maxSeconds ?? 1200;
   const group = categories.data?.find((g) => g.id === groupId);
 
-  const pick = async () => {
+  const clearFile = () => {
+    draftToken.current += 1;
+    setFile(null);
+    setDraft(null);
+    setRange(null);
+    setDraftPending(false);
+  };
+  const switchKind = (k: Kind) => {
+    if (k === kind) return;
+    clearFile();
+    setKind(k);
+  };
+
+  /** 소리는 파일 앱에서, 영상은 사진 앱(갤러리)에서 */
+  const chooseSource = async (): Promise<Source | null> => {
+    if (kind === 'video') {
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'], allowsEditing: false });
+      const a = result.canceled ? null : result.assets[0];
+      return a ? { uri: a.uri, name: a.fileName ?? 'video.mp4', mimeType: a.mimeType ?? 'video/mp4', size: a.fileSize ?? null, webFile: a.file } : null;
+    }
     const result = await DocumentPicker.getDocumentAsync({ type: ['audio/*'], copyToCacheDirectory: true });
-    if (result.canceled || !result.assets[0]) return;
-    const picked = result.assets[0];
-    if (picked.size && picked.size > maxFileMb * 1024 * 1024) {
-      notify('파일이 너무 커요', `${maxFileMb}MB 이하 파일만 올릴 수 있어요.`);
+    const a = result.canceled ? null : result.assets[0];
+    return a ? { uri: a.uri, name: a.name, mimeType: a.mimeType ?? 'audio/mpeg', size: a.size ?? null, webFile: a.file } : null;
+  };
+
+  const pick = async () => {
+    const picked = await chooseSource();
+    if (!picked) return;
+    const limit = kind === 'video' ? maxVideoMb : maxFileMb;
+    if (picked.size && picked.size > limit * 1024 * 1024) {
+      notify('파일이 너무 커요', `${kind === 'video' ? '영상은' : '소리 파일은'} ${limit}MB까지 올릴 수 있어요.`);
       return;
     }
     setFile(picked);
@@ -98,8 +126,8 @@ export default function UploadScreen() {
     setDraftPending(true);
     try {
       const form = new FormData();
-      appendAudio(form, picked);
-      const d = await sellerApi.draft(form);
+      appendSource(form, 'file', picked);
+      const d = await sellerApi.draft(form, kind);
       if (token !== draftToken.current) return;
       setDraft(d);
       setRange(initialRange(d.duration, maxSeconds));
@@ -110,28 +138,22 @@ export default function UploadScreen() {
     }
   };
 
-  const pickMedia = async (kind: 'videos' | 'images') => {
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: [kind], quality: 0.8, allowsEditing: kind === 'images', aspect: [16, 9] });
+  const pickCover = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8, allowsEditing: true, aspect: [16, 9] });
     if (result.canceled || !result.assets[0]) return;
     const picked = result.assets[0];
-    const maxMb = kind === 'videos' ? policy.data?.maxVideoMb ?? 200 : policy.data?.maxImageMb ?? 10;
+    const maxMb = policy.data?.maxImageMb ?? 10;
     if (picked.fileSize && picked.fileSize > maxMb * 1024 * 1024) {
       notify('파일이 너무 커요', `${maxMb}MB까지 올릴 수 있어요.`);
       return;
     }
-    if (kind === 'videos') setVideo(picked);
-    else setCover(picked);
+    setCover(picked);
   };
   const toggleSticker = (code: string) => setStickers((list) => (list.includes(code) ? list.filter((c) => c !== code)
     : list.length >= MAX_STICKERS ? list : [...list, code]));
 
   const reset = () => {
-    draftToken.current += 1;
-    setFile(null);
-    setDraft(null);
-    setRange(null);
-    setDraftPending(false);
-    setVideo(null);
+    clearFile();
     setCover(null);
     setStickers([]);
     setTitle('');
@@ -156,9 +178,8 @@ export default function UploadScreen() {
           form.append('trimEnd', String(trim.trimEnd));
         }
       } else if (file) {
-        appendAudio(form, file);
+        appendSource(form, kind === 'video' ? 'video' : 'file', file);
       }
-      if (video) appendMedia(form, 'video', video, 'video.mp4', 'video/mp4');
       if (cover) appendMedia(form, 'cover', cover, 'cover.jpg', 'image/jpeg');
       if (stickers.length) form.append('stickers', stickers.join(','));
       form.append('pattern', pattern);
@@ -180,7 +201,7 @@ export default function UploadScreen() {
   });
 
   const tooShort = draft && !canTrim(draft.duration, minSeconds);
-  const missing = !file && !video ? '소리 파일이나 영상을 골라주세요' : draftPending ? '소리 파일 올리는 중…'
+  const missing = !file ? (kind === 'video' ? '영상을 골라주세요' : '소리 파일을 골라주세요') : draftPending ? '파일 올리는 중…'
     : tooShort ? `${minSeconds}초보다 긴 소리를 골라주세요` : !title.trim() ? '이름을 적어주세요' : !categoryId ? '트리거 종류를 골라주세요'
     : !ownRecording ? '직접 녹음한 소리인지 확인해주세요' : null;
 
@@ -202,44 +223,58 @@ export default function UploadScreen() {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>새 블록 올리기</Text>
 
-        <Text style={styles.label}>소리 파일</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="소리 파일 고르기" onPress={pick} style={styles.fileBox} testID="pick-file">
-          <Ionicons name={file ? 'musical-note' : 'folder-open-outline'} size={20} color={file ? colors.primary : colors.muted} />
+        <Text style={styles.label}>올릴 것</Text>
+        <View style={styles.kinds} accessibilityRole="radiogroup">
+          {([
+            { k: 'audio', icon: 'musical-notes', title: '소리만', body: '녹음 파일 (m4a·mp3·wav…)' },
+            { k: 'video', icon: 'videocam', title: '영상', body: '소리는 영상에서, 같은 구간으로 같이 잘려요' },
+          ] as const).map((o) => {
+            const on = kind === o.k;
+            return (
+              <Pressable key={o.k} accessibilityRole="radio" accessibilityState={{ checked: on }} onPress={() => switchKind(o.k)}
+                style={[styles.kind, on && styles.kindOn]} testID={`upload-kind-${o.k}`}>
+                <Ionicons name={o.icon} size={18} color={on ? colors.primaryText : colors.faint} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.kindTitle, on && { color: colors.primaryText }]}>{o.title}</Text>
+                  <Text style={styles.kindBody}>{o.body}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Pressable accessibilityRole="button" accessibilityLabel={kind === 'video' ? '영상 고르기' : '소리 파일 고르기'} onPress={pick}
+          style={[styles.fileBox, { marginTop: space.sm }]} testID="pick-file">
+          <Ionicons name={file ? (kind === 'video' ? 'videocam' : 'musical-note') : kind === 'video' ? 'images-outline' : 'folder-open-outline'}
+            size={20} color={file ? colors.primary : colors.muted} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.fileName} numberOfLines={1}>{file ? file.name : '휴대폰에서 파일 고르기'}</Text>
+            <Text style={styles.fileName} numberOfLines={1}>
+              {file ? `${file.name} · 눌러서 바꾸기` : kind === 'video' ? '갤러리에서 영상 고르기' : '휴대폰에서 소리 파일 고르기'}
+            </Text>
             <Text style={styles.fileMeta}>
               {file?.size ? `${(file.size / 1024 / 1024).toFixed(1)}MB · ` : ''}
-              {policy.data ? `${policy.data.extensions.join(', ')} · ${Math.round(policy.data.minSeconds)}초~${policy.data.maxSeconds / 60}분 · ${maxFileMb}MB까지` : ' '}
+              {!policy.data ? ' ' : kind === 'video'
+                ? `${policy.data.videoExtensions.join(', ')} · ${maxVideoMb}MB까지 · 듣는 사람이 "영상도 같이 보기"를 켜면 보여요`
+                : `${policy.data.extensions.join(', ')} · ${maxFileMb}MB까지`}
             </Text>
           </View>
         </Pressable>
 
-        {/* 구간 고르기: 길게 녹음했으면 쓸 부분만 */}
+        {/* 구간 고르기: 길게 녹음했으면 쓸 부분만 (영상이면 화면도 같이) */}
         {file && draftPending && <BlockLoader size="small" label="파형을 만드는 중…" style={{ marginTop: space.sm }} />}
         {file && draft && range && canTrim(draft.duration, minSeconds) && (
           <>
             {draft.duration > maxSeconds && (
               <Text style={[styles.hint, { color: colors.warn, marginTop: space.sm }]}>
-                {maxSeconds / 60}분이 넘는 녹음이라 앞 {maxSeconds / 60}분을 골라 뒀어요. 손잡이로 바꿀 수 있어요.
+                {maxSeconds / 60}분이 넘어서 앞 {maxSeconds / 60}분을 골라 뒀어요. 손잡이로 바꿀 수 있어요.
               </Text>
             )}
             <Trimmer uri={file.uri} duration={draft.duration} peaks={draft.peaks} range={range} onChange={setRange}
-              min={minSeconds} max={maxSeconds} />
+              min={minSeconds} max={maxSeconds} video={kind === 'video'} />
           </>
         )}
 
-        {/* 영상 (선택) */}
-        <Pressable accessibilityRole="button" accessibilityLabel="영상 고르기" onPress={() => (video ? setVideo(null) : pickMedia('videos'))}
-          style={[styles.fileBox, { marginTop: space.sm }]} testID="pick-video">
-          <Ionicons name={video ? 'videocam' : 'videocam-outline'} size={20} color={video ? colors.primary : colors.muted} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.fileName} numberOfLines={1}>{video ? `${video.fileName ?? '영상'} · 눌러서 빼기` : '영상도 같이 올리기 (선택)'}</Text>
-            <Text style={styles.fileMeta}>“진짜 그 장면이구나” 하고 보는 용도 · 영상만 올리면 영상의 소리를 써요 · 가볍게 480p로 저장</Text>
-          </View>
-        </Pressable>
-
         <Text style={styles.label}>블록 꾸미기 <Text style={styles.labelHint}>· 사진이 있으면 사진, 없으면 스티커</Text></Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="겉면 사진 고르기" onPress={() => (cover ? setCover(null) : pickMedia('images'))}
+        <Pressable accessibilityRole="button" accessibilityLabel="겉면 사진 고르기" onPress={() => (cover ? setCover(null) : pickCover())}
           style={styles.fileBox} testID="pick-cover">
           {cover ? <Image source={{ uri: cover.uri }} style={styles.coverThumb} /> : <Ionicons name="image-outline" size={20} color={colors.muted} />}
           <View style={{ flex: 1 }}>
@@ -313,7 +348,7 @@ export default function UploadScreen() {
         <BlockCard block={previewBlock({ title, note, price, talkType, place, nickname: user?.nickname ?? '나',
           duration: range ? range.end - range.start : draft?.duration ?? 200,
           category: group?.children.find((c) => c.id === categoryId) ?? null, groupName: group?.name ?? null,
-          design: { coverUrl: cover?.uri ?? null, stickers, pattern, hasVideo: !!video, videoUrl: null } })}
+          design: { coverUrl: cover?.uri ?? null, stickers, pattern, hasVideo: !!file && kind === 'video', videoUrl: null } })}
           previewing={false} onPreview={() => {}} showNote style={styles.preview} />
 
         <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: ownRecording }} onPress={() => setOwnRecording(!ownRecording)}
@@ -393,6 +428,14 @@ const styles = StyleSheet.create({
   cardTitle: { color: colors.text, fontSize: 18, fontWeight: '800' },
   label: { color: colors.text, fontSize: 14, fontWeight: '700', marginTop: space.sm },
   labelHint: { color: colors.faint, fontWeight: '400', fontSize: 12 },
+  kinds: { flexDirection: 'row', gap: space.sm },
+  kind: {
+    flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 8, padding: space.md, borderRadius: radius.md,
+    borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bg,
+  },
+  kindOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  kindTitle: { color: colors.text, fontSize: 14, fontWeight: '800' },
+  kindBody: { color: colors.muted, fontSize: 11, lineHeight: 15, marginTop: 2 },
   fileBox: {
     flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.md,
     borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.border, backgroundColor: colors.bg,

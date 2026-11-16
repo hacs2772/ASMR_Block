@@ -62,10 +62,8 @@ function SellPage() {
   const [progress, setProgress] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef(null);
-  // 영상(선택): 소리 파일이 없으면 영상의 소리를 블록 음원으로 씀
-  const [video, setVideo] = useState(null);
-  const [videoDuration, setVideoDuration] = useState(null);
-  const videoInputRef = useRef(null);
+  // 올릴 것: 소리만(audio) 또는 영상(video). 영상이면 소리는 영상에서 뽑고, 고른 구간으로 소리·화면을 같이 잘라 싱크가 맞음
+  const [kind, setKind] = useState('audio');
   // 블록 꾸미기(C안): 사진이 있으면 사진, 없으면 스티커 + 무늬
   const [cover, setCover] = useState(null);
   const [coverUrl, setCoverUrl] = useState(null);
@@ -92,16 +90,6 @@ function SellPage() {
 
   const maxVideoMb = policy?.maxVideoMb ?? 200;
   const maxImageMb = policy?.maxImageMb ?? 10;
-  const pickVideo = async (f) => {
-    if (!f) return undefined;
-    if (f.size > maxVideoMb * 1024 * 1024) return toast.error(`영상은 ${maxVideoMb}MB까지 올릴 수 있어요.`);
-    setVideo(f);
-    const url = URL.createObjectURL(f);
-    setVideoDuration(await readDuration(url, true));
-    URL.revokeObjectURL(url);
-    if (!title) setTitle(f.name.replace(/\.[^.]+$/, '').slice(0, 60));
-    return undefined;
-  };
   const pickCover = (f) => {
     if (!f) return undefined;
     if (f.size > maxImageMb * 1024 * 1024) return toast.error(`사진은 ${maxImageMb}MB까지 올릴 수 있어요.`);
@@ -112,21 +100,43 @@ function SellPage() {
   const toggleSticker = (code) => setStickers((list) => (list.includes(code) ? list.filter((c) => c !== code)
     : list.length >= MAX_STICKERS ? list : [...list, code]));
 
+  /** 끌어 온 파일이 영상인지 소리인지 (webm처럼 둘 다 되는 형식은 지금 고른 쪽) */
+  const kindOf = (f) => {
+    if (f.type?.startsWith('video/')) return 'video';
+    if (f.type?.startsWith('audio/')) return 'audio';
+    const ext = f.name.split('.').pop()?.toLowerCase();
+    const isVideo = policy?.videoExtensions?.includes(ext);
+    const isAudio = policy?.extensions?.includes(ext);
+    return isVideo && !isAudio ? 'video' : isAudio && !isVideo ? 'audio' : kind;
+  };
+  const clearFile = () => {
+    pickToken.current += 1;
+    setFile(null); setFileUrl(null); setDuration(null); setDraft(null); setRange(null); setDraftProgress(null);
+  };
+  const switchKind = (k) => {
+    if (k === kind) return;
+    clearFile();
+    setKind(k);
+  };
+
   const pick = async (f) => {
     if (!f) return;
-    if (f.size > maxFileMb * 1024 * 1024) return toast.error(`${maxFileMb}MB 이하 파일만 올릴 수 있어요.`);
+    const k = kindOf(f);
+    const limit = k === 'video' ? maxVideoMb : maxFileMb;
+    if (f.size > limit * 1024 * 1024) return toast.error(`${k === 'video' ? '영상은' : '소리 파일은'} ${limit}MB까지 올릴 수 있어요.`);
     const url = URL.createObjectURL(f);
     const token = ++pickToken.current;
+    setKind(k);
     setFile(f);
     setFileUrl(url);
     setDraft(null);
     setRange(null);
     setDraftProgress(0);
     if (!title) setTitle(f.name.replace(/\.[^.]+$/, '').slice(0, 60));
-    readDuration(url).then((d) => { if (token === pickToken.current) setDuration(d); });
+    readDuration(url, k === 'video').then((d) => { if (token === pickToken.current) setDuration(d); });
     // 먼저 올려서 파형 받기 (그동안 이름·트리거를 적으면 돼요). 실패하면 구간 고르기 없이 파일을 그대로 올림
     try {
-      const d = await sellerApi.draft(f, (p) => token === pickToken.current && setDraftProgress(p));
+      const d = await sellerApi.draft(f, (p) => token === pickToken.current && setDraftProgress(p), k);
       if (token !== pickToken.current) return undefined;
       setDraft(d);
       setDuration(d.duration);
@@ -141,12 +151,12 @@ function SellPage() {
 
   const group = groups.find((g) => g.id === groupId);
   const category = group?.children?.find((c) => c.id === categoryId);
-  // 소리 길이: 소리 파일이 있으면 고른 구간(없으면 파일 전체), 없으면 영상
-  const soundLength = file ? (range ? range.end - range.start : duration) : videoDuration;
+  // 블록 길이: 고른 구간 (파형을 못 만들었으면 파일 전체)
+  const soundLength = file ? (range ? range.end - range.start : duration) : null;
   const lengthProblem = soundLength && policy
     ? (soundLength < policy.minSeconds ? `${Math.round(policy.minSeconds)}초보다 길어야 해요` : soundLength > policy.maxSeconds + 0.05 ? `${policy.maxSeconds / 60}분보다 짧아야 해요` : null)
     : null;
-  const missing = !file && !video ? '소리 파일이나 영상을 골라 주세요'
+  const missing = !file ? (kind === 'video' ? '영상을 골라 주세요' : '소리 파일을 골라 주세요')
     : draftProgress !== null ? `소리 파일 올리는 중… ${draftProgress}%`
     : lengthProblem || (!title.trim() ? '이름을 적어 주세요'
     : !categoryId ? '트리거 종류를 골라 주세요' : !agree ? '직접 녹음했는지 확인해 주세요' : null);
@@ -157,8 +167,8 @@ function SellPage() {
     talkType, recordedPlace: place.trim() || null, owned: true, fileUrl,
     category: category ? { ...category, parentName: group?.name, color: group?.color } : group ? { ...group, parentName: group.name } : null,
     uploader: { nickname: user?.nickname || '나' },
-    design: { coverUrl, stickers, pattern, hasVideo: !!video, videoUrl: null },
-  }), [title, note, soundLength, price, talkType, place, category, group, user, fileUrl, coverUrl, stickers, pattern, video]);
+    design: { coverUrl, stickers, pattern, hasVideo: !!file && kind === 'video', videoUrl: null },
+  }), [title, note, soundLength, price, talkType, place, category, group, user, fileUrl, coverUrl, stickers, pattern, file, kind]);
 
   const submit = async () => {
     if (missing) return;
@@ -172,9 +182,8 @@ function SellPage() {
         form.append('trimEnd', String(trim.trimEnd));
       }
     } else if (file) {
-      form.append('file', file);
+      form.append(kind === 'video' ? 'video' : 'file', file);
     }
-    if (video) form.append('video', video);
     if (cover) form.append('cover', cover);
     if (stickers.length) form.append('stickers', stickers.join(','));
     form.append('pattern', pattern);
@@ -189,8 +198,8 @@ function SellPage() {
     try {
       await sellerApi.upload(form, setProgress);
       toast.success('올렸어요! 검수가 끝나면 블록 상점에 올라가요.');
-      setFile(null); setFileUrl(null); setDuration(null); setDraft(null); setRange(null); setTitle(''); setPlace(''); setNote(''); setAgree(false);
-      setVideo(null); setVideoDuration(null); setCover(null); setCoverUrl(null); setStickers([]);
+      clearFile(); setTitle(''); setPlace(''); setNote(''); setAgree(false);
+      setCover(null); setCoverUrl(null); setStickers([]);
       loadMine();
     } catch (e) {
       toast.error(errorMessage(e, '올리지 못했어요.'));
@@ -223,7 +232,23 @@ function SellPage() {
           <div className="card space-y-7 p-6 sm:p-8">
             {/* 파일 */}
             <div>
-              <p className="label">소리 파일 <span className="ml-1 text-xs font-normal text-faint">· 영상만 올려도 돼요 (영상의 소리를 써요)</span></p>
+              <p className="label">올릴 것</p>
+              <div className="mb-3 grid grid-cols-2 gap-2" role="radiogroup" aria-label="올릴 것">
+                {[
+                  { k: 'audio', icon: IoMusicalNotes, title: '소리만', body: '녹음 파일 (m4a·mp3·wav…)' },
+                  { k: 'video', icon: IoVideocam, title: '영상', body: '소리는 영상에서, 같은 구간으로 같이 잘려요' },
+                ].map((o) => (
+                  <button key={o.k} type="button" role="radio" aria-checked={kind === o.k} onClick={() => switchKind(o.k)} data-testid={`sell-kind-${o.k}`}
+                    className={`flex min-w-0 items-start gap-2.5 rounded-xl border p-3 text-left transition-colors ${
+                      kind === o.k ? 'border-pink bg-pink-soft' : 'border-line bg-card hover:border-line-strong'}`}>
+                    <o.icon size={20} className={`mt-0.5 shrink-0 ${kind === o.k ? 'text-pink-text' : 'text-faint'}`} />
+                    <span className="min-w-0">
+                      <span className={`block text-sm font-bold ${kind === o.k ? 'text-pink-text' : ''}`}>{o.title}</span>
+                      <span className="block text-[11px] leading-snug text-muted">{o.body}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
               <button type="button" onClick={() => inputRef.current?.click()}
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)}
                 onDrop={(e) => { e.preventDefault(); setDragOver(false); pick(e.dataTransfer.files?.[0]); }}
@@ -231,25 +256,32 @@ function SellPage() {
                   dragOver ? 'border-pink bg-pink-soft' : 'border-line-strong hover:border-faint'}`} data-testid="sell-drop">
                 {file ? (
                   <>
-                    <IoMusicalNotes size={28} className="text-pink-text" />
-                    <span className="font-bold">{file.name}</span>
+                    {kind === 'video' ? <IoVideocam size={28} className="text-pink-text" /> : <IoMusicalNotes size={28} className="text-pink-text" />}
+                    <span className="max-w-full truncate font-bold">{file.name}</span>
                     <span className="text-xs text-muted">{(file.size / 1024 / 1024).toFixed(1)}MB{duration ? ` · ${formatDuration(duration)}` : ''} · 눌러서 바꾸기</span>
                     {lengthProblem && <span className="text-xs font-bold text-danger">{lengthProblem}</span>}
                   </>
                 ) : (
                   <>
                     <IoCloudUpload size={30} className="text-faint" />
-                    <span className="font-bold">파일을 여기로 끌어오거나 눌러서 고르기</span>
+                    <span className="font-bold">{kind === 'video' ? '영상을' : '소리 파일을'} 여기로 끌어오거나 눌러서 고르기</span>
                     <span className="text-xs text-faint">
-                      {policy ? `${policy.extensions.join(', ')} · ${Math.round(policy.minSeconds)}초~${policy.maxSeconds / 60}분 · ${maxFileMb}MB까지` : 'mp3, m4a, wav …'}
+                      {!policy ? 'mp3, m4a, wav …' : kind === 'video'
+                        ? `${policy.videoExtensions.join(', ')} · ${maxVideoMb}MB까지 · 쓸 부분은 다음 단계에서 골라요`
+                        : `${policy.extensions.join(', ')} · ${maxFileMb}MB까지 · 쓸 부분은 다음 단계에서 골라요`}
                     </span>
+                    {kind === 'video' && (
+                      <span className="text-[11px] text-faint">"진짜 그 장면이구나" 하고 볼 수 있게. 듣는 사람이 "영상도 같이 보기"를 켜면 보여요 · 480p로 가볍게 저장</span>
+                    )}
                   </>
                 )}
               </button>
               <input ref={inputRef} type="file" className="hidden" data-testid="sell-file"
-                accept={policy ? policy.extensions.map((x) => `.${x}`).join(',') : 'audio/*'} onChange={(e) => { pick(e.target.files?.[0]); e.target.value = ''; }} />
+                accept={!policy ? (kind === 'video' ? 'video/*' : 'audio/*')
+                  : (kind === 'video' ? policy.videoExtensions : policy.extensions).map((x) => `.${x}`).join(',')}
+                onChange={(e) => { pick(e.target.files?.[0]); e.target.value = ''; }} />
 
-              {/* 구간 고르기: 길게 녹음했으면 쓸 부분만 */}
+              {/* 구간 고르기: 길게 녹음했으면 쓸 부분만 (영상이면 화면도 같이) */}
               {file && draftProgress !== null && (
                 <div className="mt-3 rounded-xl bg-card-active p-3.5 text-sm text-muted" data-testid="draft-progress">
                   파형을 만드는 중… {draftProgress < 100 ? `${draftProgress}%` : '거의 다 됐어요'}
@@ -259,32 +291,12 @@ function SellPage() {
               {file && draft && range && canTrim(draft.duration, policy?.minSeconds ?? 10) && (
                 <div className="mt-3">
                   {draft.duration > (policy?.maxSeconds ?? 1200) && (
-                    <p className="mb-2 text-xs text-warn">{(policy?.maxSeconds ?? 1200) / 60}분이 넘는 녹음이라 앞 {(policy?.maxSeconds ?? 1200) / 60}분을 골라 뒀어요. 손잡이로 바꿀 수 있어요.</p>
+                    <p className="mb-2 text-xs text-warn">{(policy?.maxSeconds ?? 1200) / 60}분이 넘어서 앞 {(policy?.maxSeconds ?? 1200) / 60}분을 골라 뒀어요. 손잡이로 바꿀 수 있어요.</p>
                   )}
                   <Trimmer src={fileUrl} duration={draft.duration} peaks={draft.peaks} range={range} onChange={setRange}
-                    min={policy?.minSeconds ?? 10} max={policy?.maxSeconds ?? 1200} />
+                    min={policy?.minSeconds ?? 10} max={policy?.maxSeconds ?? 1200} video={kind === 'video'} />
                 </div>
               )}
-
-              {/* 영상 (선택) */}
-              <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl bg-card-active p-3.5">
-                <IoVideocam size={20} className="text-pink-text" />
-                <div className="min-w-0 flex-1 basis-52 text-sm">
-                  {video ? (
-                    <p className="truncate"><b>{video.name}</b> <span className="text-xs text-muted">{(video.size / 1024 / 1024).toFixed(0)}MB{videoDuration ? ` · ${formatDuration(videoDuration)}` : ''}</span></p>
-                  ) : (
-                    <p><b>영상도 같이 올리기</b> <span className="text-xs text-faint">(선택)</span></p>
-                  )}
-                  <p className="text-xs text-muted">"진짜 그 장면이구나" 하고 볼 수 있게. 듣는 사람이 "영상도 같이 보기"를 켜면 보여요 · 가볍게 480p로 저장</p>
-                </div>
-                {video ? (
-                  <button type="button" className="btn-ghost btn-sm ml-auto" onClick={() => { setVideo(null); setVideoDuration(null); }}>빼기</button>
-                ) : (
-                  <button type="button" className="btn-line btn-sm ml-auto" onClick={() => videoInputRef.current?.click()} data-testid="sell-video-pick">영상 고르기</button>
-                )}
-                <input ref={videoInputRef} type="file" className="hidden" data-testid="sell-video"
-                  accept={policy ? policy.videoExtensions.map((x) => `.${x}`).join(',') : 'video/*'} onChange={(e) => pickVideo(e.target.files?.[0])} />
-              </div>
             </div>
 
             {/* 블록 꾸미기 (C안) */}

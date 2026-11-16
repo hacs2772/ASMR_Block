@@ -1,13 +1,16 @@
 package com.asmrblock;
 
 import com.asmrblock.support.IntegrationTest;
+import com.asmrblock.storage.StorageService;
 import com.asmrblock.support.TestAudio;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.nio.file.Path;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,6 +22,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** 올리기 전 구간 고르기: 소리를 먼저 올려 파형·길이를 받고, 고른 구간만 블록으로 */
 class UploadTrimApiTest extends IntegrationTest {
+
+    @Autowired
+    private StorageService storageService;
 
     private ResultActions draft(String token, byte[] audio, String filename) throws Exception {
         return mvc.perform(bearer(multipart("/api/v1/blocks/upload-drafts")
@@ -113,19 +119,65 @@ class UploadTrimApiTest extends IntegrationTest {
         // 잘못 골라서 실패한 뒤에도 같은 파일로 다시 올릴 수 있음
         uploadDraft(token, draftId, 10.0, 25.0).andExpect(status().isCreated()).andExpect(jsonPath("$.data.duration").value(15));
 
-        // 영상만 올릴 때는 구간 고르기 없음, 파일 + draftId 둘 다는 안 됨
-        mvc.perform(bearer(multipart("/api/v1/blocks")
-                        .file(new MockMultipartFile("video", "v.mp4", "video/mp4", TestAudio.testVideo(12, true))), token)
-                        .param("title", "영상").param("categoryId", String.valueOf(leafCategoryId())).param("license", "OWN")
-                        .param("trimStart", "0").param("trimEnd", "11"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.message").value("영상만 올릴 때는 구간을 고를 수 없어요. 소리 파일을 같이 올려 주세요."));
+        // 소리는 하나에서만: 파일 + draftId, 소리 파일 + 영상은 안 됨 (싱크가 어긋날 수 있어서)
+        String one = "소리 파일이나 영상 중 하나만 올려 주세요. 영상이면 영상의 소리를 그대로 써요.";
         String another = JsonPath.read(json(draft(token, TestAudio.sineMp3(12, 300), "a.mp3")), "$.data.draftId");
         mvc.perform(bearer(multipart("/api/v1/blocks")
                         .file(new MockMultipartFile("file", "b.mp3", "audio/mpeg", TestAudio.sineMp3(12, 300))), token)
                         .param("draftId", another)
                         .param("title", "둘 다").param("categoryId", String.valueOf(leafCategoryId())).param("license", "OWN"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error.message").value("소리 파일은 하나만 올려 주세요."));
+                .andExpect(jsonPath("$.error.message").value(one));
+        mvc.perform(bearer(multipart("/api/v1/blocks")
+                        .file(new MockMultipartFile("file", "b.mp3", "audio/mpeg", TestAudio.sineMp3(12, 300)))
+                        .file(new MockMultipartFile("video", "v.mp4", "video/mp4", TestAudio.testVideo(12, true))), token)
+                        .param("title", "따로따로").param("categoryId", String.valueOf(leafCategoryId())).param("license", "OWN"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.message").value(one));
+    }
+
+    @Test
+    @DisplayName("영상: 먼저 올려 파형을 받고, 고른 구간으로 소리와 화면을 같이 자름 (길이가 같아 싱크가 맞음)")
+    void videoDraftTrimsSoundAndPicture() throws Exception {
+        String token = newUser().accessToken();
+        String body = json(mvc.perform(bearer(multipart("/api/v1/blocks/upload-drafts")
+                        .file(new MockMultipartFile("file", "scene.mp4", "video/mp4", TestAudio.testVideo(30, true))), token)
+                        .param("kind", "video"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.kind").value("video"))
+                .andExpect(jsonPath("$.data.duration", closeTo(30.0, 0.3)))
+                .andExpect(jsonPath("$.data.peaks", hasSize(400))));
+        String draftId = JsonPath.read(body, "$.data.draftId");
+
+        long id = idOf(uploadDraft(token, draftId, 6.0, 18.0)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.duration").value(12))
+                .andExpect(jsonPath("$.data.design.hasVideo").value(true)));
+        // 저장된 영상도 같은 12초
+        String mine = json(getWithToken("/api/v1/me/uploads", token));
+        List<String> urls = JsonPath.read(mine, "$.data.content[?(@.id == " + id + ")].design.videoUrl");
+        String videoUrl = urls.getFirst();
+        assertThat(videoUrl).contains("/videos/");
+        Path videoFile = storageService.resolve(videoUrl.substring(videoUrl.indexOf("videos/")));
+        assertThat(TestAudio.durationOf(videoFile)).isCloseTo(12.0, org.assertj.core.data.Offset.offset(0.3));
+
+        // 영상을 바로 올려도 구간을 고를 수 있음
+        mvc.perform(bearer(multipart("/api/v1/blocks")
+                        .file(new MockMultipartFile("video", "v.mp4", "video/mp4", TestAudio.testVideo(14, true))), token)
+                        .param("title", "바로 자른 영상").param("categoryId", String.valueOf(leafCategoryId())).param("license", "OWN")
+                        .param("trimStart", "2").param("trimEnd", "13"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.duration").value(11));
+
+        // 소리 없는 영상, 영상이 아닌 파일
+        mvc.perform(bearer(multipart("/api/v1/blocks/upload-drafts")
+                        .file(new MockMultipartFile("file", "silent.mp4", "video/mp4", TestAudio.testVideo(12, false))), token)
+                        .param("kind", "video"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.message").value("영상에서 소리를 찾지 못했어요. 소리가 있는 영상을 골라 주세요."));
+        mvc.perform(bearer(multipart("/api/v1/blocks/upload-drafts")
+                        .file(new MockMultipartFile("file", "a.mp3", "audio/mpeg", TestAudio.sineMp3(12, 300))), token)
+                        .param("kind", "video"))
+                .andExpect(status().isBadRequest());
     }
 }

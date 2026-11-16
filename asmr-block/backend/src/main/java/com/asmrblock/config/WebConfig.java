@@ -1,8 +1,10 @@
 package com.asmrblock.config;
 
+import com.asmrblock.activity.ActivityInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.CacheControl;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -10,7 +12,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 
 /**
- * 로컬 저장소의 음원 파일을 /files/** 주소로 제공합니다.
+ * 로컬 저장소의 음원 파일을 /files/** 주소로 제공하고, API 요청에 "쓴 날" 기록을 붙입니다.
  * (구간 탐색용 Range 요청도 지원 - 나중에 S3/R2 + CDN으로 교체 예정)
  */
 @Configuration
@@ -18,6 +20,13 @@ import java.time.Duration;
 public class WebConfig implements WebMvcConfigurer {
 
     private final AppProperties properties;
+    private final ActivityInterceptor activityInterceptor;
+
+    /** 로그인한 사람이 서비스를 쓴 날 기록 (관리자 통계 "다시 왔는지") */
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(activityInterceptor).addPathPatterns("/api/**");
+    }
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {

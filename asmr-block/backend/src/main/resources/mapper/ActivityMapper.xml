@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.asmrblock.activity.ActivityMapper">
+
+    <insert id="insertDay">
+        INSERT INTO user_activity_day (user_id, day) VALUES (#{userId}, #{day})
+        ON CONFLICT DO NOTHING
+    </insert>
+
+    <insert id="insertListen">
+        INSERT INTO listen_log (user_id, playlist_id, minutes) VALUES (#{userId}, #{playlistId}, #{minutes})
+    </insert>
+
+    <select id="existsListenSince" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1 FROM listen_log
+            WHERE user_id = #{userId} AND playlist_id = #{playlistId} AND minutes = #{minutes} AND listened_at &gt;= #{since}
+        )
+    </select>
+
+</mapper>

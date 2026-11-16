@@ -2,8 +2,8 @@
 
 > 최종 수정일: 2026-11-13 / PostgreSQL 16
 >
-> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V9 가 기준입니다.
-> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘 / V5: 트리거 중심 분류(code), 말소리, 녹음한 곳 / V6: 조합 담기 — 복사본의 원본 / V7: 블록 꾸미기(사진·스티커) + 영상 블록 / V8: 스티커 테이블(관리자 페이지에서 추가), 검수 메모 / V9: 의견 보내기)
+> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V10 이 기준입니다.
+> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘 / V5: 트리거 중심 분류(code), 말소리, 녹음한 곳 / V6: 조합 담기 — 복사본의 원본 / V7: 블록 꾸미기(사진·스티커) + 영상 블록 / V8: 스티커 테이블(관리자 페이지에서 추가), 검수 메모 / V9: 의견 보내기 / V10: 베타 지표 — 쓴 날, 오래 들음)
 > 서버가 시작될 때 Flyway가 자동 적용합니다. **테이블을 바꿀 때는 `V8__설명.sql` 처럼 새 파일을 추가**하세요 (기존 파일 수정 금지).
 > 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 환경에서만 실행).
 
@@ -106,6 +106,24 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | contact | VARCHAR(100) | 답장 받을 곳 (선택) |
 | page / client | VARCHAR | 보낸 화면 (`/create`) / `web`·`app` |
 | is_done | BOOLEAN | 관리자가 확인함 |
+
+## user_activity_day (쓴 날, V10)
+로그인한 사람의 API 요청이 오면 그 사람의 한국 날짜로 하루 한 줄 (`ActivityInterceptor`, 서버 메모리로 하루 한 번만 DB에 씀). 관리자 통계 "다시 왔는지"
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| user_id | FK → users (CASCADE) | PK (user_id, day) |
+| day | DATE | 한국 날짜 |
+
+## listen_log (오래 들음, V10)
+듣기 화면이 조합을 `minutes`분 넘게 재생하면 한 번 (지금은 10분). 같은 조합·같은 분은 6시간에 한 번만
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| user_id | FK → users (CASCADE) | |
+| playlist_id | FK → playlist (CASCADE) | |
+| minutes | INT | 1~600 |
+| listened_at | TIMESTAMP | |
 
 ## user_block (내 블록함, V3)
 

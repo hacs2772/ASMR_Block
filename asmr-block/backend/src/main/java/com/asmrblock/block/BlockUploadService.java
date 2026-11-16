@@ -27,8 +27,9 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * 블록 올리기: 음원(또는 영상의 소리) → 표준 형식으로 변환(음량 -24 LUFS) → 블록 등록(PENDING).
- * 꾸미기(겉면 사진 · 스티커 + 무늬)와 같이 보는 영상(480p, 소리 없음)도 함께. 관리자가 승인하면 목록에 노출됩니다.
+ * 블록 올리기: 소리 파일 또는 영상 하나 (구간을 고르면 그 부분만) → 소리는 표준 형식으로(음량 -24 LUFS),
+ * 영상이면 같은 구간을 480p·소리 없음으로 → 블록 등록(PENDING). 꾸미기(겉면 사진 · 스티커 + 무늬)도 함께.
+ * 소리 따로 + 영상 따로는 받지 않음 (싱크가 어긋날 수 있어서). 관리자가 승인하면 목록에 노출됩니다.
  */
 @Slf4j
 @Service
@@ -37,7 +38,7 @@ public class BlockUploadService {
 
     static final Set<String> ALLOWED_EXTENSIONS =
             Set.of("mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "webm");
-    private static final Set<String> VIDEO_EXTENSIONS = Set.of("mp4", "mov", "m4v", "webm");
+    static final Set<String> VIDEO_EXTENSIONS = Set.of("mp4", "mov", "m4v", "webm");
     private static final Set<String> IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp");
     static final int MIN_DURATION_SECONDS = 10;
     static final int MAX_DURATION_SECONDS = 20 * 60;
@@ -67,10 +68,11 @@ public class BlockUploadService {
         validate(request);
         String stickers = stickerService.normalize(request.stickers());
         String pattern = BlockDesign.normalizePattern(request.pattern());
-        // 소리: 음원 파일 → 먼저 올려 둔 파일(구간 고르기) → 영상의 소리 순서로
+        // 소리는 하나에서만: 소리 파일 · 영상(소리는 영상에서) · 먼저 올려 둔 파일(구간 고르기, 소리나 영상)
+        // 영상이면 소리와 화면을 같은 파일·같은 구간에서 만들어 싱크가 맞음
         UploadDraftService.Draft draft = hasText(request.draftId()) ? draftService.take(uploaderId, request.draftId()) : null;
-        boolean hasAudio = present(request.file()) || draft != null;
-        boolean hasVideo = present(request.video());
+        boolean hasVideo = present(request.video()) || (draft != null && draft.video());
+        boolean hasAudio = !hasVideo;
         String extension = draft != null ? draft.extension()
                 : present(request.file()) ? extensionOf(request.file().getOriginalFilename(), ALLOWED_EXTENSIONS)
                 : extensionOf(request.video().getOriginalFilename(), VIDEO_EXTENSIONS);
@@ -99,16 +101,12 @@ public class BlockUploadService {
                         .formatted(MIN_DURATION_SECONDS, MAX_DURATION_SECONDS / 60));
             }
 
-            // 영상: 480p · 소리 없음으로 줄여서 (원본 영상은 크기 때문에 보관하지 않음)
+            // 영상: 소리와 같은 구간을 480p · 소리 없음으로 줄여서 (원본 영상은 크기 때문에 보관하지 않음)
             String videoKey = null;
             if (hasVideo) {
-                Path videoIn = hasAudio ? workDir.resolve("video." + extensionOf(request.video().getOriginalFilename(), VIDEO_EXTENSIONS)) : original;
-                if (hasAudio) {
-                    request.video().transferTo(videoIn);
-                }
                 Path videoOut = workDir.resolve("video.mp4");
                 try {
-                    audioService.blockVideo(videoIn, videoOut);
+                    audioService.blockVideo(original, videoOut, trim);
                 } catch (AudioProcessingException e) {
                     log.info("업로드 영상 변환 실패: {}", e.getMessage());
                     throw ApiException.badRequest("영상 파일을 읽을 수 없어요. 다른 파일로 시도해 주세요.");
@@ -177,18 +175,16 @@ public class BlockUploadService {
 
     private void validate(BlockUploadRequest request) {
         boolean hasDraft = hasText(request.draftId());
-        if (!present(request.file()) && !hasDraft && !present(request.video())) {
+        int sources = (present(request.file()) ? 1 : 0) + (present(request.video()) ? 1 : 0) + (hasDraft ? 1 : 0);
+        if (sources == 0) {
             throw ApiException.badRequest("음원 파일이나 영상 파일 중 하나는 올려 주세요.");
         }
-        if (present(request.file()) && hasDraft) {
-            throw ApiException.badRequest("소리 파일은 하나만 올려 주세요.");
+        if (sources > 1) {
+            throw ApiException.badRequest("소리 파일이나 영상 중 하나만 올려 주세요. 영상이면 영상의 소리를 그대로 써요.");
         }
         if (request.trimStart() != null || request.trimEnd() != null) {
             if (request.trimStart() == null || request.trimEnd() == null) {
                 throw ApiException.badRequest("구간은 시작과 끝을 같이 골라 주세요.");
-            }
-            if (!present(request.file()) && !hasDraft) {
-                throw ApiException.badRequest("영상만 올릴 때는 구간을 고를 수 없어요. 소리 파일을 같이 올려 주세요.");
             }
             double length = request.trimEnd() - request.trimStart();
             if (request.trimStart() < 0 || length <= 0) {

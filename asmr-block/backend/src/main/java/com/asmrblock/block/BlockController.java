@@ -71,12 +71,13 @@ public class BlockController {
         return ApiResponse.ok("업로드되었습니다. 검수 후 공개됩니다.", blockUploadService.upload(userId, request));
     }
 
-    // 올리기 전 구간 고르기: 소리 파일을 먼저 올리면 길이·파형을 돌려줌 (올리기 때 draftId + trimStart/trimEnd)
+    // 올리기 전 구간 고르기: 소리 파일이나 영상(kind=video)을 먼저 올리면 길이·파형을 돌려줌 (올리기 때 draftId + trimStart/trimEnd)
     @PostMapping(value = "/upload-drafts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<UploadDraftResponse> uploadDraft(@AuthenticationPrincipal Long userId,
-                                                        @RequestPart(value = "file", required = false) MultipartFile file) {
-        return ApiResponse.ok(uploadDraftService.create(userId, file));
+                                                        @RequestPart(value = "file", required = false) MultipartFile file,
+                                                        @RequestParam(defaultValue = "audio") String kind) {
+        return ApiResponse.ok(uploadDraftService.create(userId, file, kind));
     }
 
     // 재생 기록 (로그인 필요)

@@ -4,6 +4,8 @@ import com.asmrblock.common.ApiResponse;
 import com.asmrblock.common.PageQuery;
 import com.asmrblock.common.PageResponse;
 import com.asmrblock.play.PlayResult;
+import com.asmrblock.playlist.PlaylistDtos.ListenedRequest;
+import com.asmrblock.playlist.PlaylistDtos.ListenedResponse;
 import com.asmrblock.playlist.PlaylistDtos.PlaylistDetailResponse;
 import com.asmrblock.playlist.PlaylistDtos.PlaylistSaveRequest;
 import com.asmrblock.playlist.PlaylistDtos.PlaylistSummaryResponse;
@@ -93,6 +95,14 @@ public class PlaylistController {
     public ApiResponse<PlayResult> recordPlay(@AuthenticationPrincipal Long userId,
                                               @PathVariable Long playlistId) {
         return ApiResponse.ok(playlistService.recordPlay(playlistId, userId));
+    }
+
+    // 오래 들음 기록 (로그인 필요): 듣기 화면이 10분 넘게 재생하면 한 번 → 관리자 통계 "잠들 때까지 들었는지"
+    @PostMapping("/{playlistId}/listened")
+    public ApiResponse<ListenedResponse> recordListened(@AuthenticationPrincipal Long userId,
+                                                        @PathVariable Long playlistId,
+                                                        @Valid @RequestBody ListenedRequest request) {
+        return ApiResponse.ok(new ListenedResponse(playlistService.recordListened(playlistId, userId, request.minutes())));
     }
 
     private PlaylistDetailResponse detail(Playlist playlist, Long viewerId) {
