@@ -16,6 +16,7 @@ public class BlockSearchCondition {
     private TalkType talkType;       // NONE: 노토킹만, WHISPER: 속삭임만
     private Boolean free;            // true: 무료만, false: 유료만, null: 전부
     private BlockStatus status;
+    private boolean listedOnly;      // true: 상점에 보이는 블록만 (관리자의 "샘플 숨기기" 등으로 내린 건 빼고)
     private String sort;             // latest | popular
     private int offset;
     private int limit;

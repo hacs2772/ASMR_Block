@@ -41,7 +41,7 @@ public class BlockService {
     @Transactional(readOnly = true)
     public PageResponse<BlockResponse> search(Long categoryId, List<Long> tagIds, String keyword, Boolean free,
                                               TalkType talkType, String sort, PageQuery page, Long viewerId) {
-        BlockSearchCondition condition = condition(categoryId, tagIds, keyword, free, talkType, BlockStatus.APPROVED, sort, page);
+        BlockSearchCondition condition = condition(categoryId, tagIds, keyword, free, talkType, BlockStatus.APPROVED, sort, page, true);
         List<Block> blocks = blockMapper.search(condition);
         return PageResponse.of(toResponses(blocks, viewerId, false), page, blockMapper.count(condition));
     }
@@ -49,7 +49,7 @@ public class BlockService {
     /** 관리자 검수 목록: 상태별, 전체 음원 주소까지 */
     @Transactional(readOnly = true)
     public PageResponse<BlockResponse> searchForAdmin(BlockStatus status, PageQuery page) {
-        BlockSearchCondition condition = condition(null, null, null, null, null, status, "latest", page);
+        BlockSearchCondition condition = condition(null, null, null, null, null, status, "latest", page, false);
         List<Block> blocks = blockMapper.search(condition);
         return PageResponse.of(toResponses(blocks, null, true), page, blockMapper.count(condition));
     }
@@ -65,7 +65,7 @@ public class BlockService {
         if (blocks.size() < limit) {
             Set<Long> shown = blocks.stream().map(Block::getId).collect(Collectors.toSet());
             BlockSearchCondition popular = condition(null, null, null, null, null, BlockStatus.APPROVED, "popular",
-                    PageQuery.of(0, limit + blocks.size()));
+                    PageQuery.of(0, limit + blocks.size()), true);
             blockMapper.search(popular).stream().filter(b -> !shown.contains(b.getId()))
                     .limit(limit - blocks.size()).forEach(blocks::add);
         }
@@ -176,9 +176,12 @@ public class BlockService {
         return blockMapper.findById(id).orElseThrow(() -> ApiException.notFound("블록을 찾을 수 없습니다."));
     }
 
+    /** listedOnly: 상점처럼 보이는 곳이면 true (관리자 목록은 false) */
     private static BlockSearchCondition condition(Long categoryId, List<Long> tagIds, String keyword, Boolean free,
-                                                  TalkType talkType, BlockStatus status, String sort, PageQuery page) {
+                                                  TalkType talkType, BlockStatus status, String sort, PageQuery page,
+                                                  boolean listedOnly) {
         return BlockSearchCondition.builder()
+                .listedOnly(listedOnly)
                 .categoryId(categoryId)
                 .tagIds(tagIds == null || tagIds.isEmpty() ? null : tagIds)
                 .keyword(keyword == null || keyword.isBlank() ? null : keyword.trim())

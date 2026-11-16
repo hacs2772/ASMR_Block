@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 샘플 계정 = db/samples/R__public_samples.sql 의 samples@asmrblock.invalid -->
+<mapper namespace="com.asmrblock.block.SampleMapper">
+
+    <sql id="sampleUser">(SELECT id FROM users WHERE email = 'samples@asmrblock.invalid')</sql>
+
+    <select id="status" resultType="map">
+        SELECT
+            (SELECT COUNT(*) FROM block WHERE uploader_id = <include refid="sampleUser"/>
+                AND is_active = true AND status = 'APPROVED')                                      AS sample_blocks,
+            (SELECT COUNT(*) FROM block WHERE uploader_id = <include refid="sampleUser"/>
+                AND is_active = true AND status = 'APPROVED' AND is_listed = true)                 AS listed_sample_blocks,
+            (SELECT COUNT(*) FROM playlist WHERE user_id = <include refid="sampleUser"/>
+                AND source_playlist_id IS NULL)                                                    AS sample_combos,
+            (SELECT COUNT(*) FROM playlist WHERE user_id = <include refid="sampleUser"/>
+                AND source_playlist_id IS NULL AND is_public = true)                               AS public_sample_combos,
+            (SELECT COUNT(*) FROM block WHERE uploader_id IS DISTINCT FROM <include refid="sampleUser"/>
+                AND is_active = true AND status = 'APPROVED' AND is_listed = true)                 AS real_blocks
+    </select>
+
+    <update id="setBlocksListed">
+        UPDATE block SET is_listed = #{listed} WHERE uploader_id = <include refid="sampleUser"/>
+    </update>
+
+    <update id="setCombosPublic">
+        UPDATE playlist SET is_public = #{isPublic}
+        WHERE user_id = <include refid="sampleUser"/> AND source_playlist_id IS NULL
+    </update>
+
+</mapper>

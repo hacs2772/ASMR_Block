@@ -500,6 +500,9 @@
 | PATCH | `/admin/feedback/{id}` | 관리자 | 확인함 `{ "done": true }` |
 | GET | `/admin/stats?funnelDays=14` | 관리자 | 숫자 한눈에: `people`(total = 베타 손님 + 가입 회원, newToday·new7d), `activity`(만든 조합·공개 조합·한 번에 담기·재생 24시간/7일/전체), `content`(승인 블록·샘플·사람들이 올린 블록·승인 대기), `newFeedback`, `days`(최근 14일 날짜별 가입·새 조합·재생), **`funnel`**(아래) |
 
+| GET | `/admin/samples` | 관리자 | 샘플 상태 `{ "blocks": 20, "listedBlocks": 20, "combos": 5, "publicCombos": 5, "realBlocks": 12, "visible": true }` (공개용 샘플 계정의 블록·조합, `realBlocks` = 상점에 보이는 진짜 블록) |
+| PUT | `/admin/samples` | 관리자 | **샘플 한꺼번에 숨기기·다시 보이기** `{ "visible": false }` → 샘플 블록 `is_listed`(V11)와 샘플 조합 `is_public`을 바꿈. 숨기면 상점·요즘 뜨는 소리·추천 조합·베타 손님 첫 블록에서 빠지고, **이미 담은 사람은 블록함·조합에서 그대로 들음**. 샘플 SQL이 다시 돌아도 숨긴 그대로 |
+
 **어디서 그만두나요 (`funnel`, V10)**: 최근 `funnelDays`일(1~90, 기본 14) 안에 들어온 사람 중 각 단계까지 간 사람 수 (단계마다 따로 셈)
 ```json
 { "days": 14, "joined": 20, "collected": 9, "hasCombo": 6, "madeCombo": 5, "collectedCombo": 1,

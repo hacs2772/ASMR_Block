@@ -90,6 +90,9 @@ export const adminApi = {
   /** 베타 반응 숫자 (사람·조합·재생·블록·새 의견 + 최근 14일) */
   /** funnelDays: "어디서 그만두는지"를 볼 기간 (최근 며칠 안에 들어온 사람) */
   stats: (funnelDays = 14) => data(axiosInstance.get('/admin/stats', { params: { funnelDays } })),
+  /** 샘플 블록·샘플 조합 상태 / 한꺼번에 숨기기(false)·다시 보이기(true) */
+  samples: () => data(axiosInstance.get('/admin/samples')),
+  setSamples: (visible) => axiosInstance.put('/admin/samples', { visible }).then((r) => r.data),
 };
 
 /** 의견 보내기 (로그인 없이도 됨) */

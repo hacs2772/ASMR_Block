@@ -211,4 +211,16 @@ public final class BlockDtos {
             @Max(value = 10000, message = "가격은 10000코인 이하여야 합니다.")
             Integer price) {
     }
+
+    /** 관리자: 샘플 보이기(true)·숨기기(false) */
+    public record SampleVisibilityRequest(@NotNull(message = "visible은 필수입니다.") Boolean visible) {
+    }
+
+    /**
+     * 관리자: 샘플 상태. blocks = 샘플 블록 수, listedBlocks = 그중 상점에 보이는 수, combos·publicCombos = 샘플 조합,
+     * realBlocks = 상점에 보이는 진짜 블록 수, visible = 샘플이 하나라도 보이는지
+     */
+    public record SampleStatusResponse(long blocks, long listedBlocks, long combos, long publicCombos, long realBlocks,
+                                       boolean visible) {
+    }
 }

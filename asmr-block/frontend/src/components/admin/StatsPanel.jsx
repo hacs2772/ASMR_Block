@@ -43,6 +43,8 @@ function StatsPanel({ onOpenFeedback }) {
           sub={`샘플 ${fmt(content.sampleBlocks)} · 올라온 블록 ${fmt(content.userUploads)} · 승인 대기 ${fmt(content.pendingBlocks)}`} />
       </div>
 
+      <SampleBar />
+
       {newFeedback > 0 && (
         <button type="button" onClick={onOpenFeedback}
           className="mt-3 flex w-full items-center justify-between rounded-xl bg-pink-soft px-4 py-3 text-left text-sm font-bold text-pink-text hover:bg-pink hover:text-white">
@@ -82,6 +84,53 @@ function StatsPanel({ onOpenFeedback }) {
           {series.map((s) => <MiniBars key={s.key} title={s.title} unit={s.unit} days={days} valueKey={s.key} />)}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * 샘플 블록·샘플 조합 한꺼번에 숨기기/다시 보이기 (진짜 블록이 모이면).
+ * 숨겨도 이미 담은 사람의 블록함·조합에서는 그대로 들을 수 있음
+ */
+function SampleBar() {
+  const [s, setS] = useState(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { adminApi.samples().then(setS).catch(() => setS(false)); }, []);
+  if (!s || s.blocks + s.combos === 0) return null;
+
+  const toggle = async () => {
+    const next = !s.visible;
+    if (!next && !window.confirm('샘플 블록과 샘플 조합을 상점·추천 조합에서 숨길까요?\n이미 담은 사람은 그대로 들을 수 있고, 언제든 다시 보이게 할 수 있어요.')) return;
+    setBusy(true);
+    try {
+      const res = await adminApi.setSamples(next);
+      setS(res.data);
+      toast.success(res.message);
+    } catch (e) {
+      toast.error(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="card mt-3 flex flex-wrap items-center gap-3 p-4" data-testid="sample-bar">
+      <div className="min-w-0 flex-1 basis-64">
+        <p className="text-sm font-bold">
+          샘플 블록 {s.blocks}개 · 샘플 조합 {s.combos}개{' '}
+          <span className={s.visible ? 'text-muted' : 'text-warn'}>{s.visible ? '· 상점에 보이는 중' : '· 숨김'}</span>
+        </p>
+        <p className="mt-0.5 text-xs leading-relaxed text-muted">
+          상점에 진짜 블록 {s.realBlocks}개.{' '}
+          {s.visible
+            ? (s.realBlocks >= 10 ? '진짜 블록이 충분해요. 샘플을 숨겨도 좋아요.' : '진짜 블록이 10개쯤 모이면 샘플을 숨기는 걸 추천해요.')
+            : '상점·추천 조합에서만 빠졌고, 이미 담은 사람은 그대로 들어요.'}
+        </p>
+      </div>
+      <button type="button" className={s.visible ? 'btn-line btn-sm' : 'btn-pink btn-sm'} onClick={toggle} disabled={busy}
+        data-testid="sample-toggle">
+        {busy ? '바꾸는 중…' : s.visible ? '샘플 숨기기' : '샘플 다시 보이기'}
+      </button>
     </div>
   );
 }

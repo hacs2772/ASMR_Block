@@ -33,6 +33,7 @@
         <where>
             b.is_active = true
             <if test="status != null">AND b.status = #{status}</if>
+            <if test="listedOnly">AND b.is_listed = true</if>
             <!-- 대분류를 고르면 그 아래 소분류 블록까지 -->
             <if test="categoryId != null">
                 AND (b.category_id = #{categoryId}
@@ -98,7 +99,7 @@
     <select id="findTrending" resultMap="BlockMap">
         SELECT recent.recent_plays, x.* FROM (
             <include refid="selectBlock"/>
-            WHERE b.is_active = true AND b.status = 'APPROVED'
+            WHERE b.is_active = true AND b.status = 'APPROVED' AND b.is_listed = true
         ) x
         JOIN (
             SELECT target_id, COUNT(*) AS recent_plays

@@ -98,7 +98,7 @@ public class AuthService {
         int starter = properties.beta().starterBlocks();
         if (starter > 0) {
             List<Long> freeBlocks = blockMapper.search(BlockSearchCondition.builder()
-                    .free(true).status(BlockStatus.APPROVED).sort("popular").offset(0).limit(starter).build())
+                    .free(true).status(BlockStatus.APPROVED).listedOnly(true).sort("popular").offset(0).limit(starter).build())
                     .stream().map(Block::getId).toList();
             libraryService.addFree(user.getId(), freeBlocks);
         }
