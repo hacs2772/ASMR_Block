@@ -72,6 +72,10 @@
         <foreach collection="sourceIds" item="id" open="(" separator="," close=")">#{id}</foreach>
     </select>
 
+    <update id="updatePublic">
+        UPDATE playlist SET is_public = #{isPublic}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
     <update id="update">
         UPDATE playlist SET title = #{title}, description = #{description},
                             total_duration = #{totalDuration}, is_public = #{isPublic},

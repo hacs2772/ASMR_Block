@@ -33,7 +33,8 @@ class LocalStorageServiceTest {
                 new AppProperties.Shop(100),
                 new AppProperties.Beta(true, 6),
                 new AppProperties.Admin(null, null),
-                new AppProperties.Upload(200)));
+                new AppProperties.Upload(200),
+                new AppProperties.Site(null)));
     }
 
     @Test

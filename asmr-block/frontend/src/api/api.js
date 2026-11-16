@@ -54,6 +54,8 @@ export const playlistApi = {
   get: (id) => data(axiosInstance.get(`/playlists/${id}`)),
   create: (body) => data(axiosInstance.post('/playlists', body)),
   update: (id, body) => data(axiosInstance.put(`/playlists/${id}`, body)),
+  /** 공개·비공개만 바꾸기 (공유하기 전에 공개로) */
+  setPublic: (id, isPublic) => data(axiosInstance.patch(`/playlists/${id}/visibility`, { isPublic })),
   remove: (id) => data(axiosInstance.delete(`/playlists/${id}`)),
   recordPlay: (id) => data(axiosInstance.post(`/playlists/${id}/play`)),
   /** 오래 들음 (듣기 화면이 10분 넘게 재생하면 한 번) → 관리자 통계 */

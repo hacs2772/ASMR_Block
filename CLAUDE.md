@@ -25,6 +25,7 @@
   - ⚠ ffmpeg 6.1은 `-ss`로 중간부터 읽은 mp3를 `loudnorm`으로 파일 끝까지 처리하면 멈춤 → 자르기는 꼭 `atrim` 필터로. 파형은 `aeval=abs(val(0))` 뒤에 1000Hz로 줄임(그냥 줄이면 탭핑 같은 높은 소리가 사라짐)
 - **관리자 페이지(V8, 웹 `/admin`)**: 관리자 계정으로 로그인하면 위 메뉴에 "관리자" (`user.role === 'ADMIN'`, 서버도 `/api/v1/admin/**` ADMIN 확인). 블록 승인·돌려보내기(이유 `review_note` → 판매자 "내가 올린 블록"), **트리거 종류**(묶음 색·소분류 아이콘 추가·고치기·숨기기·순서), **스티커**(SVG 검사·PNG 256px 추가·숨기기·순서). 바꾸면 앱·웹에 바로(앱 업데이트 없이). 분류·스티커는 지우지 않고 숨김. 아이콘 고르기 목록 = 웹 `lib/blocks.js` `ICONS`(앱 Ionicons에도 있는 이름만)
 - **어디서 그만두나요(V10, 관리자 통계 맨 위 아래)**: 최근 7·14·30일에 들어온 사람이 들어옴 → 블록 직접 담음(베타 손님이 처음 받은 블록 빼고) → 내 조합이 생김 → 조합 틀어 봄 → 10분 넘게 들음 → 다음 날 이후 다시 옴, 단계마다 사람 수·%. 다시 옴 = 로그인한 API 요청마다 `user_activity_day`(하루 한 줄, `activity/ActivityInterceptor`), 10분 = 웹 듣기 화면·앱 `PlayerProvider`가 `lib/listen`(웹·앱 같음, jest)으로 재생 시간을 모아 `POST /playlists/{id}/listened` 한 번
+- **조합 공유(카톡 미리보기)**: 공유 링크 = `https://asmrblock.com/s/{id}` → 백엔드 `share` 패키지가 og 태그 HTML(조합 이름·설명) + 카드 그림 `/s/{id}/card.png`(Java2D로 블록 두 줄, 글자 없음, `ShareCardRenderer`)을 만들고 사람은 `/listen/{id}`로 넘김. 공개 조합만, 웹 nginx `/s/` → 백엔드, 사이트 주소 `APP_SITE_URL`. 웹 듣기 화면 `components/playlist/ShareButton.jsx`·앱 플레이어 머리 공유 아이콘: 휴대폰 공유 창(없으면 링크 복사), 담아 온 복사본은 원래 조합, 내 비공개 조합은 "공개로 바꾸고 공유"(`PATCH /playlists/{id}/visibility`)
 - **베타 운영(V9)**: 웹 `/privacy`·`/terms`(베타판 쉬운 말, 연락처 help@asmrblock.com, `pages/LegalPages.jsx`), 가입·베타 버튼 아래 동의 안내. **의견 보내기**: 웹 오른쪽 아래 버튼·바닥글(`components/common/Feedback.jsx`), 앱 도움말(`components/FeedbackForm.tsx`) → `POST /feedback`(로그인 없이도, 10분에 5번). 관리자 페이지 **통계**(`GET /admin/stats`, 관리자·샘플 계정 빼고 한국 시간, 최근 14일)·**의견** 탭
 - **블록 상점 → 내 블록함**: 듣는 사람은 상점에서 블록을 담고(`user_block`), 편집기에는 **담은 블록만**. 같은 블록 복제는 무료. 무료는 바로 담기, 유료는 구매(코인 + 구독, 준비 중) — 사기 전엔 앞 30초 맛보기(`preview_key`)만, 원본 `fileUrl`은 내 것일 때만
 - **플레이리스트 = 옆으로 누운 레고 블록 두 줄** (왼쪽→오른쪽, 블록 길이 = 소리 길이): **첫째 줄**(`MAIN`, 빈틈없이 순서대로) + **둘째 줄**(`MIX`, 선택, 따로 흐름, `startSeconds` 위치에만·사이는 빈칸·겹침 금지). 이어진 같은 블록은 `repeat`(1~200)로 묶어 저장, 줄별 볼륨, 한 바퀴 최대 10시간
@@ -115,6 +116,7 @@ cd asmr-block/mobile && npx tsc --noEmit && npx eslint . && npx jest   # CI와 �
 - [x] 처음 사용법 팝업(앱·웹): 처음 한 번 움직이는 안내 4장 + 편집기 끌기 안내 2장, 도움말에서 다시 보기
 - [x] 업로드 구간 고르기(앱·웹): 파형 보면서 손잡이로 쓸 부분만 골라 올리기
 - [x] 관리자 통계 "어디서 그만두나요"(V10) + 업로드는 소리만 또는 영상 하나(영상은 소리·화면을 같은 구간으로 자름)
+- [x] 조합 공유: 카톡에 붙이면 조합 이름·블록 그림 미리보기 카드, 누르면 바로 듣기
 - [ ] **거의 0원으로 먼저 보여 주기**(사용자가 고른 방향): 공개용 준비 끝(`docker-compose.public.yml` + `start-public.bat`, 웹·API·음원 한 주소 https://asmrblock.com 을 Cloudflare Tunnel로). 남은 것 = 사용자가 도메인 구매 → 터널 토큰 → `.env.public` → 반응 보기 (README "asmrblock.com 으로 다른 사람에게 보여 주기"). 사업자·스토어 계정·유료 서버는 그 뒤에
 - [ ] EAS Build(TestFlight / Play 내부 테스트)로 앱 아이콘·첫 화면·잠금화면 재생 확인, 광고 SDK(AdMob)로 광고 자리 교체
 - [ ] 파일 저장소 S3/R2 (`StorageService` 구현 추가), 오래된 완성본 정리

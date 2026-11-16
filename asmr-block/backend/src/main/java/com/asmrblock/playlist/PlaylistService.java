@@ -315,6 +315,17 @@ public class PlaylistService {
         playlists.forEach(p -> p.setLayers(layers.getOrDefault(p.getId(), List.of())));
     }
 
+    /** 공개·비공개만 바꾸기 (공유하려고 공개로). 담아 온 복사본은 원래 조합을 공유하면 돼서 공개로 못 바꿈 */
+    @Transactional
+    public Playlist setPublic(Long id, Long userId, boolean isPublic) {
+        Playlist playlist = findOwn(id, userId, "내 조합만 바꿀 수 있어요.");
+        if (isPublic && playlist.getSourcePlaylistId() != null) {
+            throw ApiException.badRequest("담아 온 조합은 공개할 수 없어요. 원래 조합을 공유해 주세요.");
+        }
+        playlistMapper.updatePublic(id, isPublic);
+        return getViewable(id, userId);
+    }
+
     private Playlist find(Long id) {
         return playlistMapper.findById(id)
                 .orElseThrow(() -> ApiException.notFound("플레이리스트를 찾을 수 없습니다."));

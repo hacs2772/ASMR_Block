@@ -48,13 +48,14 @@ export function Button({ title, onPress, variant = 'primary', icon, loading, dis
   );
 }
 
-export function IconButton({ icon, onPress, label, size = 22, color = colors.text, style }: {
-  icon: IconName; onPress: () => void; label: string; size?: number; color?: string; style?: StyleProp<ViewStyle>;
+export function IconButton({ icon, onPress, label, size = 22, color = colors.text, style, testID }: {
+  icon: IconName; onPress: () => void; label: string; size?: number; color?: string; style?: StyleProp<ViewStyle>; testID?: string;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      testID={testID}
       hitSlop={8}
       onPress={onPress}
       style={({ pressed }) => [styles.iconButton, pressed && { opacity: 0.6 }, style]}

@@ -29,7 +29,8 @@ public record AppProperties(
         @Valid @NotNull Shop shop,
         @Valid @NotNull Beta beta,
         @Valid @NotNull Admin admin,
-        @Valid @NotNull Upload upload) {
+        @Valid @NotNull Upload upload,
+        @Valid @NotNull Site site) {
 
     public record Jwt(
             @NotBlank(message = "JWT 비밀키가 없습니다. JWT_SECRET 환경변수를 설정하세요.")
@@ -80,6 +81,15 @@ public record AppProperties(
     public record Admin(String email, String password) {
         public boolean configured() {
             return email != null && !email.isBlank() && password != null && !password.isBlank();
+        }
+    }
+
+    /**
+     * 사이트 주소 (공유 링크 미리보기의 그림·주소용, 예: https://asmrblock.com). 비우면 요청이 들어온 주소 기준
+     */
+    public record Site(String url) {
+        public boolean configured() {
+            return url != null && !url.isBlank();
         }
     }
 

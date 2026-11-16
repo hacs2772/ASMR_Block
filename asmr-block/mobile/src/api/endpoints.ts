@@ -97,6 +97,9 @@ export const playlistApi = {
   trending: (size = 5) => api<PlaylistSummary[]>('/playlists/trending' + query({ size })),
   get: (id: number) => api<PlaylistDetail>(`/playlists/${id}`),
   create: (data: PlaylistSaveRequest) => api<PlaylistDetail>('/playlists', { method: 'POST', body: data }),
+  /** 공개·비공개만 바꾸기 (공유하기 전에 공개로) */
+  setPublic: (id: number, isPublic: boolean) =>
+    api<PlaylistDetail>(`/playlists/${id}/visibility`, { method: 'PATCH', body: { isPublic } }),
   update: (id: number, data: PlaylistSaveRequest) =>
     api<PlaylistDetail>(`/playlists/${id}`, { method: 'PUT', body: data }),
   remove: (id: number) => api<void>(`/playlists/${id}`, { method: 'DELETE' }),

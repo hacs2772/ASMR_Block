@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { AppState, Platform, ScrollView, Share, StyleSheet, Switch, Text, View } from 'react-native';
 import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import { BlockLoader } from '@/components/BlockLoader';
 import { BlockVideoPanel } from '@/components/BlockVideoPanel';
@@ -15,7 +15,8 @@ import { canDownload, listSaved, localUriOf, localUriOfSaved, removeTrack, saveT
 import { usePlayer, type NowPlaying } from '@/audio/PlayerProvider';
 import { formatRemaining, sleepOptionLabel, SLEEP_OPTIONS_MIN } from '@/audio/sleepTimer';
 import { Button, Chip, EmptyState, IconButton } from '@/components/ui';
-import { notify } from '@/lib/dialog';
+import { confirm, notify } from '@/lib/dialog';
+import { SITE_URL } from '@/lib/links';
 import { formatDuration, formatMinutes } from '@/lib/format';
 import { useAuth } from '@/store/auth';
 import { categoryFallbackColor, colors, radius, space } from '@/theme';
@@ -161,15 +162,54 @@ export default function PlayerScreen() {
   const position = isCurrent ? status.currentTime : 0;
   const duration = isCurrent && status.duration > 0 ? status.duration : r?.duration ?? saved?.duration ?? p?.totalDuration ?? 0;
 
+  /**
+   * 공유하기: https://asmrblock.com/s/{id} → 카톡에 붙이면 조합 이름·블록 그림 미리보기 카드, 누르면 바로 듣기.
+   * 담아 온 복사본이면 원래 조합을, 내 비공개 조합이면 공개로 바꿀지 먼저 물어봄
+   */
+  const share = async () => {
+    if (!p) return;
+    const shareId = p.collect.sourcePlaylistId ?? p.id;
+    if (shareId === p.id && !p.isPublic) {
+      if (!user || p.owner.id !== user.id) return;
+      const ok = await confirm('비공개 조합은 친구가 열 수 없어요', '공개로 바꾸고 공유할까요? 추천 조합에도 보여요.', '공개로 바꾸고 공유');
+      if (!ok) return;
+      try {
+        const updated = await playlistApi.setPublic(p.id, true);
+        queryClient.setQueryData(['playlist', playlistId], updated);
+        void queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      } catch (e) {
+        notify('공개로 바꾸지 못했어요', (e as Error).message);
+        return;
+      }
+    }
+    const url = `${SITE_URL}/s/${shareId}`;
+    const message = `${p.title} — ASMR Block에서 쌓은 나만의 팅글 조합\n${url}`;
+    try {
+      await Share.share(Platform.OS === 'ios' ? { message: `${p.title} — ASMR Block에서 쌓은 나만의 팅글 조합`, url } : { message, title: p.title });
+    } catch {
+      // 웹 미리보기 등 공유 창이 없으면 링크 복사
+      try {
+        await globalThis.navigator?.clipboard?.writeText(url);
+        notify('링크를 복사했어요', '카톡에 붙여 넣으면 미리보기 카드가 나와요.');
+      } catch {
+        notify('이 링크를 보내 주세요', url);
+      }
+    }
+  };
+
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       <Stack.Screen
         options={{
           title: '',
-          headerRight: () =>
-            p && user && p.owner.id === user.id ? (
-              <IconButton icon="create-outline" label="편집" onPress={() => router.push({ pathname: '/editor/[id]', params: { id: String(playlistId) } })} />
-            ) : null,
+          headerRight: () => (
+            <View style={styles.headerActions}>
+              {p && <IconButton icon="share-social-outline" label="공유하기" onPress={() => void share()} testID="share-combo" />}
+              {p && user && p.owner.id === user.id && (
+                <IconButton icon="create-outline" label="편집" onPress={() => router.push({ pathname: '/editor/[id]', params: { id: String(playlistId) } })} />
+              )}
+            </View>
+          ),
         }}
       />
 
@@ -334,6 +374,7 @@ function TimelineArt({ main, mix, total, fallbackColors, progress, onSeek }: {
 }
 
 const styles = StyleSheet.create({
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   videoRow: {
     flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.card, borderRadius: radius.md,
     paddingHorizontal: space.md, paddingVertical: 6, marginBottom: space.md,

@@ -75,6 +75,9 @@ app:
     # 공개용(public)에서만 씀: 이 이메일·비밀번호로 관리자 계정을 만들거나 비밀번호를 맞춤 (.env.public)
     email: ${APP_ADMIN_EMAIL:}
     password: ${APP_ADMIN_PASSWORD:}
+  site:
+    # 공유 링크(카톡 미리보기)에 쓰는 사이트 주소. 공개용은 PUBLIC_URL(https://asmrblock.com), 비우면 요청 주소 기준
+    url: ${APP_SITE_URL:}
   upload:
     # 영상 블록 최대 크기(MB). 공개용은 Cloudflare 무료 한도(100MB) 때문에 90
     max-video-mb: ${APP_UPLOAD_MAX_VIDEO_MB:200}

@@ -227,6 +227,10 @@ public final class PlaylistDtos {
         }
     }
 
+    /** 공개·비공개만 바꾸기 */
+    public record VisibilityRequest(@jakarta.validation.constraints.NotNull(message = "isPublic은 필수입니다.") Boolean isPublic) {
+    }
+
     /** 오래 들음 기록: 듣기 화면이 minutes분 넘게 재생했을 때 (지금은 10분에 한 번) */
     public record ListenedRequest(
             @jakarta.validation.constraints.Min(value = 1, message = "1분 이상이어야 해요.")

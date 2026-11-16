@@ -9,6 +9,7 @@ import com.asmrblock.playlist.PlaylistDtos.ListenedResponse;
 import com.asmrblock.playlist.PlaylistDtos.PlaylistDetailResponse;
 import com.asmrblock.playlist.PlaylistDtos.PlaylistSaveRequest;
 import com.asmrblock.playlist.PlaylistDtos.PlaylistSummaryResponse;
+import com.asmrblock.playlist.PlaylistDtos.VisibilityRequest;
 import com.asmrblock.render.RenderService;
 import com.asmrblock.storage.StorageService;
 import jakarta.validation.Valid;
@@ -75,6 +76,15 @@ public class PlaylistController {
                                                       @Valid @RequestBody PlaylistSaveRequest request) {
         return ApiResponse.ok("플레이리스트가 수정되었습니다.",
                 detail(playlistService.update(playlistId, userId, request), userId));
+    }
+
+    // 공개·비공개만 바꾸기 (공유하기 전에 공개로)
+    @PatchMapping("/{playlistId}/visibility")
+    public ApiResponse<PlaylistDetailResponse> setVisibility(@AuthenticationPrincipal Long userId,
+                                                             @PathVariable Long playlistId,
+                                                             @Valid @RequestBody VisibilityRequest request) {
+        return ApiResponse.ok(request.isPublic() ? "공개로 바꿨어요." : "비공개로 바꿨어요.",
+                detail(playlistService.setPublic(playlistId, userId, request.isPublic()), userId));
     }
 
     @DeleteMapping("/{playlistId}")
