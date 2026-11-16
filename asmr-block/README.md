@@ -298,6 +298,40 @@ npx expo start
 - 끄기: `stop-public.bat` (DB·올린 음원은 남아요). 코드가 바뀌면 `start-public.bat`을 다시 실행 (git pull + 다시 빌드)
 - PC가 꺼져 있으면 사이트에 Cloudflare 오류 화면이 보여요. 사람이 많아지면 그때 유료 서버·파일 저장소(R2)로 옮기기
 
+### 7. 안드로이드 앱 설치 파일(APK) 만들기 📲 (무료)
+
+asmrblock.com 에 붙는 **진짜 안드로이드 앱**을 만들어서, 링크 하나로 베타 참여자 휴대폰에 설치하게 해요.
+빌드는 Expo 클라우드(EAS)가 해 줘서 PC에 안드로이드 개발 도구를 깔 필요가 없어요. 설정은 `mobile/eas.json`에 다 들어 있어요
+(`preview` = 바로 설치하는 APK, `production` = 나중에 Play 스토어용, 둘 다 서버 주소 `https://asmrblock.com/api/v1`).
+
+**준비 (한 번만)**
+- [expo.dev](https://expo.dev) 무료 가입 (구글 계정으로 가능)
+- PC에 Node.js가 있는지: PowerShell에서 `node -v` → 숫자가 안 나오면 [nodejs.org](https://nodejs.org)에서 LTS 설치
+
+**만들기** (`asmr-block\mobile` 폴더에서 PowerShell, 한 줄씩)
+```bash
+npm install
+```
+```bash
+npx eas-cli@latest login
+```
+```bash
+npx eas-cli@latest build -p android --profile preview
+```
+- 처음엔 두 가지를 물어봐요. 둘 다 **Enter(Yes)**
+  - `Create an EAS project?` → 내 Expo 계정에 "asmr-block" 프로젝트를 만듦
+  - `Generate a new Android Keystore?` → 앱 서명 열쇠를 Expo가 만들어 안전하게 보관 (나중에 Play 스토어에 올릴 때도 같은 열쇠)
+- 10~20분 기다리면 **설치 링크와 QR**이 나와요 (expo.dev → 내 프로젝트 → Builds 에서도 보임)
+- 첫 빌드가 끝나면 `mobile\app.json`에 `projectId` 한 줄이 생겨요 → 그 번호를 Claude에게 알려 주면 저장소에 넣어 둬요 (그 전까지 이 파일은 그대로 두기)
+
+**설치하기 (안드로이드 휴대폰)**
+- 링크를 열거나 QR을 찍어서 APK 내려받기 → 열기 → "출처를 알 수 없는 앱 설치"를 물으면 **허용** → 설치
+- 베타 참여자에게도 같은 링크를 보내면 돼요. 앱을 고치면 같은 명령으로 다시 만들고, 새 APK를 깔면 위에 덮어써져요 (버전 번호는 Expo가 알아서 올림)
+
+**진짜 앱에서 꼭 확인할 것**: 앱 아이콘·첫 화면 / 베타로 바로 시작 / 조합 재생 → **화면을 꺼도 계속 들리는지** / **잠금화면의 재생 버튼** / 30분 잠들기 타이머 / 블록 판매에서 영상 고르기·구간 고르기
+- 앱은 공개 서버(지금은 회사 PC)에 붙어요. 서버가 꺼져 있으면 앱도 "서버에 연결할 수 없어요"
+- 아이폰 앱은 애플 개발자 계정(1년 약 13만 원)이 필요해서 나중에. 그때까지 아이폰은 웹사이트를 홈 화면에 추가해서 써요
+
 ### (선택) Docker 없이 개발 모드로 실행
 Java 21, Node 22, ffmpeg 가 필요합니다.
 ```bash

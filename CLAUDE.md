@@ -83,7 +83,7 @@ cd asmr-block/mobile && npx tsc --noEmit && npx eslint . && npx jest   # CI와 �
 
 ## 모바일 규칙
 - Expo API는 SDK마다 바뀐다. 기억 말고 `node_modules/<패키지>/build/*.d.ts` 타입 정의로 확인하고 쓴다.
-- API 주소는 `src/lib/config.ts`가 자동으로 정한다 (Expo Go: `npx expo start`한 PC의 IP:8080). 서버의 음원 URL도 요청한 주소 기준이라 휴대폰에서 재생된다.
+- API 주소는 `src/lib/config.ts`가 자동으로 정한다 (Expo Go: `npx expo start`한 PC의 IP:8080). 서버의 음원 URL도 요청한 주소 기준이라 휴대폰에서 재생된다. **설치용 앱**(EAS 빌드, `eas.json`의 `preview`=APK·`production`=AAB)은 `EXPO_PUBLIC_API_URL=https://asmrblock.com/api/v1`, 없어도 개발이 아닌 빌드면 공개 서버로 (jest `config.test.ts`). 만드는 법은 README "안드로이드 앱 설치 파일(APK) 만들기". 마이크·카메라·다른 앱 위에 그리기 권한은 막아 둠(`app.json` `blockedPermissions`)
 - expo-audio 플레이어의 볼륨/반복 대입은 `src/audio/playerControls.ts`에서만 (lint 규칙 때문).
 - 편집기: 상태·계산은 `src/store/editor.ts`(순수 함수 + zustand, jest로 테스트), 화면은 `src/components/editor/`. 드래그는 react-native-gesture-handler v3 훅(`usePanGesture` 등, Reanimated 없음)
   - 끄는 동안 블록 요소를 없애거나 그리는 순서를 바꾸지 않는다 (손가락 아래 요소가 바뀌면 웹/기기에서 끌기가 취소됨). 위치(`left`)·`zIndex`·흐리게만 바꾼다
@@ -117,8 +117,9 @@ cd asmr-block/mobile && npx tsc --noEmit && npx eslint . && npx jest   # CI와 �
 - [x] 업로드 구간 고르기(앱·웹): 파형 보면서 손잡이로 쓸 부분만 골라 올리기
 - [x] 관리자 통계 "어디서 그만두나요"(V10) + 업로드는 소리만 또는 영상 하나(영상은 소리·화면을 같은 구간으로 자름)
 - [x] 조합 공유: 카톡에 붙이면 조합 이름·블록 그림 미리보기 카드, 누르면 바로 듣기
-- [ ] **거의 0원으로 먼저 보여 주기**(사용자가 고른 방향): 공개용 준비 끝(`docker-compose.public.yml` + `start-public.bat`, 웹·API·음원 한 주소 https://asmrblock.com 을 Cloudflare Tunnel로). 남은 것 = 사용자가 도메인 구매 → 터널 토큰 → `.env.public` → 반응 보기 (README "asmrblock.com 으로 다른 사람에게 보여 주기"). 사업자·스토어 계정·유료 서버는 그 뒤에
-- [ ] EAS Build(TestFlight / Play 내부 테스트)로 앱 아이콘·첫 화면·잠금화면 재생 확인, 광고 SDK(AdMob)로 광고 자리 교체
+- [x] **거의 0원으로 먼저 보여 주기**(사용자가 고른 방향): asmrblock.com 공개 중 (지금은 사용자의 회사 PC + Cloudflare Tunnel, 옮기는 법은 README "다른 PC로 옮기기"). 남은 것 = 진짜 녹음 블록 채우기 → 베타 모집(`docs/beta_recruit.md`) → 반응 보기. 사업자·스토어 계정·유료 서버는 그 뒤에
+- [ ] 안드로이드 APK: 설정·안내 준비 끝(`mobile/eas.json`, README) → 사용자가 Expo 가입 후 `eas build -p android --profile preview` → 실기기로 아이콘·첫 화면·잠금화면 재생 확인. 첫 빌드 뒤 `app.json`의 `extra.eas.projectId`를 저장소에 넣기
+- [ ] 아이폰(TestFlight, 애플 개발자 계정 필요), 광고 SDK(AdMob)로 광고 자리 교체
 - [ ] 파일 저장소 S3/R2 (`StorageService` 구현 추가), 오래된 완성본 정리
 - [ ] 베타 출시 → 수익화: 코인 충전(인앱결제) → 블록 구매 + 구독. **정식 출시 때 `app.beta.quick-login=false`로 "베타로 바로 시작"(손님 계정) 끄기** (웹·앱 버튼은 `GET /auth/beta`가 false면 저절로 숨음)
 - [ ] 추천: 취향 온보딩 → 재생 기록 기반 추천 → 수면 기록/패턴 → AI 조합 생성
