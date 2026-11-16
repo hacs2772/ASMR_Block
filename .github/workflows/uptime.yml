@@ -35,8 +35,10 @@ jobs:
         run: |
           check() {
             local web api
-            web=$(curl -sS --max-time 20 -A "asmrblock-uptime" -o /tmp/web.html -w '%{http_code}' "$SITE/" || echo "연결 안 됨")
-            api=$(curl -sS --max-time 20 -A "asmrblock-uptime" -o /tmp/api.json -w '%{http_code}' "$SITE/api/v1/auth/beta" || echo "연결 안 됨")
+            web=$(curl -s --max-time 20 -A "asmrblock-uptime" -o /tmp/web.html -w '%{http_code}' "$SITE/") || true
+            api=$(curl -s --max-time 20 -A "asmrblock-uptime" -o /tmp/api.json -w '%{http_code}' "$SITE/api/v1/auth/beta") || true
+            [ "${web:-000}" = "000" ] && web="연결 안 됨"
+            [ "${api:-000}" = "000" ] && api="연결 안 됨"
             echo "웹 $web / API $api"
             echo "detail=웹 화면: $web, API: $api" >> "$GITHUB_OUTPUT"
             [ "$web" = "200" ] && grep -q "ASMR Block" /tmp/web.html && [ "$api" = "200" ] && grep -q '"success":true' /tmp/api.json
