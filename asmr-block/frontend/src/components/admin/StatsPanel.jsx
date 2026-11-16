@@ -45,6 +45,7 @@ function StatsPanel({ onOpenFeedback, onOpenReports }) {
 
       <SampleBar />
       {stats.disk && <DiskBar disk={stats.disk} onCleaned={() => adminApi.stats(funnelDays).then(setStats).catch(() => {})} />}
+      {stats.storage && <StorageLine storage={stats.storage} />}
 
       {stats.openReports > 0 && (
         <button type="button" onClick={onOpenReports} data-testid="stats-reports"
@@ -132,6 +133,31 @@ function DiskBar({ disk, onCleaned }) {
         {busy ? '정리하는 중…' : '오래된 완성본 정리'}
       </button>
     </div>
+  );
+}
+
+/**
+ * 파일 저장소: 이 PC(local) 또는 클라우드(Cloudflare R2, s3). 클라우드로 바꾼 뒤에는 옛 파일 옮기기 상태
+ * (docs/r2_guide.md: .env.public 에 R2 키를 넣고 재시작하면 바뀜)
+ */
+function StorageLine({ storage }) {
+  const cloud = storage.type === 's3';
+  const left = storage.pending;
+  return (
+    <p className="mt-2 px-1 text-xs leading-relaxed text-muted" data-testid="storage-line">
+      <b className="text-ink">파일 저장소</b>{' '}
+      {cloud ? (
+        <>
+          클라우드 (버킷 {storage.bucket})
+          {storage.total > 0 && (
+            <> · 옛 파일 옮기기 {storage.done}/{storage.total}
+              {storage.running ? ' (옮기는 중… 그동안은 옛 파일로 재생돼요)' : left > 0 ? ` · ${left}개 남음(다음에 켤 때 다시)` : ' · 끝'}
+              {storage.failed > 0 && <span className="text-warn"> · 실패 {storage.failed}</span>}
+            </>
+          )}
+        </>
+      ) : '이 PC 디스크 (클라우드로 옮기려면 docs/r2_guide.md)'}
+    </p>
   );
 }
 

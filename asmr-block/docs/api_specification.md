@@ -528,6 +528,7 @@
 | PUT | `/admin/samples` | 관리자 | **샘플 한꺼번에 숨기기·다시 보이기** `{ "visible": false }` → 샘플 블록 `is_listed`(V11)와 샘플 조합 `is_public`을 바꿈. 숨기면 상점·요즘 뜨는 소리·추천 조합·베타 손님 첫 블록에서 빠지고, **이미 담은 사람은 블록함·조합에서 그대로 들음**. 샘플 SQL이 다시 돌아도 숨긴 그대로 |
 
 - 통계의 **`disk`**: `{ "freeMb", "totalMb", "rendersMb", "low" }` 서버 디스크 남은 공간·완성본 크기, `low` = 5GB 아래 또는 10%·20GB 아래
+- 통계의 **`storage`**: `{ "type": "local"|"s3", "bucket", "total", "done", "failed", "pending", "running" }` 파일 저장소. 클라우드(`s3`, Cloudflare R2)로 바꾸면 옛 파일 옮기기 상태 (`docs/r2_guide.md`)
 
 **어디서 그만두나요 (`funnel`, V10)**: 최근 `funnelDays`일(1~90, 기본 14) 안에 들어온 사람 중 각 단계까지 간 사람 수 (단계마다 따로 셈)
 ```json

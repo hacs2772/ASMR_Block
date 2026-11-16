@@ -33,6 +33,11 @@ public class RenderCleanupService {
         if (result.deleted() > 0) {
             log.info("오래된 완성본 정리: {}개, {}MB", result.deleted(), result.freedBytes() / (1024 * 1024));
         }
+        // 클라우드 저장소면: ffmpeg용으로 받아 둔 블록 소리 중 며칠 안 쓴 것도 지움
+        int cached = storageService.cleanCache();
+        if (cached > 0) {
+            log.info("받아 둔 클라우드 파일 정리: {}개", cached);
+        }
     }
 
     public Result run() {

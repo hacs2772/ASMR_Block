@@ -46,8 +46,32 @@ public record AppProperties(
     public record Auth(@NotNull Duration refreshTokenValidity) {
     }
 
-    /** publicBaseUrl이 비어 있으면 요청 주소 기준으로 파일 URL을 만듦 (휴대폰 개발용) */
-    public record Storage(@NotBlank String localDir, String publicBaseUrl) {
+    /**
+     * 파일 저장소. type = local(이 PC 디스크 localDir) · s3(클라우드, s3.*).
+     * publicBaseUrl이 비어 있으면 요청 주소 기준으로 파일 URL을 만듦 (휴대폰 개발용, local일 때)
+     */
+    public record Storage(@NotBlank String localDir, String publicBaseUrl, String type, @Valid S3 s3) {
+        public Storage {
+            type = type == null || type.isBlank() ? "local" : type.trim().toLowerCase();
+            s3 = s3 == null ? new S3(null, null, null, null, null, null, null, 3) : s3;
+        }
+
+        /** 클라우드(S3 호환) 저장소를 쓰는지 */
+        public boolean cloud() {
+            return "s3".equals(type);
+        }
+
+        /**
+         * 클라우드 저장소 (Cloudflare R2 등 S3 호환). endpoint·bucket·accessKey·secretKey·publicBaseUrl은 type=s3일 때 꼭 필요.
+         * cacheDir = ffmpeg가 읽을 파일을 잠깐 받아 두는 곳, cacheKeepDays일 동안 안 쓰면 지움
+         */
+        public record S3(String endpoint, String region, String bucket, String accessKey, String secretKey,
+                         String publicBaseUrl, String cacheDir, @Min(1) int cacheKeepDays) {
+            public S3 {
+                region = region == null || region.isBlank() ? "auto" : region.trim();
+                cacheDir = cacheDir == null || cacheDir.isBlank() ? "./media-cache" : cacheDir;
+            }
+        }
     }
 
     public record Cors(List<String> allowedOrigins) {

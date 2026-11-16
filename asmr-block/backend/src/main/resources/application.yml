@@ -38,11 +38,25 @@ app:
   auth:
     refresh-token-validity: 14d
   storage:
-    # 음원 파일 저장 위치 (나중에 S3/R2로 교체 예정)
+    # 파일을 어디에 둘까: local = 이 PC 디스크(local-dir) / s3 = 클라우드(Cloudflare R2 같은 S3 호환, 아래 s3.*)
+    # s3로 바꾸면 local-dir에 있던 옛 파일은 켜질 때 저절로 클라우드로 옮김 (다 옮기기 전까지는 옛 파일로 재생)
+    type: ${APP_STORAGE_TYPE:local}
+    # 음원 파일 저장 위치 (local일 때. s3일 때는 옮기기 전 옛 파일 자리)
     local-dir: ${APP_STORAGE_LOCAL_DIR:./media}
     # 비워두면 요청이 들어온 주소 기준 (예: 휴대폰이 192.168.0.10:8080으로 접속하면 그 주소로)
-    # 운영에서는 CDN 주소를 넣음 (예: https://cdn.asmrblock.com)
     public-base-url: ${APP_STORAGE_PUBLIC_BASE_URL:}
+    s3:
+      # R2: https://<계정ID>.r2.cloudflarestorage.com (Cloudflare → R2 → API 화면에 나옴)
+      endpoint: ${APP_STORAGE_S3_ENDPOINT:}
+      region: ${APP_STORAGE_S3_REGION:auto}
+      bucket: ${APP_STORAGE_S3_BUCKET:}
+      access-key: ${APP_STORAGE_S3_ACCESS_KEY:}
+      secret-key: ${APP_STORAGE_S3_SECRET_KEY:}
+      # 버킷의 공개 주소 (앱·웹이 소리를 받는 곳, 예: https://files.asmrblock.com)
+      public-base-url: ${APP_STORAGE_S3_PUBLIC_URL:}
+      # ffmpeg가 읽을 블록 소리를 잠깐 받아 두는 곳 + 며칠 안 쓰면 지움
+      cache-dir: ${APP_STORAGE_S3_CACHE_DIR:./media-cache}
+      cache-keep-days: 3
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:3000}
   play-count:

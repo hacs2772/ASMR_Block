@@ -50,7 +50,7 @@
 
 ## 구조
 - `asmr-block/backend` — Spring Boot 4.1 / Java 21 / MyBatis / PostgreSQL 16 / ffmpeg
-  - 기능별 패키지: `auth`, `user`, `category`, `block`, `library`(내 블록함), `playlist`, `render`, `play`, `audio`(ffmpeg), `storage`, `common`, `config`, `security`, `creator`, `share`, `report`, `activity`, `stats`, `notification`
+  - 기능별 패키지: `auth`, `user`, `category`, `block`, `library`(내 블록함), `playlist`, `render`, `play`, `audio`(ffmpeg), `storage`, `common`, `config`, `security`, `creator`, `share`, `report`, `activity`, `stats`, `notification`, `coin`
   - MyBatis XML: `src/main/resources/mapper/*Mapper.xml` (타입은 전체 클래스 이름으로 씀)
 - `asmr-block/mobile` — **메인 클라이언트**. Expo SDK 58 / React Native 0.88 / TypeScript / Expo Router
   - 작업 전 `asmr-block/mobile/AGENTS.md`(Expo 규칙)를 따른다: 패키지는 `npx expo install`, 화면은 `src/app/`
@@ -89,7 +89,7 @@ cd asmr-block/e2e && npx playwright test     # 화면 검사 (서버·웹·앱 �
 - 목록은 `PageQuery`/`PageResponse` 사용. 여러 건의 연관 데이터는 한 번에 조회 (N+1 금지 — 예: `CategoryService.tagsByBlockIds`, `PlaylistMapper.findLayers`).
 - 로그인 사용자는 컨트롤러에서 `@AuthenticationPrincipal Long userId` (비로그인 허용 API면 null 가능).
 - 공개 API는 `SecurityConfig` 의 permitAll 목록에 추가. 그 외는 기본적으로 로그인 필요.
-- 파일은 DB에 **키**(`samples/rain.mp3`)만 저장하고 URL은 `StorageService.publicUrl()` 로 만든다.
+- 파일은 DB에 **키**(`samples/rain.mp3`)만 저장하고 URL은 `StorageService.publicUrl()` 로 만든다. 저장소 = `app.storage.type`: `local`(`LocalStorageService`, 이 PC 디스크 + `/files/**`) · `s3`(`S3StorageService`, Cloudflare R2 등 S3 호환 — 공개 주소 `s3.public-base-url`, ffmpeg가 읽을 `blocks/`·`samples/`만 `cache-dir`에 받아 두고 3일 안 쓰면 정리, 켜질 때 `local-dir`의 옛 파일을 저절로 옮기고 그 전엔 옛 주소로 재생). ffmpeg 입력은 꼭 `resolve(key)`로 (클라우드면 그때 받아 옴). 테스트는 Docker 없이 `support/FakeS3Server`(`S3StorageServiceTest`·`CloudStorageApiTest`). 사용자 안내 `docs/r2_guide.md`(`.env.public`에 `STORAGE_TYPE=s3` + `R2_*` 6줄)
 - ffmpeg 호출은 `audio` 패키지(`AudioService`, `MixCommandBuilder`)에만 둔다. 믹싱 방식을 바꾸면 `Composition.MIX_VERSION`을 올린다 (기존 완성본 무효화).
   - 크로스페이드는 **균형 트리**로 묶는다 (일렬로 이으면 8시간짜리가 O(n²)으로 느려짐). 입력 파일 최대 `MAX_INPUTS`(500)
 - 테스트에는 ffmpeg가 필요하다 (`TestAudio`로 짧은 사인파 음원을 만들어 업로드→승인→완성본까지 검사).
@@ -148,7 +148,7 @@ cd asmr-block/e2e && npx playwright test     # 화면 검사 (서버·웹·앱 �
 - [x] **거의 0원으로 먼저 보여 주기**(사용자가 고른 방향): asmrblock.com 공개 중 (지금은 사용자의 회사 PC + Cloudflare Tunnel, 옮기는 법은 README "다른 PC로 옮기기"). 남은 것 = 진짜 녹음 블록 채우기 → 베타 모집(`docs/beta_recruit.md`) → 반응 보기. 사업자·스토어 계정·유료 서버는 그 뒤에
 - [ ] 안드로이드 APK: 설정·안내 준비 끝(`mobile/eas.json`, README) → 사용자가 Expo 가입 후 `eas build -p android --profile preview` → 실기기로 아이콘·첫 화면·잠금화면 재생 확인. 첫 빌드 뒤 `app.json`의 `extra.eas.projectId`를 저장소에 넣기
 - [ ] 아이폰(TestFlight, 애플 개발자 계정 필요), 광고 SDK(AdMob)로 광고 자리 교체
-- [ ] 파일 저장소 S3/R2 (`StorageService` 구현 추가), 오래된 완성본 정리
+- [x] 파일 저장소 Cloudflare R2(S3 호환) 준비: 키만 넣으면 바뀜(`docs/r2_guide.md`), 옛 파일 자동 옮기기·옮기는 동안 끊김 없음, 관리자 통계에 저장소 상태 → **사용자가 R2 버킷·키를 만들어 넣으면 끝**
 - [x] **코인 뼈대(V16)**: 받은/충전 코인 지갑·내역, 코인으로 유료 블록 사기·조합 한 번에 사기, 크리에이터 판매 수익·정산 대기, 관리자 코인 주기·정산 완료 표시
 - [ ] 베타 출시 → 수익화: 코인 충전(인앱결제 → 영수증 확인 → `CoinService.charge`) + 구독. **정식 출시 때 `app.beta.quick-login=false`로 "베타로 바로 시작"(손님 계정) 끄기** (웹·앱 버튼은 `GET /auth/beta`가 false면 저절로 숨음)
 - [ ] 추천: 취향 온보딩 → 재생 기록 기반 추천 → 수면 기록/패턴 → AI 조합 생성

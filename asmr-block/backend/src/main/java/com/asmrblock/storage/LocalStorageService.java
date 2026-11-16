@@ -1,6 +1,7 @@
 package com.asmrblock.storage;
 
 import com.asmrblock.config.AppProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -19,6 +20,7 @@ import java.nio.file.StandardCopyOption;
  *    (localhost로 고정하면 휴대폰에서는 자기 자신을 가리켜서 재생이 안 됨)
  */
 @Service
+@ConditionalOnProperty(prefix = "app.storage", name = "type", havingValue = "local", matchIfMissing = true)
 public class LocalStorageService implements StorageService {
 
     static final String FILES_PATH = "/files";

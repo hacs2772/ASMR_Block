@@ -25,7 +25,7 @@ class LocalStorageServiceTest {
         return new LocalStorageService(new AppProperties(
                 new AppProperties.Jwt("x".repeat(32), Duration.ofMinutes(30)),
                 new AppProperties.Auth(Duration.ofDays(14)),
-                new AppProperties.Storage("build/test-media", publicBaseUrl),
+                new AppProperties.Storage("build/test-media", publicBaseUrl, "local", null),
                 new AppProperties.Cors(List.of()),
                 new AppProperties.PlayCount(Duration.ofMinutes(30)),
                 new AppProperties.Audio("ffmpeg", "ffprobe", -24, Duration.ofMinutes(1)),
