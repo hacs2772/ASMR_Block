@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { IoBarChart, IoChatbubbles, IoColorPalette, IoFlag, IoHappy, IoShieldCheckmark } from 'react-icons/io5';
+import { IoBarChart, IoChatbubbles, IoColorPalette, IoFlag, IoHappy, IoShieldCheckmark, IoWallet } from 'react-icons/io5';
 import BlockReview from '../components/admin/BlockReview';
 import CategoryManager from '../components/admin/CategoryManager';
+import CoinManager from '../components/admin/CoinManager';
 import FeedbackList from '../components/admin/FeedbackList';
 import ReportList from '../components/admin/ReportList';
 import StatsPanel from '../components/admin/StatsPanel';
@@ -17,6 +18,7 @@ const TABS = [
   { key: 'feedback', label: '의견', icon: IoChatbubbles },
   { key: 'categories', label: '트리거 종류', icon: IoColorPalette },
   { key: 'stickers', label: '스티커', icon: IoHappy },
+  { key: 'coins', label: '코인', icon: IoWallet },
 ];
 
 /** 관리자 페이지: 관리자 계정으로 로그인했을 때만 (서버도 ADMIN 권한을 다시 확인) */
@@ -81,6 +83,7 @@ function AdminPage() {
         {tab === 'feedback' && <FeedbackList onNewCount={setNewFeedback} />}
         {tab === 'categories' && <CategoryManager />}
         {tab === 'stickers' && <StickerManager />}
+        {tab === 'coins' && <CoinManager />}
       </div>
     </div>
   );

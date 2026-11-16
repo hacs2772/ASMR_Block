@@ -8,6 +8,7 @@ import { useAuth } from '@/store/auth';
 import { colors, radius, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitch } from '@/locales/LanguageSwitch';
+import { WalletCard } from '@/components/coin/WalletCard';
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
@@ -45,6 +46,8 @@ export default function ProfileScreen() {
           <Button title={t('profile.signup')} variant="secondary" onPress={() => router.push('/signup')} style={{ alignSelf: 'stretch' }} />
         </EmptyState>
       )}
+
+      {status === 'signedIn' && <WalletCard />}
 
       {status === 'signedIn' && (
         <View style={styles.actions}>

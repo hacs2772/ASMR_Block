@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitch from '../locales/LanguageSwitch';
 import authApi from '../api/authApi';
 import { errorMessage } from '../api/api';
 import useAuthStore from '../store/authStore';
+import WalletCard from '../components/coin/WalletCard';
 
 /** 내 정보: 닉네임 바꾸기 · 바로 가기 · 로그아웃 · 회원 탈퇴 */
 function ProfilePage() {
@@ -14,6 +15,13 @@ function ProfilePage() {
   const { user, isAuthenticated, updateMe, logout } = useAuthStore();
   const [nickname, setNickname] = useState(user?.nickname || '');
   const [saving, setSaving] = useState(false);
+  const { hash } = useLocation();
+  // "내 코인 보기"(/profile#coins)로 오면 코인 칸으로
+  useEffect(() => {
+    if (hash !== '#coins') return undefined;
+    const timer = setTimeout(() => document.getElementById('coins')?.scrollIntoView({ behavior: 'smooth' }), 150);
+    return () => clearTimeout(timer);
+  }, [hash]);
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
   const save = async (e) => {
@@ -47,6 +55,8 @@ function ProfilePage() {
         <Link to="/sell#mine" className="btn-line text-center">{t('profile.uploads')}</Link>
         <Link to="/shop" className="btn-line text-center">{t('profile.shop')}</Link>
       </div>
+
+      <WalletCard />
 
       <form onSubmit={save} className="card mt-6 space-y-4 p-6">
         <label className="block"><span className="label">{t('profile.nickname')}</span>

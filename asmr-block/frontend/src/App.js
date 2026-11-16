@@ -8,6 +8,7 @@ import { VideoModal } from './components/block/VideoModal';
 import { ComingSoonModal } from './components/common/ComingSoon';
 import { FeedbackFab, FeedbackModal } from './components/common/Feedback';
 import { ReportModal } from './components/common/Report';
+import { BuyModal } from './components/coin/BuyModal';
 import { InstallModal, listenInstallPrompt } from './components/common/Install';
 import Footer from './components/common/Footer';
 import { GuideModal } from './components/guide/GuideModal';
@@ -97,6 +98,7 @@ function App() {
         <VideoModal />
         <FeedbackModal />
         <ReportModal />
+        <BuyModal />
         <InstallModal />
         <GuideModal />
         <FeedbackFab />

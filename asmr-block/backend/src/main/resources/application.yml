@@ -65,6 +65,13 @@ app:
   shop:
     # 판매자가 올릴 때 정할 수 있는 최대 가격(코인). 너무 비싸지지 않게, 운영하면서 조절
     seller-max-price: ${APP_SHOP_SELLER_MAX_PRICE:100}
+  coins:
+    # 크리에이터 몫(%): 블록이 "충전 코인"으로 팔리면 그 코인의 이만큼이 크리에이터에게 (받은 코인으로 팔린 건 정산 안 됨)
+    creator-share-percent: ${APP_COINS_CREATOR_SHARE_PERCENT:70}
+    # 1코인 = 몇 원 (크리에이터 정산 금액 계산용)
+    krw-per-coin: ${APP_COINS_KRW_PER_COIN:100}
+    # 관리자가 한 번에 주거나 회수할 수 있는 최대 코인
+    grant-max: 100000
   beta:
     # 베타 기간에만: "베타로 바로 시작" 버튼 (가입 없이 손님 계정을 만들어 바로 로그인)
     # ⚠ 정식 출시 때 false로 끄세요 (APP_BETA_QUICK_LOGIN=false)

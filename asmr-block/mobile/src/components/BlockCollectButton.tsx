@@ -3,14 +3,15 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '@/api/client';
-import { libraryApi } from '@/api/endpoints';
+import { coinApi, libraryApi } from '@/api/endpoints';
 import type { Block } from '@/api/types';
+import { askToBuy } from '@/components/coin/askToBuy';
 import { notify } from '@/lib/dialog';
 import { useAuth } from '@/store/auth';
 import { colors, radius } from '@/theme';
 import { useTranslation } from 'react-i18next';
 
-/** 담기 버튼: 담기(무료) / 담음 / 빼기(내 블록함의 무료 블록) / 구매 준비 중(유료) */
+/** 담기 버튼: 담기(무료) / 담음 / 빼기(내 블록함의 무료 블록) / 코인으로 사기(유료, 확인 창) */
 export function BlockCollectButton({ block, inLibraryView = false }: { block: Block; inLibraryView?: boolean }) {
   const { t } = useTranslation();
   const signedIn = useAuth((s) => s.status === 'signedIn');
@@ -22,7 +23,18 @@ export function BlockCollectButton({ block, inLibraryView = false }: { block: Bl
   const add = useMutation({
     mutationFn: () => libraryApi.add(block.id),
     onSuccess: refresh,
-    onError: (e) => notify(e instanceof ApiError && e.status === 402 ? t('block.buySoonTitle') : t('block.addFailed'), (e as Error).message),
+    onError: (e) => notify(t('block.addFailed'), (e as Error).message),
+  });
+  const buy = useMutation({
+    mutationFn: async () => (await askToBuy(queryClient, { kind: 'block', title: block.title, price: block.price }))
+      ? coinApi.purchase(block.id) : null,
+    onSuccess: (result) => {
+      if (!result) return;
+      queryClient.setQueryData(['wallet'], result.wallet);
+      refresh();
+      notify(t('coin.boughtTitle'), t('coin.bought', { title: block.title }));
+    },
+    onError: (e) => notify(e instanceof ApiError && e.code === 'NOT_ENOUGH_COINS' ? t('coin.shortTitle') : t('coin.buyFailed'), (e as Error).message),
   });
   const remove = useMutation({
     mutationFn: () => libraryApi.remove(block.id),
@@ -48,9 +60,21 @@ export function BlockCollectButton({ block, inLibraryView = false }: { block: Bl
   }
   if (block.price > 0) {
     return (
-      <View style={[styles.pill, styles.pillGhost]} accessibilityLabel={t('block.buyA11y', { coins: t('common.coins', { count: block.price }) })}>
-        <Text style={styles.soon}>{t('block.buySoon')}</Text>
-      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t('coin.buyA11y', { title: block.title, count: block.price })}
+        onPress={() => (signedIn ? buy.mutate() : router.push('/login'))}
+        disabled={buy.isPending}
+        style={({ pressed }) => [styles.pill, styles.pillAdd, pressed && { opacity: 0.8 }]}
+        testID={`buy-${block.id}`}
+      >
+        {buy.isPending ? <ActivityIndicator color={colors.white} size="small" /> : (
+          <>
+            <Ionicons name="wallet" size={13} color={colors.white} />
+            <Text style={styles.pillAddText}>{t('coin.buyShort', { count: block.price })}</Text>
+          </>
+        )}
+      </Pressable>
     );
   }
   return (
@@ -80,5 +104,4 @@ const styles = StyleSheet.create({
   pillDoneText: { color: colors.muted, fontWeight: '700', fontSize: 12 },
   pillGhost: { borderWidth: 1, borderColor: colors.border },
   pillGhostText: { color: colors.muted, fontWeight: '600', fontSize: 12 },
-  soon: { color: colors.faint, fontSize: 11, fontWeight: '600' },
 });

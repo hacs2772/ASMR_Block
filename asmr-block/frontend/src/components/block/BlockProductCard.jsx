@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { IoCheckmarkCircle, IoCube, IoLocation, IoPause, IoPlay, IoShareSocialOutline, IoVideocam } from 'react-icons/io5';
+import { IoCheckmarkCircle, IoCube, IoLocation, IoPause, IoPlay, IoShareSocialOutline, IoVideocam, IoWallet } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
-import { errorMessage, libraryApi } from '../../api/api';
+import { coinApi, errorMessage, libraryApi } from '../../api/api';
 import { usePreviewStore } from '../../hooks/usePreview';
 import { colorOf, formatDuration, groupLabel, iconOf, noteOf, talkLabel } from '../../lib/blocks';
 import { shareLink, shareLinks } from '../../lib/share';
@@ -11,6 +11,7 @@ import useAuthStore from '../../store/authStore';
 import Brick from '../brand/Brick';
 import { useVideoModal } from './VideoModal';
 import { ReportButton } from '../common/Report';
+import { useBuy } from '../coin/BuyModal';
 
 /** 상점 블록 폭: 소리 길이에 비례 (너무 짧거나 길어도 카드 안에 들어가게) */
 export const productBrickWidth = (seconds) => Math.round(Math.min(178, Math.max(76, (seconds / 60) * 30)));
@@ -98,7 +99,7 @@ function BlockProductCard({ block, rank, onCollected, preview = false, hideCreat
   );
 }
 
-/** 블록 담기: 무료는 바로, 유료는 구매 준비 중, 이미 있으면 "블록함에 있음" */
+/** 블록 담기: 무료는 바로, 유료는 코인으로 사기(확인 창), 이미 있으면 "블록함에 있음" */
 export function CollectBlockButton({ block, onCollected }) {
   const { t } = useTranslation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -110,7 +111,24 @@ export function CollectBlockButton({ block, onCollected }) {
     return <span className="btn-line btn-sm w-full cursor-default text-success"><IoCheckmarkCircle size={14} /> {t('block.inBox')}</span>;
   }
   if (block.price > 0) {
-    return <span className="btn-line btn-sm w-full cursor-default text-faint">{t('block.buySoon')}</span>;
+    const buy = () => {
+      if (!isAuthenticated) return navigate('/login');
+      useBuy.getState().open({
+        kind: 'block', title: block.title, price: block.price,
+        run: () => coinApi.purchase(block.id),
+        onDone: () => {
+          setOwned(true);
+          toast.success(t('coin.bought', { title: block.title }));
+          onCollected?.(block);
+        },
+      });
+      return undefined;
+    };
+    return (
+      <button type="button" className="btn-pink btn-sm w-full" onClick={buy} data-testid={`buy-block-${block.id}`}>
+        <IoWallet size={14} /> {t('coin.buy', { count: block.price })}
+      </button>
+    );
   }
   const collect = async () => {
     if (!isAuthenticated) return navigate('/login');

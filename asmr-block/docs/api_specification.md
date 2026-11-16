@@ -17,7 +17,8 @@
 6. [내 블록함 (Library)](#6-내-블록함-library)
 7. [플레이리스트 = 레고 블록 두 줄 (Playlist)](#7-플레이리스트--레고-블록-두-줄-playlist)
 8. [완성본 (Render)](#8-완성본-render)
-9. [관리자 (Admin)](#9-관리자-admin) — 블록 검수 · 트리거 종류 · 스티커 · 의견·통계
+9. [관리자 (Admin)](#9-관리자-admin) — 블록 검수 · 트리거 종류 · 스티커 · 의견·통계 · 코인
+10. [코인 (Coin)](#10-코인-coin) — 내 코인 · 유료 블록 사기 · 크리에이터 판매 수익 (V16)
 
 ---
 
@@ -38,7 +39,7 @@
 | 200 / 201 | 성공 / 생성됨 | |
 | 400 | 요청 값 오류 | `VALIDATION_ERROR`, `BAD_REQUEST` |
 | 401 | 로그인 필요 또는 **Access Token 만료** → 토큰 갱신 후 재시도 | `UNAUTHORIZED` |
-| 402 | 유료 블록이라 구매가 필요 (구매 기능 준비 중) | `PURCHASE_REQUIRED` |
+| 402 | 유료 블록이라 구매가 필요 / 코인이 모자람 (V16) | `PURCHASE_REQUIRED`, `NOT_ENOUGH_COINS` |
 | 403 | 권한 없음 (남의 비공개 플레이리스트, 관리자 전용 등) | `FORBIDDEN` |
 | 404 | 없음 | `NOT_FOUND` |
 | 409 | 중복 (이메일) | `CONFLICT` |
@@ -315,7 +316,7 @@
 | Method | URL | 인증 | 설명 |
 |------|------|------|------|
 | GET | `/me/blocks` | 필요 | 내 블록함 (최근에 담은 순, 모두 `owned: true`) |
-| POST | `/me/blocks/{blockId}` | 필요 | **담기** - 무료 블록만. 이미 있으면 그대로 성공. 유료면 **402** `PURCHASE_REQUIRED` |
+| POST | `/me/blocks/{blockId}` | 필요 | **담기** - 무료 블록만. 이미 있으면 그대로 성공. 유료면 **402** `PURCHASE_REQUIRED` → 코인으로 사기 `POST /blocks/{id}/purchase` (10장) |
 | DELETE | `/me/blocks/{blockId}` | 필요 | 빼기 - 무료로 담은 블록만 (구매·지급·직접 올린 블록은 400) |
 
 - 새로 가입하면 **빈 블록함**으로 시작
@@ -421,7 +422,7 @@
   - `sourcePlaylistId` / `sourceOwner`: 남의 조합을 담아 온 복사본이면 원본 id와 원작자 (아니면 null)
   - `collectCount`: 이 조합을 담아 간 사람 수
   - `collectedId`: 내가 이미 담았으면 내 복사본 id (아니면 null)
-  - `lockedCount`: 내가 아직 갖지 않은 유료 블록 수 (0이어야 한 번에 담기 가능)
+  - `lockedCount` / `lockedPrice`: 내가 아직 갖지 않은 유료 블록 수와 그걸 다 사는 데 드는 코인 (V16). 0이 아니면 `?buy=true`로 사고 담기
 
 ### 7.4 조합 한 번에 담기 `POST /playlists/{id}/collect`
 남의 **공개** 조합을 담으면
@@ -430,8 +431,9 @@
 
 - 이미 담은 조합이면 새로 만들지 않고 그 복사본을 돌려줌 (복사본을 지우면 다시 담을 수 있음)
 - 응답: 복사본 상세(7.2), 메시지 `"내 조합에 담았어요."`
+- **`?buy=true`** (V16): 아직 없는 유료 블록을 코인으로 한 번에 사고 담음. 코인이 모자라면 하나도 안 사고(무료 블록도 안 담김) 402 `NOT_ENOUGH_COINS`
 
-**Error:** 400 (내가 만든 조합, 지금 들을 수 없는 블록 포함), 401, 402 (아직 갖지 않은 **유료 블록** 포함 — 코인 구매가 열리면 그 블록 값만 내고 담게 됨), 403 (남의 비공개), 404
+**Error:** 400 (내가 만든 조합, 지금 들을 수 없는 블록 포함), 401, 402 (`PURCHASE_REQUIRED` 아직 갖지 않은 **유료 블록** 포함 — `"유료 블록이 2개 들어 있어요 (60코인). 사고 담을 수 있어요."` / `NOT_ENOUGH_COINS` buy=true인데 코인이 모자람), 403 (남의 비공개), 404
 
 ---
 
@@ -579,8 +581,58 @@
 
 ---
 
+## 10. 코인 (Coin)
+
+V16. 유료 블록(`price` > 0)은 **코인**으로 사요. 코인은 두 가지예요.
+
+| 코인 | 어떻게 생기나 | 쓸 때 | 크리에이터 정산 |
+|------|------|------|------|
+| **받은 코인** `bonus` | 관리자가 줌(베타 테스터·이벤트) | **먼저** 씀 | 안 됨 (진짜 돈이 아니라서) |
+| **충전 코인** `paid` | 스토어 결제(인앱결제, 앱 출시 때 열림) | 받은 코인 다음 | 팔린 코인 × `app.coins.creator-share-percent`(기본 70%, 내림) |
+
+| Method | URL | 인증 | 설명 |
+|------|------|------|------|
+| GET | `/me/wallet` | 필요 | 내 코인 `{ "balance": 40, "paid": 30, "bonus": 10 }` |
+| GET | `/me/wallet/transactions?page=&size=` | 필요 | 코인 내역 (최근 것부터, 페이지) |
+| POST | `/blocks/{blockId}/purchase` | 필요 | **유료 블록 사기** → 내 블록함(뺄 수 없음). 응답 `{ "block": BlockResponse(owned·fileUrl), "wallet": {...} }` |
+| GET | `/me/earnings` | 필요 | **내 판매 수익** (크리에이터) |
+
+**사기** `POST /blocks/{id}/purchase`
+- 메시지 `"블록을 샀어요. 내 블록함에 담았어요."`, 이미 내 블록함에 있으면(내가 올린 블록 포함) 코인을 쓰지 않고 `"이미 내 블록함에 있어요."`
+- 코인이 모자라면 **402** `NOT_ENOUGH_COINS` `"코인이 모자라요. 30코인이 필요한데 지금 0코인 있어요."` (영어 요청이면 영어)
+- 무료 블록이면 400 `"무료 블록은 바로 담으면 돼요."`, 들을 수 없는 블록이면 404
+- 사면 크리에이터에게 담김 알림(`BLOCK_COLLECTED`). 같은 사람이 동시에 두 번 눌러도 코인은 한 번만 빠짐 (그 사람 줄을 잠그고 처리)
+
+**내역 한 줄** (`TransactionResponse`)
+```json
+{ "id": 9, "type": "PURCHASE", "amount": -30, "paidAmount": -10, "bonusAmount": -20, "balanceAfter": 40,
+  "blockId": 31, "blockTitle": "빗소리", "note": null, "at": "2026-11-16T14:39:35Z" }
+```
+- `type`: `GRANT` 관리자가 줌(`amount` < 0이면 회수) · `PURCHASE` 블록 구매 · `CHARGE` 충전 · `REFUND` 환불(아직 없음). `note` = 관리자가 적은 이유
+
+**내 판매 수익** `GET /me/earnings`
+```json
+{ "sharePercent": 70, "krwPerCoin": 100, "salesCount": 3, "soldCoins": 90, "bonusSoldCoins": 60,
+  "earnedCoins": 21, "pendingCoins": 21, "pendingKrw": 2100, "settledCoins": 0,
+  "recent": [ { "blockId": 31, "title": "빗소리", "price": 30, "paidCoins": 30, "share": 21, "at": "...Z" } ] }
+```
+- `bonusSoldCoins`: 받은 코인으로 팔린 몫(정산 안 됨), `earnedCoins` = 내 몫 합계 = `pendingCoins`(정산 대기) + `settledCoins`(정산 받음), `pendingKrw` = 대기 × `krwPerCoin`(설정 `app.coins.krw-per-coin`)
+
+**충전** (아직 화면 없음): 스토어 결제 영수증을 확인한 뒤 서버가 `CoinService.charge(userId, coins, 영수증 번호)`를 부르면 충전 코인이 늘어남. 같은 영수증 번호(`external_id`)는 한 번만
+
+### 관리자: 코인·정산 (ADMIN)
+
+| Method | URL | 설명 |
+|------|------|------|
+| GET | `/admin/coins/users?q=` | 사람 찾기(이메일·닉네임 일부, 비우면 최근 가입 20명) `[{ id, email, nickname, paid, bonus, balance }]` |
+| POST | `/admin/coins/grant` | 코인 주기 `{ "userId": 12, "amount": 100, "note": "베타 감사" }` → 받은 코인으로. `amount` < 0이면 회수(받은 코인에서만, 모자라면 400). 0이나 `app.coins.grant-max`(10만) 넘으면 400 |
+| GET | `/admin/earnings` | 판매가 있는 크리에이터 (정산 대기가 많은 순) `[{ creatorId, nickname, email, salesCount, soldCoins, bonusSoldCoins, earnedCoins, pendingCoins, pendingKrw, settledCoins }]` |
+| POST | `/admin/earnings/{creatorId}/settle` | **정산 완료로 표시** `{ "note": "11월 송금" }` → 정산 대기 몫 전부를 정산 기록(`creator_settlement`)으로. 송금은 직접 하고 누름. 대기가 0이면 400. 응답 = 바뀐 목록, 메시지 `"7코인(700원)을 정산 완료로 표시했어요."` |
+
+---
+
 ## 향후 추가 예정
-- **코인 충전(인앱결제) → 코인으로 블록 구매 + 구독**, 크리에이터 수익 배분 (`play_log` 기반)
+- **코인 충전(인앱결제)** → 영수증 확인 후 `CoinService.charge`, 구독, 환불
 - 유료 원본 보호 강화: S3/R2 서명된 URL
 - 좋아요 / 추천
 - 저장소 S3/R2 + CDN

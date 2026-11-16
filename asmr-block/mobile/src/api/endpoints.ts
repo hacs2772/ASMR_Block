@@ -1,6 +1,10 @@
 import { api } from './client';
 import type {
+  CoinTransaction,
   Creator,
+  Earnings,
+  Purchase,
+  Wallet,
   NotificationItem,
   NotificationSettings,
   NotificationSummary,
@@ -111,10 +115,18 @@ export const sellerApi = {
     api<UploadDraft>(`/blocks/upload-drafts?kind=${kind}`, { method: 'POST', body: form }),
 };
 
+/** 코인 (V16): 내 코인·내역, 유료 블록 사기, 내 판매 수익 */
+export const coinApi = {
+  wallet: () => api<Wallet>('/me/wallet'),
+  transactions: (page = 0, size = 50) => api<Page<CoinTransaction>>('/me/wallet/transactions' + query({ page, size })),
+  purchase: (blockId: number) => api<Purchase>(`/blocks/${blockId}/purchase`, { method: 'POST' }),
+  earnings: () => api<Earnings>('/me/earnings'),
+};
+
 /** 내 블록함: 상점에서 담은 블록 (편집기에는 이것만 보임) */
 export const libraryApi = {
   mine: () => api<Block[]>('/me/blocks'),
-  /** 무료 블록 담기 (유료는 402 PURCHASE_REQUIRED - 구매 준비 중) */
+  /** 무료 블록 담기 (유료는 402 PURCHASE_REQUIRED → coinApi.purchase로 사기) */
   add: (blockId: number) => api<Block>(`/me/blocks/${blockId}`, { method: 'POST' }),
   remove: (blockId: number) => api<void>(`/me/blocks/${blockId}`, { method: 'DELETE' }),
 };
@@ -137,7 +149,8 @@ export const playlistApi = {
   /** 오래 들음 (10분 넘게 재생하면 한 번) → 관리자 통계 */
   listened: (id: number, minutes: number) => api<{ counted: boolean }>(`/playlists/${id}/listened`, { method: 'POST', body: { minutes } }),
   /** 조합 한 번에 담기: 블록은 내 블록함에, 조합은 내 조합(비공개)으로 복사 → 복사본 상세 */
-  collect: (id: number) => api<PlaylistDetail>(`/playlists/${id}/collect`, { method: 'POST' }),
+  /** buy=true: 아직 없는 유료 블록을 코인으로 한 번에 사고 담음 (모자라면 402 NOT_ENOUGH_COINS) */
+  collect: (id: number, buy = false) => api<PlaylistDetail>(`/playlists/${id}/collect${buy ? '?buy=true' : ''}`, { method: 'POST' }),
   /** 첫 조합 바로 만들기: 트리거 묶음 코드(tap·rain…) → 무료 블록 담기 + 조합 + 완성본 시작. title = 영어 화면이면 영어 이름 (없으면 서버가 한국어 이름) */
   quickStart: (triggers: string[], listenMinutes = 60, title?: string) =>
     api<PlaylistDetail>('/playlists/quick-start', { method: 'POST', body: { triggers, listenMinutes, ...(title ? { title } : {}) } }),

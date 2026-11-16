@@ -4,7 +4,7 @@ package com.asmrblock.library;
 public enum LibrarySource {
     /** 무료 블록을 담음 (뺄 수 있음) */
     FREE,
-    /** 코인으로 구매 (구매 기능이 열리면) */
+    /** 코인으로 구매 (V16, POST /blocks/{id}/purchase · 조합 담기 buy=true) */
     PURCHASE,
     /** 직접 올린 블록 (승인되면 자동) */
     CREATOR,

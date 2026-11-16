@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import authApi from '../api/authApi';
+import useWalletStore from './walletStore';
 import i18n, { currentLang, LANG_KEY, setLang } from '../locales';
 
 /**
@@ -107,6 +108,7 @@ const useAuthStore = create(
         }
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        useWalletStore.getState().clear();
         set({
           user: null,
           isAuthenticated: false,

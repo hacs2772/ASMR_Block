@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 코인 (V16): 지갑(users.coin_paid·coin_bonus) · 내역 · 블록 구매 · 크리에이터 수익 · 정산 -->
+<mapper namespace="com.asmrblock.coin.CoinMapper">
+
+    <select id="findWallet" resultType="com.asmrblock.coin.Wallet">
+        SELECT coin_paid, coin_bonus FROM users WHERE id = #{userId} AND is_active = true
+    </select>
+
+    <select id="lockWallet" resultType="com.asmrblock.coin.Wallet">
+        SELECT coin_paid, coin_bonus FROM users WHERE id = #{userId} AND is_active = true FOR UPDATE
+    </select>
+
+    <update id="updateWallet">
+        UPDATE users SET coin_paid = #{paid}, coin_bonus = #{bonus} WHERE id = #{userId}
+    </update>
+
+    <insert id="insertTransaction" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO coin_transaction (user_id, type, paid_amount, bonus_amount, balance_after, block_id, purchase_id, note, external_id)
+        VALUES (#{userId}, #{type}, #{paidAmount}, #{bonusAmount}, #{balanceAfter}, #{blockId}, #{purchaseId}, #{note}, #{externalId})
+    </insert>
+
+    <select id="findTransactions" resultType="com.asmrblock.coin.CoinTransaction">
+        SELECT t.*, b.title AS block_title, b.title_en AS block_title_en
+        FROM coin_transaction t
+        LEFT JOIN block b ON b.id = t.block_id
+        WHERE t.user_id = #{userId}
+        ORDER BY t.created_at DESC, t.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countTransactions" resultType="long">
+        SELECT COUNT(*) FROM coin_transaction WHERE user_id = #{userId}
+    </select>
+
+    <select id="existsExternalId" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM coin_transaction WHERE external_id = #{externalId})
+    </select>
+
+    <insert id="insertPurchase" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO block_purchase (buyer_id, block_id, creator_id, price, bonus_coins, paid_coins, creator_share)
+        VALUES (#{buyerId}, #{blockId}, #{creatorId}, #{price}, #{bonusCoins}, #{paidCoins}, #{creatorShare})
+    </insert>
+
+    <sql id="earningsColumns">
+        COUNT(*)                                                                AS sales_count,
+        COALESCE(SUM(p.price), 0)                                               AS sold_coins,
+        COALESCE(SUM(p.bonus_coins), 0)                                         AS bonus_coins,
+        COALESCE(SUM(p.creator_share), 0)                                       AS earned_coins,
+        COALESCE(SUM(p.creator_share) FILTER (WHERE p.settlement_id IS NULL), 0)     AS pending_coins,
+        COALESCE(SUM(p.creator_share) FILTER (WHERE p.settlement_id IS NOT NULL), 0) AS settled_coins
+    </sql>
+
+    <select id="earnings" resultType="com.asmrblock.coin.EarningsSummary">
+        SELECT #{creatorId} AS creator_id, <include refid="earningsColumns"/>
+        FROM block_purchase p
+        WHERE p.creator_id = #{creatorId}
+    </select>
+
+    <select id="recentSales" resultType="com.asmrblock.coin.BlockPurchase">
+        SELECT p.*, b.title AS block_title, b.title_en AS block_title_en
+        FROM block_purchase p
+        JOIN block b ON b.id = p.block_id
+        WHERE p.creator_id = #{creatorId}
+        ORDER BY p.created_at DESC, p.id DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="allEarnings" resultType="com.asmrblock.coin.EarningsSummary">
+        SELECT p.creator_id, u.nickname, u.email, <include refid="earningsColumns"/>
+        FROM block_purchase p
+        JOIN users u ON u.id = p.creator_id
+        GROUP BY p.creator_id, u.nickname, u.email
+        ORDER BY pending_coins DESC, sales_count DESC, p.creator_id
+    </select>
+
+    <insert id="insertSettlement" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO creator_settlement (creator_id, coins, krw, note)
+        VALUES (#{creatorId}, #{coins}, #{krw}, #{note})
+    </insert>
+
+    <update id="markSettled">
+        UPDATE block_purchase SET settlement_id = #{settlementId}
+        WHERE creator_id = #{creatorId} AND settlement_id IS NULL AND creator_share > 0
+    </update>
+
+    <update id="syncSettlement">
+        UPDATE creator_settlement s
+        SET coins = t.coins, krw = t.coins * #{krwPerCoin}
+        FROM (SELECT COALESCE(SUM(creator_share), 0) AS coins FROM block_purchase WHERE settlement_id = #{id}) t
+        WHERE s.id = #{id}
+    </update>
+
+    <select id="findSettlement" resultType="com.asmrblock.coin.Settlement">
+        SELECT * FROM creator_settlement WHERE id = #{id}
+    </select>
+
+    <select id="searchUsers" resultType="com.asmrblock.coin.UserCoins">
+        SELECT id, email, nickname, coin_paid, coin_bonus
+        FROM users
+        WHERE is_active = true
+        <if test="q != null">
+            AND (email ILIKE '%' || #{q} || '%' OR nickname ILIKE '%' || #{q} || '%')
+        </if>
+        ORDER BY (coin_paid + coin_bonus) > 0 DESC, created_at DESC, id DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findUserCoins" resultType="com.asmrblock.coin.UserCoins">
+        SELECT id, email, nickname, coin_paid, coin_bonus FROM users WHERE id = #{userId} AND is_active = true
+    </select>
+
+</mapper>

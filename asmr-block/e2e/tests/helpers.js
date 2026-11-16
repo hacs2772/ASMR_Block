@@ -67,13 +67,15 @@ const path = require('path');
 const TONE = path.join(__dirname, '..', 'fixtures', 'tone-15s.mp3');
 
 /** 크리에이터가 블록을 올리고 관리자가 승인 → 블록 id (다른 검사의 샘플 블록을 건드리지 않게 따로 만듦) */
-async function uploadApproved(request, creator, admin, title) {
+/** price: 유료 블록이면 코인 (없으면 무료) */
+async function uploadApproved(request, creator, admin, title, price) {
   const groups = await api(request, 'GET', '/categories');
   const res = await request.post(`${API}/blocks`, {
     headers: { Authorization: `Bearer ${creator.token}` },
     multipart: {
       file: { name: 'tone.mp3', mimeType: 'audio/mpeg', buffer: fs.readFileSync(TONE) },
       title, categoryId: String(groups[0].children[0].id), license: 'OWN',
+      ...(price ? { price: String(price) } : {}),
     },
   });
   expect(res.status(), await res.text()).toBe(201);

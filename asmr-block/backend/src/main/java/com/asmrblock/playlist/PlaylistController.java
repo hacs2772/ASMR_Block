@@ -104,10 +104,12 @@ public class PlaylistController {
     }
 
     // 조합 한 번에 담기: 블록은 내 블록함에, 조합은 내 조합(비공개)으로 복사 (로그인 필요)
+    // 아직 없는 유료 블록이 있으면 402, buy=true면 그 블록들을 코인으로 한 번에 사고 담음 (V16)
     @PostMapping("/{playlistId}/collect")
     public ApiResponse<PlaylistDetailResponse> collect(@AuthenticationPrincipal Long userId,
-                                                       @PathVariable Long playlistId) {
-        return ApiResponse.ok("내 조합에 담았어요.", detail(playlistService.collect(playlistId, userId), userId));
+                                                       @PathVariable Long playlistId,
+                                                       @RequestParam(defaultValue = "false") boolean buy) {
+        return ApiResponse.ok("내 조합에 담았어요.", detail(playlistService.collect(playlistId, userId, buy), userId));
     }
 
     // 재생 기록 (로그인 필요)

@@ -31,12 +31,12 @@ public class LibraryService {
         return blockService.toLibraryResponses(libraryMapper.findBlocks(userId));
     }
 
-    /** 담기: 무료 블록만. 유료 블록은 구매 기능이 열리면 구매로 담김 */
+    /** 담기: 무료 블록만. 유료 블록은 코인으로 사면 담김 (POST /blocks/{id}/purchase) */
     @Transactional
     public BlockResponse add(Long userId, Long blockId) {
         Block block = blockService.findPlayable(blockId);
         if (block.isPaid() && libraryMapper.findSource(userId, blockId).isEmpty()) {
-            throw ApiException.paymentRequired("유료 블록은 구매 기능이 열리면 담을 수 있어요.");
+            throw ApiException.paymentRequired("유료 블록은 코인으로 사서 담을 수 있어요.");
         }
         if (libraryMapper.insert(userId, blockId, LibrarySource.FREE) > 0) {
             notificationService.blockCollected(block, userId);

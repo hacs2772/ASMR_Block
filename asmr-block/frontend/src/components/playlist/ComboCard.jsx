@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { IoCheckmarkCircle, IoLockClosed, IoPlay, IoStar } from 'react-icons/io5';
+import { IoCheckmarkCircle, IoPlay, IoStar, IoWallet } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { errorMessage, playlistApi } from '../../api/api';
 import { formatLength, listenLabel } from '../../lib/blocks';
 import useAuthStore from '../../store/authStore';
+import { useBuy } from '../coin/BuyModal';
 
 /** 조합 미리보기: 첫째 줄 블록 색을 옆으로 누운 작은 레고로 (레이어드가 있으면 아래 얇은 줄) */
 export function ComboBricks({ colors = [], hasMix, big }) {
@@ -80,8 +81,21 @@ export function CollectComboButton({ combo, className = '' }) {
       </Link>
     );
   }
+  // 아직 없는 유료 블록이 있으면: 그 블록들을 코인으로 한 번에 사고 담기 (확인 창)
   if (combo.collect?.lockedCount > 0) {
-    return <span className={`btn-line btn-sm cursor-default text-faint ${className}`}><IoLockClosed size={12} /> {t('combo.lockedBlocks', { count: combo.collect.lockedCount })}</span>;
+    const buy = () => useBuy.getState().open({
+      kind: 'combo', title: combo.title, price: combo.collect.lockedPrice, blocks: combo.collect.lockedCount,
+      run: () => playlistApi.collect(combo.id, true),
+      onDone: (copy) => {
+        setCopyId(copy.id);
+        toast.success(t('coin.comboBought'));
+      },
+    });
+    return (
+      <button type="button" className={`btn-pink btn-sm ${className}`} onClick={buy} data-testid={`combo-buy-${combo.id}`}>
+        <IoWallet size={13} /> {t('coin.comboBuy', { count: combo.collect.lockedPrice })}
+      </button>
+    );
   }
   const collect = async () => {
     setBusy(true);

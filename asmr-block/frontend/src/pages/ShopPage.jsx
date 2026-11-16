@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { IoSearch } from 'react-icons/io5';
+import { Link, useSearchParams } from 'react-router-dom';
+import { IoSearch, IoWallet } from 'react-icons/io5';
 import { useTranslation } from 'react-i18next';
 import { catalogApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
 import BlockProductCard from '../components/block/BlockProductCard';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
 import { categoryLabel, talkLabel } from '../lib/blocks';
+import useAuthStore from '../store/authStore';
+import useWalletStore from '../store/walletStore';
 
 const TABS = ['trending', 'latest', 'free'];
 
@@ -69,7 +71,10 @@ function ShopPage() {
             placeholder={t('shop.searchPh')} aria-label={t('shop.search')} data-testid="shop-search" />
         </label>
       </div>
-      <p className="mt-2 text-sm text-muted">{t('shop.lead')}</p>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted">{t('shop.lead')}</p>
+        <MyCoins />
+      </div>
 
       <div className="mt-6 flex gap-2 border-b border-line">
         {TABS.map((key) => (
@@ -119,6 +124,21 @@ function ShopPage() {
         )}
       </div>
     </div>
+  );
+}
+
+/** 로그인했으면 "내 코인 N" (누르면 내 정보의 코인 내역) */
+function MyCoins() {
+  const { t } = useTranslation();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const wallet = useWalletStore((s) => s.wallet);
+  const load = useWalletStore((s) => s.load);
+  useEffect(() => { if (isAuthenticated) load(); }, [isAuthenticated, load]);
+  if (!isAuthenticated || !wallet) return null;
+  return (
+    <Link to="/profile#coins" className="chip gap-1.5" data-testid="my-coins">
+      <IoWallet size={13} className="text-pink-text" /> {t('coin.mine', { count: wallet.balance })}
+    </Link>
   );
 }
 

@@ -22,6 +22,7 @@ import { useAuth } from '@/store/auth';
 import { categoryFallbackColor, colors, radius, space } from '@/theme';
 import { RecordingGuideLink } from '@/components/upload/RecordingGuideLink';
 import { useTranslation } from 'react-i18next';
+import { EarningsCard } from '@/components/coin/EarningsCard';
 import { categoryLabel, patternLabel, stickerName, talkLabel } from '@/lib/labels';
 import i18n from '@/locales';
 
@@ -378,6 +379,7 @@ export default function UploadScreen() {
           </Pressable>
         ) : null}
       </View>
+      {status === 'signedIn' ? <EarningsCard /> : null}
       {mine.isLoading ? <BlockLoader size="small" />
         : (mine.data?.content ?? []).length === 0 ? <Text style={styles.empty}>{t('upload.mineEmpty')}</Text>
           : mine.data!.content.map((u) => <UploadRow key={u.id} upload={u} />)}

@@ -13,6 +13,7 @@ import { categoryLabel, colorOf, formatDuration, talkLabel, TALK_TYPES } from '.
 import { MAX_STICKERS, PATTERNS, patternLabel, StickerImage, stickerName, useStickers } from '../lib/stickers';
 import { canTrim, initialRange, trimParams } from '../lib/trim';
 import useLangChange from '../locales/useLangChange';
+import EarningsCard from '../components/coin/EarningsCard';
 import useAuthStore from '../store/authStore';
 import { RecordingGuideLink } from './RecordingGuidePage';
 
@@ -421,6 +422,7 @@ function SellPage() {
               <Link to={`/creator/${user.id}`} className="btn-line btn-sm" data-testid="my-creator-page">{t('sell.myPage')}</Link>
             )}
           </div>
+          <EarningsCard />
           <div className="mt-5">
             {mine === null ? <BlockLoader small /> : mine.length === 0 ? (
               <p className="card p-6 text-sm text-muted">{t('sell.mineEmpty')}</p>

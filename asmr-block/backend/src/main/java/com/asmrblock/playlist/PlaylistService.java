@@ -3,6 +3,7 @@ package com.asmrblock.playlist;
 import com.asmrblock.activity.ActivityService;
 import com.asmrblock.block.Block;
 import com.asmrblock.block.BlockService;
+import com.asmrblock.coin.CoinService;
 import com.asmrblock.common.ApiException;
 import com.asmrblock.common.PageQuery;
 import com.asmrblock.common.PageResponse;
@@ -41,6 +42,7 @@ public class PlaylistService {
     private final LibraryService libraryService;
     private final NotificationService notificationService;
     private final ActivityService activityService;
+    private final CoinService coinService;
 
     // ===================== 조회 =====================
 
@@ -107,11 +109,11 @@ public class PlaylistService {
 
     /**
      * 조합 한 번에 담기: 남의 공개 조합의 블록을 내 블록함에 넣고, 조합을 내 조합(비공개)으로 복사.
-     * 아직 갖지 않은 유료 블록이 있으면 담을 수 없음 (코인 구매가 열리면 그 블록 값만 내고 담게 됨).
+     * 아직 갖지 않은 유료 블록이 있으면 402. buy=true면 그 블록들을 코인으로 한 번에 사고 담음 (V16).
      * 이미 담은 조합이면 그 복사본을 그대로 돌려줌.
      */
     @Transactional
-    public Playlist collect(Long id, Long userId) {
+    public Playlist collect(Long id, Long userId, boolean buy) {
         Playlist source = getViewable(id, userId);
         if (source.getUserId().equals(userId)) {
             throw ApiException.badRequest("내가 만든 조합이에요.");
@@ -126,11 +128,17 @@ public class PlaylistService {
             throw ApiException.badRequest("지금은 들을 수 없는 블록이 있어서 담을 수 없어요.");
         }
         Set<Long> owned = libraryService.ownedIds(userId, blocks.stream().map(Block::getId).toList());
-        int locked = source.lockedCount(owned);
-        if (locked > 0) {
-            throw ApiException.paymentRequired("유료 블록이 " + locked + "개 들어 있어요. 코인 구매가 열리면 담을 수 있어요.");
+        List<Block> locked = source.lockedBlocks(owned);
+        if (!locked.isEmpty()) {
+            if (!buy) {
+                throw ApiException.paymentRequired("유료 블록이 %d개 들어 있어요 (%d코인). 사고 담을 수 있어요."
+                        .formatted(locked.size(), source.lockedPrice(owned)));
+            }
+            // buy=true: 없는 유료 블록을 코인으로 한 번에 삼 (모자라면 402 NOT_ENOUGH_COINS, 하나도 안 삼)
+            coinService.buy(userId, locked);
         }
-        libraryService.addFree(userId, blocks.stream().map(Block::getId).filter(b -> !owned.contains(b)).toList());
+        libraryService.addFree(userId, blocks.stream().filter(b -> !b.isPaid() && !owned.contains(b.getId()))
+                .map(Block::getId).toList());
 
         Playlist copy = Playlist.builder()
                 .userId(userId).title(source.getTitle()).description(source.getDescription())
@@ -304,7 +312,7 @@ public class PlaylistService {
         Set<Long> owned = libraryService.ownedIds(viewerId, playlists.stream()
                 .flatMap(p -> p.distinctBlocks().stream()).map(Block::getId).collect(Collectors.toSet()));
         return playlists.stream()
-                .map(p -> PlaylistSummaryResponse.from(p, collected.get(p.getId()), p.lockedCount(owned)))
+                .map(p -> PlaylistSummaryResponse.from(p, collected.get(p.getId()), owned))
                 .toList();
     }
 

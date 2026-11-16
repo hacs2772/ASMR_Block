@@ -60,9 +60,19 @@ public class Playlist {
 
     /** 보는 사람이 아직 갖지 않은 유료 블록 수 (담으려면 구매가 필요한 블록) */
     public int lockedCount(Set<Long> ownedBlockIds) {
-        return (int) distinctBlocks().stream()
+        return lockedBlocks(ownedBlockIds).size();
+    }
+
+    /** 아직 없는 유료 블록 (조합 담기 전에 사야 하는 것) */
+    public List<Block> lockedBlocks(Set<Long> ownedBlockIds) {
+        return distinctBlocks().stream()
                 .filter(b -> b.isPaid() && !ownedBlockIds.contains(b.getId()))
-                .count();
+                .toList();
+    }
+
+    /** 아직 없는 유료 블록을 모두 사는 데 드는 코인 */
+    public int lockedPrice(Set<Long> ownedBlockIds) {
+        return lockedBlocks(ownedBlockIds).stream().mapToInt(Block::getPrice).sum();
     }
 
     /** 내 것이거나, 공개이면서 관리자가 숨기지 않은 조합 */

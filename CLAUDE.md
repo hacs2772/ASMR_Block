@@ -40,7 +40,8 @@
 - **보안 점검(베타 모집 전)**: 로그인은 15분 동안 같은 이메일 10번·같은 접속 주소 30번 틀리면 429(`RateLimiter.ensureUnder/record/clear`). 올린 파일은 ffmpeg에 넘기기 전에 ffprobe 형식 이름으로 허용 목록 검사(`AudioService.SOUND/VIDEO/IMAGE_FORMATS` — 확장자만 mp3인 재생목록·concat·글자 파일 막기), 모든 ffmpeg 입력에 `-protocol_whitelist file`(`FfmpegRunner.localFilesOnly`). 웹 nginx는 화면에 보안 머리말(X-Frame-Options·nosniff·Referrer-Policy·Permissions-Policy). 남의 것 건드리기·관리자 기능·위장 파일은 `SecurityApiTest`로 확인. 새 업로드 형식을 받으려면 허용 목록에도 넣기
 - **신고 + 관리자 숨기기(V13, `report` 패키지)**: 블록 카드·듣기 화면(남의 조합)에 작은 깃발 "신고"(웹 `components/common/Report.jsx`, 앱 `components/ReportSheet.tsx`) → 이 블록·조합 또는 올린 사람(@닉네임), 이유 4가지(저작권·불쾌함·광고·도배·기타) + 적은 말, 로그인 없이도(1시간 10번). 관리자 페이지 **신고** 탭(`components/admin/ReportList.jsx`, 배지 = 통계 `openReports`): 대상별로 묶어 보고 들어 보기 → **숨기기**(블록 = REJECTED + 판매자에게 이유, 조합 = `is_hidden`, 사람 = `upload_banned`) / **문제없음** / 숨긴 것 **되돌리기**, "올린 사람 업로드도 막기". 새로 공개 조합 목록을 만들면 `is_hidden = false`를 꼭 넣기
 - **베타 운영(V9)**: 웹 `/privacy`·`/terms`(베타판 쉬운 말, 연락처 help@asmrblock.com, `pages/LegalPages.jsx`), 가입·베타 버튼 아래 동의 안내. **의견 보내기**: 웹 오른쪽 아래 버튼·바닥글(`components/common/Feedback.jsx`), 앱 도움말(`components/FeedbackForm.tsx`) → `POST /feedback`(로그인 없이도, 10분에 5번). 관리자 페이지 **통계**(`GET /admin/stats`, 관리자·샘플 계정 빼고 한국 시간, 최근 14일)·**의견** 탭
-- **블록 상점 → 내 블록함**: 듣는 사람은 상점에서 블록을 담고(`user_block`), 편집기에는 **담은 블록만**. 같은 블록 복제는 무료. 무료는 바로 담기, 유료는 구매(코인 + 구독, 준비 중) — 사기 전엔 앞 30초 맛보기(`preview_key`)만, 원본 `fileUrl`은 내 것일 때만
+- **블록 상점 → 내 블록함**: 듣는 사람은 상점에서 블록을 담고(`user_block`), 편집기에는 **담은 블록만**. 같은 블록 복제는 무료. 무료는 바로 담기, 유료는 **코인으로 사기** — 사기 전엔 앞 30초 맛보기(`preview_key`)만, 원본 `fileUrl`은 내 것일 때만
+- **코인(V16, `coin` 패키지)**: 코인 두 가지 — **받은 코인**(`users.coin_bonus`, 관리자 지급·이벤트, **먼저 씀**, 정산 안 됨) · **충전 코인**(`coin_paid`, 스토어 결제가 열리면 `CoinService.charge(영수증 번호)`로, 아직 화면 없음). 유료 블록 사기 `POST /blocks/{id}/purchase`(모자라면 402 `NOT_ENOUGH_COINS`, 사용자 줄 `FOR UPDATE`로 두 번 안 빠짐), 조합 담기 `?buy=true`(없는 유료 블록 한 번에, `collect.lockedPrice`). 크리에이터 몫 = 충전 코인으로 팔린 것 × `app.coins.creator-share-percent`(70) → `GET /me/earnings`(정산 대기·받음, `krw-per-coin` 100원). 관리자 페이지 **코인** 탭(`components/admin/CoinManager.jsx`): 사람 찾아 코인 주기·회수(받은 코인만) + 크리에이터 "정산 완료로 표시"(송금은 직접). 화면: 웹 확인 창 `components/coin/BuyModal.jsx`(useBuy)·내 정보 `WalletCard`·판매 `EarningsCard`·상점 "내 코인", 앱 `components/coin/askToBuy.ts`(confirm)·내 정보 `WalletCard`·`app/coins.tsx`·블록 판매 탭 `EarningsCard`. 충전 안내 = "앱 출시 때 열려요"
 - **플레이리스트 = 옆으로 누운 레고 블록 두 줄** (왼쪽→오른쪽, 블록 길이 = 소리 길이): **첫째 줄**(`MAIN`, 빈틈없이 순서대로) + **둘째 줄**(`MIX`, 선택, 따로 흐름, `startSeconds` 위치에만·사이는 빈칸·겹침 금지). 이어진 같은 블록은 `repeat`(1~200)로 묶어 저장, 줄별 볼륨, 한 바퀴 최대 10시간
 - **얼마나 들을까요?** `listenMinutes`: 완성본(한 바퀴)을 앱이 그 시간 동안 반복 재생 (긴 파일을 만들지 않음)
 - **편집 중 전체 듣기**: 완성본 없이 앱이 플레이어 2개로 두 줄을 바로 틀어 봄 (`src/audio/useMixPreview.ts`). 저장하면 완성본을 자동으로 만들고 다 되면 자동 재생
@@ -81,7 +82,7 @@ cd asmr-block/e2e && npx playwright test     # 화면 검사 (서버·웹·앱 �
 테스트 계정: `test@asmrblock.com` / `password123` (관리자: `admin@asmrblock.com`)
 
 ## 백엔드 규칙
-- **DB 변경은 새 Flyway 파일로만**: `src/main/resources/db/migration/V{n}__설명.sql`. 이미 있는 V 파일은 절대 수정하지 않는다. (지금 V15까지 있음 → 다음은 V16)
+- **DB 변경은 새 Flyway 파일로만**: `src/main/resources/db/migration/V{n}__설명.sql`. 이미 있는 V 파일은 절대 수정하지 않는다. (지금 V16까지 있음 → 다음은 V17)
 - 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 프로필에서만 실행). 여러 번 실행돼도 안전하게 `ON CONFLICT` 사용.
 - 응답은 항상 `ApiResponse` 형식(`success`, `message`, `data`, `error{code,message}`). 오류는 `ApiException.notFound/badRequest/...` 로 던진다.
 - 요청/응답 DTO는 record로, 기능 패키지의 `*Dtos.java` 안에 모은다. 컨트롤러에서 `Map`으로 응답을 만들지 않는다.
@@ -148,5 +149,6 @@ cd asmr-block/e2e && npx playwright test     # 화면 검사 (서버·웹·앱 �
 - [ ] 안드로이드 APK: 설정·안내 준비 끝(`mobile/eas.json`, README) → 사용자가 Expo 가입 후 `eas build -p android --profile preview` → 실기기로 아이콘·첫 화면·잠금화면 재생 확인. 첫 빌드 뒤 `app.json`의 `extra.eas.projectId`를 저장소에 넣기
 - [ ] 아이폰(TestFlight, 애플 개발자 계정 필요), 광고 SDK(AdMob)로 광고 자리 교체
 - [ ] 파일 저장소 S3/R2 (`StorageService` 구현 추가), 오래된 완성본 정리
-- [ ] 베타 출시 → 수익화: 코인 충전(인앱결제) → 블록 구매 + 구독. **정식 출시 때 `app.beta.quick-login=false`로 "베타로 바로 시작"(손님 계정) 끄기** (웹·앱 버튼은 `GET /auth/beta`가 false면 저절로 숨음)
+- [x] **코인 뼈대(V16)**: 받은/충전 코인 지갑·내역, 코인으로 유료 블록 사기·조합 한 번에 사기, 크리에이터 판매 수익·정산 대기, 관리자 코인 주기·정산 완료 표시
+- [ ] 베타 출시 → 수익화: 코인 충전(인앱결제 → 영수증 확인 → `CoinService.charge`) + 구독. **정식 출시 때 `app.beta.quick-login=false`로 "베타로 바로 시작"(손님 계정) 끄기** (웹·앱 버튼은 `GET /auth/beta`가 false면 저절로 숨음)
 - [ ] 추천: 취향 온보딩 → 재생 기록 기반 추천 → 수면 기록/패턴 → AI 조합 생성

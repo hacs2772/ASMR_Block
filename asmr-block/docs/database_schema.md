@@ -2,8 +2,8 @@
 
 > 최종 수정일: 2026-11-16 / PostgreSQL 16
 >
-> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V15 가 기준입니다.
-> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘 / V5: 트리거 중심 분류(code), 말소리, 녹음한 곳 / V6: 조합 담기 — 복사본의 원본 / V7: 블록 꾸미기(사진·스티커) + 영상 블록 / V8: 스티커 테이블(관리자 페이지에서 추가), 검수 메모 / V9: 의견 보내기 / V10: 베타 지표 — 쓴 날, 오래 들음 / V11: 블록 상점에 보이는지 `block.is_listed` / V12: 완성본을 마지막으로 쓴 때 `audio_render.last_used_at` / V13: 신고·숨기기 / V14: 알림함 / V15: 영어 이름 `*_en` — 트리거·스티커·블록·조합)
+> 실제 테이블 정의는 `backend/src/main/resources/db/migration/` 의 V1 ~ V16 가 기준입니다.
+> (V2: 레고 타임라인 - 반복·시작 시각·믹스 트랙, 카테고리 트리, 완성본 진행률 / V3: 블록 상점·내 블록함, 유료 맛보기, 얼마나 들을까요 / V4: 소분류 아이콘 / V5: 트리거 중심 분류(code), 말소리, 녹음한 곳 / V6: 조합 담기 — 복사본의 원본 / V7: 블록 꾸미기(사진·스티커) + 영상 블록 / V8: 스티커 테이블(관리자 페이지에서 추가), 검수 메모 / V9: 의견 보내기 / V10: 베타 지표 — 쓴 날, 오래 들음 / V11: 블록 상점에 보이는지 `block.is_listed` / V12: 완성본을 마지막으로 쓴 때 `audio_render.last_used_at` / V13: 신고·숨기기 / V14: 알림함 / V15: 영어 이름 `*_en` — 트리거·스티커·블록·조합 / V16: 코인 — 지갑·내역·블록 구매·정산)
 > 서버가 시작될 때 Flyway가 자동 적용합니다. **테이블을 바꿀 때는 `V8__설명.sql` 처럼 새 파일을 추가**하세요 (기존 파일 수정 금지).
 > 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 환경에서만 실행).
 
@@ -158,6 +158,18 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | playlist_id | FK → playlist (CASCADE) | |
 | minutes | INT | 1~600 |
 | listened_at | TIMESTAMP | |
+
+## 코인 (V16)
+
+| 테이블·컬럼 | 설명 |
+|------|------|
+| `users.coin_paid` / `coin_bonus` | 충전 코인(돈 낸 것) / 받은 코인(관리자 지급·이벤트, 먼저 씀). 둘 다 0 이상 (CHECK) |
+| `coin_transaction` | 코인 내역: `type`(GRANT·PURCHASE·CHARGE·REFUND), `paid_amount`·`bonus_amount`(+ 늘어남 / - 줄어듦), `balance_after`, `block_id`·`purchase_id`, `note`(관리자 이유), `external_id`(스토어 영수증 번호, UNIQUE → 같은 결제를 두 번 안 넣음) |
+| `block_purchase` | 블록 구매: `buyer_id`·`block_id`·`creator_id`, `price` = `bonus_coins` + `paid_coins`, `creator_share` = 충전 코인 × 비율(내림), `settlement_id`(정산했으면). (buyer_id, block_id) UNIQUE |
+| `creator_settlement` | 관리자가 "정산 완료로 표시"한 기록: `creator_id`, `coins`, `krw`, `note` |
+
+- 산 블록은 `user_block.source = 'PURCHASE'` (뺄 수 없음)
+- 코인을 바꿀 때는 `users` 그 줄을 `FOR UPDATE`로 잠가서 동시에 두 번 사도 한 번만 빠짐
 
 ## user_block (내 블록함, V3)
 

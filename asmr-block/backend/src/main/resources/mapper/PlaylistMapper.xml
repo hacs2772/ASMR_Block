@@ -29,6 +29,8 @@
                 <result property="stickers" column="block_stickers"/>
                 <result property="stickerPattern" column="block_pattern"/>
                 <result property="videoKey" column="block_video"/>
+                <!-- 조합 담기에서 유료 블록을 살 때 크리에이터 몫·알림에 씀 (V16) -->
+                <result property="uploaderId" column="block_uploader_id"/>
                 <association property="category" javaType="com.asmrblock.category.SoundCategory">
                     <id property="id" column="cat_id"/>
                     <result property="name" column="cat_name"/>
@@ -169,7 +171,7 @@
                b.title AS block_title, b.title_en AS block_title_en, b.file_key, b.duration AS block_duration, b.price AS block_price,
                b.status AS block_status, b.is_active AS block_active,
                b.thumbnail_key AS block_cover, b.stickers AS block_stickers, b.sticker_pattern AS block_pattern,
-               b.video_key AS block_video,
+               b.video_key AS block_video, b.uploader_id AS block_uploader_id,
                c.id AS cat_id, c.name AS cat_name, c.name_en AS cat_name_en, c.code AS cat_code, c.color AS cat_color, c.icon AS cat_icon,
                c.parent_id AS cat_parent_id, pc.name AS cat_parent_name, pc.name_en AS cat_parent_name_en, pc.code AS cat_parent_code
         FROM playlist_layer l

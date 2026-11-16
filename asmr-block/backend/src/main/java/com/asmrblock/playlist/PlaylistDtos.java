@@ -111,11 +111,13 @@ public final class PlaylistDtos {
      * lockedCount: 보는 사람이 아직 갖지 않은 유료 블록 수 (0이어야 한 번에 담을 수 있음)
      */
     public record CollectInfo(Long sourcePlaylistId, OwnerResponse sourceOwner, int collectCount,
-                              Long collectedId, int lockedCount) {
+                              Long collectedId, int lockedCount, int lockedPrice) {
 
-        static CollectInfo of(Playlist playlist, Long collectedId, int lockedCount) {
+        /** lockedCount·lockedPrice = 보는 사람에게 아직 없는 유료 블록 수와 다 사는 데 드는 코인 (V16) */
+        static CollectInfo of(Playlist playlist, Long collectedId, Set<Long> ownedBlockIds) {
             return new CollectInfo(playlist.getSourcePlaylistId(), OwnerResponse.sourceOf(playlist),
-                    playlist.getCollectCount() == null ? 0 : playlist.getCollectCount(), collectedId, lockedCount);
+                    playlist.getCollectCount() == null ? 0 : playlist.getCollectCount(), collectedId,
+                    playlist.lockedCount(ownedBlockIds), playlist.lockedPrice(ownedBlockIds));
         }
     }
 
@@ -188,7 +190,7 @@ public final class PlaylistDtos {
                     new OwnerResponse(playlist.getUserId(), playlist.getOwnerNickname()),
                     playlist.layer(LayerRole.MAIN).map(l -> TrackResponse.from(l, storage, ownedBlockIds)).orElse(null),
                     playlist.layer(LayerRole.MIX).map(l -> TrackResponse.from(l, storage, ownedBlockIds)).orElse(null),
-                    render, CollectInfo.of(playlist, collectedId, playlist.lockedCount(ownedBlockIds)),
+                    render, CollectInfo.of(playlist, collectedId, ownedBlockIds),
                     playlist.getCreatedAt(), playlist.getUpdatedAt());
         }
     }
@@ -210,7 +212,7 @@ public final class PlaylistDtos {
             CollectInfo collect,
             LocalDateTime createdAt) {
 
-        public static PlaylistSummaryResponse from(Playlist playlist, Long collectedId, int lockedCount) {
+        public static PlaylistSummaryResponse from(Playlist playlist, Long collectedId, Set<Long> ownedBlockIds) {
             List<PlaylistBlock> mainBlocks = playlist.layer(LayerRole.MAIN)
                     .map(PlaylistLayer::getBlocks).orElse(List.of());
             return new PlaylistSummaryResponse(
@@ -225,7 +227,7 @@ public final class PlaylistDtos {
                                     : pb.getBlock().getCategory().getColor())
                             .toList(),
                     playlist.getRecentPlays(),
-                    CollectInfo.of(playlist, collectedId, lockedCount),
+                    CollectInfo.of(playlist, collectedId, ownedBlockIds),
                     playlist.getCreatedAt());
         }
     }

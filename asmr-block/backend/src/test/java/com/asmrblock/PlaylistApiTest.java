@@ -250,7 +250,7 @@ class PlaylistApiTest extends IntegrationTest {
         // 샘플 4번: 왁스·비누(유료) → 코인 구매가 열리기 전에는 담을 수 없음
         postJson("/api/v1/playlists/4/collect", "", user)
                 .andExpect(status().isPaymentRequired())
-                .andExpect(jsonPath("$.error.message").value("유료 블록이 2개 들어 있어요. 코인 구매가 열리면 담을 수 있어요."));
+                .andExpect(jsonPath("$.error.message").value("유료 블록이 2개 들어 있어요 (60코인). 사고 담을 수 있어요."));
         postJson("/api/v1/playlists/3/collect", "").andExpect(status().isUnauthorized());
     }
 }

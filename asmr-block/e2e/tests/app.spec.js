@@ -46,6 +46,33 @@ test.describe('앱', () => {
     await expect.poll(async () => (await api(request, 'GET', '/me/notifications/summary', creator.token)).settings.collect).toBe(false);
     expect((await api(request, 'GET', '/me/notifications/summary', creator.token)).unread).toBe(0);
   });
+
+  test('코인으로 유료 블록 사기 → 내 정보 → 코인 내역', async ({ page, request }) => {
+    const admin = await adminToken(request);
+    const creator = await newUser(request, 'appcoin');
+    const creatorId = (await api(request, 'GET', '/users/me', creator.token)).id;
+    const blockId = await uploadApproved(request, creator, admin, '앱 코인 블록', 20);
+    const buyer = await newUser(request, 'appbuy');
+    await api(request, 'POST', '/admin/coins/grant', admin, { userId: (await api(request, 'GET', '/users/me', buyer.token)).id, amount: 50 });
+
+    // 확인 창(웹 미리보기는 브라우저 confirm/alert)은 모두 확인
+    const dialogs = [];
+    page.on('dialog', (d) => { dialogs.push(d.message()); void d.accept(); });
+    await page.goto('/');
+    await page.getByTestId('home-login').click();
+    await page.getByPlaceholder('email@example.com').fill(buyer.email);
+    await page.locator('input[type="password"]').fill(buyer.password);
+    await page.getByTestId('submit').click();
+    await page.waitForURL((u) => !u.pathname.startsWith('/login'));
+    await page.getByTestId('open-profile').first().click();
+    await expect(page.getByTestId('wallet-balance')).toHaveText('50코인');
+
+    await page.goto(`/creator/${creatorId}`);
+    await page.getByTestId(`buy-${blockId}`).click();
+    await expect.poll(async () => (await api(request, 'GET', '/me/wallet', buyer.token)).balance).toBe(30);
+    expect(dialogs[0]).toContain('지금 내 코인 50 → 사고 나면 30');
+    await expect(page.getByTestId(`buy-${blockId}`)).toBeHidden();
+  });
 });
 
 // 앱 영어판: 휴대폰 언어가 영어면 영어로, 내 정보에서 바꾸면 바로 바뀌고 다시 열어도 그대로

@@ -285,7 +285,6 @@
     "shareText": "{{title}} — @{{nickname}}님의 ASMR 블록",
     "add": "블록 담기",
     "inBox": "블록함에 있음",
-    "buySoon": "구매 준비 중",
     "added": "'{{title}}'을 내 블록함에 담았어요",
     "videoTitle": "{{title}} 영상",
     "videoNote": "영상은 소리 없이, 소리는 블록 음원으로 같이 나와요"
@@ -299,7 +298,6 @@
     "loginToCollect": "로그인하고 담기",
     "mine": "내 조합",
     "inMine": "내 조합에 있어요",
-    "lockedBlocks": "유료 블록 {{count}}개 · 준비 중",
     "collected": "내 조합에 담았어요. 블록은 내 블록함에 들어왔어요.",
     "collect": "한 번에 담기"
   },
@@ -748,5 +746,49 @@
     "contact": "궁금한 점은 <mail>{{email}}</mail> 로 보내 주세요.",
     "viewTerms": "이용약관 보기",
     "viewPrivacy": "개인정보 처리방침 보기"
+  },
+  "coin": {
+    "title": "내 코인",
+    "mine": "내 코인 {{count}}",
+    "split": "받은 코인 {{bonus}} · 충전 코인 {{paid}}",
+    "chargeSoon": "코인 충전은 앱 출시 때 열려요. 지금은 이벤트로 받은 코인으로 유료 블록을 살 수 있어요.",
+    "history": "코인 내역",
+    "historyEmpty": "아직 내역이 없어요.",
+    "more": "더 보기",
+    "tx": {
+      "GRANT": "받은 코인",
+      "REVOKE": "회수된 코인",
+      "PURCHASE": "블록 구매",
+      "CHARGE": "충전",
+      "REFUND": "환불"
+    },
+    "txBlock": "블록 구매 · {{title}}",
+    "buy": "{{count}}코인으로 사기",
+    "buying": "사는 중…",
+    "buyTitle": "블록 사기",
+    "buyBody": "‘{{title}}’ 블록을 {{count}}코인으로 살까요? 사면 내 블록함에 담기고 끝까지 들을 수 있어요.",
+    "comboTitle": "블록 사고 조합 담기",
+    "comboBody": "이 조합의 유료 블록 {{blocks}}개를 {{count}}코인으로 사고, 조합을 내 조합에 담을까요?",
+    "comboBuy": "블록 사고 담기 · {{count}}코인",
+    "have": "지금 내 코인",
+    "price": "가격",
+    "after": "사고 나면",
+    "short": "{{count}}코인이 모자라요",
+    "myWallet": "내 코인 보기",
+    "bought": "‘{{title}}’ 블록을 샀어요. 내 블록함에 담았어요.",
+    "comboBought": "블록을 사고 내 조합에 담았어요."
+  },
+  "earn": {
+    "title": "내 판매 수익",
+    "sales": "팔린 횟수",
+    "sold": "팔린 코인",
+    "pending": "정산 대기",
+    "krw": "약 {{krw}}원",
+    "settled": "정산 받음",
+    "rule": "충전 코인으로 팔린 것의 {{percent}}%가 내 몫이에요. 이벤트로 받은 코인으로 팔린 건 정산되지 않아요. 정산(송금)은 정식 출시 뒤에 시작해요.",
+    "recent": "최근 판매",
+    "empty": "아직 팔린 블록이 없어요. 유료 블록이 팔리면 여기에 보여요.",
+    "share": "내 몫 {{count}}코인",
+    "bonusOnly": "이벤트 코인"
   }
 }

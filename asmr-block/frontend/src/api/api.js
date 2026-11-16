@@ -27,6 +27,18 @@ export const libraryApi = {
   remove: (blockId) => data(axiosInstance.delete(`/me/blocks/${blockId}`)),
 };
 
+/** 코인 (V16): 내 코인·내역, 유료 블록 사기, 내 판매 수익 */
+export const coinApi = {
+  /** { balance, paid(충전 코인), bonus(받은 코인) } */
+  wallet: () => data(axiosInstance.get('/me/wallet')),
+  /** 내역 (최근 것부터): { content: [{ type, amount, blockTitle, note, at }], pageInfo } */
+  transactions: (page = 0, size = 20) => data(axiosInstance.get('/me/wallet/transactions', { params: { page, size } })),
+  /** 유료 블록 사기 → { block(이제 내 것), wallet }. 모자라면 402 NOT_ENOUGH_COINS */
+  purchase: (blockId) => data(axiosInstance.post(`/blocks/${blockId}/purchase`)),
+  /** 내 판매 수익 (크리에이터): 팔린 횟수·코인, 내 몫, 정산 대기, 최근 판매 */
+  earnings: () => data(axiosInstance.get('/me/earnings')),
+};
+
 /** 블록 판매 (크리에이터 업로드) */
 export const sellerApi = {
   policy: () => data(axiosInstance.get('/blocks/upload-policy')),
@@ -64,8 +76,8 @@ export const playlistApi = {
   recordPlay: (id) => data(axiosInstance.post(`/playlists/${id}/play`)),
   /** 오래 들음 (듣기 화면이 10분 넘게 재생하면 한 번) → 관리자 통계 */
   listened: (id, minutes) => data(axiosInstance.post(`/playlists/${id}/listened`, { minutes })),
-  /** 조합 한 번에 담기: 블록은 내 블록함에, 조합은 내 조합(비공개 복사본)으로 */
-  collect: (id) => data(axiosInstance.post(`/playlists/${id}/collect`)),
+  /** 조합 한 번에 담기: 블록은 내 블록함에, 조합은 내 조합(비공개 복사본)으로. buy=true면 없는 유료 블록을 코인으로 사고 담음 */
+  collect: (id, buy = false) => data(axiosInstance.post(`/playlists/${id}/collect`, null, { params: buy ? { buy: true } : {} })),
   /** 첫 조합 바로 만들기: 트리거 묶음 코드(tap·rain…) → 무료 블록 담기 + 조합 + 완성본 시작 */
   /** title: 조합 이름 (영어 화면이면 영어로, 없으면 서버가 "나의 첫 팅글 · …") */
   quickStart: (triggers, listenMinutes = 60, title) => data(axiosInstance.post('/playlists/quick-start', { triggers, listenMinutes, title })),
@@ -106,6 +118,11 @@ export const adminApi = {
   reports: (status = 'OPEN') => data(axiosInstance.get('/admin/reports', { params: { status } })),
   /** action HIDE 숨기기 | DISMISS 문제없음 | RESTORE 되돌리기, banOwner = 올린 사람 업로드도 막기 */
   resolveReport: (body) => axiosInstance.post('/admin/reports/resolve', body).then((r) => r.data),
+  /** 코인: 사람 찾기(이메일·닉네임 일부) · 주기(+)/회수(-) · 크리에이터 정산 목록 · 정산 완료 표시 */
+  coinUsers: (q) => data(axiosInstance.get('/admin/coins/users', { params: q ? { q } : {} })),
+  grantCoins: (userId, amount, note) => axiosInstance.post('/admin/coins/grant', { userId, amount, note }).then((r) => r.data),
+  earnings: () => data(axiosInstance.get('/admin/earnings')),
+  settle: (creatorId, note) => axiosInstance.post(`/admin/earnings/${creatorId}/settle`, { note }).then((r) => r.data),
 };
 
 /** 내 알림함: 검수 결과(승인·돌려보냄) · 담김 소식. settings = { review, collect } (끄면 아예 안 만듦) */

@@ -2,6 +2,7 @@ package com.asmrblock.config;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -27,6 +28,7 @@ public record AppProperties(
         @Valid @NotNull Audio audio,
         @Valid @NotNull Render render,
         @Valid @NotNull Shop shop,
+        @Valid @NotNull Coins coins,
         @Valid @NotNull Beta beta,
         @Valid @NotNull Admin admin,
         @Valid @NotNull Upload upload,
@@ -67,6 +69,13 @@ public record AppProperties(
 
     /** 블록 상점: 판매자가 정할 수 있는 최대 가격(코인). 너무 비싸지지 않게 */
     public record Shop(@Min(0) int sellerMaxPrice) {
+    }
+
+    /**
+     * 코인: creatorSharePercent = 충전 코인으로 팔린 블록에서 크리에이터 몫(%), krwPerCoin = 1코인이 몇 원(정산 금액),
+     * grantMax = 관리자가 한 번에 주거나 회수할 수 있는 최대 코인
+     */
+    public record Coins(@Min(0) @Max(100) int creatorSharePercent, @Min(1) int krwPerCoin, @Min(1) int grantMax) {
     }
 
     /**

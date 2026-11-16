@@ -170,7 +170,42 @@ export type CollectInfo = {
   sourceOwner: { id: number; nickname: string } | null;
   collectCount: number;
   collectedId: number | null;
+  /** 보는 사람에게 아직 없는 유료 블록 수 · 다 사는 데 드는 코인 (V16) */
   lockedCount: number;
+  lockedPrice: number;
+};
+
+/** 내 코인 (V16): balance = 쓸 수 있는 전부, paid = 충전한 코인, bonus = 받은 코인(먼저 씀) */
+export type Wallet = { balance: number; paid: number; bonus: number };
+
+/** 코인 내역 한 줄 (amount: + 늘어남 / - 줄어듦) */
+export type CoinTransaction = {
+  id: number;
+  type: 'GRANT' | 'PURCHASE' | 'CHARGE' | 'REFUND';
+  amount: number;
+  paidAmount: number;
+  bonusAmount: number;
+  balanceAfter: number;
+  blockId: number | null;
+  blockTitle: string | null;
+  note: string | null;
+  at: string;
+};
+
+export type Purchase = { block: Block; wallet: Wallet };
+
+/** 내 판매 수익 (크리에이터) */
+export type Earnings = {
+  sharePercent: number;
+  krwPerCoin: number;
+  salesCount: number;
+  soldCoins: number;
+  bonusSoldCoins: number;
+  earnedCoins: number;
+  pendingCoins: number;
+  pendingKrw: number;
+  settledCoins: number;
+  recent: { blockId: number; title: string; price: number; paidCoins: number; share: number; at: string }[];
 };
 
 export type PlaylistDetail = {
