@@ -13,7 +13,8 @@
 - **앱 큰 메뉴**(사용자가 실기기로 써 보고 정함): 아래 탭 5칸 = **홈** · **블록 구매**(블록 상점) · **★추천 조합** · **블록 편집** · **블록 판매**(크리에이터 업로드, 화면 이름 "ASMR 블록 판매"). **내 정보**와 **? 도움말**은 오른쪽 위 아이콘(`components/HeaderActions.tsx`)
   - **홈은 단순하게**: 맨 위 = **내 조합 바로 듣기**(가장 최근 조합 크게 + 나머지, 완성본이 없으면 플레이어가 만들고 자동 재생) → 요즘 팅글 많이 오는 블록 → 광고 자리. 팅글 설명·쓰는 법·단어장은 홈에 두지 않고 `/help`로, 남의 조합은 추천 조합 탭으로
   - **추천 조합 = 조합 한 번에 담기**(V6, `POST /playlists/{id}/collect`): 남의 공개 조합의 블록은 내 블록함에, 조합은 내 조합(비공개 복사본, `source_playlist_id`)으로. 아직 없는 유료 블록이 있으면 402
-  - 트리거 고르기(첫 조합 쌓아 주기)는 블록 편집 탭의 접힌 "트리거로 빠르게 시작"에
+  - 트리거 고르기(첫 조합 쌓아 주기)는 블록 편집 탭의 접힌 "트리거로 빠르게 시작" + **홈에 조합이 없을 때** (`components/tingle/TriggerPicker.tsx`): "이걸로 바로 듣기"(아래 첫 조합 바로 만들기 → 플레이어) / "편집기에서 직접 쌓기"
+- **첫 조합 바로 만들기**(`POST /playlists/quick-start`, `playlist/QuickStartService`): 트리거를 고르면 서버가 무료 블록(트리거마다 2개)을 담고, 트리거를 돌아가며 15분 안팎 비공개 조합을 만들어 완성본까지 시작 → 바로 듣기 화면. 웹은 홈의 "어떤 소리에 팅글이 오세요?"·내 조합이 비었을 때(`components/home/QuickStart.jsx`, 로그인 안 했으면 베타 손님으로 먼저, 얼마나 들을까요 30분~8시간)
 - **처음 사용법 팝업**(사용자 피드백: 처음 온 사람이 쓰는 법을 모름): 움직이는 그림 카드로 ① 블록 담기 → ② 꾹 눌러 끌어서 쌓기 → ③ 얼마나 들을지·저장 → ④ 잠들기 전 듣기 (처음 한 번, 건너뛰기·다음·점). 편집기를 처음 열면 끌기·고치기 2장. 다시 보기 = 앱 ? 도움말 "사용법 다시 보기", 웹 바닥글 "사용법 보기"·팅글 가이드 버튼
   - 내용은 앱 `lib/guide.ts` · 웹 `lib/guide.js`(제목·순서·그림이 같아야 함, 앱 jest `__tests__/guide.test.ts`, 설명은 메뉴 이름만 다름). 그림 = 앱 `components/guide/GuideArt.tsx`(RN Animated) · 웹 `components/guide/GuideArt.jsx`(global.css `.g-*`), "동작 줄이기"면 끝난 모습으로 멈춤
   - 본 적 있음 = `asmr.guide.welcome.v1`·`asmr.guide.editor.v1` (앱 SecureStore `lib/prefs.ts`, 웹 localStorage). 내용을 크게 바꿔 다시 보여 주려면 v2로
@@ -121,6 +122,7 @@ cd asmr-block/mobile && npx tsc --noEmit && npx eslint . && npx jest   # CI와 �
 - [x] 조합 공유: 카톡에 붙이면 조합 이름·블록 그림 미리보기 카드, 누르면 바로 듣기
 - [x] 샘플 숨기기 버튼(V11), 베타 모집 글(`docs/beta_recruit.md`), 안드로이드 APK 빌드 준비
 - [x] 공개 서버 안전장치: 너무 자주 하면 429, 오래된 완성본 정리(V12), 관리자 통계에 디스크
+- [x] 첫 조합 바로 만들기: 트리거만 고르면 조합을 쌓아 바로 듣기 (웹 홈·내 조합, 앱 홈·블록 편집)
 - [x] **거의 0원으로 먼저 보여 주기**(사용자가 고른 방향): asmrblock.com 공개 중 (지금은 사용자의 회사 PC + Cloudflare Tunnel, 옮기는 법은 README "다른 PC로 옮기기"). 남은 것 = 진짜 녹음 블록 채우기 → 베타 모집(`docs/beta_recruit.md`) → 반응 보기. 사업자·스토어 계정·유료 서버는 그 뒤에
 - [ ] 안드로이드 APK: 설정·안내 준비 끝(`mobile/eas.json`, README) → 사용자가 Expo 가입 후 `eas build -p android --profile preview` → 실기기로 아이콘·첫 화면·잠금화면 재생 확인. 첫 빌드 뒤 `app.json`의 `extra.eas.projectId`를 저장소에 넣기
 - [ ] 아이폰(TestFlight, 애플 개발자 계정 필요), 광고 SDK(AdMob)로 광고 자리 교체

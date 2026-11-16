@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import QuickStart from '../components/home/QuickStart';
 import { Link, Navigate } from 'react-router-dom';
 import { IoCreate, IoPlay, IoTrash } from 'react-icons/io5';
 import { toast } from 'react-toastify';
@@ -30,7 +31,10 @@ function MyCombosPage() {
       </div>
       <div className="mt-8">
         {combos === null ? <BlockLoader /> : combos.length === 0 ? (
-          <p className="card p-8 text-center text-muted">아직 만든 조합이 없어요. 블록을 쌓거나 추천 조합을 한 번에 담아 오세요.</p>
+          <div className="space-y-4">
+            <p className="card p-6 text-center text-sm text-muted">아직 만든 조합이 없어요. 트리거만 고르면 첫 조합을 바로 쌓아 드려요.</p>
+            <QuickStart title="첫 조합을 바로 쌓아 볼까요?" />
+          </div>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {combos.map((c) => (

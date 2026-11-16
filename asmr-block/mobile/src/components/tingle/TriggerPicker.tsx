@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { BlockLoader } from '@/components/BlockLoader';
-import { catalogApi, libraryApi } from '@/api/endpoints';
+import { catalogApi, libraryApi, playlistApi } from '@/api/endpoints';
 import type { Block } from '@/api/types';
 import { Button, Chip } from '@/components/ui';
 import { notify } from '@/lib/dialog';
@@ -44,6 +44,7 @@ export function TriggerPicker() {
   const all = useQuery({ queryKey: ['blocks', 'picker'], queryFn: () => catalogApi.blocks({ size: 100, sort: 'popular' }) });
   const [picked, setPicked] = useState<string[]>(FIRST_PICKS);
   const [starting, setStarting] = useState(false);
+  const [listening, setListening] = useState(false);
 
   const blocks = all.data?.content ?? [];
   const groups = (categories.data ?? []).filter((g) => g.code && blocks.some((b) => b.category?.groupCode === g.code));
@@ -79,6 +80,23 @@ export function TriggerPicker() {
     } finally {
       setStarting(false);
     }
+  };
+
+  /** 바로 듣기: 서버가 무료 블록을 담고 조합을 쌓아 완성본까지 시작 → 플레이어가 다 되면 재생 */
+  const listenNow = async () => {
+    if (!signedIn) return router.push('/login');
+    setListening(true);
+    try {
+      const combo = await playlistApi.quickStart(picked, 60);
+      void queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      void queryClient.invalidateQueries({ queryKey: ['library'] });
+      router.push({ pathname: '/player/[id]', params: { id: String(combo.id) } });
+    } catch (e) {
+      notify('조합을 쌓지 못했어요', (e as Error).message);
+    } finally {
+      setListening(false);
+    }
+    return undefined;
   };
 
   if (all.isLoading || categories.isLoading) return <BlockLoader size="small" style={{ marginVertical: space.lg }} />;
@@ -117,8 +135,9 @@ export function TriggerPicker() {
                 <Text style={[styles.pickPrice, b.price === 0 && { color: colors.success }]}>{b.price > 0 ? `${b.price}코인` : '무료'}</Text>
               </View>
             ))}
-            <Button title={signedIn ? '이걸로 쌓기 시작' : '로그인하고 쌓기 시작'} icon="layers" onPress={start} loading={starting}
-              style={{ marginTop: space.sm }} testID="pick-start" />
+            <Button title={signedIn ? '이걸로 바로 듣기 (1시간)' : '로그인하고 바로 듣기'} icon="play" onPress={() => void listenNow()}
+              loading={listening} style={{ marginTop: space.sm }} testID="pick-listen" />
+            <Button title="편집기에서 직접 쌓기" icon="layers" variant="secondary" onPress={start} loading={starting} testID="pick-start" />
             {hasPaid && <Text style={styles.note}>유료 블록은 지금은 30초만 들어 볼 수 있어서, 무료 블록만으로 시작해요.</Text>}
           </>
         )}

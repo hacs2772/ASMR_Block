@@ -9,6 +9,7 @@ import BlockProductCard from '../components/block/BlockProductCard';
 import { AppBadges } from '../components/common/ComingSoon';
 import { useFirstRunGuide } from '../components/guide/GuideModal';
 import AssembleButton from '../components/home/AssembleButton';
+import QuickStart from '../components/home/QuickStart';
 import ComboCard from '../components/playlist/ComboCard';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
 import { TRIGGER_COLOR } from '../lib/blocks';
@@ -55,17 +56,10 @@ function HomePage() {
         <HeroBoard />
       </section>
 
-      {/* ---------- 트리거 바로 가기 ---------- */}
+      {/* ---------- 첫 조합 바로 만들기: 트리거를 고르면 바로 쌓아서 듣기 ---------- */}
       {groups.length > 0 && (
         <section className="page pb-6">
-          <div className="flex flex-wrap gap-2">
-            <span className="mr-1 self-center text-sm font-bold text-muted">어떤 소리에 팅글이 오세요?</span>
-            {groups.map((g) => (
-              <Link key={g.id} to={`/shop?group=${g.id}`} className="chip" data-testid={`home-trigger-${g.code}`}>
-                <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: g.color }} />{g.name}
-              </Link>
-            ))}
-          </div>
+          <QuickStart groups={groups} />
         </section>
       )}
 

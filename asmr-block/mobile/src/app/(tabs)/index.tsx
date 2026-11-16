@@ -9,6 +9,7 @@ import { usePlayer } from '@/audio/PlayerProvider';
 import { usePreview } from '@/audio/usePreview';
 import { AdSlot } from '@/components/AdSlot';
 import { BlockCard } from '@/components/BlockCard';
+import { TriggerPicker } from '@/components/tingle/TriggerPicker';
 import { BlockLoader } from '@/components/BlockLoader';
 import { PlaylistCard } from '@/components/PlaylistCard';
 import { Button } from '@/components/ui';
@@ -58,8 +59,9 @@ export default function HomeScreen() {
         <BlockLoader style={{ marginVertical: space.lg }} />
       ) : !first ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>아직 만든 조합이 없어요</Text>
-          <Text style={styles.emptyText}>블록을 직접 쌓거나, 다른 사람 조합을 한 번에 담아 와 보세요.</Text>
+          <Text style={styles.emptyTitle}>어떤 소리에 팅글이 오세요?</Text>
+          <Text style={styles.emptyText}>트리거만 고르면 첫 조합을 바로 쌓아서 들려드려요. 블록을 직접 쌓거나 다른 사람 조합을 담아 와도 돼요.</Text>
+          <TriggerPicker />
           <View style={styles.emptyActions}>
             <Button title="새로 만들기" icon="add" onPress={() => router.push({ pathname: '/editor/[id]', params: { id: 'new' } })} style={{ flex: 1 }} />
             <Button title="추천 조합" icon="star" variant="secondary" onPress={() => router.push('/combos')} style={{ flex: 1 }} />

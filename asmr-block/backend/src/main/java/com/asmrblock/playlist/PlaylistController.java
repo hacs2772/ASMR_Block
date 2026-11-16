@@ -9,6 +9,7 @@ import com.asmrblock.playlist.PlaylistDtos.ListenedResponse;
 import com.asmrblock.playlist.PlaylistDtos.PlaylistDetailResponse;
 import com.asmrblock.playlist.PlaylistDtos.PlaylistSaveRequest;
 import com.asmrblock.playlist.PlaylistDtos.PlaylistSummaryResponse;
+import com.asmrblock.playlist.PlaylistDtos.QuickStartRequest;
 import com.asmrblock.playlist.PlaylistDtos.VisibilityRequest;
 import com.asmrblock.render.RenderService;
 import com.asmrblock.storage.StorageService;
@@ -28,6 +29,7 @@ public class PlaylistController {
     private final PlaylistService playlistService;
     private final RenderService renderService;
     private final StorageService storageService;
+    private final QuickStartService quickStartService;
 
     // 내 플레이리스트
     @GetMapping
@@ -68,6 +70,14 @@ public class PlaylistController {
     public ApiResponse<PlaylistDetailResponse> create(@AuthenticationPrincipal Long userId,
                                                       @Valid @RequestBody PlaylistSaveRequest request) {
         return ApiResponse.ok("플레이리스트가 생성되었습니다.", detail(playlistService.create(userId, request), userId));
+    }
+
+    // 첫 조합 바로 만들기: 트리거를 고르면 무료 블록을 담고 조합을 쌓아 완성본까지 시작 → 듣기 화면으로
+    @PostMapping("/quick-start")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<PlaylistDetailResponse> quickStart(@AuthenticationPrincipal Long userId,
+                                                          @Valid @RequestBody QuickStartRequest request) {
+        return ApiResponse.ok("첫 조합을 쌓았어요.", detail(quickStartService.start(userId, request), userId));
     }
 
     @PutMapping("/{playlistId}")

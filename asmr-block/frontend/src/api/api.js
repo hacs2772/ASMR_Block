@@ -62,6 +62,8 @@ export const playlistApi = {
   listened: (id, minutes) => data(axiosInstance.post(`/playlists/${id}/listened`, { minutes })),
   /** 조합 한 번에 담기: 블록은 내 블록함에, 조합은 내 조합(비공개 복사본)으로 */
   collect: (id) => data(axiosInstance.post(`/playlists/${id}/collect`)),
+  /** 첫 조합 바로 만들기: 트리거 묶음 코드(tap·rain…) → 무료 블록 담기 + 조합 + 완성본 시작 */
+  quickStart: (triggers, listenMinutes = 60) => data(axiosInstance.post('/playlists/quick-start', { triggers, listenMinutes })),
   requestRender: (id) => data(axiosInstance.post(`/playlists/${id}/render`)),
   render: (id) => data(axiosInstance.get(`/playlists/${id}/render`)),
 };

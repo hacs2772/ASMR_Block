@@ -108,6 +108,9 @@ export const playlistApi = {
   listened: (id: number, minutes: number) => api<{ counted: boolean }>(`/playlists/${id}/listened`, { method: 'POST', body: { minutes } }),
   /** 조합 한 번에 담기: 블록은 내 블록함에, 조합은 내 조합(비공개)으로 복사 → 복사본 상세 */
   collect: (id: number) => api<PlaylistDetail>(`/playlists/${id}/collect`, { method: 'POST' }),
+  /** 첫 조합 바로 만들기: 트리거 묶음 코드(tap·rain…) → 무료 블록 담기 + 조합 + 완성본 시작 */
+  quickStart: (triggers: string[], listenMinutes = 60) =>
+    api<PlaylistDetail>('/playlists/quick-start', { method: 'POST', body: { triggers, listenMinutes } }),
   requestRender: (id: number) => api<Render>(`/playlists/${id}/render`, { method: 'POST' }),
   render: (id: number) => api<Render>(`/playlists/${id}/render`),
 };

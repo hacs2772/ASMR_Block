@@ -241,4 +241,18 @@ public final class PlaylistDtos {
     /** counted: 새로 셌으면 true (같은 조합·같은 시간은 6시간에 한 번) */
     public record ListenedResponse(boolean counted) {
     }
+
+    /**
+     * 첫 조합 바로 만들기: 트리거 묶음 코드(tap·rain…) 1~5개 → 무료 블록을 담고 조합을 쌓아 완성본까지 바로 시작.
+     * listenMinutes 생략 시 60분
+     */
+    public record QuickStartRequest(
+            @jakarta.validation.constraints.NotEmpty(message = "트리거를 하나 이상 골라 주세요.")
+            @Size(max = 5, message = "트리거는 5개까지 고를 수 있어요.")
+            List<@NotBlank(message = "트리거가 비어 있어요.") String> triggers,
+
+            @Min(value = 0, message = "재생 시간은 0분 이상이어야 합니다.")
+            @Max(value = MAX_LISTEN_MINUTES, message = "재생 시간은 최대 10시간까지 고를 수 있습니다.")
+            Integer listenMinutes) {
+    }
 }
