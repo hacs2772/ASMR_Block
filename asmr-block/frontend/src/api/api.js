@@ -12,8 +12,11 @@ export const catalogApi = {
   categories: () => data(axiosInstance.get('/categories')),
   /** 요즘 팅글 많이 오는 블록 (최근 7일 재생 수) */
   trending: (size = 8) => data(axiosInstance.get('/blocks/trending', { params: { size } })),
-  /** params: categoryId, free, talkType, keyword, sort(latest|popular), page, size */
+  /** params: categoryId, free, talkType, keyword, uploaderId(크리에이터), sort(latest|popular), page, size */
   blocks: (params = {}) => data(axiosInstance.get('/blocks', { params: { size: 48, ...params } })),
+  block: (id) => data(axiosInstance.get(`/blocks/${id}`)),
+  /** 크리에이터 머리: 닉네임 · 블록 수 · 담은 사람 · 들은 횟수 · 많이 올린 트리거 */
+  creator: (id) => data(axiosInstance.get(`/creators/${id}`)),
 };
 
 /** 내 블록함 (상점에서 담은 블록, 편집기에는 이것만) */

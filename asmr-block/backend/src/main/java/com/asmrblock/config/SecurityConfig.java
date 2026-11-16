@@ -56,7 +56,9 @@ public class SecurityConfig {
                     "/api/v1/blocks", "/api/v1/blocks/*",
                     "/api/v1/playlists/public",
                     "/api/v1/playlists/*", "/api/v1/playlists/*/render",  // 공개 플레이리스트 (비공개는 서비스에서 막음)
-                    "/s/*", "/s/*/card.png"                                 // 공유 링크 미리보기 (공개 조합만 카드)
+                    "/api/v1/creators/*",                                   // 크리에이터 페이지
+                    "/s/*", "/s/*/card.png",                                // 공유 링크 미리보기 (공개 조합만 카드)
+                    "/s/b/*", "/s/b/*/card.png", "/s/c/*", "/s/c/*/card.png" // 블록·크리에이터 공유 링크
                 ).permitAll()
                 .requestMatchers(
                     "/files/**",                    // 음원 파일

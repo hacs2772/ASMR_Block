@@ -1,0 +1,26 @@
+import { toast } from 'react-toastify';
+
+/** 공유 링크 (서버가 카톡 미리보기 카드를 만들어 줌): 조합 /s/{id}, 블록 /s/b/{id}, 크리에이터 /s/c/{id} */
+export const shareLinks = {
+  combo: (id) => `${window.location.origin}/s/${id}`,
+  block: (id) => `${window.location.origin}/s/b/${id}`,
+  creator: (id) => `${window.location.origin}/s/c/${id}`,
+};
+
+/** 휴대폰이면 공유 창, 아니면 링크 복사 (복사도 안 되면 직접 복사하게 보여 줌) */
+export async function shareLink(title, url, text = `${title} — ASMR Block`) {
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text, url });
+      return;
+    } catch (e) {
+      if (e?.name === 'AbortError') return; // 공유 창을 닫음
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    toast.success('링크를 복사했어요. 카톡에 붙여 넣으면 미리보기 카드가 나와요.');
+  } catch {
+    window.prompt('이 링크를 복사해서 보내 주세요', url);
+  }
+}

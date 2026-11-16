@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { IoCheckmarkCircle, IoCube, IoLocation, IoPause, IoPlay, IoVideocam } from 'react-icons/io5';
+import { Link, useNavigate } from 'react-router-dom';
+import { IoCheckmarkCircle, IoCube, IoLocation, IoPause, IoPlay, IoShareSocialOutline, IoVideocam } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { errorMessage, libraryApi } from '../../api/api';
 import { usePreviewStore } from '../../hooks/usePreview';
 import { colorOf, formatDuration, iconOf, noteOf, TALK_LABEL } from '../../lib/blocks';
+import { shareLink, shareLinks } from '../../lib/share';
 import useAuthStore from '../../store/authStore';
 import Brick from '../brand/Brick';
 import { useVideoModal } from './VideoModal';
@@ -15,9 +16,10 @@ export const productBrickWidth = (seconds) => Math.round(Math.min(178, Math.max(
 
 /**
  * 블록 상품 카드 (앱 BlockCard와 같은 모양): 레고 바닥판 위에 블록 하나 + 가격표 + 듣기,
- * 아래에 이름 · 트리거 · 말소리 · @크리에이터 · 녹음한 곳 · 블록 담기
+ * 아래에 이름 · 트리거 · 말소리 · @크리에이터(누르면 크리에이터 페이지) · 녹음한 곳 · 공유·신고 · 블록 담기.
+ * hideCreator: 크리에이터 페이지 안에서는 @닉네임을 빼고 녹음한 곳만
  */
-function BlockProductCard({ block, rank, onCollected, preview = false }) {
+function BlockProductCard({ block, rank, onCollected, preview = false, hideCreator = false }) {
   const playingId = usePreviewStore((s) => s.playingId);
   const toggle = usePreviewStore((s) => s.toggle);
   const playing = playingId === block.id;
@@ -66,9 +68,18 @@ function BlockProductCard({ block, rank, onCollected, preview = false }) {
         <p className="text-xs text-muted">{group} · {TALK_LABEL[block.talkType || 'NONE']}</p>
         <div className="flex items-center gap-2">
           <p className="flex min-w-0 flex-1 items-center gap-1 truncate text-xs text-faint">
-            @{block.uploader?.nickname}
-            {block.recordedPlace && <><span>·</span><IoLocation size={11} className="shrink-0" /><span className="truncate">{block.recordedPlace}</span></>}
+            {!hideCreator && (block.uploader?.id && !preview
+              ? <Link to={`/creator/${block.uploader.id}`} className="truncate hover:text-pink-text" data-testid={`creator-link-${block.id}`}>@{block.uploader.nickname}</Link>
+              : <span className="truncate">@{block.uploader?.nickname}</span>)}
+            {block.recordedPlace && <>{!hideCreator && <span>·</span>}<IoLocation size={11} className="shrink-0" /><span className="truncate">{block.recordedPlace}</span></>}
           </p>
+          {!preview && (
+            <button type="button" aria-label={`${block.title} 공유하기`} data-testid={`share-block-${block.id}`}
+              onClick={() => shareLink(block.title, shareLinks.block(block.id), `${block.title} — @${block.uploader?.nickname ?? ''}님의 ASMR 블록`)}
+              className="shrink-0 p-0.5 text-faint hover:text-ink">
+              <IoShareSocialOutline size={13} />
+            </button>
+          )}
           {canReport && (
             <ReportButton target={{ type: 'BLOCK', id: block.id, title: block.title }} owner={block.uploader?.id ? block.uploader : null}
               label="" className="shrink-0 p-0.5" testId={`report-block-${block.id}`} />

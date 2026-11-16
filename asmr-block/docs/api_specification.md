@@ -187,6 +187,7 @@
 | Method | URL | 인증 | 설명 |
 |------|------|------|------|
 | GET | `/blocks` | - (로그인하면 `owned` 표시) | 목록 (승인된 블록만) |
+| GET | `/creators/{userId}` | - | **크리에이터 페이지 머리**: `{ "id", "nickname", "blockCount", "collectorCount", "playCount", "triggers": ["탭핑·타건", …], "since" }` — 블록 수는 상점에 보이는 승인 블록, `collectorCount` = 내 블록함에 담은 다른 사람 수(본인 빼고), `triggers` = 많이 올린 트리거 묶음 최대 3개. 없거나 탈퇴한 사람은 404. 블록 목록은 `GET /blocks?uploaderId={id}` |
 | GET | `/blocks/trending` | - | **요즘 뜨는 소리**: 최근 `days`(기본 7)일 재생 수 순, `size` 기본 10 → `recentPlays` 포함. 재생 기록이 모자라면 많이 들은 순 → 새로 올라온 순으로 채움(`recentPlays` 없음) |
 | GET | `/blocks/upload-policy` | - | **업로드 규칙**: `{ "maxPrice": 100, "maxFileMb": 50, "minSeconds": 10, "maxSeconds": 1200, "extensions": [...], "maxVideoMb": 200, "videoExtensions": [...], "maxImageMb": 10, "imageExtensions": [...], "stickers": ["flagjp", ...], "patterns": ["dots", "lines", "none"] }` |
 | GET | `/blocks/{id}` | - | 상세 (승인 전이면 404) |
@@ -194,7 +195,7 @@
 | GET | `/me/uploads` | 필요 | **내가 올린 블록** (검수 상태 무관, 최신순, 페이지) |
 | POST | `/blocks/{id}/play` | 필요 | 재생 기록 |
 
-**목록 쿼리**: `categoryId` (대분류면 그 아래 소분류까지), `free=true|false` (무료만 / 유료만), `talkType=NONE|WHISPER|TALK` (**노토킹만** / 속삭임만 / 말하기만), `tagIds=1,2` (하나라도 달린 블록), `keyword` (이름 · 녹음한 곳 · 크리에이터 닉네임), `sort=latest|popular`, `page`, `size`
+**목록 쿼리**: `categoryId` (대분류면 그 아래 소분류까지), `free=true|false` (무료만 / 유료만), `talkType=NONE|WHISPER|TALK` (**노토킹만** / 속삭임만 / 말하기만), `tagIds=1,2` (하나라도 달린 블록), `keyword` (이름 · 녹음한 곳 · 크리에이터 닉네임), `uploaderId` (그 크리에이터가 올린 블록만, 크리에이터 페이지), `sort=latest|popular`, `page`, `size`
 
 **BlockResponse**
 ```json
@@ -552,7 +553,7 @@
 
 ---
 
-## 조합 공유 링크 (카톡 미리보기)
+## 공유 링크 (카톡 미리보기) — 조합 · 블록 · 크리에이터
 
 API(`/api/v1`) 밖의 주소예요. 웹 nginx가 `/s/`를 백엔드로 넘겨요. 로그인 없이 열림.
 
@@ -560,9 +561,14 @@ API(`/api/v1`) 밖의 주소예요. 웹 nginx가 `/s/`를 백엔드로 넘겨요
 |------|------|------|
 | GET | `/s/{playlistId}` | 미리보기용 작은 HTML: og·twitter 태그(제목 `조합 이름 · ASMR Block`, 설명 `블록 7개 · 한 바퀴 24분 · 탭핑·빗소리 \| @닉네임님이 쌓은 나만의 팅글`, 그림 `/s/{id}/card.png?v=수정시각`) + 사람은 바로 `/listen/{id}`로 넘어감. **공개 조합만** 조합 정보, 비공개·없는 조합은 사이트 기본 카드(`/og-image.png`). 10분 캐시 |
 | GET | `/s/{playlistId}/card.png` | 카드 그림 1200×630 PNG: 밤 바탕 + 레고 바닥판 위 그 조합의 블록 두 줄(색 = 트리거, 길이 = 소리 길이, 글자 없음). 공개 조합만(아니면 404), 1시간 캐시 |
+| GET | `/s/b/{blockId}` | **블록**: 제목 `블록 이름 · ASMR Block`, 설명 `탭핑·타건 · 3분 20초 · 노토킹 \| @닉네임 · 녹음한 곳` → 사람은 **크리에이터 페이지에서 그 블록이 맨 위**(`/creator/{올린 사람}?block={id}`). 승인된 블록만, 아니면 기본 카드(→ `/shop`) |
+| GET | `/s/b/{blockId}/card.png` | 블록 하나를 크게 (길이 = 소리 길이, 겉면 홈 한 칸 = 1분). 승인 블록만(아니면 404) |
+| GET | `/s/c/{userId}` | **크리에이터**: 제목 `@닉네임의 ASMR 블록 · ASMR Block`, 설명 `블록 3개 · 탭핑·바스락 \| 좋아하는 트리거만 골라 쌓는 나만의 ASMR` → `/creator/{id}`. 없는 사람이면 기본 카드 |
+| GET | `/s/c/{userId}/card.png` | 그 사람이 올린 블록들을 바닥판 가운데 줄지어 (최대 3줄, 블록이 없으면 로고 블록 셋). 없는 사람 404 |
 
 - 사이트 주소 = 설정 `app.site.url`(공개용 `APP_SITE_URL` = `PUBLIC_URL`), 비우면 요청 주소 기준
 - 웹 듣기 화면·앱 플레이어의 **공유하기**: 휴대폰은 공유 창, 아니면 링크 복사. 담아 온 복사본이면 원래 조합 링크, 내 비공개 조합이면 "공개로 바꾸고 공유할까요?"를 먼저 물어봄
+- 블록 카드의 작은 공유 아이콘 = `/s/b/{id}`, 크리에이터 페이지의 공유하기 = `/s/c/{id}` (웹 `lib/share.js` · 앱 `lib/share.ts`)
 
 ---
 

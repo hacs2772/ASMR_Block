@@ -1,7 +1,13 @@
 package com.asmrblock.share;
 
+import com.asmrblock.block.Block;
+import com.asmrblock.block.BlockMapper;
+import com.asmrblock.block.BlockSearchCondition;
+import com.asmrblock.block.BlockStatus;
 import com.asmrblock.common.ApiException;
 import com.asmrblock.config.AppProperties;
+import com.asmrblock.creator.CreatorDtos.CreatorResponse;
+import com.asmrblock.creator.CreatorService;
 import com.asmrblock.playlist.Playlist;
 import com.asmrblock.playlist.PlaylistBlock;
 import com.asmrblock.playlist.PlaylistLayer;
@@ -13,12 +19,14 @@ import org.springframework.web.util.HtmlUtils;
 
 import java.time.ZoneOffset;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 /**
  * 조합 공유 링크 (https://asmrblock.com/s/{id}): 카톡·문자에 붙이면 미리보기 카드(조합 이름 · 블록 그림 · 한 줄 설명)가 나오고,
- * 사람이 누르면 바로 듣기 화면(/listen/{id})으로 넘어감. 공개 조합만 카드를 만들고, 아니면 사이트 기본 카드
+ * 사람이 누르면 바로 듣기 화면(/listen/{id})으로 넘어감. 공개 조합만 카드를 만들고, 아니면 사이트 기본 카드.
+ * 블록(/s/b/{id}) → 크리에이터 페이지에서 그 블록을 맨 위에, 크리에이터(/s/c/{id}) → 크리에이터 페이지
  */
 @Service
 @RequiredArgsConstructor
@@ -26,6 +34,11 @@ public class ShareService {
 
     private final PlaylistService playlistService;
     private final AppProperties properties;
+    private final BlockMapper blockMapper;
+    private final CreatorService creatorService;
+
+    private static final String DEFAULT_TITLE = "ASMR Block — 나만의 팅글을 블록으로";
+    private static final String DEFAULT_DESCRIPTION = "좋아하는 트리거 블록만 골라 딸깍 이어 붙이는, 나만의 ASMR 만들기";
 
     /** 공개 조합 (아니거나 없으면 비어 있음) */
     public Optional<Playlist> publicPlaylist(Long id) {
@@ -42,29 +55,72 @@ public class ShareService {
         return ShareCardRenderer.render(playlist);
     }
 
-    /** 미리보기용 작은 HTML (og 태그) + 바로 듣기 화면으로 넘기기 */
+    /** 조합: 미리보기용 작은 HTML (og 태그) + 바로 듣기 화면으로 넘기기 */
     public String page(Long id) {
         String site = siteUrl();
-        String listen = site + "/listen/" + id;
         Optional<Playlist> found = publicPlaylist(id);
-        String title;
-        String description;
-        String image;
-        if (found.isPresent()) {
-            Playlist p = found.get();
-            title = p.getTitle() + " · ASMR Block";
-            description = describe(p);
-            long version = p.getUpdatedAt() == null ? 0 : p.getUpdatedAt().toEpochSecond(ZoneOffset.UTC);
-            image = site + "/s/" + id + "/card.png?v=" + version;
-        } else {
-            title = "ASMR Block — 나만의 팅글을 블록으로";
-            description = "좋아하는 트리거 블록만 골라 딸깍 이어 붙이는, 나만의 ASMR 만들기";
-            image = site + "/og-image.png";
+        if (found.isEmpty()) {
+            return html(DEFAULT_TITLE, DEFAULT_DESCRIPTION, site + "/og-image.png", site + "/listen/" + id, site + "/s/" + id, "조합 들으러 가기");
         }
+        Playlist p = found.get();
+        long version = p.getUpdatedAt() == null ? 0 : p.getUpdatedAt().toEpochSecond(ZoneOffset.UTC);
+        return html(p.getTitle() + " · ASMR Block", describe(p), site + "/s/" + id + "/card.png?v=" + version,
+                site + "/listen/" + id, site + "/s/" + id, "조합 들으러 가기");
+    }
+
+    /** 공유할 수 있는 블록 (승인·활성). 아니면 비어 있음 */
+    public Optional<Block> sharedBlock(Long id) {
+        return blockMapper.findById(id).filter(b -> b.getStatus() == BlockStatus.APPROVED);
+    }
+
+    /** 블록: 카드 = 큰 블록 하나, 누르면 크리에이터 페이지에서 그 블록이 맨 위에 */
+    public String blockPage(Long id) {
+        String site = siteUrl();
+        Optional<Block> found = sharedBlock(id);
+        if (found.isEmpty()) {
+            return html(DEFAULT_TITLE, DEFAULT_DESCRIPTION, site + "/og-image.png", site + "/shop", site + "/s/b/" + id, "블록 상점으로 가기");
+        }
+        Block b = found.get();
+        long version = b.getUpdatedAt() == null ? 0 : b.getUpdatedAt().toEpochSecond(ZoneOffset.UTC);
+        return html(b.getTitle() + " · ASMR Block", describeBlock(b), site + "/s/b/" + id + "/card.png?v=" + version,
+                site + "/creator/" + b.getUploaderId() + "?block=" + id, site + "/s/b/" + id, "블록 들으러 가기");
+    }
+
+    public byte[] blockCard(Long id) {
+        return ShareCardRenderer.renderBlock(sharedBlock(id).orElseThrow(() -> ApiException.notFound("공유할 수 없는 블록이에요.")));
+    }
+
+    /** 크리에이터: 카드 = 그 사람이 올린 블록들, 누르면 크리에이터 페이지 */
+    public String creatorPage(Long userId) {
+        String site = siteUrl();
+        String target = site + "/creator/" + userId;
+        try {
+            CreatorResponse c = creatorService.get(userId);
+            StringBuilder d = new StringBuilder("블록 ").append(c.blockCount()).append("개");
+            if (!c.triggers().isEmpty()) {
+                d.append(" · ").append(String.join("·", c.triggers()));
+            }
+            d.append(" | 좋아하는 트리거만 골라 쌓는 나만의 ASMR");
+            return html("@" + c.nickname() + "의 ASMR 블록 · ASMR Block", d.toString(),
+                    site + "/s/c/" + userId + "/card.png?v=" + c.blockCount(), target, site + "/s/c/" + userId, "블록 보러 가기");
+        } catch (ApiException e) {
+            return html(DEFAULT_TITLE, DEFAULT_DESCRIPTION, site + "/og-image.png", site + "/shop", site + "/s/c/" + userId, "블록 상점으로 가기");
+        }
+    }
+
+    public byte[] creatorCard(Long userId) {
+        creatorService.get(userId); // 없는 사람이면 404
+        List<Block> blocks = blockMapper.search(BlockSearchCondition.builder()
+                .uploaderId(userId).status(BlockStatus.APPROVED).listedOnly(true).sort("popular").offset(0).limit(24).build());
+        return ShareCardRenderer.renderCreator(blocks);
+    }
+
+    /** og·twitter 태그 + 사람은 바로 target으로 넘김 */
+    private String html(String title, String description, String image, String target, String self, String linkText) {
         String t = escape(title);
         String d = escape(description);
-        String l = escape(listen);
-        String u = escape(site + "/s/" + id);
+        String l = escape(target);
+        String u = escape(self);
         String i = escape(image);
         return """
                 <!doctype html>
@@ -90,10 +146,40 @@ public class ShareService {
                 <meta http-equiv="refresh" content="0;url=%3$s">
                 <style>body{margin:0;background:#0A0A0F;color:#ECECF1;font-family:sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center}a{color:#FF85AF}</style>
                 </head><body>
-                <p><a href="%3$s">조합 들으러 가기</a></p>
+                <p><a href="%3$s">%7$s</a></p>
                 <script>location.replace(%6$s)</script>
                 </body></html>
-                """.formatted(t, d, l, u, i, jsString(listen));
+                """.formatted(t, d, l, u, i, jsString(target), escape(linkText));
+    }
+
+    /** "탭핑 · 3분 20초 · 노토킹 | @닉네임 · 도쿄 신주쿠역 앞" */
+    static String describeBlock(Block b) {
+        StringBuilder sb = new StringBuilder();
+        if (b.getCategory() != null) {
+            String group = b.getCategory().getParentName() != null ? b.getCategory().getParentName() : b.getCategory().getName();
+            if (group != null) {
+                sb.append(group).append(" · ");
+            }
+        }
+        int seconds = b.getDuration() == null ? 0 : b.getDuration();
+        sb.append(seconds / 60).append("분");
+        if (seconds % 60 > 0) {
+            sb.append(" ").append(seconds % 60).append("초");
+        }
+        if (b.getTalkType() != null) {
+            sb.append(" · ").append(switch (b.getTalkType()) {
+                case NONE -> "노토킹";
+                case WHISPER -> "속삭임";
+                case TALK -> "말하기";
+            });
+        }
+        if (b.getUploaderNickname() != null) {
+            sb.append(" | @").append(b.getUploaderNickname());
+        }
+        if (b.getRecordedPlace() != null && !b.getRecordedPlace().isBlank()) {
+            sb.append(" · ").append(b.getRecordedPlace());
+        }
+        return sb.toString();
     }
 
     /** "블록 7개 · 한 바퀴 24분 · 탭핑·빗소리·귓속말 | @닉네임님이 쌓은 나만의 팅글" */

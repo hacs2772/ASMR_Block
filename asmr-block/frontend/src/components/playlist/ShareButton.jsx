@@ -2,27 +2,12 @@ import React, { useState } from 'react';
 import { IoShareSocial } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { errorMessage, playlistApi } from '../../api/api';
+import { shareLink as share, shareLinks } from '../../lib/share';
 
 /** 공유 링크: /s/{id} → 카톡·문자에 붙이면 조합 이름·블록 그림 미리보기 카드, 누르면 바로 듣기 */
-export const shareUrl = (id) => `${window.location.origin}/s/${id}`;
+export const shareUrl = shareLinks.combo;
 
-async function shareLink(title, url) {
-  const text = `${title} — ASMR Block에서 쌓은 나만의 팅글 조합`;
-  if (navigator.share) {
-    try {
-      await navigator.share({ title, text, url });
-      return;
-    } catch (e) {
-      if (e?.name === 'AbortError') return; // 공유 창을 닫음
-    }
-  }
-  try {
-    await navigator.clipboard.writeText(url);
-    toast.success('링크를 복사했어요. 카톡에 붙여 넣으면 미리보기 카드가 나와요.');
-  } catch {
-    window.prompt('이 링크를 복사해서 보내 주세요', url);
-  }
-}
+const shareLink = (title, url) => share(title, url, `${title} — ASMR Block에서 쌓은 나만의 팅글 조합`);
 
 /**
  * 조합 공유하기. 담아 온 복사본이면 원래 조합을 공유하고,

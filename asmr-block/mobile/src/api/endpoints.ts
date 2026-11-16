@@ -1,5 +1,6 @@
 import { api } from './client';
 import type {
+  Creator,
   BetaLoginResponse,
   Block,
   CategoryGroup,
@@ -52,11 +53,16 @@ export const catalogApi = {
     free?: boolean;
     talkType?: TalkType | null;
     keyword?: string;
+    /** 이 크리에이터가 올린 블록만 */
+    uploaderId?: number;
     sort?: 'latest' | 'popular';
     page?: number;
     size?: number;
   } = {}) =>
     api<Page<Block>>('/blocks' + query({ size: 50, ...params })),
+  block: (id: number) => api<Block>(`/blocks/${id}`),
+  /** 크리에이터 머리: 닉네임 · 블록 수 · 담은 사람 · 들은 횟수 · 많이 올린 트리거 */
+  creator: (id: number) => api<Creator>(`/creators/${id}`),
 };
 
 /** 블록 겉면 스티커 그림 (로그인 없이, 숨긴 것 포함) */

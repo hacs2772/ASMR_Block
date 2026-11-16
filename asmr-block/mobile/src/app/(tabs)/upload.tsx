@@ -365,7 +365,15 @@ export default function UploadScreen() {
         <Text style={styles.hint}>올리면 음량을 자동으로 맞추고, 관리자 검수 후 블록 상점에 나와요.</Text>
       </View>
 
-      <Text style={styles.sectionTitle}>내가 올린 블록</Text>
+      <View style={styles.sectionRow}>
+        <Text style={[styles.sectionTitle, { marginTop: 0 }]}>내가 올린 블록</Text>
+        {user ? (
+          <Pressable accessibilityRole="link" hitSlop={8} testID="my-creator-page"
+            onPress={() => router.push({ pathname: '/creator/[id]', params: { id: String(user.id) } })}>
+            <Text style={styles.sectionLink}>내 크리에이터 페이지 ›</Text>
+          </Pressable>
+        ) : null}
+      </View>
       {mine.isLoading ? <BlockLoader size="small" />
         : (mine.data?.content ?? []).length === 0 ? <Text style={styles.empty}>아직 올린 블록이 없어요</Text>
           : mine.data!.content.map((u) => <UploadRow key={u.id} upload={u} />)}
@@ -453,6 +461,8 @@ const styles = StyleSheet.create({
   check: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginVertical: space.sm },
   checkText: { color: colors.text, fontSize: 13, flex: 1 },
   sectionTitle: { color: colors.text, fontSize: 17, fontWeight: '700', marginTop: space.sm },
+  sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: space.sm },
+  sectionLink: { color: colors.primaryText, fontSize: 13, fontWeight: '700' },
   empty: { color: colors.faint, fontSize: 13 },
   row: {
     flexDirection: 'row', alignItems: 'center', gap: space.md, backgroundColor: colors.card, borderRadius: radius.md,

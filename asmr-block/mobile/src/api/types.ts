@@ -87,6 +87,17 @@ export type Block = {
   recentPlays: number | null;
 };
 
+/** 크리에이터 페이지 머리 (블록 목록은 catalogApi.blocks({ uploaderId })) */
+export type Creator = {
+  id: number;
+  nickname: string;
+  blockCount: number;
+  collectorCount: number;
+  playCount: number;
+  triggers: string[];
+  since: string;
+};
+
 export type Page<T> = {
   content: T[];
   pageInfo: { page: number; size: number; totalElements: number; totalPages: number; hasNext: boolean };

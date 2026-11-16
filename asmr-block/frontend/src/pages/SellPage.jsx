@@ -407,7 +407,12 @@ function SellPage() {
 
       {isAuthenticated && (
         <section id="mine" className="mt-16 scroll-mt-24">
-          <h2 className="text-2xl font-extrabold">내가 올린 블록</h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="mr-auto text-2xl font-extrabold">내가 올린 블록</h2>
+            {user?.id && (
+              <Link to={`/creator/${user.id}`} className="btn-line btn-sm" data-testid="my-creator-page">내 크리에이터 페이지 · 공유</Link>
+            )}
+          </div>
           <div className="mt-5">
             {mine === null ? <BlockLoader small /> : mine.length === 0 ? (
               <p className="card p-6 text-sm text-muted">아직 올린 블록이 없어요. 위에서 첫 블록을 올려 보세요.</p>

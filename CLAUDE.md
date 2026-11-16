@@ -24,6 +24,8 @@
 - **업로드 구간 고르기**(길게 녹음하고 일부만 올리기): 파일을 고르면 먼저 `POST /blocks/upload-drafts`(영상은 `?kind=video`, 구간 고르기 화면에 영상도 보이고 손잡이를 옮긴 곳의 장면이 나옴)로 올려 길이·파형(400칸)을 받고(임시 6시간), 파형 위 손잡이 두 개·가운데 끌기·±1초·고른 부분 듣기로 구간을 골라 올리기에 `draftId` + `trimStart/trimEnd`. 서버는 atrim으로 자르고 앞뒤 0.5초 페이드, 원본은 그 구간만 `-c copy`로 보관
   - 계산은 웹 `lib/trim.js` · 앱 `lib/trim.ts`(글자까지 같은지 앱 jest가 검사), 화면은 웹 `components/sell/Trimmer.jsx` · 앱 `components/upload/Trimmer.tsx`
   - ⚠ ffmpeg 6.1은 `-ss`로 중간부터 읽은 mp3를 `loudnorm`으로 파일 끝까지 처리하면 멈춤 → 자르기는 꼭 `atrim` 필터로. 파형은 `aeval=abs(val(0))` 뒤에 1000Hz로 줄임(그냥 줄이면 탭핑 같은 높은 소리가 사라짐)
+- **크리에이터 페이지**: 블록 카드의 @닉네임 → 웹 `/creator/:id`(`pages/CreatorPage.jsx`) · 앱 `/creator/[id]` — 머리(`GET /creators/{id}`, `creator` 패키지: 상점에 보이는 블록 수·담은 사람·들은 횟수·많이 올린 트리거) + 그 사람 블록(`GET /blocks?uploaderId=`), `?block=12`면 그 블록을 맨 위 "공유받은 블록". 판매 화면 "내가 올린 블록" 옆 "내 크리에이터 페이지". **블록 공유** `/s/b/{id}`(블록 카드의 작은 공유 아이콘) · **크리에이터 공유** `/s/c/{id}` → 조합 공유와 같은 og HTML + 카드 그림(`ShareCardRenderer.renderBlock/renderCreator`). 공유 함수는 웹 `lib/share.js` · 앱 `lib/share.ts`
+- **사이트 감시**(`.github/workflows/uptime.yml`): GitHub Actions가 15분마다 asmrblock.com 웹·API(`/auth/beta`)를 확인(3번 다시 해 봄) → 안 열리면 저장소에 "사이트-꺼짐" 이슈(메일 알림), 다시 열리면 댓글 달고 닫음. **예약 실행은 기본 브랜치(main)의 파일로만 돌아서 main에도 같은 파일이 있음** — 바꾸면 main에도 넣기
 - **녹음 가이드**(크리에이터용): 웹 `/sell/guide`(`pages/RecordingGuidePage.jsx`, 판매 화면·바닥글에서 링크) · 앱 `/recording-guide`(블록 판매 탭 맨 위 바로가기). 녹음 전 체크 5개(눌러서 체크, 저장 안 함) → 트리거 하나만·조용한 곳·휴대폰 놓는 법(한 뼘 그림)·녹음할 때·올리기 전에 → 올릴 수 없는 소리(남의 소리·배경 음악·허락 없는 목소리). 내용은 웹 `lib/recording.js` · 앱 `lib/recording.ts`(글자까지 같은지 앱 jest)
 - **관리자 페이지(V8, 웹 `/admin`)**: 관리자 계정으로 로그인하면 위 메뉴에 "관리자" (`user.role === 'ADMIN'`, 서버도 `/api/v1/admin/**` ADMIN 확인). 블록 승인·돌려보내기(이유 `review_note` → 판매자 "내가 올린 블록"), **트리거 종류**(묶음 색·소분류 아이콘 추가·고치기·숨기기·순서), **스티커**(SVG 검사·PNG 256px 추가·숨기기·순서). 바꾸면 앱·웹에 바로(앱 업데이트 없이). 분류·스티커는 지우지 않고 숨김. 아이콘 고르기 목록 = 웹 `lib/blocks.js` `ICONS`(앱 Ionicons에도 있는 이름만)
 - **어디서 그만두나요(V10, 관리자 통계 맨 위 아래)**: 최근 7·14·30일에 들어온 사람이 들어옴 → 블록 직접 담음(베타 손님이 처음 받은 블록 빼고) → 내 조합이 생김 → 조합 틀어 봄 → 10분 넘게 들음 → 다음 날 이후 다시 옴, 단계마다 사람 수·%. 다시 옴 = 로그인한 API 요청마다 `user_activity_day`(하루 한 줄, `activity/ActivityInterceptor`), 10분 = 웹 듣기 화면·앱 `PlayerProvider`가 `lib/listen`(웹·앱 같음, jest)으로 재생 시간을 모아 `POST /playlists/{id}/listened` 한 번
@@ -41,7 +43,7 @@
 
 ## 구조
 - `asmr-block/backend` — Spring Boot 4.1 / Java 21 / MyBatis / PostgreSQL 16 / ffmpeg
-  - 기능별 패키지: `auth`, `user`, `category`, `block`, `library`(내 블록함), `playlist`, `render`, `play`, `audio`(ffmpeg), `storage`, `common`, `config`, `security`
+  - 기능별 패키지: `auth`, `user`, `category`, `block`, `library`(내 블록함), `playlist`, `render`, `play`, `audio`(ffmpeg), `storage`, `common`, `config`, `security`, `creator`, `share`, `report`, `activity`, `stats`
   - MyBatis XML: `src/main/resources/mapper/*Mapper.xml` (타입은 전체 클래스 이름으로 씀)
 - `asmr-block/mobile` — **메인 클라이언트**. Expo SDK 58 / React Native 0.88 / TypeScript / Expo Router
   - 작업 전 `asmr-block/mobile/AGENTS.md`(Expo 규칙)를 따른다: 패키지는 `npx expo install`, 화면은 `src/app/`
@@ -127,6 +129,7 @@ cd asmr-block/mobile && npx tsc --noEmit && npx eslint . && npx jest   # CI와 �
 - [x] 첫 조합 바로 만들기: 트리거만 고르면 조합을 쌓아 바로 듣기 (웹 홈·내 조합, 앱 홈·블록 편집)
 - [x] 신고하기 + 관리자 숨기기·업로드 막기(V13) — 스토어 심사(사용자 콘텐츠 신고 기능)에도 필요
 - [x] 녹음 가이드(웹 `/sell/guide`·앱 블록 판매): 휴대폰으로 듣기 좋은 블록 녹음하는 법 + 녹음 전 체크
+- [x] 사이트 감시(GitHub Actions 15분마다 → 이슈 알림) + 크리에이터 페이지·블록/크리에이터 공유 링크
 - [x] **거의 0원으로 먼저 보여 주기**(사용자가 고른 방향): asmrblock.com 공개 중 (지금은 사용자의 회사 PC + Cloudflare Tunnel, 옮기는 법은 README "다른 PC로 옮기기"). 남은 것 = 진짜 녹음 블록 채우기 → 베타 모집(`docs/beta_recruit.md`) → 반응 보기. 사업자·스토어 계정·유료 서버는 그 뒤에
 - [ ] 안드로이드 APK: 설정·안내 준비 끝(`mobile/eas.json`, README) → 사용자가 Expo 가입 후 `eas build -p android --profile preview` → 실기기로 아이콘·첫 화면·잠금화면 재생 확인. 첫 빌드 뒤 `app.json`의 `extra.eas.projectId`를 저장소에 넣기
 - [ ] 아이폰(TestFlight, 애플 개발자 계정 필요), 광고 SDK(AdMob)로 광고 자리 교체

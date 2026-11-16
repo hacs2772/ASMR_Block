@@ -1,5 +1,6 @@
 package com.asmrblock.share;
 
+import com.asmrblock.block.Block;
 import com.asmrblock.playlist.LayerRole;
 import com.asmrblock.playlist.Playlist;
 import com.asmrblock.playlist.PlaylistBlock;
@@ -18,7 +19,7 @@ import java.io.UncheckedIOException;
 import java.util.List;
 
 /**
- * 공유 링크 미리보기 그림 (1200×630 PNG): 밤 바탕 + 레고 바닥판 위에 그 조합의 블록 두 줄 (색 = 트리거, 길이 = 소리 길이).
+ * 공유 링크 미리보기 그림 (1200×630 PNG): 밤 바탕 + 레고 바닥판 위에 조합의 블록 두 줄 / 블록 하나 / 크리에이터의 블록들 (색 = 트리거, 길이 = 소리 길이).
  * 앱·웹 블록(C안)과 같은 모양: 진한 테두리 · 위 밝은 띠 · 아래 두께 · 오른쪽 돌기 두 개. 글자는 쓰지 않음 (제목은 카드 아래 글로 나옴)
  */
 final class ShareCardRenderer {
@@ -37,54 +38,144 @@ final class ShareCardRenderer {
     private ShareCardRenderer() {
     }
 
+    /** 바닥판 자리 (밤 바탕 + 로고 블록 셋 + 돌기 무늬 바닥판을 그린 뒤) */
+    private record Plate(int x, int y, int w, int h) {
+    }
+
+    private static final int PX = 64;
+    private static final int PY = 150;
+    private static final int PW = W - 128;
+    private static final int PH = 400;
+
+    /** 조합: 첫째 줄 + 둘째 줄(레이어드) */
     static byte[] render(Playlist playlist) {
-        BufferedImage image = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = image.createGraphics();
-        try {
-            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g.setColor(NIGHT);
-            g.fillRect(0, 0, W, H);
-
-            // 로고: 블록 셋 (탭핑 · 바스락 · 귓속말)
-            int lx = 80;
-            for (Color c : List.of(new Color(0xFF8A3D), new Color(0x8CCB4E), new Color(0xFF6FA3))) {
-                brick(g, c, lx, 64, 64, 40);
-                lx += 72;
-            }
-
-            // 바닥판 + 돌기 무늬
-            int px = 64;
-            int py = 150;
-            int pw = W - 128;
-            int ph = 400;
-            g.setColor(PLATE);
-            g.fill(new RoundRectangle2D.Double(px, py, pw, ph, 28, 28));
-            g.setColor(STUD);
-            for (int y = py + 22; y < py + ph - 10; y += 34) {
-                for (int x = px + 22; x < px + pw - 10; x += 34) {
-                    g.fillOval(x - 5, y - 5, 10, 10);
-                }
-            }
-            g.setColor(LINE);
-            g.setStroke(new BasicStroke(2f));
-            g.draw(new RoundRectangle2D.Double(px, py, pw, ph, 28, 28));
-
+        return draw(g -> {
+            Plate p = frame(g);
             PlaylistLayer main = playlist.layer(LayerRole.MAIN).orElse(null);
             PlaylistLayer mix = playlist.layer(LayerRole.MIX).filter(l -> !l.getBlocks().isEmpty()).orElse(null);
-            int innerX = px + 40;
-            int innerW = pw - 80 - 14; // 오른쪽 돌기 자리
+            int innerX = p.x() + 40;
+            int innerW = p.w() - 80 - 14; // 오른쪽 돌기 자리
             int cycle = Math.max(1, Math.max(main == null ? 0 : main.duration(), mix == null ? 0 : mix.duration()));
             double scale = innerW / (double) cycle;
             if (mix == null) {
-                drawRow(g, main, innerX, py + 140, 120, scale, false);
+                drawRow(g, main, innerX, p.y() + 140, 120, scale, false);
             } else {
-                drawRow(g, main, innerX, py + 80, 110, scale, false);
-                drawRow(g, mix, innerX, py + 240, 84, scale, true);
+                drawRow(g, main, innerX, p.y() + 80, 110, scale, false);
+                drawRow(g, mix, innerX, p.y() + 240, 84, scale, true);
             }
+        });
+    }
 
-            // 아래 분홍 줄 (재생선 느낌)
-            g.setColor(PINK);
-            g.fill(new RoundRectangle2D.Double(px, py + ph + 30, 220, 8, 8, 8));
+    /** 블록 하나: 바닥판 가운데 큰 블록 (길이 = 소리 길이, 겉면 홈 한 칸 = 1분) */
+    static byte[] renderBlock(Block block) {
+        return draw(g -> {
+            Plate p = frame(g);
+            int seconds = block.getDuration() == null ? 180 : block.getDuration();
+            int w = (int) Math.round(Math.min(p.w() - 160, Math.max(340, seconds / 60.0 * 190)));
+            int h = 190;
+            int x = p.x() + (p.w() - w) / 2 - 8;
+            int y = p.y() + (p.h() - h) / 2 - 4;
+            Color color = colorOf(block);
+            brick(g, color, x, y, w, h);
+            // 겉면 홈: 1분마다 (앱 Brick과 같은 느낌)
+            int minutes = Math.max(1, (int) Math.floor(seconds / 60.0));
+            for (int m = 1; m < minutes && m < 30; m++) {
+                int gx = x + (int) Math.round(w * (m * 60.0 / seconds));
+                g.setColor(new Color(0, 0, 0, 70));
+                g.fillRect(gx - 1, y + 14, 2, h - 44);
+                g.setColor(new Color(255, 255, 255, 50));
+                g.fillRect(gx + 1, y + 14, 1, h - 44);
+            }
+        });
+    }
+
+    /** 크리에이터: 그 사람이 올린 블록들을 바닥판 위에 줄지어 (블록이 없으면 로고 블록 셋을 크게) */
+    static byte[] renderCreator(List<Block> blocks) {
+        return draw(g -> {
+            Plate p = frame(g);
+            if (blocks.isEmpty()) {
+                int x = p.x() + (p.w() - 3 * 230) / 2;
+                for (Color c : LOGO) {
+                    brick(g, c, x, p.y() + 140, 210, 120);
+                    x += 230;
+                }
+                return;
+            }
+            // 줄 나누기 (최대 3줄) → 줄마다 가운데, 전체도 바닥판 가운데
+            int maxW = p.w() - 80 - 14;
+            int h = 96;
+            int gap = 22;
+            int rowGap = 26;
+            List<List<int[]>> rows = new java.util.ArrayList<>();
+            List<Block> placed = new java.util.ArrayList<>();
+            List<int[]> row = new java.util.ArrayList<>();
+            int rowW = 0;
+            for (Block b : blocks) {
+                int seconds = b.getDuration() == null ? 180 : b.getDuration();
+                int w = (int) Math.round(Math.min(360, Math.max(110, seconds / 60.0 * 70)));
+                if (!row.isEmpty() && rowW + gap + w > maxW) {
+                    rows.add(row);
+                    if (rows.size() == 3) {
+                        row = null;
+                        break;
+                    }
+                    row = new java.util.ArrayList<>();
+                    rowW = 0;
+                }
+                rowW += (row.isEmpty() ? 0 : gap) + w;
+                row.add(new int[]{w, placed.size()});
+                placed.add(b);
+            }
+            if (row != null && !row.isEmpty()) {
+                rows.add(row);
+            }
+            int total = rows.size() * h + (rows.size() - 1) * rowGap;
+            int y = p.y() + (p.h() - total) / 2;
+            for (List<int[]> r : rows) {
+                int width = r.stream().mapToInt(c -> c[0]).sum() + gap * (r.size() - 1);
+                int x = p.x() + (p.w() - width) / 2 - 7;
+                for (int[] c : r) {
+                    brick(g, colorOf(placed.get(c[1])), x, y, c[0], h);
+                    x += c[0] + gap;
+                }
+                y += h + rowGap;
+            }
+        });
+    }
+
+    private static final List<Color> LOGO = List.of(new Color(0xFF8A3D), new Color(0x8CCB4E), new Color(0xFF6FA3));
+
+    /** 밤 바탕 + 로고 블록 셋 + 바닥판 + 아래 분홍 줄 */
+    private static Plate frame(Graphics2D g) {
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setColor(NIGHT);
+        g.fillRect(0, 0, W, H);
+        int lx = 80;
+        for (Color c : LOGO) {
+            brick(g, c, lx, 64, 64, 40);
+            lx += 72;
+        }
+        g.setColor(PLATE);
+        g.fill(new RoundRectangle2D.Double(PX, PY, PW, PH, 28, 28));
+        g.setColor(STUD);
+        for (int y = PY + 22; y < PY + PH - 10; y += 34) {
+            for (int x = PX + 22; x < PX + PW - 10; x += 34) {
+                g.fillOval(x - 5, y - 5, 10, 10);
+            }
+        }
+        g.setColor(LINE);
+        g.setStroke(new BasicStroke(2f));
+        g.draw(new RoundRectangle2D.Double(PX, PY, PW, PH, 28, 28));
+        g.setColor(PINK);
+        g.fill(new RoundRectangle2D.Double(PX, PY + PH + 30, 220, 8, 8, 8));
+        return new Plate(PX, PY, PW, PH);
+    }
+
+    private static byte[] draw(java.util.function.Consumer<Graphics2D> painter) {
+        BufferedImage image = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = image.createGraphics();
+        try {
+            painter.accept(g);
         } finally {
             g.dispose();
         }
@@ -124,8 +215,12 @@ final class ShareCardRenderer {
     }
 
     private static Color colorOf(PlaylistBlock pb) {
+        return colorOf(pb.getBlock());
+    }
+
+    private static Color colorOf(Block block) {
         try {
-            String hex = pb.getBlock().getCategory().getColor();
+            String hex = block.getCategory().getColor();
             return hex == null ? FALLBACK : Color.decode(hex);
         } catch (RuntimeException e) {
             return FALLBACK;

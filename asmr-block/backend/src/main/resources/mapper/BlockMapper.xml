@@ -49,6 +49,7 @@
                      OR b.recorded_place ILIKE '%' || #{keyword} || '%'
                      OR EXISTS (SELECT 1 FROM users ku WHERE ku.id = b.uploader_id AND ku.nickname ILIKE '%' || #{keyword} || '%'))
             </if>
+            <if test="uploaderId != null">AND b.uploader_id = #{uploaderId}</if>
             <if test="talkType != null">AND b.talk_type = #{talkType}</if>
             <if test="free != null and free">AND b.price = 0</if>
             <if test="free != null and !free">AND b.price &gt; 0</if>

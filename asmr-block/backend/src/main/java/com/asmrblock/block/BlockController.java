@@ -28,7 +28,7 @@ public class BlockController {
     private final UploadDraftService uploadDraftService;
 
     // 블록 상점 목록 (승인된 블록만). tagIds=1,2 → 둘 중 하나라도 달린 블록, free=true → 무료만,
-    // talkType=NONE → 노토킹만, keyword → 이름·녹음한 곳·크리에이터 닉네임
+    // talkType=NONE → 노토킹만, keyword → 이름·녹음한 곳·크리에이터 닉네임, uploaderId → 그 크리에이터가 올린 블록만
     @GetMapping
     public ApiResponse<PageResponse<BlockResponse>> search(
             @RequestParam(required = false) Long categoryId,
@@ -36,12 +36,13 @@ public class BlockController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Boolean free,
             @RequestParam(required = false) TalkType talkType,
+            @RequestParam(required = false) Long uploaderId,
             @RequestParam(defaultValue = "latest") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @AuthenticationPrincipal Long userId) {
         return ApiResponse.ok(blockService.search(
-                categoryId, tagIds, keyword, free, talkType, sort, PageQuery.of(page, size), userId));
+                categoryId, tagIds, keyword, free, talkType, uploaderId, sort, PageQuery.of(page, size), userId));
     }
 
     // 요즘 뜨는 소리 (최근 7일 재생이 많은 순)

@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { Block } from '@/api/types';
@@ -7,6 +8,7 @@ import { ReportFlag } from '@/components/ReportSheet';
 import { Brick } from '@/components/editor/Brick';
 import { useCategoryIcon } from '@/components/editor/useCategoryIcon';
 import { formatDuration } from '@/lib/format';
+import { shareLink, shareLinks } from '@/lib/share';
 import { useAuth } from '@/store/auth';
 import { categoryFallbackColor, colors, radius, space, talkLabel } from '@/theme';
 
@@ -21,8 +23,10 @@ type Props = {
   /** 아래 오른쪽 버튼 (담기 등) */
   right?: ReactNode;
   style?: StyleProp<ViewStyle>;
-  /** 신고 깃발 (업로드 미리보기에서는 끔). 내가 올린 블록에는 안 보임 */
+  /** 신고 깃발·공유·@닉네임 누르기 (업로드 미리보기에서는 끔). 신고는 내가 올린 블록에는 안 보임 */
   reportable?: boolean;
+  /** 크리에이터 페이지 안: @닉네임을 빼고 녹음한 곳만 */
+  hideCreator?: boolean;
 };
 
 const BRICK_H = 38;
@@ -40,7 +44,7 @@ const noteOf = (b: Block) => (b.description ?? '').replace(/^\[[^\]]*\]\s*/, '')
  * 블록 길이 = 소리 길이, 색 = 트리거, 아이콘 = 소분류, 블록 위에 길이. 왼쪽 위 가격표, 오른쪽 위 들어보기.
  * 아래 = 이름, 트리거·말소리, @크리에이터, 녹음한 곳, 담기
  */
-export function BlockCard({ block, previewing, onPreview, rank, showNote, right, style, reportable = true }: Props) {
+export function BlockCard({ block, previewing, onPreview, rank, showNote, right, style, reportable = true, hideCreator = false }: Props) {
   const iconOf = useCategoryIcon();
   const color = block.category?.color ?? categoryFallbackColor;
   const taste = block.price > 0 && !block.owned;
@@ -97,7 +101,18 @@ export function BlockCard({ block, previewing, onPreview, rank, showNote, right,
           <Text style={{ color }}>■ </Text>{group}<Text style={styles.talk}> · {talkLabel[block.talkType ?? 'NONE']}</Text>
         </Text>
         <View style={styles.byRow}>
-          <Text style={styles.by} numberOfLines={1}>@{block.uploader.nickname}</Text>
+          {hideCreator ? <View style={{ flex: 1 }} /> : reportable ? (
+            <Pressable accessibilityRole="link" accessibilityLabel={`@${block.uploader.nickname} 크리에이터 페이지`} hitSlop={6} style={{ flexShrink: 1, marginRight: 'auto' }}
+              onPress={() => router.push({ pathname: '/creator/[id]', params: { id: String(block.uploader.id) } })} testID={`creator-link-${block.id}`}>
+              <Text style={styles.by} numberOfLines={1}>@{block.uploader.nickname}</Text>
+            </Pressable>
+          ) : <Text style={[styles.by, { marginRight: 'auto' }]} numberOfLines={1}>@{block.uploader.nickname}</Text>}
+          {reportable ? (
+            <Pressable onPress={() => void shareLink(block.title, shareLinks.block(block.id), `${block.title} — @${block.uploader.nickname}님의 ASMR 블록`)}
+              hitSlop={10} accessibilityRole="button" accessibilityLabel={`${block.title} 공유하기`} testID={`share-block-${block.id}`} style={{ padding: 2 }}>
+              <Ionicons name="share-social-outline" size={13} color={colors.faint} />
+            </Pressable>
+          ) : null}
           {canReport ? (
             <ReportFlag target={{ type: 'BLOCK', id: block.id, title: block.title }} owner={block.uploader} size={13} testID={`report-block-${block.id}`} />
           ) : null}

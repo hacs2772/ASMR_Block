@@ -40,8 +40,9 @@ public class BlockService {
     /** 블록 상점 목록 (승인된 것만). viewerId: 로그인 사용자 (owned 표시용, 비로그인 null) */
     @Transactional(readOnly = true)
     public PageResponse<BlockResponse> search(Long categoryId, List<Long> tagIds, String keyword, Boolean free,
-                                              TalkType talkType, String sort, PageQuery page, Long viewerId) {
-        BlockSearchCondition condition = condition(categoryId, tagIds, keyword, free, talkType, BlockStatus.APPROVED, sort, page, true);
+                                              TalkType talkType, Long uploaderId, String sort, PageQuery page, Long viewerId) {
+        BlockSearchCondition condition = condition(categoryId, tagIds, keyword, free, talkType, BlockStatus.APPROVED, sort, page, true)
+                .toBuilder().uploaderId(uploaderId).build();
         List<Block> blocks = blockMapper.search(condition);
         return PageResponse.of(toResponses(blocks, viewerId, false), page, blockMapper.count(condition));
     }

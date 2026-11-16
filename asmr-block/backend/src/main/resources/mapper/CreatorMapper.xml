@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.asmrblock.creator.CreatorMapper">
+
+    <!-- 상점에 보이는 블록(승인·활성·is_listed)만 셈. 담은 사람 = 내 블록함에 담은 다른 사람 (본인 빼고) -->
+    <select id="findStats" resultType="com.asmrblock.creator.CreatorStats">
+        SELECT u.id, u.nickname, u.created_at,
+               (SELECT COUNT(*) FROM block b
+                 WHERE b.uploader_id = u.id AND b.status = 'APPROVED' AND b.is_active = true AND b.is_listed = true) AS block_count,
+               (SELECT COUNT(DISTINCT ub.user_id) FROM user_block ub JOIN block b ON b.id = ub.block_id
+                 WHERE b.uploader_id = u.id AND b.status = 'APPROVED' AND b.is_active = true AND ub.user_id &lt;&gt; u.id) AS collector_count,
+               (SELECT COALESCE(SUM(b.play_count), 0) FROM block b
+                 WHERE b.uploader_id = u.id AND b.status = 'APPROVED' AND b.is_active = true) AS play_count
+        FROM users u
+        WHERE u.id = #{userId} AND u.is_active = true
+    </select>
+
+    <select id="topTriggers" resultType="string">
+        SELECT COALESCE(p.name, c.name) AS name
+        FROM block b
+        JOIN sound_category c ON c.id = b.category_id
+        LEFT JOIN sound_category p ON p.id = c.parent_id
+        WHERE b.uploader_id = #{userId} AND b.status = 'APPROVED' AND b.is_active = true AND b.is_listed = true
+        GROUP BY COALESCE(p.name, c.name)
+        ORDER BY COUNT(*) DESC, MIN(b.created_at)
+        LIMIT 3
+    </select>
+
+</mapper>
