@@ -12,6 +12,7 @@ import { colorOf, formatDuration, TALK_LABEL } from '../lib/blocks';
 import { MAX_STICKERS, PATTERNS, StickerImage, useStickers } from '../lib/stickers';
 import { canTrim, initialRange, trimParams } from '../lib/trim';
 import useAuthStore from '../store/authStore';
+import { RecordingGuideLink } from './RecordingGuidePage';
 
 const PRICE_STEPS = [0, 10, 20, 30, 50, 100];
 const STATUS = {
@@ -220,6 +221,7 @@ function SellPage() {
         <Info icon={IoShieldCheckmark} title="2. 검수" body="남의 소리·음악이 섞였는지 확인해요" />
         <Info icon={IoCash} title="3. 판매" body={`가격은 내가 (무료 ~ ${maxPrice}코인). 정산은 출시 후 열려요`} />
       </div>
+      <RecordingGuideLink className="mt-3" />
 
       {!isAuthenticated ? (
         <div className="card mt-10 flex flex-col items-center gap-4 p-10 text-center">

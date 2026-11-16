@@ -28,6 +28,7 @@ function Footer() {
             <li><button type="button" onClick={() => useGuide.getState().show('full')} className="hover:text-ink" data-testid="footer-guide">사용법 보기</button></li>
             <li><Link to="/guide#glossary" className="hover:text-ink">ASMR 단어장</Link></li>
             <li><Link to="/sell" className="hover:text-ink">크리에이터 안내</Link></li>
+            <li><Link to="/sell/guide" className="hover:text-ink">녹음 가이드</Link></li>
             <li><button type="button" onClick={() => useFeedback.getState().open()} className="hover:text-ink">의견 보내기</button></li>
             <li><Link to="/terms" className="hover:text-ink">이용약관</Link></li>
             <li><Link to="/privacy" className="font-bold hover:text-ink">개인정보 처리방침</Link></li>

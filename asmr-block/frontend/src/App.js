@@ -22,6 +22,7 @@ import ListenPage from './pages/ListenPage';
 import MyCombosPage from './pages/MyCombosPage';
 import ProfilePage from './pages/ProfilePage';
 import SellPage from './pages/SellPage';
+import RecordingGuidePage from './pages/RecordingGuidePage';
 import ShopPage from './pages/ShopPage';
 import useAuthStore from './store/authStore';
 
@@ -57,6 +58,7 @@ function App() {
             <Route path="/create" element={<CreatePage />} />
             <Route path="/create/:id" element={<CreatePage />} />
             <Route path="/sell" element={<SellPage />} />
+            <Route path="/sell/guide" element={<RecordingGuidePage />} />
             <Route path="/guide" element={<GuidePage />} />
             <Route path="/listen/:id" element={<ListenPage />} />
             <Route path="/me/combos" element={<MyCombosPage />} />

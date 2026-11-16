@@ -20,6 +20,7 @@ import { canTrim, initialRange, trimParams, type TrimRange } from '@/lib/trim';
 import { useStickers } from '@/store/stickers';
 import { useAuth } from '@/store/auth';
 import { categoryFallbackColor, colors, radius, space, talkLabel } from '@/theme';
+import { RecordingGuideLink } from '@/components/upload/RecordingGuideLink';
 
 const PRICE_STEPS = [10, 20, 30, 50, 100];
 const TALKS: TalkType[] = ['NONE', 'WHISPER', 'TALK'];
@@ -212,6 +213,7 @@ export default function UploadScreen() {
           message="직접 녹음한 탭핑·바스락·귓속말이면 돼요. 검수 후 블록 상점에 올라가요.">
           <BetaLoginButton style={{ marginTop: space.md }} />
           <Button title="로그인" onPress={() => router.push('/login')} style={{ marginTop: space.md, alignSelf: 'stretch' }} />
+          <RecordingGuideLink style={{ marginTop: space.lg, alignSelf: 'stretch' }} />
         </EmptyState>
       </View>
     );
@@ -220,6 +222,7 @@ export default function UploadScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={mine.isRefetching} onRefresh={() => void mine.refetch()} tintColor={colors.muted} />}>
+      <RecordingGuideLink style={{ marginBottom: space.md }} />
       <View style={styles.card}>
         <Text style={styles.cardTitle}>새 블록 올리기</Text>
 

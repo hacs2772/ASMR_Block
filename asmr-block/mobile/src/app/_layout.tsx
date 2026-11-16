@@ -54,6 +54,7 @@ export default function RootLayout() {
               <Stack.Screen name="editor/[id]" options={{ title: '조합 만들기', gestureEnabled: false }} />
               <Stack.Screen name="player/[id]" options={{ title: '', presentation: 'modal' }} />
               <Stack.Screen name="help" options={{ title: '도움말', presentation: 'modal' }} />
+              <Stack.Screen name="recording-guide" options={{ title: '녹음 가이드' }} />
               <Stack.Screen name="profile" options={{ title: '내 정보' }} />
             </Stack>
           </PlayerProvider>

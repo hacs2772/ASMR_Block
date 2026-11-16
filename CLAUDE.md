@@ -24,6 +24,7 @@
 - **업로드 구간 고르기**(길게 녹음하고 일부만 올리기): 파일을 고르면 먼저 `POST /blocks/upload-drafts`(영상은 `?kind=video`, 구간 고르기 화면에 영상도 보이고 손잡이를 옮긴 곳의 장면이 나옴)로 올려 길이·파형(400칸)을 받고(임시 6시간), 파형 위 손잡이 두 개·가운데 끌기·±1초·고른 부분 듣기로 구간을 골라 올리기에 `draftId` + `trimStart/trimEnd`. 서버는 atrim으로 자르고 앞뒤 0.5초 페이드, 원본은 그 구간만 `-c copy`로 보관
   - 계산은 웹 `lib/trim.js` · 앱 `lib/trim.ts`(글자까지 같은지 앱 jest가 검사), 화면은 웹 `components/sell/Trimmer.jsx` · 앱 `components/upload/Trimmer.tsx`
   - ⚠ ffmpeg 6.1은 `-ss`로 중간부터 읽은 mp3를 `loudnorm`으로 파일 끝까지 처리하면 멈춤 → 자르기는 꼭 `atrim` 필터로. 파형은 `aeval=abs(val(0))` 뒤에 1000Hz로 줄임(그냥 줄이면 탭핑 같은 높은 소리가 사라짐)
+- **녹음 가이드**(크리에이터용): 웹 `/sell/guide`(`pages/RecordingGuidePage.jsx`, 판매 화면·바닥글에서 링크) · 앱 `/recording-guide`(블록 판매 탭 맨 위 바로가기). 녹음 전 체크 5개(눌러서 체크, 저장 안 함) → 트리거 하나만·조용한 곳·휴대폰 놓는 법(한 뼘 그림)·녹음할 때·올리기 전에 → 올릴 수 없는 소리(남의 소리·배경 음악·허락 없는 목소리). 내용은 웹 `lib/recording.js` · 앱 `lib/recording.ts`(글자까지 같은지 앱 jest)
 - **관리자 페이지(V8, 웹 `/admin`)**: 관리자 계정으로 로그인하면 위 메뉴에 "관리자" (`user.role === 'ADMIN'`, 서버도 `/api/v1/admin/**` ADMIN 확인). 블록 승인·돌려보내기(이유 `review_note` → 판매자 "내가 올린 블록"), **트리거 종류**(묶음 색·소분류 아이콘 추가·고치기·숨기기·순서), **스티커**(SVG 검사·PNG 256px 추가·숨기기·순서). 바꾸면 앱·웹에 바로(앱 업데이트 없이). 분류·스티커는 지우지 않고 숨김. 아이콘 고르기 목록 = 웹 `lib/blocks.js` `ICONS`(앱 Ionicons에도 있는 이름만)
 - **어디서 그만두나요(V10, 관리자 통계 맨 위 아래)**: 최근 7·14·30일에 들어온 사람이 들어옴 → 블록 직접 담음(베타 손님이 처음 받은 블록 빼고) → 내 조합이 생김 → 조합 틀어 봄 → 10분 넘게 들음 → 다음 날 이후 다시 옴, 단계마다 사람 수·%. 다시 옴 = 로그인한 API 요청마다 `user_activity_day`(하루 한 줄, `activity/ActivityInterceptor`), 10분 = 웹 듣기 화면·앱 `PlayerProvider`가 `lib/listen`(웹·앱 같음, jest)으로 재생 시간을 모아 `POST /playlists/{id}/listened` 한 번
 - **조합 공유(카톡 미리보기)**: 공유 링크 = `https://asmrblock.com/s/{id}` → 백엔드 `share` 패키지가 og 태그 HTML(조합 이름·설명) + 카드 그림 `/s/{id}/card.png`(Java2D로 블록 두 줄, 글자 없음, `ShareCardRenderer`)을 만들고 사람은 `/listen/{id}`로 넘김. 공개 조합만, 웹 nginx `/s/` → 백엔드, 사이트 주소 `APP_SITE_URL`. 웹 듣기 화면 `components/playlist/ShareButton.jsx`·앱 플레이어 머리 공유 아이콘: 휴대폰 공유 창(없으면 링크 복사), 담아 온 복사본은 원래 조합, 내 비공개 조합은 "공개로 바꾸고 공유"(`PATCH /playlists/{id}/visibility`)
@@ -125,6 +126,7 @@ cd asmr-block/mobile && npx tsc --noEmit && npx eslint . && npx jest   # CI와 �
 - [x] 공개 서버 안전장치: 너무 자주 하면 429, 오래된 완성본 정리(V12), 관리자 통계에 디스크
 - [x] 첫 조합 바로 만들기: 트리거만 고르면 조합을 쌓아 바로 듣기 (웹 홈·내 조합, 앱 홈·블록 편집)
 - [x] 신고하기 + 관리자 숨기기·업로드 막기(V13) — 스토어 심사(사용자 콘텐츠 신고 기능)에도 필요
+- [x] 녹음 가이드(웹 `/sell/guide`·앱 블록 판매): 휴대폰으로 듣기 좋은 블록 녹음하는 법 + 녹음 전 체크
 - [x] **거의 0원으로 먼저 보여 주기**(사용자가 고른 방향): asmrblock.com 공개 중 (지금은 사용자의 회사 PC + Cloudflare Tunnel, 옮기는 법은 README "다른 PC로 옮기기"). 남은 것 = 진짜 녹음 블록 채우기 → 베타 모집(`docs/beta_recruit.md`) → 반응 보기. 사업자·스토어 계정·유료 서버는 그 뒤에
 - [ ] 안드로이드 APK: 설정·안내 준비 끝(`mobile/eas.json`, README) → 사용자가 Expo 가입 후 `eas build -p android --profile preview` → 실기기로 아이콘·첫 화면·잠금화면 재생 확인. 첫 빌드 뒤 `app.json`의 `extra.eas.projectId`를 저장소에 넣기
 - [ ] 아이폰(TestFlight, 애플 개발자 계정 필요), 광고 SDK(AdMob)로 광고 자리 교체
