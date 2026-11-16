@@ -1,0 +1,11 @@
+{
+  "name": "asmr-block-e2e",
+  "private": true,
+  "description": "자동 화면 검사 (Playwright): 웹·앱 화면을 직접 눌러 보며 큰 흐름이 되는지 확인",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

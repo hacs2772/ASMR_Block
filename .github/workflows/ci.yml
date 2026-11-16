@@ -1,4 +1,4 @@
-# GitHub에 push하면 자동으로 백엔드 테스트 + 웹 빌드를 확인합니다.
+# GitHub에 push하면 자동으로 백엔드 테스트 + 앱 검사 + 웹 빌드 + 화면 검사(웹·앱을 직접 눌러 봄)를 확인합니다.
 # 결과는 GitHub 저장소의 Actions 탭에서 볼 수 있어요 (초록 체크 = 통과).
 name: CI
 
@@ -56,6 +56,58 @@ jobs:
         run: npx expo-doctor
       - name: 안드로이드/iOS 번들 만들기
         run: npx expo export --platform android --platform ios --output-dir /tmp/mobile-export
+
+  e2e:
+    name: 화면 검사 (웹·앱을 직접 눌러 봄)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+      - name: 서버·DB·웹 켜기 (개발용 docker compose, 샘플 음원·테스트 계정 포함)
+        working-directory: asmr-block
+        run: docker compose up -d --build
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            asmr-block/mobile/package-lock.json
+            asmr-block/e2e/package-lock.json
+      - name: 앱 웹 미리보기 만들고 띄우기 (:8081)
+        working-directory: asmr-block/mobile
+        run: |
+          npm ci
+          npx expo export -p web --output-dir /tmp/app-web
+          (npx --yes serve@14.2.6 -s /tmp/app-web -l 8081 > /tmp/serve-app.log 2>&1 &)
+      - name: 검사 도구 설치 (Playwright + 크롬)
+        working-directory: asmr-block/e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: 서버가 준비될 때까지 기다리기
+        run: |
+          for i in $(seq 1 120); do
+            if curl -fs http://localhost:8080/actuator/health > /dev/null && curl -fs http://localhost:3000 > /dev/null && curl -fs http://localhost:8081 > /dev/null; then
+              echo "준비됐어요"; exit 0
+            fi
+            sleep 5
+          done
+          echo "10분 안에 서버가 켜지지 않았어요"; exit 1
+      - name: 화면 검사
+        working-directory: asmr-block/e2e
+        run: npx playwright test
+      - name: 실패하면 서버 기록 보기
+        if: failure()
+        working-directory: asmr-block
+        run: docker compose logs --tail 300 backend
+      - name: 실패하면 검사 결과(화면·기록) 올리기
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-report
+          path: |
+            asmr-block/e2e/playwright-report
+            asmr-block/e2e/test-results
 
   web:
     name: 웹 빌드

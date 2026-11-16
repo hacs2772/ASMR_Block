@@ -13,6 +13,7 @@ import com.asmrblock.play.PlayCountService;
 import com.asmrblock.play.PlayResult;
 import com.asmrblock.play.PlayTarget;
 import com.asmrblock.storage.StorageService;
+import com.asmrblock.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 public class BlockService {
 
     private final BlockMapper blockMapper;
+    private final NotificationService notificationService;
     private final CategoryService categoryService;
     private final StorageService storageService;
     private final PlayCountService playCountService;
@@ -104,11 +106,15 @@ public class BlockService {
     // 관리자: 검수 상태 변경. 승인되면 올린 사람의 블록함에 들어가고, 유료면 맛보기를 만듦
     @Transactional
     public BlockResponse updateStatus(Long blockId, BlockStatus status, String note) {
-        findAny(blockId);
+        BlockStatus before = findAny(blockId).getStatus();
         // 메모는 돌려보낼 때만 남김 (승인하면 지움)
         String reviewNote = status == BlockStatus.REJECTED && note != null && !note.isBlank() ? note.trim() : null;
         blockMapper.updateStatus(blockId, status, reviewNote);
         Block block = findAny(blockId);
+        // 올린 사람에게 알림 (승인·돌려보냄이 바뀌었을 때만)
+        if (before != status && (status == BlockStatus.APPROVED || status == BlockStatus.REJECTED)) {
+            notificationService.blockReviewed(block, status == BlockStatus.APPROVED, reviewNote);
+        }
         if (status == BlockStatus.APPROVED) {
             libraryMapper.insert(block.getUploaderId(), blockId, LibrarySource.CREATOR);
             previewService.ensurePreview(block);

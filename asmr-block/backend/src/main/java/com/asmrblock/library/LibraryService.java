@@ -4,6 +4,7 @@ import com.asmrblock.block.Block;
 import com.asmrblock.block.BlockDtos.BlockResponse;
 import com.asmrblock.block.BlockService;
 import com.asmrblock.common.ApiException;
+import com.asmrblock.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ public class LibraryService {
 
     private final LibraryMapper libraryMapper;
     private final BlockService blockService;
+    private final NotificationService notificationService;
 
     @Transactional(readOnly = true)
     public List<BlockResponse> list(Long userId) {
@@ -36,7 +38,9 @@ public class LibraryService {
         if (block.isPaid() && libraryMapper.findSource(userId, blockId).isEmpty()) {
             throw ApiException.paymentRequired("유료 블록은 구매 기능이 열리면 담을 수 있어요.");
         }
-        libraryMapper.insert(userId, blockId, LibrarySource.FREE);
+        if (libraryMapper.insert(userId, blockId, LibrarySource.FREE) > 0) {
+            notificationService.blockCollected(block, userId);
+        }
         return blockService.toResponse(block, userId);
     }
 

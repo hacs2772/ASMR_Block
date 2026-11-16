@@ -3,6 +3,7 @@ import { IoCheckmarkCircle, IoPhonePortrait, IoDesktop } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { adminApi, errorMessage } from '../../api/api';
 import BlockLoader from '../brand/BlockLoader';
+import { shortDateTime } from '../../lib/time';
 
 const FILTERS = [
   { done: false, label: '새 의견' },
@@ -63,7 +64,7 @@ function FeedbackList({ onNewCount }) {
               <span>{f.who ? `@${f.who}${f.beta ? ' (베타 손님)' : ''}` : '로그인 안 함'}</span>
               {f.page && <span>{f.page}</span>}
               {f.contact && <span className="text-ink">답장: {f.contact}</span>}
-              <span className="text-faint">{new Date(f.createdAt).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' })}</span>
+              <span className="text-faint">{shortDateTime(f.createdAt)}</span>
               <button type="button" onClick={() => toggle(f)} data-testid={`feedback-done-${f.id}`}
                 className={`ml-auto flex items-center gap-1 rounded-lg px-2.5 py-1 font-bold ${f.done ? 'text-muted hover:text-ink' : 'bg-pink-soft text-pink-text hover:bg-pink hover:text-white'}`}>
                 <IoCheckmarkCircle /> {f.done ? '새 의견으로' : '확인함'}

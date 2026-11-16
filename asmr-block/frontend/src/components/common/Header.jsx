@@ -4,6 +4,7 @@ import { IoClose, IoMenu, IoPersonCircle, IoShieldCheckmark, IoStar } from 'reac
 import useAuthStore from '../../store/authStore';
 import LogoMark from '../brand/LogoMark';
 import { useComingSoon } from './ComingSoon';
+import NotificationBell from './Notifications';
 
 /** 큰 메뉴: 앱과 같은 순서 (블록 구매 · 추천 조합 · 조합 만들기 · 블록 판매) + 팅글 가이드 */
 export const NAV = [
@@ -85,6 +86,7 @@ function Header() {
           <button type="button" className="btn-line btn-sm hidden sm:inline-flex" onClick={() => openApp('app')} data-testid="header-get-app">
             앱 받기
           </button>
+          {isAuthenticated && <NotificationBell />}
           {isAuthenticated ? (
             <div className="relative" ref={userRef}>
               <button type="button" className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-semibold text-muted hover:text-ink"
@@ -96,6 +98,7 @@ function Header() {
                 <div className="card absolute right-0 top-12 w-48 overflow-hidden py-1 shadow-2xl">
                   <MenuLink to="/me/combos">내 조합</MenuLink>
                   <MenuLink to="/sell#mine">내가 올린 블록</MenuLink>
+                  {user?.id && <MenuLink to={`/creator/${user.id}`}>내 크리에이터 페이지</MenuLink>}
                   <MenuLink to="/profile">내 정보</MenuLink>
                   {isAdmin && <MenuLink to="/admin">관리자 페이지</MenuLink>}
                   <button type="button" onClick={handleLogout} className="block w-full px-4 py-2.5 text-left text-sm text-muted hover:bg-card-active hover:text-ink">

@@ -12,7 +12,8 @@ import java.util.Optional;
 public interface LibraryMapper {
 
     /** 이미 담겨 있으면 아무것도 하지 않음 */
-    void insert(@Param("userId") Long userId, @Param("blockId") Long blockId, @Param("source") LibrarySource source);
+    /** 담기 (이미 있으면 그대로) → 새로 담았으면 1 */
+    int insert(@Param("userId") Long userId, @Param("blockId") Long blockId, @Param("source") LibrarySource source);
 
     void delete(@Param("userId") Long userId, @Param("blockId") Long blockId);
 

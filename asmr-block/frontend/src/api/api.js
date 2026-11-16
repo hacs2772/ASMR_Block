@@ -106,6 +106,15 @@ export const adminApi = {
   resolveReport: (body) => axiosInstance.post('/admin/reports/resolve', body).then((r) => r.data),
 };
 
+/** 내 알림함: 검수 결과(승인·돌려보냄) · 담김 소식. settings = { review, collect } (끄면 아예 안 만듦) */
+export const notificationApi = {
+  summary: () => data(axiosInstance.get('/me/notifications/summary')),
+  list: (page = 0, size = 30) => data(axiosInstance.get('/me/notifications', { params: { page, size } })),
+  /** ids가 없으면 전부 읽음 */
+  read: (ids) => data(axiosInstance.post('/me/notifications/read', { ids: ids || [] })),
+  settings: (settings) => axiosInstance.put('/me/notifications/settings', settings).then((r) => r.data),
+};
+
 /** 신고하기 (로그인 없이도 됨). targetType BLOCK | PLAYLIST | USER, reason COPYRIGHT | OFFENSIVE | SPAM | OTHER */
 export const reportApi = {
   send: (body) => axiosInstance.post('/reports', body).then((res) => res.data),

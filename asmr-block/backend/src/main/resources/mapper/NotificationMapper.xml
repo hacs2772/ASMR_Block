@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.asmrblock.notification.NotificationMapper">
+
+    <resultMap id="NotificationMap" type="com.asmrblock.notification.Notification">
+        <id property="id" column="id"/>
+        <result property="read" column="is_read"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO notification (user_id, type, block_id, playlist_id, title, note, actor_nickname)
+        VALUES (#{userId}, #{type}, #{blockId}, #{playlistId}, #{title}, #{note}, #{actorNickname})
+    </insert>
+
+    <update id="bumpUnread">
+        UPDATE notification
+        SET count = count + 1, actor_nickname = #{actorNickname}, title = #{title}, updated_at = NOW()
+        WHERE user_id = #{userId} AND type = #{type} AND is_read = false
+          <if test="blockId != null">AND block_id = #{blockId}</if>
+          <if test="playlistId != null">AND playlist_id = #{playlistId}</if>
+    </update>
+
+    <select id="findByUser" resultMap="NotificationMap">
+        SELECT * FROM notification WHERE user_id = #{userId}
+        ORDER BY updated_at DESC, id DESC
+        OFFSET #{offset} LIMIT #{limit}
+    </select>
+
+    <select id="countByUser" resultType="long">
+        SELECT COUNT(*) FROM notification WHERE user_id = #{userId}
+    </select>
+
+    <select id="countUnread" resultType="long">
+        SELECT COUNT(*) FROM notification WHERE user_id = #{userId} AND is_read = false
+    </select>
+
+    <update id="markRead">
+        UPDATE notification SET is_read = true
+        WHERE user_id = #{userId} AND is_read = false
+        <if test="ids != null and !ids.isEmpty()">
+            AND id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+        </if>
+    </update>
+
+    <delete id="deleteOlderThanDays">
+        DELETE FROM notification WHERE updated_at &lt; NOW() - make_interval(days => #{days})
+    </delete>
+
+    <select id="findSettings" resultType="com.asmrblock.notification.NotifySettings">
+        SELECT notify_review, notify_collect FROM users WHERE id = #{userId} AND is_active = true
+    </select>
+
+    <update id="updateSettings">
+        UPDATE users SET notify_review = #{review}, notify_collect = #{collect} WHERE id = #{userId}
+    </update>
+
+</mapper>

@@ -20,3 +20,7 @@ asmr-block/.env.public
 
 # 공개용 자동 백업 (DB·올린 파일, 개인정보 포함)
 asmr-block/backups/
+
+# 자동 화면 검사 결과
+asmr-block/e2e/test-results/
+asmr-block/e2e/playwright-report/

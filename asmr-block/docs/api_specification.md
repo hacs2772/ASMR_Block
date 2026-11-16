@@ -520,6 +520,21 @@
 - 사람 수에서 관리자·샘플 계정·탈퇴한 사람은 뺌. 베타 손님 = `beta-…@beta.asmrblock.com`. 날짜는 한국 시간
 - 재생 = 로그인한 사람의 블록·조합 재생 기록 (같은 사람이 30분 안에 다시 들으면 1번)
 
+### 9.0 알림함 - V14 (로그인 필요)
+
+크리에이터에게 검수 결과와 담김 소식. 받는 사람이 그 종류를 꺼 두면 아예 만들지 않아요.
+
+| Method | URL | 설명 |
+|------|------|------|
+| GET | `/me/notifications?page=0&size=30` | 내 알림 (최근에 바뀐 순). 한 줄: `{ "id", "type", "message", "note", "target": { "kind": "BLOCK|UPLOADS|COMBO", "id" }, "read", "at" }` |
+| GET | `/me/notifications/summary` | 종 아이콘용 `{ "unread": 2, "settings": { "review": true, "collect": true } }` (앱·웹이 1분마다) |
+| POST | `/me/notifications/read` | 읽음 `{ "ids": [1, 2] }`, 비우면 전부 → summary |
+| PUT | `/me/notifications/settings` | 끄기·켜기 `{ "review": false, "collect": true }` (둘 다 필수) → summary, 둘 다 끄면 `"알림을 모두 껐어요."` |
+
+- `type`: `BLOCK_APPROVED` 승인(→ `BLOCK` 내 크리에이터 페이지의 그 블록) / `BLOCK_REJECTED` 돌려보냄 + `note` 이유(→ `UPLOADS` 내가 올린 블록) — 관리자가 상태를 **바꿀 때만** (신고로 숨겨도 돌려보냄 알림) / `BLOCK_COLLECTED` 상점 "블록 담기"로 새로 담음 / `COMBO_COLLECTED` 공개 조합을 한 번에 담아 감(→ `COMBO`). 본인은 빼고
+- 담김 소식은 **읽기 전까지 한 줄로 묶음**: `"@닉네임님 외 2명이 ‘원목 탭핑’ 블록을 담았어요"`
+- `at` = 마지막으로 바뀐 때, UTC(`…Z`). 90일 지난 알림은 매일 새벽 지움
+
 ### 9.5 신고 - V13
 
 누구나(로그인 없이도) 블록·공개 조합·사람을 신고하고, 관리자가 대상별로 묶어 보고 처리해요.

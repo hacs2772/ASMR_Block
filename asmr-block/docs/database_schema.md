@@ -107,6 +107,20 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | page / client | VARCHAR | 보낸 화면 (`/create`) / `web`·`app` |
 | is_done | BOOLEAN | 관리자가 확인함 |
 
+## notification (알림함, V14)
+크리에이터에게 검수 결과·담김 소식. `users.notify_review`·`notify_collect`(V14, 기본 TRUE)를 끄면 그 종류는 만들지 않음
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| user_id | FK → users (CASCADE) | 받는 사람 |
+| type | VARCHAR(30) | `BLOCK_APPROVED` · `BLOCK_REJECTED` · `BLOCK_COLLECTED` · `COMBO_COLLECTED` |
+| block_id / playlist_id | FK (CASCADE) | 무엇에 대한 알림 |
+| title | VARCHAR(200) | 그때의 블록·조합 이름 |
+| note | VARCHAR(300) | 돌려보낸 이유 |
+| actor_nickname / count | | 마지막으로 담은 사람 / 담은 사람 수 (읽기 전까지 한 줄로 묶어 count만 늘림) |
+| is_read | BOOLEAN | 읽음 |
+| created_at / updated_at | TIMESTAMP | 목록은 updated_at 순, 90일 지나면 지움 |
+
 ## report (신고, V13)
 웹·앱의 "신고". 관리자 페이지 > 신고에서 대상(`target_type`+`target_id`)별로 묶어 봄
 

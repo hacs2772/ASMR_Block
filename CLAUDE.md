@@ -25,6 +25,8 @@
   - 계산은 웹 `lib/trim.js` · 앱 `lib/trim.ts`(글자까지 같은지 앱 jest가 검사), 화면은 웹 `components/sell/Trimmer.jsx` · 앱 `components/upload/Trimmer.tsx`
   - ⚠ ffmpeg 6.1은 `-ss`로 중간부터 읽은 mp3를 `loudnorm`으로 파일 끝까지 처리하면 멈춤 → 자르기는 꼭 `atrim` 필터로. 파형은 `aeval=abs(val(0))` 뒤에 1000Hz로 줄임(그냥 줄이면 탭핑 같은 높은 소리가 사라짐)
 - **크리에이터 페이지**: 블록 카드의 @닉네임 → 웹 `/creator/:id`(`pages/CreatorPage.jsx`) · 앱 `/creator/[id]` — 머리(`GET /creators/{id}`, `creator` 패키지: 상점에 보이는 블록 수·담은 사람·들은 횟수·많이 올린 트리거) + 그 사람 블록(`GET /blocks?uploaderId=`), `?block=12`면 그 블록을 맨 위 "공유받은 블록". 판매 화면 "내가 올린 블록" 옆 "내 크리에이터 페이지". **블록 공유** `/s/b/{id}`(블록 카드의 작은 공유 아이콘) · **크리에이터 공유** `/s/c/{id}` → 조합 공유와 같은 og HTML + 카드 그림(`ShareCardRenderer.renderBlock/renderCreator`). 공유 함수는 웹 `lib/share.js` · 앱 `lib/share.ts`
+- **알림함(V14, `notification` 패키지)**: 크리에이터에게 검수 결과(BLOCK_APPROVED·BLOCK_REJECTED+이유, `BlockService.updateStatus`에서 상태가 바뀔 때만)·담김 소식(BLOCK_COLLECTED = 상점 "블록 담기"로 새로 담았을 때, COMBO_COLLECTED = 공개 조합 한 번에 담기, 본인은 빼고). 담김 소식은 읽기 전까지 한 줄로 묶어 `count`만 늘림. **끄기** = `users.notify_review`·`notify_collect`(끄면 아예 안 만듦). API `GET /me/notifications`·`/summary`(안 읽은 수 + 설정, 1분마다)·`POST /read`·`PUT /settings`, 90일 지난 알림은 매일 지움. 웹 머리글 종(`components/common/Notifications.jsx`, 창 아래 끄기 스위치) · 앱 머리 종(`components/NotificationBell.tsx`) → `app/notifications.tsx`(맨 위 끄기 스위치). 시간은 `at`(UTC, Z) → `lib/time`(웹·앱 같음, jest) "5분 전"
+- **자동 화면 검사**(`asmr-block/e2e`, Playwright, CI "화면 검사"): CI가 개발용 docker compose + 앱 웹 미리보기(:8081)를 띄우고 웹·앱 큰 흐름을 직접 눌러 봄 (처음 시작·담기·쌓기·업로드·승인·알림·신고·크리에이터·화면 넘침). 검사마다 새 계정을 API로 만듦. 화면을 바꾸면 `data-testid`를 지키거나 검사도 같이 고치기. 실행법은 `e2e/README.md`
 - **사이트 감시**(`.github/workflows/uptime.yml`): GitHub Actions가 15분마다 asmrblock.com 웹·API(`/auth/beta`)를 확인(3번 다시 해 봄) → 안 열리면 저장소에 "사이트-꺼짐" 이슈(메일 알림), 다시 열리면 댓글 달고 닫음. **예약 실행은 기본 브랜치(main)의 파일로만 돌아서 main에도 같은 파일이 있음** — 바꾸면 main에도 넣기
 - **녹음 가이드**(크리에이터용): 웹 `/sell/guide`(`pages/RecordingGuidePage.jsx`, 판매 화면·바닥글에서 링크) · 앱 `/recording-guide`(블록 판매 탭 맨 위 바로가기). 녹음 전 체크 5개(눌러서 체크, 저장 안 함) → 트리거 하나만·조용한 곳·휴대폰 놓는 법(한 뼘 그림)·녹음할 때·올리기 전에 → 올릴 수 없는 소리(남의 소리·배경 음악·허락 없는 목소리). 내용은 웹 `lib/recording.js` · 앱 `lib/recording.ts`(글자까지 같은지 앱 jest)
 - **관리자 페이지(V8, 웹 `/admin`)**: 관리자 계정으로 로그인하면 위 메뉴에 "관리자" (`user.role === 'ADMIN'`, 서버도 `/api/v1/admin/**` ADMIN 확인). 블록 승인·돌려보내기(이유 `review_note` → 판매자 "내가 올린 블록"), **트리거 종류**(묶음 색·소분류 아이콘 추가·고치기·숨기기·순서), **스티커**(SVG 검사·PNG 256px 추가·숨기기·순서). 바꾸면 앱·웹에 바로(앱 업데이트 없이). 분류·스티커는 지우지 않고 숨김. 아이콘 고르기 목록 = 웹 `lib/blocks.js` `ICONS`(앱 Ionicons에도 있는 이름만)
@@ -43,7 +45,7 @@
 
 ## 구조
 - `asmr-block/backend` — Spring Boot 4.1 / Java 21 / MyBatis / PostgreSQL 16 / ffmpeg
-  - 기능별 패키지: `auth`, `user`, `category`, `block`, `library`(내 블록함), `playlist`, `render`, `play`, `audio`(ffmpeg), `storage`, `common`, `config`, `security`, `creator`, `share`, `report`, `activity`, `stats`
+  - 기능별 패키지: `auth`, `user`, `category`, `block`, `library`(내 블록함), `playlist`, `render`, `play`, `audio`(ffmpeg), `storage`, `common`, `config`, `security`, `creator`, `share`, `report`, `activity`, `stats`, `notification`
   - MyBatis XML: `src/main/resources/mapper/*Mapper.xml` (타입은 전체 클래스 이름으로 씀)
 - `asmr-block/mobile` — **메인 클라이언트**. Expo SDK 58 / React Native 0.88 / TypeScript / Expo Router
   - 작업 전 `asmr-block/mobile/AGENTS.md`(Expo 규칙)를 따른다: 패키지는 `npx expo install`, 화면은 `src/app/`
@@ -68,11 +70,12 @@ cd asmr-block/backend && ./gradlew test      # 백엔드 통합 테스트 (Docke
 cd asmr-block/frontend && CI=true npm run build && CI=true npx react-scripts test --watchAll=false   # 웹 빌드·테스트
 cd asmr-block/mobile && npx expo start       # 앱 (휴대폰 Expo Go로 QR 스캔, 같은 와이파이)
 cd asmr-block/mobile && npx tsc --noEmit && npx eslint . && npx jest   # CI와 같은 명령 (npm run lint는 scripts/를 안 봄)
+cd asmr-block/e2e && npx playwright test     # 화면 검사 (서버·웹·앱 미리보기를 먼저 켜 둠, e2e/README.md)
 ```
 테스트 계정: `test@asmrblock.com` / `password123` (관리자: `admin@asmrblock.com`)
 
 ## 백엔드 규칙
-- **DB 변경은 새 Flyway 파일로만**: `src/main/resources/db/migration/V{n}__설명.sql`. 이미 있는 V 파일은 절대 수정하지 않는다. (지금 V13까지 있음 → 다음은 V14)
+- **DB 변경은 새 Flyway 파일로만**: `src/main/resources/db/migration/V{n}__설명.sql`. 이미 있는 V 파일은 절대 수정하지 않는다. (지금 V14까지 있음 → 다음은 V15)
 - 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 프로필에서만 실행). 여러 번 실행돼도 안전하게 `ON CONFLICT` 사용.
 - 응답은 항상 `ApiResponse` 형식(`success`, `message`, `data`, `error{code,message}`). 오류는 `ApiException.notFound/badRequest/...` 로 던진다.
 - 요청/응답 DTO는 record로, 기능 패키지의 `*Dtos.java` 안에 모은다. 컨트롤러에서 `Map`으로 응답을 만들지 않는다.
@@ -130,6 +133,7 @@ cd asmr-block/mobile && npx tsc --noEmit && npx eslint . && npx jest   # CI와 �
 - [x] 신고하기 + 관리자 숨기기·업로드 막기(V13) — 스토어 심사(사용자 콘텐츠 신고 기능)에도 필요
 - [x] 녹음 가이드(웹 `/sell/guide`·앱 블록 판매): 휴대폰으로 듣기 좋은 블록 녹음하는 법 + 녹음 전 체크
 - [x] 사이트 감시(GitHub Actions 15분마다 → 이슈 알림) + 크리에이터 페이지·블록/크리에이터 공유 링크
+- [x] 자동 화면 검사(CI, Playwright) + 크리에이터 알림함(V14, 종류별 끄기)
 - [x] **거의 0원으로 먼저 보여 주기**(사용자가 고른 방향): asmrblock.com 공개 중 (지금은 사용자의 회사 PC + Cloudflare Tunnel, 옮기는 법은 README "다른 PC로 옮기기"). 남은 것 = 진짜 녹음 블록 채우기 → 베타 모집(`docs/beta_recruit.md`) → 반응 보기. 사업자·스토어 계정·유료 서버는 그 뒤에
 - [ ] 안드로이드 APK: 설정·안내 준비 끝(`mobile/eas.json`, README) → 사용자가 Expo 가입 후 `eas build -p android --profile preview` → 실기기로 아이콘·첫 화면·잠금화면 재생 확인. 첫 빌드 뒤 `app.json`의 `extra.eas.projectId`를 저장소에 넣기
 - [ ] 아이폰(TestFlight, 애플 개발자 계정 필요), 광고 SDK(AdMob)로 광고 자리 교체

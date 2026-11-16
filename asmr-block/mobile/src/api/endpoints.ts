@@ -1,6 +1,9 @@
 import { api } from './client';
 import type {
   Creator,
+  NotificationItem,
+  NotificationSettings,
+  NotificationSummary,
   BetaLoginResponse,
   Block,
   CategoryGroup,
@@ -74,6 +77,15 @@ export const stickerApi = {
 export const feedbackApi = {
   send: (body: { message: string; contact?: string | null; page?: string }) =>
     api<null>('/feedback', { method: 'POST', body: { client: 'app', ...body } }),
+};
+
+/** 내 알림함: 검수 결과 · 담김 소식 (끄면 아예 안 만듦) */
+export const notificationApi = {
+  summary: () => api<NotificationSummary>('/me/notifications/summary'),
+  list: (page = 0) => api<Page<NotificationItem>>('/me/notifications' + query({ page, size: 30 })),
+  /** ids가 없으면 전부 읽음 */
+  read: (ids?: number[]) => api<NotificationSummary>('/me/notifications/read', { method: 'POST', body: { ids: ids ?? [] } }),
+  settings: (settings: NotificationSettings) => api<NotificationSummary>('/me/notifications/settings', { method: 'PUT', body: settings }),
 };
 
 export type ReportTargetType = 'BLOCK' | 'PLAYLIST' | 'USER';

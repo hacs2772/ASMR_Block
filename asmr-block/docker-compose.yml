@@ -39,6 +39,9 @@ services:
       DB_PASSWORD: postgres
       APP_STORAGE_LOCAL_DIR: /data/media
       APP_GENERATE_SAMPLE_AUDIO: "true"   # 첫 실행 때 샘플 음원 20개 생성 (1~2분)
+      # 개발용은 넉넉하게 (자동 화면 검사가 계정을 여러 개 만듦). 공개용은 기본값(1시간 20번)
+      APP_LIMIT_SIGNUP_PER_HOUR_PER_IP: "1000"
+      APP_LIMIT_BETA_LOGIN_PER_HOUR_PER_IP: "1000"
       # 휴대폰 앱(Expo)도 같은 와이파이에서 http://<PC IP>:8080 으로 접속 가능
     ports:
       - "8080:8080"

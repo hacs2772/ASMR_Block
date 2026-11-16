@@ -14,6 +14,7 @@ import com.asmrblock.playlist.PlaylistDtos.ItemRequest;
 import com.asmrblock.playlist.PlaylistDtos.PlaylistSaveRequest;
 import com.asmrblock.playlist.PlaylistDtos.TrackRequest;
 import com.asmrblock.playlist.PlaylistDtos.PlaylistSummaryResponse;
+import com.asmrblock.notification.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,7 @@ public class PlaylistService {
     private final BlockService blockService;
     private final PlayCountService playCountService;
     private final LibraryService libraryService;
+    private final NotificationService notificationService;
     private final ActivityService activityService;
 
     // ===================== 조회 =====================
@@ -140,6 +142,7 @@ public class PlaylistService {
             // 동시에 두 번 누른 경우: 먼저 만들어진 복사본을 돌려줌
             return getViewable(collectedIds(userId, List.of(id)).get(id), userId);
         }
+        notificationService.comboCollected(source, userId);
         for (PlaylistLayer layer : source.getLayers()) {
             PlaylistLayer copied = PlaylistLayer.builder()
                     .playlistId(copy.getId()).role(layer.getRole()).volume(layer.getVolume()).build();

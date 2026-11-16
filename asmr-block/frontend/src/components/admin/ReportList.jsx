@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { adminApi, errorMessage } from '../../api/api';
 import { REPORT_REASONS } from '../common/Report';
 import BlockLoader from '../brand/BlockLoader';
+import { shortDateTime } from '../../lib/time';
 
 const FILTERS = [
   { status: 'OPEN', label: '새 신고' },
@@ -108,7 +109,7 @@ function ReportCard({ item, status, busy, onResolve }) {
         {item.targetType !== 'USER' && item.ownerNickname && <span>올린 사람 @{item.ownerNickname}</span>}
         <span className="font-bold text-pink-text">신고 {item.count}건</span>
         {reasons.map((r) => <span key={r.key} className="rounded-full border border-line px-2 py-0.5">{r.short} {item.reasons[r.key]}</span>)}
-        <span className="text-faint">{new Date(item.lastAt).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' })}</span>
+        <span className="text-faint">{shortDateTime(item.lastAt)}</span>
       </div>
       {item.details && <p className="mt-3 whitespace-pre-wrap break-words rounded-lg bg-card-active p-3 text-sm leading-relaxed">{item.details}</p>}
       {item.mediaUrl && <Listen url={item.mediaUrl} />}

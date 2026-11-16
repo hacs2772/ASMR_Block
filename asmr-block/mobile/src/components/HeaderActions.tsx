@@ -1,14 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { NotificationBell } from '@/components/NotificationBell';
 import { useAuth } from '@/store/auth';
 import { colors } from '@/theme';
 
-/** 화면 오른쪽 위: ? 도움말(팅글 설명·단어장) + 내 정보 */
+/** 화면 오른쪽 위: 알림(로그인했을 때) + ? 도움말(팅글 설명·단어장) + 내 정보 */
 export function HeaderActions() {
   const signedIn = useAuth((s) => s.status === 'signedIn');
   return (
     <View style={styles.row}>
+      <NotificationBell />
       <Pressable accessibilityRole="button" accessibilityLabel="도움말" hitSlop={8} onPress={() => router.push('/help')}
         style={styles.btn} testID="open-help">
         <Ionicons name="help-circle-outline" size={24} color={colors.muted} />

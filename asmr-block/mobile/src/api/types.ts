@@ -87,6 +87,23 @@ export type Block = {
   recentPlays: number | null;
 };
 
+export type NotificationType = 'BLOCK_APPROVED' | 'BLOCK_REJECTED' | 'BLOCK_COLLECTED' | 'COMBO_COLLECTED';
+
+/** 알림 한 줄. target = 누르면 갈 곳 (BLOCK 내 크리에이터 페이지의 그 블록 / UPLOADS 내가 올린 블록 / COMBO 그 조합) */
+export type NotificationItem = {
+  id: number;
+  type: NotificationType;
+  message: string;
+  note: string | null;
+  target: { kind: 'BLOCK' | 'UPLOADS' | 'COMBO'; id: number | null } | null;
+  read: boolean;
+  at: string;
+};
+
+/** review = 검수 결과(승인·돌려보냄), collect = 내 블록·조합을 담았을 때 */
+export type NotificationSettings = { review: boolean; collect: boolean };
+export type NotificationSummary = { unread: number; settings: NotificationSettings };
+
 /** 크리에이터 페이지 머리 (블록 목록은 catalogApi.blocks({ uploaderId })) */
 export type Creator = {
   id: number;

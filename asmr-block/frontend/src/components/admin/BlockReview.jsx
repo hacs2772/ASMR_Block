@@ -6,6 +6,7 @@ import { colorOf, formatDuration, iconOf, noteOf, TALK_LABEL } from '../../lib/b
 import BlockLoader from '../brand/BlockLoader';
 import Brick from '../brand/Brick';
 import { useVideoModal } from '../block/VideoModal';
+import { serverTime } from '../../lib/time';
 
 const TABS = [
   { status: 'PENDING', label: '승인 대기' },
@@ -92,7 +93,7 @@ function ReviewCard({ block, status, onDone }) {
     TALK_LABEL[block.talkType || 'NONE'],
     formatDuration(block.duration),
     block.recordedPlace,
-    new Date(block.createdAt).toLocaleDateString('ko-KR'),
+    serverTime(block.createdAt)?.toLocaleDateString('ko-KR'),
   ].filter(Boolean).join(' · ');
 
   return (
