@@ -1,0 +1,80 @@
+# asmrblock.com이 열리는지 15분마다 확인해요 (공개 저장소라 무료).
+# 안 열리면(3번 다시 해 봐도) 저장소에 "사이트가 안 열려요" 이슈를 만들어 GitHub 알림(메일)이 가고,
+# 다시 열리면 그 이슈에 댓글을 달고 닫아요. 이미 열린 이슈가 있으면 새로 만들지 않아요.
+# ⚠ 예약 실행(schedule)은 기본 브랜치(main)에 있는 이 파일로만 돌아요. 바꾸면 main에도 같이 넣어 주세요.
+# 지금 바로 확인: GitHub 저장소 → Actions → 사이트 감시 → Run workflow
+name: 사이트 감시
+
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'   # 15분마다 (정각을 피해서 덜 밀림)
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/uptime.yml']
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: uptime
+
+jobs:
+  check:
+    name: asmrblock.com 확인
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      SITE: https://asmrblock.com
+      LABEL: 사이트-꺼짐
+    steps:
+      - name: 웹과 API가 열리는지 (안 되면 30초 뒤 다시, 3번까지)
+        id: check
+        run: |
+          check() {
+            local web api
+            web=$(curl -sS --max-time 20 -A "asmrblock-uptime" -o /tmp/web.html -w '%{http_code}' "$SITE/" || echo "연결 안 됨")
+            api=$(curl -sS --max-time 20 -A "asmrblock-uptime" -o /tmp/api.json -w '%{http_code}' "$SITE/api/v1/auth/beta" || echo "연결 안 됨")
+            echo "웹 $web / API $api"
+            echo "detail=웹 화면: $web, API: $api" >> "$GITHUB_OUTPUT"
+            [ "$web" = "200" ] && grep -q "ASMR Block" /tmp/web.html && [ "$api" = "200" ] && grep -q '"success":true' /tmp/api.json
+          }
+          for i in 1 2 3; do
+            if check; then echo "up=true" >> "$GITHUB_OUTPUT"; echo "열려요"; exit 0; fi
+            [ "$i" -lt 3 ] && { echo "$i번째 실패, 30초 뒤 다시 해 봐요"; sleep 30; }
+          done
+          echo "up=false" >> "$GITHUB_OUTPUT"
+
+      - name: 안 열리면 이슈 만들기 (이미 열려 있으면 그대로)
+        if: steps.check.outputs.up == 'false'
+        run: |
+          now=$(TZ=Asia/Seoul date '+%m월 %d일 %H:%M')
+          gh label create "$LABEL" -R "$REPO" --color D93F0B --description "asmrblock.com이 안 열림 (사이트 감시)" 2>/dev/null || true
+          open=$(gh issue list -R "$REPO" --label "$LABEL" --state open --json number --jq '.[0].number // empty')
+          if [ -z "$open" ]; then
+            gh issue create -R "$REPO" --label "$LABEL" --title "asmrblock.com이 안 열려요 ($now)" --body "$(cat <<BODY
+          사이트 감시가 3번 다시 해 봤는데 asmrblock.com이 안 열려요. (한국 시간 $now)
+
+          - 결과: ${{ steps.check.outputs.detail }}
+          - 이렇게 확인해 보세요
+            1. 공개 서버 PC(지금은 회사 PC)가 켜져 있는지, 잠자기 모드가 아닌지
+            2. Docker Desktop이 켜져 있는지
+            3. \`start-public.bat\` 다시 실행
+
+          다시 열리면 이 이슈에 댓글이 달리고 저절로 닫혀요.
+          BODY
+          )"
+          else
+            echo "이미 열린 이슈 #$open 이 있어서 새로 만들지 않아요"
+          fi
+          exit 1
+
+      - name: 다시 열렸으면 이슈 닫기
+        if: steps.check.outputs.up == 'true'
+        run: |
+          now=$(TZ=Asia/Seoul date '+%m월 %d일 %H:%M')
+          for n in $(gh issue list -R "$REPO" --label "$LABEL" --state open --json number --jq '.[].number'); do
+            gh issue close "$n" -R "$REPO" --comment "다시 열렸어요 ($now, 한국 시간)"
+          done
