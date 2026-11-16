@@ -19,6 +19,9 @@
 - **블록 꾸미기(C안, V7)**: 겉면 = 크리에이터 사진(`thumbnail_key`, 640px jpg)이 있으면 사진 → 없으면 스티커 최대 3개 + 무늬(dots·lines·none) → 둘 다 없으면 트리거 아이콘. 테두리·돌기·아래 띠는 트리거 색 그대로. 스티커 목록·그림은 **V8부터 서버 DB(`sticker` 테이블)**, 앱·웹은 `GET /stickers`로 받아 그림(웹 `<img>`, 앱 `StickerArt`). 웹 `lib/stickers.js`·앱 `lib/stickers.ts`의 기본 16개는 받기 전·오프라인용 (앱 jest가 V8과 같은지 검사)
 - **영상 블록(V7)**: "진짜 그 장소·그 장면이구나" 하고 보는 용도(유튜브처럼 보는 게 아님). 올릴 때 선택, **480p·24fps·소리 없는 mp4**로 줄여 저장(원본 영상은 보관 안 함), 영상만 올리면 영상의 소리를 블록 음원으로. 들을 때 **기본은 소리만**, "영상도 같이 보기"를 켜면 지금 나오는 블록 영상(영상 없는 블록이면 겉면 그림). **화면이 꺼지거나 앱을 벗어나면, 잠들기 타이머 마지막 20초에는 영상이 꺼짐**. 유료 블록 영상 주소(`design.videoUrl`)는 산 사람만
 - **블록**: 3~4분짜리 ASMR 소리. 판매자가 업로드(가격은 판매자가 정하되 `app.shop.seller-max-price` 이하) → 관리자 승인(APPROVED) → 공개. `price` = 코인(0 무료)
+- **업로드 구간 고르기**(길게 녹음하고 일부만 올리기): 파일을 고르면 먼저 `POST /blocks/upload-drafts`로 올려 길이·파형(400칸)을 받고(임시 6시간), 파형 위 손잡이 두 개·가운데 끌기·±1초·고른 부분 듣기로 구간을 골라 올리기에 `draftId` + `trimStart/trimEnd`. 서버는 atrim으로 자르고 앞뒤 0.5초 페이드, 원본은 그 구간만 `-c copy`로 보관
+  - 계산은 웹 `lib/trim.js` · 앱 `lib/trim.ts`(글자까지 같은지 앱 jest가 검사), 화면은 웹 `components/sell/Trimmer.jsx` · 앱 `components/upload/Trimmer.tsx`
+  - ⚠ ffmpeg 6.1은 `-ss`로 중간부터 읽은 mp3를 `loudnorm`으로 파일 끝까지 처리하면 멈춤 → 자르기는 꼭 `atrim` 필터로. 파형은 `aeval=abs(val(0))` 뒤에 1000Hz로 줄임(그냥 줄이면 탭핑 같은 높은 소리가 사라짐)
 - **관리자 페이지(V8, 웹 `/admin`)**: 관리자 계정으로 로그인하면 위 메뉴에 "관리자" (`user.role === 'ADMIN'`, 서버도 `/api/v1/admin/**` ADMIN 확인). 블록 승인·돌려보내기(이유 `review_note` → 판매자 "내가 올린 블록"), **트리거 종류**(묶음 색·소분류 아이콘 추가·고치기·숨기기·순서), **스티커**(SVG 검사·PNG 256px 추가·숨기기·순서). 바꾸면 앱·웹에 바로(앱 업데이트 없이). 분류·스티커는 지우지 않고 숨김. 아이콘 고르기 목록 = 웹 `lib/blocks.js` `ICONS`(앱 Ionicons에도 있는 이름만)
 - **베타 운영(V9)**: 웹 `/privacy`·`/terms`(베타판 쉬운 말, 연락처 help@asmrblock.com, `pages/LegalPages.jsx`), 가입·베타 버튼 아래 동의 안내. **의견 보내기**: 웹 오른쪽 아래 버튼·바닥글(`components/common/Feedback.jsx`), 앱 도움말(`components/FeedbackForm.tsx`) → `POST /feedback`(로그인 없이도, 10분에 5번). 관리자 페이지 **통계**(`GET /admin/stats`, 관리자·샘플 계정 빼고 한국 시간, 최근 14일)·**의견** 탭
 - **블록 상점 → 내 블록함**: 듣는 사람은 상점에서 블록을 담고(`user_block`), 편집기에는 **담은 블록만**. 같은 블록 복제는 무료. 무료는 바로 담기, 유료는 구매(코인 + 구독, 준비 중) — 사기 전엔 앞 30초 맛보기(`preview_key`)만, 원본 `fileUrl`은 내 것일 때만
@@ -108,6 +111,7 @@ cd asmr-block/mobile && npx tsc --noEmit && npx eslint . && npx jest   # CI와 �
 - [x] 8단계: 핸드폰 웹 화면 정리(넘침 없음·손가락 끌기 확인), **관리자 페이지**(블록 승인·트리거 종류·스티커, V8)
 - [x] 9단계: **asmrblock.com 공개**(내 PC + Cloudflare Tunnel, 샘플 블록·조합, 구글·네이버 등록) + 베타 운영(약관·개인정보 처리방침, 의견 보내기, 관리자 통계, 자동 백업, V9)
 - [x] 처음 사용법 팝업(앱·웹): 처음 한 번 움직이는 안내 4장 + 편집기 끌기 안내 2장, 도움말에서 다시 보기
+- [x] 업로드 구간 고르기(앱·웹): 파형 보면서 손잡이로 쓸 부분만 골라 올리기
 - [ ] **거의 0원으로 먼저 보여 주기**(사용자가 고른 방향): 공개용 준비 끝(`docker-compose.public.yml` + `start-public.bat`, 웹·API·음원 한 주소 https://asmrblock.com 을 Cloudflare Tunnel로). 남은 것 = 사용자가 도메인 구매 → 터널 토큰 → `.env.public` → 반응 보기 (README "asmrblock.com 으로 다른 사람에게 보여 주기"). 사업자·스토어 계정·유료 서버는 그 뒤에
 - [ ] EAS Build(TestFlight / Play 내부 테스트)로 앱 아이콘·첫 화면·잠금화면 재생 확인, 광고 SDK(AdMob)로 광고 자리 교체
 - [ ] 파일 저장소 S3/R2 (`StorageService` 구현 추가), 오래된 완성본 정리

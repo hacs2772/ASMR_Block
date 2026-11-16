@@ -44,11 +44,16 @@ public class FfmpegRunner {
 
     /** 오디오 길이(초, 반올림) */
     public int probeDurationSeconds(Path file) {
+        return (int) Math.round(probeDuration(file));
+    }
+
+    /** 오디오 길이(초, 소수점) */
+    public double probeDuration(Path file) {
         String output = run(List.of(ffprobePath, "-v", "error",
                 "-show_entries", "format=duration", "-of", "csv=p=0", file.toString()), Duration.ofSeconds(30),
                 seconds -> { });
         try {
-            return (int) Math.round(Double.parseDouble(output.trim()));
+            return Double.parseDouble(output.trim());
         } catch (NumberFormatException e) {
             throw new AudioProcessingException("오디오 길이를 읽을 수 없습니다.");
         }

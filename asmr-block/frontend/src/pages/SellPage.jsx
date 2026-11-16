@@ -6,9 +6,11 @@ import { catalogApi, errorMessage, sellerApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
 import BetaLoginButton from '../components/common/BetaLoginButton';
 import BlockProductCard from '../components/block/BlockProductCard';
+import Trimmer from '../components/sell/Trimmer';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
 import { colorOf, formatDuration, TALK_LABEL } from '../lib/blocks';
 import { MAX_STICKERS, PATTERNS, StickerImage, useStickers } from '../lib/stickers';
+import { canTrim, initialRange, trimParams } from '../lib/trim';
 import useAuthStore from '../store/authStore';
 
 const PRICE_STEPS = [0, 10, 20, 30, 50, 100];
@@ -44,6 +46,11 @@ function SellPage() {
   const [file, setFile] = useState(null);
   const [fileUrl, setFileUrl] = useState(null);
   const [duration, setDuration] = useState(null);
+  // 구간 고르기: 파일을 고르면 먼저 올려서 파형을 받음 (draft = { draftId, duration, peaks })
+  const [draft, setDraft] = useState(null);
+  const [draftProgress, setDraftProgress] = useState(null);
+  const [range, setRange] = useState(null);
+  const pickToken = useRef(0);
   const [title, setTitle] = useState('');
   const [groupId, setGroupId] = useState(null);
   const [categoryId, setCategoryId] = useState(null);
@@ -109,21 +116,39 @@ function SellPage() {
     if (!f) return;
     if (f.size > maxFileMb * 1024 * 1024) return toast.error(`${maxFileMb}MB 이하 파일만 올릴 수 있어요.`);
     const url = URL.createObjectURL(f);
+    const token = ++pickToken.current;
     setFile(f);
     setFileUrl(url);
-    setDuration(await readDuration(url));
+    setDraft(null);
+    setRange(null);
+    setDraftProgress(0);
     if (!title) setTitle(f.name.replace(/\.[^.]+$/, '').slice(0, 60));
+    readDuration(url).then((d) => { if (token === pickToken.current) setDuration(d); });
+    // 먼저 올려서 파형 받기 (그동안 이름·트리거를 적으면 돼요). 실패하면 구간 고르기 없이 파일을 그대로 올림
+    try {
+      const d = await sellerApi.draft(f, (p) => token === pickToken.current && setDraftProgress(p));
+      if (token !== pickToken.current) return undefined;
+      setDraft(d);
+      setDuration(d.duration);
+      setRange(initialRange(d.duration, policy?.maxSeconds ?? 1200));
+    } catch (e) {
+      if (token === pickToken.current) toast.error(errorMessage(e, '파형을 만들지 못했어요. 구간 고르기 없이 올릴 수 있어요.'));
+    } finally {
+      if (token === pickToken.current) setDraftProgress(null);
+    }
     return undefined;
   };
 
   const group = groups.find((g) => g.id === groupId);
   const category = group?.children?.find((c) => c.id === categoryId);
-  // 소리 길이: 소리 파일이 있으면 그것, 없으면 영상
-  const soundLength = file ? duration : videoDuration;
+  // 소리 길이: 소리 파일이 있으면 고른 구간(없으면 파일 전체), 없으면 영상
+  const soundLength = file ? (range ? range.end - range.start : duration) : videoDuration;
   const lengthProblem = soundLength && policy
-    ? (soundLength < policy.minSeconds ? `${Math.round(policy.minSeconds)}초보다 길어야 해요` : soundLength > policy.maxSeconds ? `${policy.maxSeconds / 60}분보다 짧아야 해요` : null)
+    ? (soundLength < policy.minSeconds ? `${Math.round(policy.minSeconds)}초보다 길어야 해요` : soundLength > policy.maxSeconds + 0.05 ? `${policy.maxSeconds / 60}분보다 짧아야 해요` : null)
     : null;
-  const missing = !file && !video ? '소리 파일이나 영상을 골라 주세요' : lengthProblem || (!title.trim() ? '이름을 적어 주세요'
+  const missing = !file && !video ? '소리 파일이나 영상을 골라 주세요'
+    : draftProgress !== null ? `소리 파일 올리는 중… ${draftProgress}%`
+    : lengthProblem || (!title.trim() ? '이름을 적어 주세요'
     : !categoryId ? '트리거 종류를 골라 주세요' : !agree ? '직접 녹음했는지 확인해 주세요' : null);
 
   // 상점에서 보일 모습 그대로
@@ -138,7 +163,17 @@ function SellPage() {
   const submit = async () => {
     if (missing) return;
     const form = new FormData();
-    if (file) form.append('file', file);
+    // 먼저 올린 파일이 있으면 그걸 쓰고(다시 안 보냄), 고른 구간만
+    if (draft) {
+      form.append('draftId', draft.draftId);
+      const trim = trimParams(range, draft.duration);
+      if (trim) {
+        form.append('trimStart', String(trim.trimStart));
+        form.append('trimEnd', String(trim.trimEnd));
+      }
+    } else if (file) {
+      form.append('file', file);
+    }
     if (video) form.append('video', video);
     if (cover) form.append('cover', cover);
     if (stickers.length) form.append('stickers', stickers.join(','));
@@ -154,7 +189,7 @@ function SellPage() {
     try {
       await sellerApi.upload(form, setProgress);
       toast.success('올렸어요! 검수가 끝나면 블록 상점에 올라가요.');
-      setFile(null); setFileUrl(null); setDuration(null); setTitle(''); setPlace(''); setNote(''); setAgree(false);
+      setFile(null); setFileUrl(null); setDuration(null); setDraft(null); setRange(null); setTitle(''); setPlace(''); setNote(''); setAgree(false);
       setVideo(null); setVideoDuration(null); setCover(null); setCoverUrl(null); setStickers([]);
       loadMine();
     } catch (e) {
@@ -212,7 +247,24 @@ function SellPage() {
                 )}
               </button>
               <input ref={inputRef} type="file" className="hidden" data-testid="sell-file"
-                accept={policy ? policy.extensions.map((x) => `.${x}`).join(',') : 'audio/*'} onChange={(e) => pick(e.target.files?.[0])} />
+                accept={policy ? policy.extensions.map((x) => `.${x}`).join(',') : 'audio/*'} onChange={(e) => { pick(e.target.files?.[0]); e.target.value = ''; }} />
+
+              {/* 구간 고르기: 길게 녹음했으면 쓸 부분만 */}
+              {file && draftProgress !== null && (
+                <div className="mt-3 rounded-xl bg-card-active p-3.5 text-sm text-muted" data-testid="draft-progress">
+                  파형을 만드는 중… {draftProgress < 100 ? `${draftProgress}%` : '거의 다 됐어요'}
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full bg-pink transition-all" style={{ width: `${draftProgress}%` }} /></div>
+                </div>
+              )}
+              {file && draft && range && canTrim(draft.duration, policy?.minSeconds ?? 10) && (
+                <div className="mt-3">
+                  {draft.duration > (policy?.maxSeconds ?? 1200) && (
+                    <p className="mb-2 text-xs text-warn">{(policy?.maxSeconds ?? 1200) / 60}분이 넘는 녹음이라 앞 {(policy?.maxSeconds ?? 1200) / 60}분을 골라 뒀어요. 손잡이로 바꿀 수 있어요.</p>
+                  )}
+                  <Trimmer src={fileUrl} duration={draft.duration} peaks={draft.peaks} range={range} onChange={setRange}
+                    min={policy?.minSeconds ?? 10} max={policy?.maxSeconds ?? 1200} />
+                </div>
+              )}
 
               {/* 영상 (선택) */}
               <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl bg-card-active p-3.5">

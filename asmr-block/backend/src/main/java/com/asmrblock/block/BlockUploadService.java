@@ -2,6 +2,7 @@ package com.asmrblock.block;
 
 import com.asmrblock.audio.AudioProcessingException;
 import com.asmrblock.audio.AudioService;
+import com.asmrblock.audio.AudioService.Trim;
 import com.asmrblock.block.BlockDtos.BlockResponse;
 import com.asmrblock.block.BlockDtos.BlockUploadRequest;
 import com.asmrblock.block.BlockDtos.UploadPolicyResponse;
@@ -34,7 +35,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BlockUploadService {
 
-    private static final Set<String> ALLOWED_EXTENSIONS =
+    static final Set<String> ALLOWED_EXTENSIONS =
             Set.of("mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "webm");
     private static final Set<String> VIDEO_EXTENSIONS = Set.of("mp4", "mov", "m4v", "webm");
     private static final Set<String> IMAGE_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp");
@@ -51,6 +52,7 @@ public class BlockUploadService {
     private final BlockService blockService;
     private final TransactionTemplate transactionTemplate;
     private final AppProperties properties;
+    private final UploadDraftService draftService;
 
     /** 업로드 규칙 (판매 최대 가격, 파일 크기·길이, 형식) */
     public UploadPolicyResponse policy() {
@@ -65,30 +67,35 @@ public class BlockUploadService {
         validate(request);
         String stickers = stickerService.normalize(request.stickers());
         String pattern = BlockDesign.normalizePattern(request.pattern());
-        boolean hasAudio = present(request.file());
+        // 소리: 음원 파일 → 먼저 올려 둔 파일(구간 고르기) → 영상의 소리 순서로
+        UploadDraftService.Draft draft = hasText(request.draftId()) ? draftService.take(uploaderId, request.draftId()) : null;
+        boolean hasAudio = present(request.file()) || draft != null;
         boolean hasVideo = present(request.video());
-        // 소리는 음원 파일에서, 없으면 영상의 소리에서
-        MultipartFile source = hasAudio ? request.file() : request.video();
-        String extension = hasAudio ? extensionOf(source.getOriginalFilename(), ALLOWED_EXTENSIONS)
-                : extensionOf(source.getOriginalFilename(), VIDEO_EXTENSIONS);
+        String extension = draft != null ? draft.extension()
+                : present(request.file()) ? extensionOf(request.file().getOriginalFilename(), ALLOWED_EXTENSIONS)
+                : extensionOf(request.video().getOriginalFilename(), VIDEO_EXTENSIONS);
         String id = UUID.randomUUID().toString();
 
         Path workDir = createTempDir();
         try {
-            Path original = workDir.resolve("original." + extension);
-            source.transferTo(original);
+            Path original = draft != null ? draft.file() : workDir.resolve("original." + extension);
+            if (draft == null) {
+                (present(request.file()) ? request.file() : request.video()).transferTo(original);
+            }
+            Trim trim = trimOf(request, original, draft);
 
             Path normalized = workDir.resolve("normalized.mp3");
             int duration;
             try {
-                duration = audioService.normalize(original, normalized);
+                duration = audioService.normalize(original, normalized, trim);
             } catch (AudioProcessingException e) {
                 log.info("업로드 음원 변환 실패: {}", e.getMessage());
                 throw ApiException.badRequest(hasAudio ? "오디오 파일을 읽을 수 없습니다. 다른 파일로 시도해주세요."
                         : "영상에서 소리를 찾지 못했어요. 소리 파일을 같이 올려 주세요.");
             }
             if (duration < MIN_DURATION_SECONDS || duration > MAX_DURATION_SECONDS) {
-                throw ApiException.badRequest("블록 길이는 %d초 ~ %d분 사이여야 합니다."
+                throw ApiException.badRequest(("블록 길이는 %d초 ~ %d분 사이여야 합니다."
+                        + (trim == null && duration > MAX_DURATION_SECONDS ? " 긴 녹음은 구간을 골라 올려 주세요." : ""))
                         .formatted(MIN_DURATION_SECONDS, MAX_DURATION_SECONDS / 60));
             }
 
@@ -126,11 +133,8 @@ public class BlockUploadService {
             }
 
             String fileKey = "blocks/%s.mp3".formatted(id);
-            // 음원 원본만 보관 (영상만 올렸으면 뽑아낸 소리가 원본)
-            String masterKey = hasAudio ? "masters/%s.%s".formatted(id, extension) : null;
-            if (masterKey != null) {
-                storageService.store(masterKey, original);
-            }
+            // 음원 원본만 보관 (영상만 올렸으면 뽑아낸 소리가 원본). 구간을 골랐으면 그 부분만 (잘라 낸 부분은 보관하지 않음)
+            String masterKey = hasAudio ? storeMaster(id, extension, original, trim, workDir) : null;
             storageService.store(fileKey, normalized);
 
             Block block = Block.builder()
@@ -160,6 +164,9 @@ public class BlockUploadService {
                     blockMapper.insertTags(block.getId(), Set.copyOf(request.tagIds()));
                 }
             });
+            if (draft != null) {
+                draftService.discard(draft);
+            }
             return blockService.toResponse(blockMapper.findById(block.getId()).orElseThrow(), uploaderId);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -169,8 +176,28 @@ public class BlockUploadService {
     }
 
     private void validate(BlockUploadRequest request) {
-        if (!present(request.file()) && !present(request.video())) {
+        boolean hasDraft = hasText(request.draftId());
+        if (!present(request.file()) && !hasDraft && !present(request.video())) {
             throw ApiException.badRequest("음원 파일이나 영상 파일 중 하나는 올려 주세요.");
+        }
+        if (present(request.file()) && hasDraft) {
+            throw ApiException.badRequest("소리 파일은 하나만 올려 주세요.");
+        }
+        if (request.trimStart() != null || request.trimEnd() != null) {
+            if (request.trimStart() == null || request.trimEnd() == null) {
+                throw ApiException.badRequest("구간은 시작과 끝을 같이 골라 주세요.");
+            }
+            if (!present(request.file()) && !hasDraft) {
+                throw ApiException.badRequest("영상만 올릴 때는 구간을 고를 수 없어요. 소리 파일을 같이 올려 주세요.");
+            }
+            double length = request.trimEnd() - request.trimStart();
+            if (request.trimStart() < 0 || length <= 0) {
+                throw ApiException.badRequest("구간의 시작이 끝보다 앞이어야 해요.");
+            }
+            if (length < MIN_DURATION_SECONDS || length > MAX_DURATION_SECONDS) {
+                throw ApiException.badRequest("고른 구간은 %d초 ~ %d분 사이여야 해요."
+                        .formatted(MIN_DURATION_SECONDS, MAX_DURATION_SECONDS / 60));
+            }
         }
         if (present(request.file())) {
             extensionOf(request.file().getOriginalFilename(), ALLOWED_EXTENSIONS);
@@ -199,6 +226,49 @@ public class BlockUploadService {
         }
     }
 
+    /** 고른 구간 (끝은 파일 길이 안으로, 전체를 골랐으면 자르지 않음) */
+    private Trim trimOf(BlockUploadRequest request, Path original, UploadDraftService.Draft draft) {
+        if (request.trimStart() == null || request.trimEnd() == null) {
+            return null;
+        }
+        double length;
+        try {
+            length = draft != null ? draft.duration() : audioService.exactDuration(original);
+        } catch (AudioProcessingException e) {
+            throw ApiException.badRequest("오디오 파일을 읽을 수 없습니다. 다른 파일로 시도해주세요.");
+        }
+        double end = Math.min(request.trimEnd(), length);
+        if (request.trimStart() <= 0.05 && end >= length - 0.05) {
+            return null; // 전체를 고른 것과 같음
+        }
+        if (end - request.trimStart() < MIN_DURATION_SECONDS) {
+            throw ApiException.badRequest("고른 구간이 파일보다 길어요. 구간을 다시 골라 주세요.");
+        }
+        return new Trim(request.trimStart(), end);
+    }
+
+    /** 원본 보관. 구간을 골랐으면 다시 인코딩하지 않고 그 부분만 (못 자르는 형식이면 원본은 보관하지 않음) */
+    private String storeMaster(String id, String extension, Path original, Trim trim, Path workDir) {
+        String key = "masters/%s.%s".formatted(id, extension);
+        if (trim == null) {
+            storageService.store(key, original);
+            return key;
+        }
+        Path cut = workDir.resolve("master." + extension);
+        try {
+            audioService.trimCopy(original, cut, trim);
+            storageService.store(key, cut);
+            return key;
+        } catch (AudioProcessingException e) {
+            log.info("원본 구간 자르기 실패 (원본 보관 안 함): {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
     private static String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
@@ -207,13 +277,13 @@ public class BlockUploadService {
         return file != null && !file.isEmpty();
     }
 
-    private static void checkSize(MultipartFile file, int maxMb, String what) {
+    static void checkSize(MultipartFile file, int maxMb, String what) {
         if (file.getSize() > maxMb * 1024L * 1024L) {
             throw ApiException.badRequest("%s 파일은 %dMB까지 올릴 수 있어요.".formatted(what, maxMb));
         }
     }
 
-    private static String extensionOf(String filename, Set<String> allowed) {
+    static String extensionOf(String filename, Set<String> allowed) {
         String ext = filename == null || !filename.contains(".") ? ""
                 : filename.substring(filename.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT);
         if (!allowed.contains(ext)) {

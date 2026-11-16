@@ -3,6 +3,10 @@ package com.asmrblock.audio;
 import com.asmrblock.config.AppProperties;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
@@ -31,13 +35,94 @@ public class AudioService {
      * @return 변환된 파일 길이(초)
      */
     public int normalize(Path input, Path output) {
-        ffmpeg.ffmpeg(List.of(
-                "-i", input.toString(),
-                "-vn", "-map", "0:a:0",
-                "-af", String.format(Locale.ROOT, "loudnorm=I=%.1f:TP=-2:LRA=11,aresample=44100", audio.targetLufs()),
-                "-ac", "2", "-c:a", "libmp3lame", "-b:a", "192k",
-                output.toString()), audio.processTimeout());
+        return normalize(input, output, null);
+    }
+
+    /**
+     * normalize + 구간 자르기: trim이 있으면 그 부분만 쓰고, 잘린 앞뒤가 '뚝' 하지 않게 TRIM_FADE초씩 서서히 커지고 작아짐.
+     * 자르기는 -ss가 아니라 atrim 필터로 (ffmpeg 6.1에서 -ss로 중간부터 읽고 loudnorm으로 파일 끝까지 가면 멈추는 문제가 있음)
+     */
+    public int normalize(Path input, Path output, Trim trim) {
+        String filter = String.format(Locale.ROOT, "loudnorm=I=%.1f:TP=-2:LRA=11,aresample=44100", audio.targetLufs());
+        if (trim != null) {
+            double fade = Math.min(TRIM_FADE_SECONDS, trim.length() / 4);
+            filter = String.format(Locale.ROOT,
+                    "atrim=start=%.3f:end=%.3f,asetpts=PTS-STARTPTS,afade=t=in:st=0:d=%.2f,afade=t=out:st=%.3f:d=%.2f,",
+                    trim.start(), trim.end(), fade, trim.length() - fade, fade) + filter;
+        }
+        ffmpeg.ffmpeg(List.of("-i", input.toString(), "-vn", "-map", "0:a:0", "-af", filter,
+                "-ac", "2", "-c:a", "libmp3lame", "-b:a", "192k", output.toString()), audio.processTimeout());
         return duration(output);
+    }
+
+    /** 원본 보관용: 다시 인코딩하지 않고 고른 구간만 잘라 냄 (형식 그대로, 경계는 몇 ms 차이 날 수 있음) */
+    public void trimCopy(Path input, Path output, Trim trim) {
+        ffmpeg.ffmpeg(List.of("-ss", seconds(trim.start()), "-i", input.toString(), "-t", seconds(trim.length()),
+                "-vn", "-map", "0:a:0", "-c", "copy", output.toString()), audio.processTimeout());
+    }
+
+    /**
+     * 업로드 전 "구간 고르기" 화면의 파형: 소리 크기(절댓값)를 1초에 WAVE_RATE개로 줄여서 buckets칸마다 가장 큰 값.
+     * 먼저 절댓값을 쓰니 줄여도 탭핑·바스락 같은 높은 소리의 크기가 그대로 남음 (그냥 줄이면 높은 소리가 사라짐).
+     * 0~1 (가장 큰 칸 = 1), 작은 소리도 보이게 살짝 키움. 길이는 소수점까지. 10분짜리에 3초쯤.
+     *
+     * @param pcmFile 잠깐 쓰는 파일 (부르는 쪽에서 지움)
+     */
+    public Waveform waveform(Path input, Path pcmFile, int buckets) {
+        ffmpeg.ffmpeg(List.of("-i", input.toString(), "-vn", "-map", "0:a:0", "-af", "aeval=abs(val(0))", "-ac", "1",
+                "-ar", String.valueOf(WAVE_RATE), "-f", "s16le", "-c:a", "pcm_s16le", pcmFile.toString()), audio.processTimeout());
+        try {
+            long samples = Files.size(pcmFile) / 2;
+            if (samples < WAVE_RATE) {
+                throw new AudioProcessingException("소리가 너무 짧거나 없습니다.");
+            }
+            float[] peaks = new float[buckets];
+            try (InputStream in = new BufferedInputStream(Files.newInputStream(pcmFile), 1 << 16)) {
+                long index = 0;
+                int lo;
+                while ((lo = in.read()) >= 0) {
+                    int hi = in.read();
+                    if (hi < 0) {
+                        break;
+                    }
+                    int value = Math.abs((short) ((hi << 8) | lo));
+                    int bucket = (int) Math.min(buckets - 1, index * buckets / samples);
+                    peaks[bucket] = Math.max(peaks[bucket], value);
+                    index++;
+                }
+            }
+            float max = 0;
+            for (float p : peaks) {
+                max = Math.max(max, p);
+            }
+            for (int i = 0; i < buckets; i++) {
+                double level = max > 0 ? Math.pow(peaks[i] / max, 0.6) : 0;
+                peaks[i] = Math.round(level * 1000) / 1000f;
+            }
+            return new Waveform(samples / (double) WAVE_RATE, peaks);
+        } catch (IOException e) {
+            throw new AudioProcessingException("파형을 만들 수 없습니다.", e);
+        }
+    }
+
+    private static String seconds(double value) {
+        return String.format(Locale.ROOT, "%.3f", value);
+    }
+
+    /** 잘린 앞뒤를 부드럽게 (초) */
+    public static final double TRIM_FADE_SECONDS = 0.5;
+    /** 파형용으로 줄인 1초당 소리 개수 (1시간 = 7MB 정도) */
+    static final int WAVE_RATE = 1000;
+
+    /** 고른 구간 (초) */
+    public record Trim(double start, double end) {
+        public double length() {
+            return end - start;
+        }
+    }
+
+    /** 파형: 길이(초, 소수점) + 칸마다 0~1 */
+    public record Waveform(double durationSeconds, float[] peaks) {
     }
 
     /**
@@ -103,6 +188,11 @@ public class AudioService {
 
     public int duration(Path file) {
         return ffmpeg.probeDurationSeconds(file);
+    }
+
+    /** 길이(초, 소수점) */
+    public double exactDuration(Path file) {
+        return ffmpeg.probeDuration(file);
     }
 
     public Duration timeout() {

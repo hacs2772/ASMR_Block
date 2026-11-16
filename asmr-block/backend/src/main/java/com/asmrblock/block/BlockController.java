@@ -2,6 +2,7 @@ package com.asmrblock.block;
 
 import com.asmrblock.block.BlockDtos.BlockResponse;
 import com.asmrblock.block.BlockDtos.BlockUploadRequest;
+import com.asmrblock.block.BlockDtos.UploadDraftResponse;
 import com.asmrblock.block.BlockDtos.UploadPolicyResponse;
 import com.asmrblock.common.ApiResponse;
 import com.asmrblock.common.PageQuery;
@@ -13,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -23,6 +25,7 @@ public class BlockController {
 
     private final BlockService blockService;
     private final BlockUploadService blockUploadService;
+    private final UploadDraftService uploadDraftService;
 
     // 블록 상점 목록 (승인된 블록만). tagIds=1,2 → 둘 중 하나라도 달린 블록, free=true → 무료만,
     // talkType=NONE → 노토킹만, keyword → 이름·녹음한 곳·크리에이터 닉네임
@@ -66,6 +69,14 @@ public class BlockController {
     public ApiResponse<BlockResponse> upload(@AuthenticationPrincipal Long userId,
                                              @Valid @ModelAttribute BlockUploadRequest request) {
         return ApiResponse.ok("업로드되었습니다. 검수 후 공개됩니다.", blockUploadService.upload(userId, request));
+    }
+
+    // 올리기 전 구간 고르기: 소리 파일을 먼저 올리면 길이·파형을 돌려줌 (올리기 때 draftId + trimStart/trimEnd)
+    @PostMapping(value = "/upload-drafts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<UploadDraftResponse> uploadDraft(@AuthenticationPrincipal Long userId,
+                                                        @RequestPart(value = "file", required = false) MultipartFile file) {
+        return ApiResponse.ok(uploadDraftService.create(userId, file));
     }
 
     // 재생 기록 (로그인 필요)

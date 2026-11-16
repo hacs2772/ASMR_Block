@@ -34,6 +34,16 @@ export const sellerApi = {
     onUploadProgress: (e) => onProgress?.(e.total ? Math.round((e.loaded / e.total) * 100) : 0),
   })),
   mine: () => data(axiosInstance.get('/me/uploads', { params: { size: 100 } })),
+  /** 구간 고르기: 소리 파일을 먼저 올려 길이·파형(peaks)을 받음 → 올리기 때 draftId + trimStart/trimEnd */
+  draft: (file, onProgress) => {
+    const form = new FormData();
+    form.append('file', file);
+    return data(axiosInstance.post('/blocks/upload-drafts', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 5 * 60 * 1000,
+      onUploadProgress: (e) => onProgress?.(e.total ? Math.round((e.loaded / e.total) * 100) : 0),
+    }));
+  },
 };
 
 export const playlistApi = {

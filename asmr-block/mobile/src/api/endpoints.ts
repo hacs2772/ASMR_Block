@@ -6,6 +6,7 @@ import type {
   LoginResponse,
   MyUpload,
   Page,
+  UploadDraft,
   PlaylistDetail,
   PlaylistSaveRequest,
   PlaylistSummary,
@@ -75,6 +76,8 @@ export const sellerApi = {
   /** form: file, title, categoryId, license(OWN), price, talkType, recordedPlace, description */
   upload: (form: FormData) => api<Block>('/blocks', { method: 'POST', body: form }),
   mine: () => api<Page<MyUpload>>('/me/uploads?size=100'),
+  /** 구간 고르기: 소리 파일(form의 file)을 먼저 올려 길이·파형을 받음 → 올리기 때 draftId + trimStart/trimEnd */
+  draft: (form: FormData) => api<UploadDraft>('/blocks/upload-drafts', { method: 'POST', body: form }),
 };
 
 /** 내 블록함: 상점에서 담은 블록 (편집기에는 이것만 보임) */

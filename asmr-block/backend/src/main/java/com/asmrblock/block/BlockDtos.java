@@ -136,7 +136,19 @@ public final class BlockDtos {
 
             /** 녹음한 곳 (선택, 예: 도쿄 신주쿠역 앞) */
             @Size(max = 60, message = "녹음한 곳은 60자 이내여야 합니다.")
-            String recordedPlace) {
+            String recordedPlace,
+
+            /** 먼저 올려 둔 소리 파일(POST /blocks/upload-drafts)을 쓸 때. file 대신 */
+            @Size(max = 64)
+            String draftId,
+
+            /** 구간 고르기 (선택, 초): 둘 다 주면 그 부분만 블록으로. 앞뒤 0.5초는 부드럽게 */
+            Double trimStart,
+            Double trimEnd) {
+    }
+
+    /** 구간 고르기용으로 먼저 올린 소리: 올리기 때 draftId로. peaks = 파형(칸마다 0~1, 400칸) */
+    public record UploadDraftResponse(String draftId, double duration, float[] peaks) {
     }
 
     /** 업로드 규칙 (앱이 화면에 안내하고, 서버도 같은 값으로 검사) */

@@ -44,6 +44,15 @@ public final class TestAudio {
         return make(args, ".mp4");
     }
 
+    /** 앞 silentSeconds초는 조용하고, 뒤 toneSeconds초는 사인파인 MP3 (파형 모양 확인용) */
+    public static byte[] silenceThenToneMp3(int silentSeconds, int toneSeconds) {
+        return make(java.util.List.of("ffmpeg", "-nostdin", "-loglevel", "error", "-y",
+                "-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo:d=" + silentSeconds,
+                "-f", "lavfi", "-i", "sine=frequency=500:duration=" + toneSeconds,
+                "-filter_complex", "[1:a]aformat=channel_layouts=stereo[t];[0:a][t]concat=n=2:v=0:a=1",
+                "-c:a", "libmp3lame", "-b:a", "96k"), ".mp3");
+    }
+
     /** 작은 PNG 사진 */
     public static byte[] testPng() {
         return make(java.util.List.of("ffmpeg", "-nostdin", "-loglevel", "error", "-y",

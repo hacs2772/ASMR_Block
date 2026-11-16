@@ -4,17 +4,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Image, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { BlockLoader } from '@/components/BlockLoader';
 import { catalogApi, sellerApi } from '@/api/endpoints';
-import type { Block, BlockDesign, MyUpload, TalkType } from '@/api/types';
+import type { Block, BlockDesign, MyUpload, TalkType, UploadDraft } from '@/api/types';
 import { BlockCard } from '@/components/BlockCard';
 import { Button, Chip, EmptyState } from '@/components/ui';
 import { notify } from '@/lib/dialog';
 import { formatDuration } from '@/lib/format';
 import { MAX_STICKERS, PATTERNS } from '@/lib/stickers';
 import { StickerArt } from '@/components/StickerArt';
+import { Trimmer } from '@/components/upload/Trimmer';
+import { canTrim, initialRange, trimParams, type TrimRange } from '@/lib/trim';
 import { useStickers } from '@/store/stickers';
 import { useAuth } from '@/store/auth';
 import { categoryFallbackColor, colors, radius, space, talkLabel } from '@/theme';
@@ -24,6 +26,12 @@ const TALKS: TalkType[] = ['NONE', 'WHISPER', 'TALK'];
 
 type PickedFile = DocumentPicker.DocumentPickerAsset;
 type PickedMedia = ImagePicker.ImagePickerAsset;
+
+/** 소리 파일을 FormData에 (웹 미리보기는 File, 휴대폰은 uri) */
+function appendAudio(form: FormData, file: PickedFile) {
+  if (Platform.OS === 'web' && file.file) form.append('file', file.file);
+  else form.append('file', { uri: file.uri, name: file.name, type: file.mimeType ?? 'audio/mpeg' } as unknown as Blob);
+}
 
 /** 사진·영상을 FormData에 (웹 미리보기는 File, 휴대폰은 uri) */
 function appendMedia(form: FormData, field: string, media: PickedMedia, fallbackName: string, fallbackType: string) {
@@ -45,6 +53,11 @@ export default function UploadScreen() {
   const mine = useQuery({ queryKey: ['my-uploads'], queryFn: sellerApi.mine, enabled: status === 'signedIn' });
 
   const [file, setFile] = useState<PickedFile | null>(null);
+  // 구간 고르기: 파일을 고르면 먼저 올려서 파형을 받음 (그동안 이름·트리거를 적으면 돼요)
+  const [draft, setDraft] = useState<UploadDraft | null>(null);
+  const [draftPending, setDraftPending] = useState(false);
+  const [range, setRange] = useState<TrimRange | null>(null);
+  const draftToken = useRef(0);
   const [title, setTitle] = useState('');
   const [groupId, setGroupId] = useState<number | null>(null);
   const [categoryId, setCategoryId] = useState<number | null>(null);
@@ -64,6 +77,8 @@ export default function UploadScreen() {
 
   const maxPrice = policy.data?.maxPrice ?? 100;
   const maxFileMb = policy.data?.maxFileMb ?? 50;
+  const minSeconds = policy.data?.minSeconds ?? 10;
+  const maxSeconds = policy.data?.maxSeconds ?? 1200;
   const group = categories.data?.find((g) => g.id === groupId);
 
   const pick = async () => {
@@ -76,6 +91,23 @@ export default function UploadScreen() {
     }
     setFile(picked);
     if (!title.trim()) setTitle(picked.name.replace(/\.[^.]+$/, '').slice(0, 100));
+    // 먼저 올려서 파형 받기. 실패하면 구간 고르기 없이 파일을 그대로 올림
+    const token = ++draftToken.current;
+    setDraft(null);
+    setRange(null);
+    setDraftPending(true);
+    try {
+      const form = new FormData();
+      appendAudio(form, picked);
+      const d = await sellerApi.draft(form);
+      if (token !== draftToken.current) return;
+      setDraft(d);
+      setRange(initialRange(d.duration, maxSeconds));
+    } catch (e) {
+      if (token === draftToken.current) notify('파형을 만들지 못했어요', `${(e as Error).message}\n구간 고르기 없이 파일 그대로 올릴 수 있어요.`);
+    } finally {
+      if (token === draftToken.current) setDraftPending(false);
+    }
   };
 
   const pickMedia = async (kind: 'videos' | 'images') => {
@@ -94,7 +126,11 @@ export default function UploadScreen() {
     : list.length >= MAX_STICKERS ? list : [...list, code]));
 
   const reset = () => {
+    draftToken.current += 1;
     setFile(null);
+    setDraft(null);
+    setRange(null);
+    setDraftPending(false);
     setVideo(null);
     setCover(null);
     setStickers([]);
@@ -111,9 +147,16 @@ export default function UploadScreen() {
   const upload = useMutation({
     mutationFn: () => {
       const form = new FormData();
-      if (file) {
-        if (Platform.OS === 'web' && file.file) form.append('file', file.file);
-        else form.append('file', { uri: file.uri, name: file.name, type: file.mimeType ?? 'audio/mpeg' } as unknown as Blob);
+      // 먼저 올린 파일이 있으면 그걸 쓰고(다시 안 보냄), 고른 구간만
+      if (draft) {
+        form.append('draftId', draft.draftId);
+        const trim = trimParams(range, draft.duration);
+        if (trim) {
+          form.append('trimStart', String(trim.trimStart));
+          form.append('trimEnd', String(trim.trimEnd));
+        }
+      } else if (file) {
+        appendAudio(form, file);
       }
       if (video) appendMedia(form, 'video', video, 'video.mp4', 'video/mp4');
       if (cover) appendMedia(form, 'cover', cover, 'cover.jpg', 'image/jpeg');
@@ -136,7 +179,9 @@ export default function UploadScreen() {
     onError: (e) => notify('올리지 못했어요', (e as Error).message),
   });
 
-  const missing = !file && !video ? '소리 파일이나 영상을 골라주세요' : !title.trim() ? '이름을 적어주세요' : !categoryId ? '트리거 종류를 골라주세요'
+  const tooShort = draft && !canTrim(draft.duration, minSeconds);
+  const missing = !file && !video ? '소리 파일이나 영상을 골라주세요' : draftPending ? '소리 파일 올리는 중…'
+    : tooShort ? `${minSeconds}초보다 긴 소리를 골라주세요` : !title.trim() ? '이름을 적어주세요' : !categoryId ? '트리거 종류를 골라주세요'
     : !ownRecording ? '직접 녹음한 소리인지 확인해주세요' : null;
 
   if (status !== 'signedIn') {
@@ -168,6 +213,20 @@ export default function UploadScreen() {
             </Text>
           </View>
         </Pressable>
+
+        {/* 구간 고르기: 길게 녹음했으면 쓸 부분만 */}
+        {file && draftPending && <BlockLoader size="small" label="파형을 만드는 중…" style={{ marginTop: space.sm }} />}
+        {file && draft && range && canTrim(draft.duration, minSeconds) && (
+          <>
+            {draft.duration > maxSeconds && (
+              <Text style={[styles.hint, { color: colors.warn, marginTop: space.sm }]}>
+                {maxSeconds / 60}분이 넘는 녹음이라 앞 {maxSeconds / 60}분을 골라 뒀어요. 손잡이로 바꿀 수 있어요.
+              </Text>
+            )}
+            <Trimmer uri={file.uri} duration={draft.duration} peaks={draft.peaks} range={range} onChange={setRange}
+              min={minSeconds} max={maxSeconds} />
+          </>
+        )}
 
         {/* 영상 (선택) */}
         <Pressable accessibilityRole="button" accessibilityLabel="영상 고르기" onPress={() => (video ? setVideo(null) : pickMedia('videos'))}
@@ -252,6 +311,7 @@ export default function UploadScreen() {
 
         <Text style={styles.label}>상점에서는 이렇게 보여요</Text>
         <BlockCard block={previewBlock({ title, note, price, talkType, place, nickname: user?.nickname ?? '나',
+          duration: range ? range.end - range.start : draft?.duration ?? 200,
           category: group?.children.find((c) => c.id === categoryId) ?? null, groupName: group?.name ?? null,
           design: { coverUrl: cover?.uri ?? null, stickers, pattern, hasVideo: !!video, videoUrl: null } })}
           previewing={false} onPreview={() => {}} showNote style={styles.preview} />
@@ -277,12 +337,12 @@ export default function UploadScreen() {
 
 /** 올리기 전 미리보기용 블록 (아직 서버에 없음) */
 function previewBlock(f: {
-  title: string; note: string; price: number; talkType: TalkType; place: string; nickname: string;
+  title: string; note: string; price: number; talkType: TalkType; place: string; nickname: string; duration: number;
   category: Block['category']; groupName: string | null; design: BlockDesign;
 }): Block {
   return {
     id: 7, title: f.title.trim() || '이름 없음', description: f.note.trim() || null, fileUrl: null, previewUrl: null,
-    price: f.price, owned: false, duration: 200, talkType: f.talkType, recordedPlace: f.place.trim() || null, design: f.design,
+    price: f.price, owned: false, duration: Math.round(f.duration), talkType: f.talkType, recordedPlace: f.place.trim() || null, design: f.design,
     license: 'OWN', attribution: null, status: 'PENDING',
     category: f.category ? { ...f.category, parentName: f.groupName } : null,
     tags: [], uploader: { id: 0, nickname: f.nickname }, playCount: 0, recentPlays: null,

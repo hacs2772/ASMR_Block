@@ -171,6 +171,9 @@ export type PlaylistSummary = {
 };
 
 /** 업로드 규칙 (판매 최대 가격 등) */
+/** 구간 고르기용으로 먼저 올린 소리 (올리기 때 draftId로) */
+export type UploadDraft = { draftId: string; duration: number; peaks: number[] };
+
 export type UploadPolicy = {
   maxPrice: number; maxFileMb: number; minSeconds: number; maxSeconds: number; extensions: string[];
   maxVideoMb: number; videoExtensions: string[]; maxImageMb: number; imageExtensions: string[]; stickers: string[]; patterns: string[];
