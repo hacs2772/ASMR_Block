@@ -42,6 +42,22 @@
         UPDATE audio_render SET status = 'PENDING' WHERE status = 'PROCESSING'
     </update>
 
+    <update id="touch">
+        UPDATE audio_render SET last_used_at = NOW()
+        WHERE composition_hash = #{hash} AND (last_used_at IS NULL OR last_used_at &lt; NOW() - INTERVAL '1 day')
+    </update>
+
+    <select id="findStale" resultType="com.asmrblock.render.AudioRender">
+        SELECT * FROM audio_render
+        WHERE (status = 'DONE' AND COALESCE(last_used_at, updated_at) &lt; NOW() - make_interval(days => #{days}))
+           OR (status = 'FAILED' AND updated_at &lt; NOW() - make_interval(days => #{days}))
+        ORDER BY id
+    </select>
+
+    <delete id="deleteById">
+        DELETE FROM audio_render WHERE id = #{id}
+    </delete>
+
     <select id="findPendingHashes" resultType="string">
         SELECT composition_hash FROM audio_render WHERE status = 'PENDING' ORDER BY created_at
     </select>

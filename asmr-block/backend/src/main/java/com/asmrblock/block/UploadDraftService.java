@@ -5,7 +5,9 @@ import com.asmrblock.audio.AudioService;
 import com.asmrblock.audio.AudioService.Waveform;
 import com.asmrblock.block.BlockDtos.UploadDraftResponse;
 import com.asmrblock.common.ApiException;
+import com.asmrblock.common.RateLimiter;
 import com.asmrblock.config.AppProperties;
+import com.asmrblock.user.UserMapper;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,6 +42,8 @@ public class UploadDraftService {
 
     private final AudioService audioService;
     private final AppProperties properties;
+    private final RateLimiter rateLimiter;
+    private final UserMapper userMapper;
     private final Path dir;
     private final Map<String, Draft> drafts = new ConcurrentHashMap<>();
 
@@ -47,9 +51,12 @@ public class UploadDraftService {
     record Draft(String id, Long userId, Path file, String extension, boolean video, double duration, Instant createdAt) {
     }
 
-    public UploadDraftService(AudioService audioService, AppProperties properties) {
+    public UploadDraftService(AudioService audioService, AppProperties properties, RateLimiter rateLimiter,
+                              UserMapper userMapper) {
         this.audioService = audioService;
         this.properties = properties;
+        this.rateLimiter = rateLimiter;
+        this.userMapper = userMapper;
         this.dir = createDir();
     }
 
@@ -58,6 +65,10 @@ public class UploadDraftService {
         boolean video = "video".equalsIgnoreCase(kind);
         if (file == null || file.isEmpty()) {
             throw ApiException.badRequest(video ? "영상을 골라 주세요." : "소리 파일을 골라 주세요.");
+        }
+        if (!BlockUploadService.isAdmin(userMapper, userId)) {
+            rateLimiter.check("draft:u" + userId, properties.limits().uploadDraftsPerHour(), Duration.ofHours(1),
+                    "파일을 너무 자주 올렸어요. 잠시 후 다시 골라 주세요.");
         }
         String extension = BlockUploadService.extensionOf(file.getOriginalFilename(),
                 video ? BlockUploadService.VIDEO_EXTENSIONS : BlockUploadService.ALLOWED_EXTENSIONS);

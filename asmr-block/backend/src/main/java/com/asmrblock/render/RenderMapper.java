@@ -30,4 +30,12 @@ public interface RenderMapper {
     int resetProcessingToPending();
 
     List<String> findPendingHashes();
+
+    /** 마지막으로 쓴 때 (하루에 한 번만 갱신해서 DB 쓰기를 줄임) */
+    void touch(String hash);
+
+    /** 정리 대상: days일 동안 안 쓴 완성본(DONE) + 오래된 실패(FAILED) */
+    List<AudioRender> findStale(@Param("days") int days);
+
+    void deleteById(Long id);
 }

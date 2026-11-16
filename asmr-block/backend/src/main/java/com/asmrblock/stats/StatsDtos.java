@@ -13,7 +13,18 @@ public final class StatsDtos {
      * days: 최근 14일 하루하루 (가입, 새 조합, 재생)
      */
     public record StatsResponse(People people, Activity activity, Content content, long newFeedback, List<Day> days,
-                                Funnel funnel) {
+                                Funnel funnel, Disk disk) {
+    }
+
+    /**
+     * 서버 디스크 (올린 소리·완성본이 저장되는 곳): 남은 공간·전체(MB), 완성본이 차지한 크기(MB, 정리하면 줄어듦),
+     * low = 5GB 아래, 또는 10% 아래이면서 20GB 아래로 남음 (관리자 화면에 경고)
+     */
+    public record Disk(long freeMb, long totalMb, long rendersMb, boolean low) {
+    }
+
+    /** 오래된 완성본 정리 결과 */
+    public record CleanupResponse(int deleted, long freedMb) {
     }
 
     /**

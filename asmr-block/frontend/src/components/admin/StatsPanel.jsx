@@ -44,6 +44,7 @@ function StatsPanel({ onOpenFeedback }) {
       </div>
 
       <SampleBar />
+      {stats.disk && <DiskBar disk={stats.disk} onCleaned={() => adminApi.stats(funnelDays).then(setStats).catch(() => {})} />}
 
       {newFeedback > 0 && (
         <button type="button" onClick={onOpenFeedback}
@@ -84,6 +85,46 @@ function StatsPanel({ onOpenFeedback }) {
           {series.map((s) => <MiniBars key={s.key} title={s.title} unit={s.unit} days={days} valueKey={s.key} />)}
         </div>
       )}
+    </div>
+  );
+}
+
+const gb = (mb) => (mb >= 1024 ? `${(mb / 1024).toFixed(mb >= 10240 ? 0 : 1)}GB` : `${mb}MB`);
+
+/** 서버 디스크 (올린 소리·완성본이 저장되는 회사 PC 디스크): 남은 공간, 완성본 크기, 오래된 완성본 정리 */
+function DiskBar({ disk, onCleaned }) {
+  const [busy, setBusy] = useState(false);
+  const cleanup = async () => {
+    setBusy(true);
+    try {
+      const res = await adminApi.cleanup();
+      toast.success(res.data.freedMb > 0 ? `${res.message} (${gb(res.data.freedMb)} 비움)` : res.message);
+      onCleaned?.();
+    } catch (e) {
+      toast.error(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const usedPct = disk.totalMb > 0 ? Math.round(((disk.totalMb - disk.freeMb) / disk.totalMb) * 100) : 0;
+  return (
+    <div className={`card mt-3 flex flex-wrap items-center gap-3 p-4 ${disk.low ? 'border-warn' : ''}`} data-testid="disk-bar">
+      <div className="min-w-0 flex-1 basis-64">
+        <p className="text-sm font-bold">
+          서버 디스크 <span className={disk.low ? 'text-warn' : 'text-muted'}>남은 공간 {gb(disk.freeMb)}</span>
+          <span className="text-faint"> / {gb(disk.totalMb)}</span>
+        </p>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-card-active" aria-hidden="true">
+          <div className={`h-full rounded-full ${disk.low ? 'bg-warn' : 'bg-pink'}`} style={{ width: `${usedPct}%` }} />
+        </div>
+        <p className="mt-1.5 text-xs leading-relaxed text-muted">
+          {disk.low ? '공간이 얼마 안 남았어요. 오래된 완성본을 정리하거나 PC 디스크를 비워 주세요. ' : ''}
+          완성본(합친 소리) {gb(disk.rendersMb)} · 30일 넘게 안 들은 건 매일 새벽 저절로 정리돼요 (다시 들으면 다시 만들어짐)
+        </p>
+      </div>
+      <button type="button" className="btn-line btn-sm" onClick={cleanup} disabled={busy} data-testid="cleanup">
+        {busy ? '정리하는 중…' : '오래된 완성본 정리'}
+      </button>
     </div>
   );
 }

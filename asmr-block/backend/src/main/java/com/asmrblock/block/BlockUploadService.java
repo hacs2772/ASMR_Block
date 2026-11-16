@@ -10,6 +10,8 @@ import com.asmrblock.config.AppProperties;
 import com.asmrblock.category.CategoryService;
 import com.asmrblock.common.ApiException;
 import com.asmrblock.sticker.StickerService;
+import com.asmrblock.user.Role;
+import com.asmrblock.user.UserMapper;
 import com.asmrblock.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +56,7 @@ public class BlockUploadService {
     private final TransactionTemplate transactionTemplate;
     private final AppProperties properties;
     private final UploadDraftService draftService;
+    private final UserMapper userMapper;
 
     /** 업로드 규칙 (판매 최대 가격, 파일 크기·길이, 형식) */
     public UploadPolicyResponse policy() {
@@ -66,6 +69,12 @@ public class BlockUploadService {
 
     public BlockResponse upload(Long uploaderId, BlockUploadRequest request) {
         validate(request);
+        // 하루에 너무 많이 올리면 잠깐 막음 (디스크·검수 대기열 보호, 관리자는 제한 없음)
+        int perDay = properties.limits().uploadsPerDay();
+        if (!isAdmin(userMapper, uploaderId)
+                && blockMapper.countUploadsSince(uploaderId, java.time.LocalDateTime.now().minusDays(1)) >= perDay) {
+            throw ApiException.tooManyRequests("블록은 하루에 %d개까지 올릴 수 있어요. 내일 다시 올려 주세요.".formatted(perDay));
+        }
         String stickers = stickerService.normalize(request.stickers());
         String pattern = BlockDesign.normalizePattern(request.pattern());
         // 소리는 하나에서만: 소리 파일 · 영상(소리는 영상에서) · 먼저 올려 둔 파일(구간 고르기, 소리나 영상)
@@ -259,6 +268,11 @@ public class BlockUploadService {
             log.info("원본 구간 자르기 실패 (원본 보관 안 함): {}", e.getMessage());
             return null;
         }
+    }
+
+    /** 관리자인지 (업로드 제한을 받지 않음) */
+    static boolean isAdmin(UserMapper userMapper, Long userId) {
+        return userId != null && userMapper.findById(userId).map(u -> u.getRole() == Role.ADMIN).orElse(false);
     }
 
     private static boolean hasText(String value) {

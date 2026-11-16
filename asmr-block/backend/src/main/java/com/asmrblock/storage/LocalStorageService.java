@@ -79,6 +79,21 @@ public class LocalStorageService implements StorageService {
         return Files.isRegularFile(resolve(key));
     }
 
+    @Override
+    public long delete(String key) {
+        Path path = resolve(key);
+        try {
+            if (!Files.isRegularFile(path)) {
+                return 0;
+            }
+            long size = Files.size(path);
+            Files.delete(path);
+            return size;
+        } catch (IOException e) {
+            throw new UncheckedIOException("파일 지우기 실패: " + key, e);
+        }
+    }
+
     private static String stripLeadingSlash(String key) {
         return key.startsWith("/") ? key.substring(1) : key;
     }

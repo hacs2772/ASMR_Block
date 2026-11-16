@@ -10,6 +10,10 @@ import java.util.Optional;
 @Mapper
 public interface BlockMapper {
 
+    /** 한 사람이 since 뒤로 올린 블록 수 (하루 업로드 제한) */
+    long countUploadsSince(@org.apache.ibatis.annotations.Param("uploaderId") Long uploaderId,
+                           @org.apache.ibatis.annotations.Param("since") java.time.LocalDateTime since);
+
     void insert(Block block);
 
     void insertTags(@Param("blockId") Long blockId, @Param("tagIds") Collection<Long> tagIds);

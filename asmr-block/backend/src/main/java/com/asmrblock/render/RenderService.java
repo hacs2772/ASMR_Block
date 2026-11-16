@@ -71,6 +71,9 @@ public class RenderService {
         if (render.getStatus() == RenderStatus.PENDING) {
             submit(hash);
         }
+        if (render.getStatus() == RenderStatus.DONE) {
+            renderMapper.touch(hash);
+        }
         return RenderResponse.from(render, storageService);
     }
 
@@ -87,7 +90,17 @@ public class RenderService {
             return RenderResponse.NOT_REQUESTED; // 재생 가능한 블록이 없는 경우
         }
         return renderMapper.findByHash(hash)
-                .map(render -> RenderResponse.from(render, storageService))
+                .map(render -> {
+                    if (render.getStatus() != RenderStatus.DONE) {
+                        return RenderResponse.from(render, storageService);
+                    }
+                    // 정리돼서 파일이 없으면 "아직 안 만듦" → 앱·웹이 다시 요청해서 저절로 다시 만듦
+                    if (!storageService.exists(render.getFileKey())) {
+                        return RenderResponse.NOT_REQUESTED;
+                    }
+                    renderMapper.touch(hash);
+                    return RenderResponse.from(render, storageService);
+                })
                 .orElse(RenderResponse.NOT_REQUESTED);
     }
 

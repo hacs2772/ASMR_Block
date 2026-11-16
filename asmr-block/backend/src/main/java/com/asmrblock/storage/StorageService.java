@@ -19,4 +19,7 @@ public interface StorageService {
     void store(String key, Path source);
 
     boolean exists(String key);
+
+    /** 파일 지우기. 지운 크기(바이트), 없으면 0 */
+    long delete(String key);
 }

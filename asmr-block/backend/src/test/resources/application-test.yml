@@ -9,3 +9,10 @@ app:
   storage:
     local-dir: build/test-media
     public-base-url: http://localhost:8080/files
+  # 테스트는 같은 주소(127.0.0.1)에서 손님·회원을 많이 만들어서 넉넉하게 (제한 자체는 LimitsApiTest가 따로 확인)
+  limits:
+    beta-login-per-hour-per-ip: 10000
+    beta-login-per-day: 10000
+    signup-per-hour-per-ip: 10000
+    upload-drafts-per-hour: 10000
+    uploads-per-day: 10000

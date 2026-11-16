@@ -30,7 +30,9 @@ public record AppProperties(
         @Valid @NotNull Beta beta,
         @Valid @NotNull Admin admin,
         @Valid @NotNull Upload upload,
-        @Valid @NotNull Site site) {
+        @Valid @NotNull Site site,
+        @Valid @NotNull Limits limits,
+        @Valid @NotNull Cleanup cleanup) {
 
     public record Jwt(
             @NotBlank(message = "JWT 비밀키가 없습니다. JWT_SECRET 환경변수를 설정하세요.")
@@ -91,6 +93,19 @@ public record AppProperties(
         public boolean configured() {
             return url != null && !url.isBlank();
         }
+    }
+
+    /**
+     * 너무 자주 하면 잠깐 막기 (공개 사이트라 장난으로 계정·파일을 마구 만드는 걸 막음). 관리자는 업로드 제한 없음.
+     * betaLoginPerHourPerIp·signupPerHourPerIp = 같은 접속 주소에서 1시간에, betaLoginPerDay = 사이트 전체 하루에,
+     * uploadDraftsPerHour = 한 사람이 1시간에 먼저 올리기(구간 고르기), uploadsPerDay = 한 사람이 하루에 블록 올리기
+     */
+    public record Limits(@Min(1) int betaLoginPerHourPerIp, @Min(1) int betaLoginPerDay, @Min(1) int signupPerHourPerIp,
+                         @Min(1) int uploadDraftsPerHour, @Min(1) int uploadsPerDay) {
+    }
+
+    /** 정리: 아무도 renderKeepDays일 동안 안 들은 완성본 파일을 지움 (다시 들으면 저절로 다시 만듦). cron = 한국 시간 */
+    public record Cleanup(@Min(1) int renderKeepDays, @NotBlank String cron) {
     }
 
     /** 업로드 제한. 공개용은 Cloudflare 무료 요금제가 한 번에 100MB까지만 받아서 영상은 그보다 작게 */

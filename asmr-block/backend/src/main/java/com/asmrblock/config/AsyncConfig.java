@@ -2,10 +2,12 @@ package com.asmrblock.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-/** 완성본 만들기(ffmpeg)는 오래 걸리므로 별도 작업 스레드에서 처리 */
+/** 완성본 만들기(ffmpeg)는 오래 걸리므로 별도 작업 스레드에서 처리. 매일 정리 같은 정해진 시간 작업(@Scheduled)도 켬 */
 @Configuration
+@EnableScheduling
 public class AsyncConfig {
 
     public static final String RENDER_EXECUTOR = "renderExecutor";

@@ -22,4 +22,5 @@ public class AudioRender {
     private String errorMessage;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime lastUsedAt;   // 마지막으로 쓴 때 (V12, 정리 기준)
 }

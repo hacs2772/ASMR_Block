@@ -500,8 +500,11 @@
 | PATCH | `/admin/feedback/{id}` | 관리자 | 확인함 `{ "done": true }` |
 | GET | `/admin/stats?funnelDays=14` | 관리자 | 숫자 한눈에: `people`(total = 베타 손님 + 가입 회원, newToday·new7d), `activity`(만든 조합·공개 조합·한 번에 담기·재생 24시간/7일/전체), `content`(승인 블록·샘플·사람들이 올린 블록·승인 대기), `newFeedback`, `days`(최근 14일 날짜별 가입·새 조합·재생), **`funnel`**(아래) |
 
+| POST | `/admin/cleanup` | 관리자 | **오래된 완성본 지금 정리** → `{ "deleted": 3, "freedMb": 120 }`. `app.cleanup.render-keep-days`(기본 30)일 동안 아무도 안 들은 완성본 파일·오래된 실패 기록을 지움 (매일 새벽 4시 40분에도 저절로). 다시 들으면 상태가 `NOT_REQUESTED`라 앱·웹이 저절로 다시 만듦 |
 | GET | `/admin/samples` | 관리자 | 샘플 상태 `{ "blocks": 20, "listedBlocks": 20, "combos": 5, "publicCombos": 5, "realBlocks": 12, "visible": true }` (공개용 샘플 계정의 블록·조합, `realBlocks` = 상점에 보이는 진짜 블록) |
 | PUT | `/admin/samples` | 관리자 | **샘플 한꺼번에 숨기기·다시 보이기** `{ "visible": false }` → 샘플 블록 `is_listed`(V11)와 샘플 조합 `is_public`을 바꿈. 숨기면 상점·요즘 뜨는 소리·추천 조합·베타 손님 첫 블록에서 빠지고, **이미 담은 사람은 블록함·조합에서 그대로 들음**. 샘플 SQL이 다시 돌아도 숨긴 그대로 |
+
+- 통계의 **`disk`**: `{ "freeMb", "totalMb", "rendersMb", "low" }` 서버 디스크 남은 공간·완성본 크기, `low` = 5GB 아래 또는 10%·20GB 아래
 
 **어디서 그만두나요 (`funnel`, V10)**: 최근 `funnelDays`일(1~90, 기본 14) 안에 들어온 사람 중 각 단계까지 간 사람 수 (단계마다 따로 셈)
 ```json
@@ -536,4 +539,18 @@ API(`/api/v1`) 밖의 주소예요. 웹 nginx가 `/s/`를 백엔드로 넘겨요
 
 - 사이트 주소 = 설정 `app.site.url`(공개용 `APP_SITE_URL` = `PUBLIC_URL`), 비우면 요청 주소 기준
 - 웹 듣기 화면·앱 플레이어의 **공유하기**: 휴대폰은 공유 창, 아니면 링크 복사. 담아 온 복사본이면 원래 조합 링크, 내 비공개 조합이면 "공개로 바꾸고 공유할까요?"를 먼저 물어봄
+
+---
+
+## 너무 자주 하면 429 (공개 사이트 남용 막기)
+
+서버 메모리로 세요(서버를 다시 켜면 처음부터). 설정 `app.limits.*`, 관리자는 업로드 제한 없음. 응답은 `429` + `error.message`(화면에 그대로 보여 주면 됨)
+
+| 무엇 | 기본 | 기준 |
+|------|------|------|
+| `POST /auth/beta-login` | 1시간에 20번 / 사이트 전체 하루 500번 | 접속 주소(Cloudflare `CF-Connecting-IP` → `X-Forwarded-For` → 직접) |
+| `POST /auth/signup` | 1시간에 20번 | 접속 주소 |
+| `POST /blocks/upload-drafts` | 1시간에 30번 | 한 사람 |
+| `POST /blocks` | 하루(24시간)에 20개 | 한 사람 (DB로 셈) |
+| `POST /feedback` | 10분에 5번 | 한 사람 또는 접속 주소 |
 

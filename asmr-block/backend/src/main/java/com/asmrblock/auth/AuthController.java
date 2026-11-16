@@ -1,5 +1,7 @@
 package com.asmrblock.auth;
 
+import com.asmrblock.common.ClientIp;
+import jakarta.servlet.http.HttpServletRequest;
 import com.asmrblock.auth.AuthDtos.BetaLoginResponse;
 import com.asmrblock.auth.AuthDtos.BetaStatus;
 import com.asmrblock.auth.AuthDtos.LoginRequest;
@@ -23,8 +25,8 @@ public class AuthController {
 
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<UserResponse> signup(@Valid @RequestBody SignupRequest request) {
-        return ApiResponse.ok("회원가입이 완료되었습니다.", UserResponse.from(authService.signup(request)));
+    public ApiResponse<UserResponse> signup(@Valid @RequestBody SignupRequest request, HttpServletRequest http) {
+        return ApiResponse.ok("회원가입이 완료되었습니다.", UserResponse.from(authService.signup(request, ClientIp.of(http))));
     }
 
     @PostMapping("/login")
@@ -40,8 +42,8 @@ public class AuthController {
 
     // 베타 기간에만: 가입 없이 손님 계정을 만들어 바로 로그인 (정식 출시 때 app.beta.quick-login=false)
     @PostMapping("/beta-login")
-    public ApiResponse<BetaLoginResponse> betaLogin() {
-        return ApiResponse.ok("베타 손님으로 시작했어요.", authService.betaLogin());
+    public ApiResponse<BetaLoginResponse> betaLogin(HttpServletRequest http) {
+        return ApiResponse.ok("베타 손님으로 시작했어요.", authService.betaLogin(ClientIp.of(http)));
     }
 
     // 토큰 갱신 (refreshToken도 새로 바뀜 - 둘 다 저장할 것)

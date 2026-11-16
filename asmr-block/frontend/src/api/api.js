@@ -92,6 +92,8 @@ export const adminApi = {
   stats: (funnelDays = 14) => data(axiosInstance.get('/admin/stats', { params: { funnelDays } })),
   /** 샘플 블록·샘플 조합 상태 / 한꺼번에 숨기기(false)·다시 보이기(true) */
   samples: () => data(axiosInstance.get('/admin/samples')),
+  /** 오래된 완성본 지금 정리 → { message, data: { deleted, freedMb } } */
+  cleanup: () => axiosInstance.post('/admin/cleanup').then((r) => r.data),
   setSamples: (visible) => axiosInstance.put('/admin/samples', { visible }).then((r) => r.data),
 };
 

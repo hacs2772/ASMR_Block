@@ -1,5 +1,6 @@
 package com.asmrblock.feedback;
 
+import com.asmrblock.common.ClientIp;
 import com.asmrblock.common.ApiResponse;
 import com.asmrblock.common.PageQuery;
 import com.asmrblock.common.PageResponse;
@@ -24,7 +25,7 @@ public class FeedbackController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Void> send(@AuthenticationPrincipal Long userId, @Valid @RequestBody FeedbackRequest request,
                                   HttpServletRequest http) {
-        feedbackService.create(userId, clientIp(http), request);
+        feedbackService.create(userId, ClientIp.of(http), request);
         return ApiResponse.message("의견 고마워요! 꼭 읽어 볼게요.");
     }
 
@@ -40,18 +41,5 @@ public class FeedbackController {
     @PatchMapping("/api/v1/admin/feedback/{id}")
     public ApiResponse<FeedbackResponse> markDone(@PathVariable Long id, @Valid @RequestBody FeedbackDoneRequest request) {
         return ApiResponse.ok(feedbackService.markDone(id, request.done()));
-    }
-
-    /** Cloudflare가 붙여 주는 진짜 접속 주소 → 프록시 주소 → 직접 접속 주소 순 */
-    private static String clientIp(HttpServletRequest http) {
-        String cf = http.getHeader("CF-Connecting-IP");
-        if (cf != null && !cf.isBlank()) {
-            return cf.trim();
-        }
-        String forwarded = http.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return http.getRemoteAddr();
     }
 }

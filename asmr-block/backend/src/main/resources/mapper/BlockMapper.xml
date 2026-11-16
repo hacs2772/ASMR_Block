@@ -134,6 +134,10 @@
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
+    <select id="countUploadsSince" resultType="long">
+        SELECT COUNT(*) FROM block WHERE uploader_id = #{uploaderId} AND created_at &gt;= #{since}
+    </select>
+
     <select id="countByUploader" resultType="long">
         SELECT COUNT(*) FROM block WHERE is_active = true AND uploader_id = #{uploaderId}
     </select>

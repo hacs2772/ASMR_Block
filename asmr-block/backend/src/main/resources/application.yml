@@ -75,6 +75,18 @@ app:
     # 공개용(public)에서만 씀: 이 이메일·비밀번호로 관리자 계정을 만들거나 비밀번호를 맞춤 (.env.public)
     email: ${APP_ADMIN_EMAIL:}
     password: ${APP_ADMIN_PASSWORD:}
+  limits:
+    # 공개 사이트 남용 막기 (같은 접속 주소·같은 사람이 너무 자주 하면 잠깐 429). 관리자는 업로드 제한 없음
+    beta-login-per-hour-per-ip: ${APP_LIMIT_BETA_LOGIN_PER_HOUR_PER_IP:20}
+    beta-login-per-day: ${APP_LIMIT_BETA_LOGIN_PER_DAY:500}
+    signup-per-hour-per-ip: ${APP_LIMIT_SIGNUP_PER_HOUR_PER_IP:20}
+    upload-drafts-per-hour: ${APP_LIMIT_UPLOAD_DRAFTS_PER_HOUR:30}
+    uploads-per-day: ${APP_LIMIT_UPLOADS_PER_DAY:20}
+  cleanup:
+    # 아무도 이만큼 안 들은 완성본(합친 MP3)은 지움 → 다시 들으면 저절로 다시 만듦 (디스크 아끼기)
+    render-keep-days: ${APP_CLEANUP_RENDER_KEEP_DAYS:30}
+    # 매일 새벽 4시 40분 (한국 시간)
+    cron: "0 40 4 * * *"
   site:
     # 공유 링크(카톡 미리보기)에 쓰는 사이트 주소. 공개용은 PUBLIC_URL(https://asmrblock.com), 비우면 요청 주소 기준
     url: ${APP_SITE_URL:}

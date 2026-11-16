@@ -11,6 +11,7 @@ import com.asmrblock.block.BlockMapper;
 import com.asmrblock.block.BlockSearchCondition;
 import com.asmrblock.block.BlockStatus;
 import com.asmrblock.common.ApiException;
+import com.asmrblock.common.RateLimiter;
 import com.asmrblock.config.AppProperties;
 import com.asmrblock.library.LibraryService;
 import com.asmrblock.security.JwtTokenProvider;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
 
@@ -38,9 +40,16 @@ public class AuthService {
     private final AppProperties properties;
     private final BlockMapper blockMapper;
     private final LibraryService libraryService;
+    private final RateLimiter rateLimiter;
     private final SecureRandom random = new SecureRandom();
 
     @Transactional
+    public User signup(SignupRequest request, String clientIp) {
+        rateLimiter.check("signup:" + clientIp, properties.limits().signupPerHourPerIp(), Duration.ofHours(1),
+                "가입이 너무 많이 몰렸어요. 잠시 후 다시 시도해 주세요.");
+        return signup(request);
+    }
+
     public User signup(SignupRequest request) {
         String email = normalizeEmail(request.email());
         if (userMapper.existsByEmail(email)) {
@@ -79,10 +88,15 @@ public class AuthService {
      * 정식 출시 때는 app.beta.quick-login=false 로 끄면 404
      */
     @Transactional
-    public BetaLoginResponse betaLogin() {
+    public BetaLoginResponse betaLogin(String clientIp) {
         if (!properties.beta().quickLogin()) {
             throw ApiException.notFound("베타 로그인은 끝났어요. 회원가입 후 이용해 주세요.");
         }
+        // 같은 곳에서 너무 많이 / 사이트 전체로 하루에 너무 많이 → 잠깐 막음 (장난으로 손님 계정을 마구 만드는 것 방지)
+        rateLimiter.check("beta:" + clientIp, properties.limits().betaLoginPerHourPerIp(), Duration.ofHours(1),
+                "베타 손님 만들기가 잠깐 몰렸어요. 조금 뒤에 다시 눌러 주세요.");
+        rateLimiter.check("beta:all", properties.limits().betaLoginPerDay(), Duration.ofDays(1),
+                "오늘 베타 손님 자리가 다 찼어요. 회원가입으로 시작하거나 내일 다시 와 주세요.");
         String email = "beta-" + randomText(10).toLowerCase(Locale.ROOT) + "@beta.asmrblock.com";
         String password = randomText(20);
         User user = User.builder()
