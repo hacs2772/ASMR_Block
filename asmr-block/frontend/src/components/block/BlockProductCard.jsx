@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { IoCheckmarkCircle, IoCube, IoLocation, IoPause, IoPlay, IoShareSocialOutline, IoVideocam } from 'react-icons/io5';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { errorMessage, libraryApi } from '../../api/api';
 import { usePreviewStore } from '../../hooks/usePreview';
-import { colorOf, formatDuration, iconOf, noteOf, TALK_LABEL } from '../../lib/blocks';
+import { colorOf, formatDuration, groupLabel, iconOf, noteOf, talkLabel } from '../../lib/blocks';
 import { shareLink, shareLinks } from '../../lib/share';
 import useAuthStore from '../../store/authStore';
 import Brick from '../brand/Brick';
@@ -20,12 +21,13 @@ export const productBrickWidth = (seconds) => Math.round(Math.min(178, Math.max(
  * hideCreator: 크리에이터 페이지 안에서는 @닉네임을 빼고 녹음한 곳만
  */
 function BlockProductCard({ block, rank, onCollected, preview = false, hideCreator = false }) {
+  const { t } = useTranslation();
   const playingId = usePreviewStore((s) => s.playingId);
   const toggle = usePreviewStore((s) => s.toggle);
   const playing = playingId === block.id;
   const paid = block.price > 0;
   const color = colorOf(block.category);
-  const group = block.category?.parentName || block.category?.name;
+  const group = groupLabel(block.category);
   const canListen = !!(block.fileUrl || block.previewUrl);
   const openVideo = useVideoModal((s) => s.open);
   const me = useAuthStore((s) => s.user);
@@ -40,24 +42,24 @@ function BlockProductCard({ block, rank, onCollected, preview = false, hideCreat
           block.design.videoUrl && !preview ? (
             <button type="button" onClick={() => openVideo(block)} className="absolute left-3 top-3 flex items-center gap-1 rounded-md bg-black/70 px-2 py-0.5 text-xs font-bold text-white hover:bg-black"
               data-testid={`watch-${block.id}`}>
-              <IoVideocam size={12} /> 영상 보기
+              <IoVideocam size={12} /> {t('block.watchVideo')}
             </button>
           ) : (
             <span className="absolute left-3 top-3 flex items-center gap-1 rounded-md bg-black/70 px-2 py-0.5 text-xs font-bold text-white">
-              <IoVideocam size={12} /> 영상
+              <IoVideocam size={12} /> {t('block.video')}
             </span>
           )
         )}
         <span className={`absolute right-3 top-3 rotate-3 rounded-md px-2 py-0.5 text-xs font-extrabold shadow ${
           paid ? 'bg-warn text-night' : 'bg-success/90 text-night'}`}>
-          {paid ? `${block.price}코인` : '무료'}
+          {paid ? t('common.coins', { count: block.price }) : t('common.free')}
         </span>
         {canListen && (
-          <button type="button" onClick={() => toggle(block)} aria-label={playing ? '멈춤' : '미리 듣기'}
+          <button type="button" onClick={() => toggle(block)} aria-label={playing ? t('block.pause') : t('block.preview')}
             className={`absolute bottom-3 right-3 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
               playing ? 'bg-pink text-white' : 'bg-black/60 text-ink hover:bg-black/80'}`}>
             {playing ? <IoPause size={13} /> : <IoPlay size={13} />}
-            {paid && !block.owned ? '30초' : '듣기'}
+            {paid && !block.owned ? t('block.sec30') : t('block.listen')}
           </button>
         )}
       </div>
@@ -65,7 +67,7 @@ function BlockProductCard({ block, rank, onCollected, preview = false, hideCreat
         <h3 className="truncate text-[15px] font-bold">
           {rank ? <span className="mr-1.5 text-pink-text">{rank}</span> : null}{block.title}
         </h3>
-        <p className="text-xs text-muted">{group} · {TALK_LABEL[block.talkType || 'NONE']}</p>
+        <p className="text-xs text-muted">{group} · {talkLabel(block.talkType)}</p>
         <div className="flex items-center gap-2">
           <p className="flex min-w-0 flex-1 items-center gap-1 truncate text-xs text-faint">
             {!hideCreator && (block.uploader?.id && !preview
@@ -74,8 +76,8 @@ function BlockProductCard({ block, rank, onCollected, preview = false, hideCreat
             {block.recordedPlace && <>{!hideCreator && <span>·</span>}<IoLocation size={11} className="shrink-0" /><span className="truncate">{block.recordedPlace}</span></>}
           </p>
           {!preview && (
-            <button type="button" aria-label={`${block.title} 공유하기`} data-testid={`share-block-${block.id}`}
-              onClick={() => shareLink(block.title, shareLinks.block(block.id), `${block.title} — @${block.uploader?.nickname ?? ''}님의 ASMR 블록`)}
+            <button type="button" aria-label={t('block.shareThis', { title: block.title })} data-testid={`share-block-${block.id}`}
+              onClick={() => shareLink(block.title, shareLinks.block(block.id), t('block.shareText', { title: block.title, nickname: block.uploader?.nickname ?? '' }))}
               className="shrink-0 p-0.5 text-faint hover:text-ink">
               <IoShareSocialOutline size={13} />
             </button>
@@ -88,7 +90,7 @@ function BlockProductCard({ block, rank, onCollected, preview = false, hideCreat
         {noteOf(block.description) && <p className="line-clamp-2 text-xs leading-relaxed text-muted">{noteOf(block.description)}</p>}
         <div className="mt-auto pt-3">
           {preview
-            ? <span className="btn-pink btn-sm w-full cursor-default"><IoCube size={14} /> 블록 담기</span>
+            ? <span className="btn-pink btn-sm w-full cursor-default"><IoCube size={14} /> {t('block.add')}</span>
             : <CollectBlockButton block={block} onCollected={onCollected} />}
         </div>
       </div>
@@ -98,16 +100,17 @@ function BlockProductCard({ block, rank, onCollected, preview = false, hideCreat
 
 /** 블록 담기: 무료는 바로, 유료는 구매 준비 중, 이미 있으면 "블록함에 있음" */
 export function CollectBlockButton({ block, onCollected }) {
+  const { t } = useTranslation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const navigate = useNavigate();
   const [owned, setOwned] = useState(block.owned);
   const [busy, setBusy] = useState(false);
 
   if (owned) {
-    return <span className="btn-line btn-sm w-full cursor-default text-success"><IoCheckmarkCircle size={14} /> 블록함에 있음</span>;
+    return <span className="btn-line btn-sm w-full cursor-default text-success"><IoCheckmarkCircle size={14} /> {t('block.inBox')}</span>;
   }
   if (block.price > 0) {
-    return <span className="btn-line btn-sm w-full cursor-default text-faint">구매 준비 중</span>;
+    return <span className="btn-line btn-sm w-full cursor-default text-faint">{t('block.buySoon')}</span>;
   }
   const collect = async () => {
     if (!isAuthenticated) return navigate('/login');
@@ -115,7 +118,7 @@ export function CollectBlockButton({ block, onCollected }) {
     try {
       await libraryApi.add(block.id);
       setOwned(true);
-      toast.success(`'${block.title}'을 내 블록함에 담았어요`);
+      toast.success(t('block.added', { title: block.title }));
       onCollected?.(block);
     } catch (e) {
       toast.error(errorMessage(e));
@@ -125,7 +128,7 @@ export function CollectBlockButton({ block, onCollected }) {
   };
   return (
     <button type="button" className="btn-pink btn-sm w-full" onClick={collect} disabled={busy} data-testid={`collect-block-${block.id}`}>
-      <IoCube size={14} /> 블록 담기
+      <IoCube size={14} /> {t('block.add')}
     </button>
   );
 }

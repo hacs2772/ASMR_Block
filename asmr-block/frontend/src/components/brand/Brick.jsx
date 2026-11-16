@@ -1,3 +1,4 @@
+import i18n from '../../locales';
 import React from 'react';
 import { BAR_RHYTHM, shade } from '../../lib/blocks';
 import { StickerImage, useStickers } from '../../lib/stickers';
@@ -58,7 +59,7 @@ function Brick({ color, width = 120, height = 44, icon: Icon, label, minutes, ba
             {label && <span className="truncate">{label}</span>}
           </div>
         )}
-        {!bars && design?.hasVideo && <span className="brick-film">▶{height > 44 && width > 90 ? ' 영상' : ''}</span>}
+        {!bars && design?.hasVideo && <span className="brick-film">▶{height > 44 && width > 90 ? ` ${i18n.t('block.video')}` : ''}</span>}
       </div>
     </div>
   );

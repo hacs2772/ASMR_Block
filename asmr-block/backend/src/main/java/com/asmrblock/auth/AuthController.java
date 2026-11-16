@@ -42,8 +42,8 @@ public class AuthController {
 
     // 베타 기간에만: 가입 없이 손님 계정을 만들어 바로 로그인 (정식 출시 때 app.beta.quick-login=false)
     @PostMapping("/beta-login")
-    public ApiResponse<BetaLoginResponse> betaLogin(HttpServletRequest http) {
-        return ApiResponse.ok("베타 손님으로 시작했어요.", authService.betaLogin(ClientIp.of(http)));
+    public ApiResponse<BetaLoginResponse> betaLogin(HttpServletRequest http, @RequestParam(required = false) String lang) {
+        return ApiResponse.ok("베타 손님으로 시작했어요.", authService.betaLogin(ClientIp.of(http), lang));
     }
 
     // 토큰 갱신 (refreshToken도 새로 바뀜 - 둘 다 저장할 것)

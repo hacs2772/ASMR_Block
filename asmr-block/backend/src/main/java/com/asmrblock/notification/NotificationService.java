@@ -160,7 +160,8 @@ public class NotificationService {
             case COMBO_COLLECTED -> n.getPlaylistId() == null ? null : new Target("COMBO", n.getPlaylistId());
         };
         return new NotificationResponse(n.getId(), n.getType(), message, n.getNote(), target, n.isRead(),
-                n.getUpdatedAt() == null ? null : n.getUpdatedAt().atOffset(ZoneOffset.UTC));
+                n.getUpdatedAt() == null ? null : n.getUpdatedAt().atOffset(ZoneOffset.UTC),
+                n.getTitle(), n.getActorNickname(), Math.max(1, n.getCount()));
     }
 
     private static String cut(String value, int max) {

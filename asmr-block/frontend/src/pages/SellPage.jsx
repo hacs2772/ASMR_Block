@@ -2,23 +2,24 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { IoCash, IoCloudUpload, IoImage, IoMusicalNotes, IoShieldCheckmark, IoVideocam } from 'react-icons/io5';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { catalogApi, errorMessage, sellerApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
 import BetaLoginButton from '../components/common/BetaLoginButton';
 import BlockProductCard from '../components/block/BlockProductCard';
 import Trimmer from '../components/sell/Trimmer';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
-import { colorOf, formatDuration, TALK_LABEL } from '../lib/blocks';
-import { MAX_STICKERS, PATTERNS, StickerImage, useStickers } from '../lib/stickers';
+import { categoryLabel, colorOf, formatDuration, talkLabel, TALK_TYPES } from '../lib/blocks';
+import { MAX_STICKERS, PATTERNS, patternLabel, StickerImage, stickerName, useStickers } from '../lib/stickers';
 import { canTrim, initialRange, trimParams } from '../lib/trim';
 import useAuthStore from '../store/authStore';
 import { RecordingGuideLink } from './RecordingGuidePage';
 
 const PRICE_STEPS = [0, 10, 20, 30, 50, 100];
 const STATUS = {
-  PENDING: { label: '검수 중', cls: 'bg-warn/15 text-warn' },
-  APPROVED: { label: '판매 중', cls: 'bg-success/15 text-success' },
-  REJECTED: { label: '거절됨', cls: 'bg-danger/15 text-danger' },
+  PENDING: 'bg-warn/15 text-warn',
+  APPROVED: 'bg-success/15 text-success',
+  REJECTED: 'bg-danger/15 text-danger',
 };
 
 /** 파일의 길이(초)를 브라우저에서 읽어 봄 (미리보기 블록 길이 · 길이 확인용). 영상도 같은 방법 */
@@ -38,6 +39,7 @@ function readDuration(url, isVideo = false) {
  */
 function SellPage() {
   useStopPreviewOnLeave();
+  const { t } = useTranslation();
   const { isAuthenticated, user } = useAuthStore();
   const { hash } = useLocation();
   const [policy, setPolicy] = useState(null);
@@ -93,7 +95,7 @@ function SellPage() {
   const maxImageMb = policy?.maxImageMb ?? 10;
   const pickCover = (f) => {
     if (!f) return undefined;
-    if (f.size > maxImageMb * 1024 * 1024) return toast.error(`사진은 ${maxImageMb}MB까지 올릴 수 있어요.`);
+    if (f.size > maxImageMb * 1024 * 1024) return toast.error(t('sell.imageTooBig', { mb: maxImageMb }));
     setCover(f);
     setCoverUrl(URL.createObjectURL(f));
     return undefined;
@@ -124,7 +126,7 @@ function SellPage() {
     if (!f) return;
     const k = kindOf(f);
     const limit = k === 'video' ? maxVideoMb : maxFileMb;
-    if (f.size > limit * 1024 * 1024) return toast.error(`${k === 'video' ? '영상은' : '소리 파일은'} ${limit}MB까지 올릴 수 있어요.`);
+    if (f.size > limit * 1024 * 1024) return toast.error(t(k === 'video' ? 'sell.videoTooBig' : 'sell.audioTooBig', { mb: limit }));
     const url = URL.createObjectURL(f);
     const token = ++pickToken.current;
     setKind(k);
@@ -143,7 +145,7 @@ function SellPage() {
       setDuration(d.duration);
       setRange(initialRange(d.duration, policy?.maxSeconds ?? 1200));
     } catch (e) {
-      if (token === pickToken.current) toast.error(errorMessage(e, '파형을 만들지 못했어요. 구간 고르기 없이 올릴 수 있어요.'));
+      if (token === pickToken.current) toast.error(errorMessage(e, t('sell.draftFailed')));
     } finally {
       if (token === pickToken.current) setDraftProgress(null);
     }
@@ -155,21 +157,21 @@ function SellPage() {
   // 블록 길이: 고른 구간 (파형을 못 만들었으면 파일 전체)
   const soundLength = file ? (range ? range.end - range.start : duration) : null;
   const lengthProblem = soundLength && policy
-    ? (soundLength < policy.minSeconds ? `${Math.round(policy.minSeconds)}초보다 길어야 해요` : soundLength > policy.maxSeconds + 0.05 ? `${policy.maxSeconds / 60}분보다 짧아야 해요` : null)
+    ? (soundLength < policy.minSeconds ? t('sell.tooShort', { sec: Math.round(policy.minSeconds) }) : soundLength > policy.maxSeconds + 0.05 ? t('sell.tooLong', { min: policy.maxSeconds / 60 }) : null)
     : null;
-  const missing = !file ? (kind === 'video' ? '영상을 골라 주세요' : '소리 파일을 골라 주세요')
-    : draftProgress !== null ? `소리 파일 올리는 중… ${draftProgress}%`
-    : lengthProblem || (!title.trim() ? '이름을 적어 주세요'
-    : !categoryId ? '트리거 종류를 골라 주세요' : !agree ? '직접 녹음했는지 확인해 주세요' : null);
+  const missing = !file ? t(kind === 'video' ? 'sell.needVideo' : 'sell.needAudio')
+    : draftProgress !== null ? t('sell.drafting', { p: draftProgress })
+    : lengthProblem || (!title.trim() ? t('sell.needTitle')
+    : !categoryId ? t('sell.needTrigger') : !agree ? t('sell.needAgree') : null);
 
   // 상점에서 보일 모습 그대로
   const previewBlock = useMemo(() => ({
-    id: -1, title: title.trim() || '내 블록 이름', description: note, duration: soundLength || 200, price,
+    id: -1, title: title.trim() || t('sell.previewTitle'), description: note, duration: soundLength || 200, price,
     talkType, recordedPlace: place.trim() || null, owned: true, fileUrl,
     category: category ? { ...category, parentName: group?.name, color: group?.color } : group ? { ...group, parentName: group.name } : null,
-    uploader: { nickname: user?.nickname || '나' },
+    uploader: { nickname: user?.nickname || t('sell.me') },
     design: { coverUrl, stickers, pattern, hasVideo: !!file && kind === 'video', videoUrl: null },
-  }), [title, note, soundLength, price, talkType, place, category, group, user, fileUrl, coverUrl, stickers, pattern, file, kind]);
+  }), [title, note, soundLength, price, talkType, place, category, group, user, fileUrl, coverUrl, stickers, pattern, file, kind, t]);
 
   const submit = async () => {
     if (missing) return;
@@ -198,12 +200,12 @@ function SellPage() {
     setProgress(0);
     try {
       await sellerApi.upload(form, setProgress);
-      toast.success('올렸어요! 검수가 끝나면 블록 상점에 올라가요.');
+      toast.success(t('sell.uploaded'));
       clearFile(); setTitle(''); setPlace(''); setNote(''); setAgree(false);
       setCover(null); setCoverUrl(null); setStickers([]);
       loadMine();
     } catch (e) {
-      toast.error(errorMessage(e, '올리지 못했어요.'));
+      toast.error(errorMessage(e, t('sell.uploadFailed')));
     } finally {
       setProgress(null);
     }
@@ -211,34 +213,34 @@ function SellPage() {
 
   return (
     <div className="page pt-10">
-      <p className="eyebrow">크리에이터</p>
-      <h1 className="text-3xl font-black tracking-tight sm:text-4xl">ASMR 블록 판매</h1>
+      <p className="eyebrow">{t('sell.eyebrow')}</p>
+      <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{t('sell.title')}</h1>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-        내 트리거 녹음을 블록으로 올려 팔아 보세요. 휴대폰 녹음 파일도 괜찮아요. 음량은 자동으로 맞추고, 확인을 거쳐 블록 상점에 올라가요.
+        {t('sell.lead')}
       </p>
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        <Info icon={IoCloudUpload} title="1. 올리기" body="3~4분 길이의 소리 파일 하나 = 블록 하나" />
-        <Info icon={IoShieldCheckmark} title="2. 검수" body="남의 소리·음악이 섞였는지 확인해요" />
-        <Info icon={IoCash} title="3. 판매" body={`가격은 내가 (무료 ~ ${maxPrice}코인). 정산은 출시 후 열려요`} />
+        <Info icon={IoCloudUpload} title={t('sell.info1Title')} body={t('sell.info1Body')} />
+        <Info icon={IoShieldCheckmark} title={t('sell.info2Title')} body={t('sell.info2Body')} />
+        <Info icon={IoCash} title={t('sell.info3Title')} body={t('sell.info3Body', { max: maxPrice })} />
       </div>
       <RecordingGuideLink className="mt-3" />
 
       {!isAuthenticated ? (
         <div className="card mt-10 flex flex-col items-center gap-4 p-10 text-center">
-          <p className="text-lg font-bold">로그인하면 내 트리거를 블록으로 올릴 수 있어요</p>
+          <p className="text-lg font-bold">{t('sell.loginPrompt')}</p>
           <BetaLoginButton className="w-full max-w-sm" />
-          <div className="flex gap-2"><Link to="/login" className="btn-pink">로그인</Link><Link to="/signup" className="btn-line">회원가입</Link></div>
+          <div className="flex gap-2"><Link to="/login" className="btn-pink">{t('sell.login')}</Link><Link to="/signup" className="btn-line">{t('sell.signup')}</Link></div>
         </div>
       ) : (
         <div className="mt-10 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
           <div className="card space-y-7 p-6 sm:p-8">
             {/* 파일 */}
             <div>
-              <p className="label">올릴 것</p>
-              <div className="mb-3 grid grid-cols-2 gap-2" role="radiogroup" aria-label="올릴 것">
+              <p className="label">{t('sell.whatLabel')}</p>
+              <div className="mb-3 grid grid-cols-2 gap-2" role="radiogroup" aria-label={t('sell.whatLabel')}>
                 {[
-                  { k: 'audio', icon: IoMusicalNotes, title: '소리만', body: '녹음 파일 (m4a·mp3·wav…)' },
-                  { k: 'video', icon: IoVideocam, title: '영상', body: '소리는 영상에서, 같은 구간으로 같이 잘려요' },
+                  { k: 'audio', icon: IoMusicalNotes, title: t('sell.kindAudio'), body: t('sell.kindAudioBody') },
+                  { k: 'video', icon: IoVideocam, title: t('sell.kindVideo'), body: t('sell.kindVideoBody') },
                 ].map((o) => (
                   <button key={o.k} type="button" role="radio" aria-checked={kind === o.k} onClick={() => switchKind(o.k)} data-testid={`sell-kind-${o.k}`}
                     className={`flex min-w-0 items-start gap-2.5 rounded-xl border p-3 text-left transition-colors ${
@@ -260,20 +262,20 @@ function SellPage() {
                   <>
                     {kind === 'video' ? <IoVideocam size={28} className="text-pink-text" /> : <IoMusicalNotes size={28} className="text-pink-text" />}
                     <span className="max-w-full truncate font-bold">{file.name}</span>
-                    <span className="text-xs text-muted">{(file.size / 1024 / 1024).toFixed(1)}MB{duration ? ` · ${formatDuration(duration)}` : ''} · 눌러서 바꾸기</span>
+                    <span className="text-xs text-muted">{(file.size / 1024 / 1024).toFixed(1)}MB{duration ? ` · ${formatDuration(duration)}` : ''} · {t('sell.change')}</span>
                     {lengthProblem && <span className="text-xs font-bold text-danger">{lengthProblem}</span>}
                   </>
                 ) : (
                   <>
                     <IoCloudUpload size={30} className="text-faint" />
-                    <span className="font-bold">{kind === 'video' ? '영상을' : '소리 파일을'} 여기로 끌어오거나 눌러서 고르기</span>
+                    <span className="font-bold">{t(kind === 'video' ? 'sell.dropVideo' : 'sell.dropAudio')}</span>
                     <span className="text-xs text-faint">
                       {!policy ? 'mp3, m4a, wav …' : kind === 'video'
-                        ? `${policy.videoExtensions.join(', ')} · ${maxVideoMb}MB까지 · 쓸 부분은 다음 단계에서 골라요`
-                        : `${policy.extensions.join(', ')} · ${maxFileMb}MB까지 · 쓸 부분은 다음 단계에서 골라요`}
+                        ? t('sell.dropHint', { exts: policy.videoExtensions.join(', '), mb: maxVideoMb })
+                        : t('sell.dropHint', { exts: policy.extensions.join(', '), mb: maxFileMb })}
                     </span>
                     {kind === 'video' && (
-                      <span className="text-[11px] text-faint">"진짜 그 장면이구나" 하고 볼 수 있게. 듣는 사람이 "영상도 같이 보기"를 켜면 보여요 · 480p로 가볍게 저장</span>
+                      <span className="text-[11px] text-faint">{t('sell.videoNote')}</span>
                     )}
                   </>
                 )}
@@ -286,14 +288,14 @@ function SellPage() {
               {/* 구간 고르기: 길게 녹음했으면 쓸 부분만 (영상이면 화면도 같이) */}
               {file && draftProgress !== null && (
                 <div className="mt-3 rounded-xl bg-card-active p-3.5 text-sm text-muted" data-testid="draft-progress">
-                  파형을 만드는 중… {draftProgress < 100 ? `${draftProgress}%` : '거의 다 됐어요'}
+                  {t('sell.waveMaking')} {draftProgress < 100 ? `${draftProgress}%` : t('sell.almostDone')}
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-line"><div className="h-full bg-pink transition-all" style={{ width: `${draftProgress}%` }} /></div>
                 </div>
               )}
               {file && draft && range && canTrim(draft.duration, policy?.minSeconds ?? 10) && (
                 <div className="mt-3">
                   {draft.duration > (policy?.maxSeconds ?? 1200) && (
-                    <p className="mb-2 text-xs text-warn">{(policy?.maxSeconds ?? 1200) / 60}분이 넘어서 앞 {(policy?.maxSeconds ?? 1200) / 60}분을 골라 뒀어요. 손잡이로 바꿀 수 있어요.</p>
+                    <p className="mb-2 text-xs text-warn">{t('sell.overMax', { min: (policy?.maxSeconds ?? 1200) / 60 })}</p>
                   )}
                   <Trimmer src={fileUrl} duration={draft.duration} peaks={draft.peaks} range={range} onChange={setRange}
                     min={policy?.minSeconds ?? 10} max={policy?.maxSeconds ?? 1200} video={kind === 'video'} />
@@ -303,47 +305,47 @@ function SellPage() {
 
             {/* 블록 꾸미기 (C안) */}
             <div>
-              <p className="label">블록 꾸미기 <span className="ml-1 text-xs font-normal text-faint">· 사진이 있으면 사진, 없으면 스티커가 블록 겉면에 보여요</span></p>
+              <p className="label">{t('sell.designLabel')} <span className="ml-1 text-xs font-normal text-faint">· {t('sell.designHint')}</span></p>
               <div className="flex flex-wrap items-center gap-3 rounded-xl bg-card-active p-3.5">
-                {coverUrl ? <img src={coverUrl} alt="고른 사진" className="h-12 w-20 rounded-md object-cover" /> : <IoImage size={22} className="text-pink-text" />}
-                <p className="min-w-0 flex-1 basis-44 text-sm"><b>겉면 사진</b> <span className="text-xs text-faint">(선택) 녹음한 장소나 장면 사진 · {maxImageMb}MB까지</span></p>
+                {coverUrl ? <img src={coverUrl} alt={t('sell.coverAlt')} className="h-12 w-20 rounded-md object-cover" /> : <IoImage size={22} className="text-pink-text" />}
+                <p className="min-w-0 flex-1 basis-44 text-sm"><b>{t('sell.cover')}</b> <span className="text-xs text-faint">{t('sell.coverHint', { mb: maxImageMb })}</span></p>
                 {cover ? (
-                  <button type="button" className="btn-ghost btn-sm ml-auto" onClick={() => { setCover(null); setCoverUrl(null); }}>빼기</button>
+                  <button type="button" className="btn-ghost btn-sm ml-auto" onClick={() => { setCover(null); setCoverUrl(null); }}>{t('sell.remove')}</button>
                 ) : (
-                  <button type="button" className="btn-line btn-sm ml-auto" onClick={() => coverInputRef.current?.click()} data-testid="sell-cover-pick">사진 고르기</button>
+                  <button type="button" className="btn-line btn-sm ml-auto" onClick={() => coverInputRef.current?.click()} data-testid="sell-cover-pick">{t('sell.pickPhoto')}</button>
                 )}
                 <input ref={coverInputRef} type="file" className="hidden" data-testid="sell-cover"
                   accept={policy ? policy.imageExtensions.map((x) => `.${x}`).join(',') : 'image/*'} onChange={(e) => pickCover(e.target.files?.[0])} />
               </div>
-              <p className="mb-2 mt-4 text-sm font-bold">스티커 <span className="text-xs font-normal text-faint">· 최대 {MAX_STICKERS}개{cover ? ' (사진을 빼면 보여요)' : ''}</span></p>
+              <p className="mb-2 mt-4 text-sm font-bold">{t('sell.stickers')} <span className="text-xs font-normal text-faint">· {t('sell.stickersHint', { max: MAX_STICKERS })}{cover ? t('sell.stickersHidden') : ''}</span></p>
               <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
                 {stickerChoices.map((st) => (
                   <button key={st.code} type="button" onClick={() => toggleSticker(st.code)} data-testid={`sticker-${st.code}`}
                     className={`flex min-w-0 flex-col items-center gap-1 rounded-xl border px-1 pb-1.5 pt-2 text-[11px] transition-colors ${
                       stickers.includes(st.code) ? 'border-pink bg-pink-soft text-pink-text' : 'border-line bg-card text-muted hover:text-ink'}`}>
                     <span className="flex h-7"><StickerImage sticker={st} className="h-full w-auto max-w-none" /></span>
-                    <span className="w-full truncate text-center">{st.name}</span>
+                    <span className="w-full truncate text-center">{stickerName(st)}</span>
                   </button>
                 ))}
               </div>
               <div className="mt-3 flex items-center gap-2">
-                <span className="text-xs text-muted">무늬</span>
+                <span className="text-xs text-muted">{t('sell.pattern')}</span>
                 {PATTERNS.map((p) => (
-                  <button key={p.key} type="button" className={`chip px-3 py-1 text-xs ${pattern === p.key ? 'chip-on' : ''}`} onClick={() => setPattern(p.key)}>{p.label}</button>
+                  <button key={p.key} type="button" className={`chip px-3 py-1 text-xs ${pattern === p.key ? 'chip-on' : ''}`} onClick={() => setPattern(p.key)}>{patternLabel(p.key)}</button>
                 ))}
               </div>
             </div>
 
-            <Field label="이름" hint="상점에 보이는 이름">
-              <input className="input" value={title} maxLength={60} onChange={(e) => setTitle(e.target.value)} placeholder="예: 원목 책상 손톱 탭핑" data-testid="sell-title" />
+            <Field label={t('sell.name')} hint={t('sell.nameHint')}>
+              <input className="input" value={title} maxLength={60} onChange={(e) => setTitle(e.target.value)} placeholder={t('sell.namePh')} data-testid="sell-title" />
             </Field>
 
-            <Field label="트리거 종류" hint="블록 색은 트리거 묶음, 아이콘은 소분류로 정해져요">
+            <Field label={t('sell.trigger')} hint={t('sell.triggerHint')}>
               <div className="flex flex-wrap gap-2">
                 {groups.map((g) => (
                   <button key={g.id} type="button" className={`chip ${groupId === g.id ? 'chip-on' : ''}`}
                     onClick={() => { setGroupId(g.id); setCategoryId(null); }} data-testid={`sell-group-${g.code}`}>
-                    <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: g.color }} />{g.name}
+                    <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: g.color }} />{categoryLabel(g)}
                   </button>
                 ))}
               </div>
@@ -351,34 +353,34 @@ function SellPage() {
                 <div className="mt-3 flex flex-wrap gap-2 border-l-2 pl-3" style={{ borderColor: colorOf(group) }}>
                   {group.children.map((c) => (
                     <button key={c.id} type="button" className={`chip px-3 py-1 text-xs ${categoryId === c.id ? 'chip-on' : ''}`}
-                      onClick={() => setCategoryId(c.id)} data-testid={`sell-sub-${c.code}`}>{c.name}</button>
+                      onClick={() => setCategoryId(c.id)} data-testid={`sell-sub-${c.code}`}>{categoryLabel(c)}</button>
                   ))}
                 </div>
               )}
             </Field>
 
-            <Field label="말소리">
+            <Field label={t('sell.talk')}>
               <div className="flex flex-wrap gap-2">
-                {Object.entries(TALK_LABEL).map(([k, v]) => (
-                  <button key={k} type="button" className={`chip ${talkType === k ? 'chip-on' : ''}`} onClick={() => setTalkType(k)}>{v}</button>
+                {TALK_TYPES.map((k) => (
+                  <button key={k} type="button" className={`chip ${talkType === k ? 'chip-on' : ''}`} onClick={() => setTalkType(k)}>{talkLabel(k)}</button>
                 ))}
               </div>
             </Field>
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="녹음한 곳" hint="선택">
-                <input className="input" value={place} maxLength={60} onChange={(e) => setPlace(e.target.value)} placeholder="예: 도쿄 신주쿠역 앞" />
+              <Field label={t('sell.place')} hint={t('sell.optional')}>
+                <input className="input" value={place} maxLength={60} onChange={(e) => setPlace(e.target.value)} placeholder={t('sell.placePh')} />
               </Field>
-              <Field label="한 줄 소개" hint="선택">
-                <input className="input" value={note} maxLength={80} onChange={(e) => setNote(e.target.value)} placeholder="예: 손톱 끝으로 천천히" />
+              <Field label={t('sell.note')} hint={t('sell.optional')}>
+                <input className="input" value={note} maxLength={80} onChange={(e) => setNote(e.target.value)} placeholder={t('sell.notePh')} />
               </Field>
             </div>
 
-            <Field label="가격" hint={`최대 ${maxPrice}코인 · 코인 판매는 출시 후 열려요`}>
+            <Field label={t('sell.price')} hint={t('sell.priceHint', { max: maxPrice })}>
               <div className="flex flex-wrap gap-2">
                 {PRICE_STEPS.filter((p) => p <= maxPrice).map((p) => (
                   <button key={p} type="button" className={`chip ${price === p ? 'chip-on' : ''}`} onClick={() => setPrice(p)}>
-                    {p === 0 ? '무료' : `${p}코인`}
+                    {p === 0 ? t('common.free') : t('common.coins', { count: p })}
                   </button>
                 ))}
               </div>
@@ -387,20 +389,20 @@ function SellPage() {
             <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-card-active p-4 text-sm">
               <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[#F7609A]" checked={agree} onChange={(e) => setAgree(e.target.checked)} data-testid="sell-agree" />
               <span className="leading-relaxed text-muted">
-                <b className="text-ink">직접 녹음했고, 남의 소리나 음악이 섞이지 않았어요.</b> 남의 저작물이면 블록이 내려가고 판매가 멈출 수 있어요.
+                <b className="text-ink">{t('sell.agreeStrong')}</b> {t('sell.agreeRest')}
               </span>
             </label>
 
             <button type="button" className="btn-pink w-full py-3.5 text-base" onClick={submit} disabled={!!missing || progress !== null} data-testid="sell-submit">
               <IoCloudUpload size={18} />
-              {progress !== null ? `올리는 중… ${progress}%` : missing || '블록 올리기'}
+              {progress !== null ? t('sell.uploading', { p: progress }) : missing || t('sell.submit')}
             </button>
           </div>
 
           <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
-            <p className="text-sm font-bold text-muted">블록 상점에서는 이렇게 보여요</p>
+            <p className="text-sm font-bold text-muted">{t('sell.previewLabel')}</p>
             <BlockProductCard block={previewBlock} preview />
-            <p className="text-xs leading-relaxed text-faint">블록 길이 = 소리 길이. 블록 색은 트리거 묶음, 아이콘은 소분류를 따라가요. 미리보기에서 ▶로 고른 파일을 들어 볼 수 있어요.</p>
+            <p className="text-xs leading-relaxed text-faint">{t('sell.previewNote')}</p>
           </div>
         </div>
       )}
@@ -408,14 +410,14 @@ function SellPage() {
       {isAuthenticated && (
         <section id="mine" className="mt-16 scroll-mt-24">
           <div className="flex flex-wrap items-center gap-3">
-            <h2 className="mr-auto text-2xl font-extrabold">내가 올린 블록</h2>
+            <h2 className="mr-auto text-2xl font-extrabold">{t('sell.mine')}</h2>
             {user?.id && (
-              <Link to={`/creator/${user.id}`} className="btn-line btn-sm" data-testid="my-creator-page">내 크리에이터 페이지 · 공유</Link>
+              <Link to={`/creator/${user.id}`} className="btn-line btn-sm" data-testid="my-creator-page">{t('sell.myPage')}</Link>
             )}
           </div>
           <div className="mt-5">
             {mine === null ? <BlockLoader small /> : mine.length === 0 ? (
-              <p className="card p-6 text-sm text-muted">아직 올린 블록이 없어요. 위에서 첫 블록을 올려 보세요.</p>
+              <p className="card p-6 text-sm text-muted">{t('sell.mineEmpty')}</p>
             ) : (
               <div className="card divide-y divide-line">
                 {mine.map((u) => (
@@ -423,16 +425,16 @@ function SellPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-bold">{u.title}</p>
                       <p className="mt-0.5 truncate text-xs text-muted">
-                        {u.category?.name || '기타'} · {TALK_LABEL[u.talkType || 'NONE']} · {formatDuration(u.duration)} · {u.price > 0 ? `${u.price}코인` : '무료'}
+                        {categoryLabel(u.category) || t('common.other')} · {talkLabel(u.talkType)} · {formatDuration(u.duration)} · {u.price > 0 ? t('common.coins', { count: u.price }) : t('common.free')}
                         {u.recordedPlace ? ` · ${u.recordedPlace}` : ''}
                       </p>
                       {u.status === 'REJECTED' && u.reviewNote && (
-                        <p className="mt-1.5 rounded-lg bg-danger/10 px-2.5 py-1.5 text-xs text-danger" data-testid={`review-note-${u.id}`}>돌려보낸 이유: {u.reviewNote}</p>
+                        <p className="mt-1.5 rounded-lg bg-danger/10 px-2.5 py-1.5 text-xs text-danger" data-testid={`review-note-${u.id}`}>{t('sell.reviewNote', { note: u.reviewNote })}</p>
                       )}
                     </div>
-                    {u.design?.hasVideo && <span className="flex items-center gap-1 text-xs text-muted"><IoVideocam /> 영상</span>}
-                    <span className="hidden text-xs text-muted sm:block">담은 사람 {u.collectedCount}명</span>
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${STATUS[u.status]?.cls}`}>{STATUS[u.status]?.label}</span>
+                    {u.design?.hasVideo && <span className="flex items-center gap-1 text-xs text-muted"><IoVideocam /> {t('sell.kindVideo')}</span>}
+                    <span className="hidden text-xs text-muted sm:block">{t('sell.collected', { count: u.collectedCount })}</span>
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${STATUS[u.status] || ''}`}>{STATUS[u.status] ? t(`sell.status.${u.status}`) : u.status}</span>
                   </div>
                 ))}
               </div>

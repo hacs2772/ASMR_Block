@@ -59,7 +59,7 @@ public class AuthService {
                 .email(email)
                 .password(passwordEncoder.encode(request.password()))
                 .nickname(request.nickname())
-                .language("ko")
+                .language(request.language() != null ? request.language() : "ko")
                 .role(Role.USER)
                 .isActive(true)
                 .build();
@@ -111,8 +111,14 @@ public class AuthService {
      * 베타 손님 계정 만들기 + 로그인. 바로 조합을 만들어 볼 수 있게 인기 무료 블록을 몇 개 담아 줌.
      * 정식 출시 때는 app.beta.quick-login=false 로 끄면 404
      */
-    @Transactional
     public BetaLoginResponse betaLogin(String clientIp) {
+        return betaLogin(clientIp, null);
+    }
+
+    /** lang = 화면 언어 (en이면 손님 이름도 영어 "Guest1234", 계정 언어도 en) */
+    @Transactional
+    public BetaLoginResponse betaLogin(String clientIp, String lang) {
+        boolean english = "en".equals(lang);
         if (!properties.beta().quickLogin()) {
             throw ApiException.notFound("베타 로그인은 끝났어요. 회원가입 후 이용해 주세요.");
         }
@@ -126,8 +132,8 @@ public class AuthService {
         User user = User.builder()
                 .email(email)
                 .password(passwordEncoder.encode(password))
-                .nickname("베타손님" + (1000 + random.nextInt(9000)))
-                .language("ko")
+                .nickname((english ? "Guest" : "베타손님") + (1000 + random.nextInt(9000)))
+                .language(english ? "en" : "ko")
                 .role(Role.USER)
                 .isActive(true)
                 .build();

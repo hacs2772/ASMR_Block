@@ -1,6 +1,28 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import authApi from '../api/authApi';
+import i18n, { LANG_KEY, setLang } from '../locales';
+
+/** 지금 화면 언어 (계정에 저장하는 값: ko · en) */
+const currentLang = () => (i18n.language === 'en' ? 'en' : 'ko');
+
+/**
+ * 화면 언어 ↔ 계정 언어 맞추기 (나중에 알림·메일을 그 언어로 보내려고).
+ * adopt = 로그인: 이 브라우저에서 직접 고른 언어가 없으면(브라우저 언어로 자동) 계정에 저장된 언어를 따름.
+ * 그 밖에는 지금 화면 언어를 계정에 저장
+ */
+function syncLanguage(user, adopt, set) {
+  if (!user) return;
+  let chosen = null;
+  try { chosen = localStorage.getItem(LANG_KEY); } catch { /* 괜찮음 */ }
+  if (adopt && !chosen && (user.language === 'ko' || user.language === 'en')) {
+    if (user.language !== currentLang()) setLang(user.language);
+    return;
+  }
+  if (user.language !== currentLang()) {
+    authApi.updateMe({ language: currentLang() }).then((r) => set({ user: r.data })).catch(() => {});
+  }
+}
 
 const useAuthStore = create(
   persist(
@@ -25,10 +47,11 @@ const useAuthStore = create(
             isAuthenticated: true,
             isLoading: false,
           });
-          
+          syncLanguage(user, true, set);
+
           return { success: true };
         } catch (error) {
-          const message = error.response?.data?.error?.message || '로그인에 실패했습니다.';
+          const message = error.response?.data?.error?.message || i18n.t('errors.loginFailed');
           set({ error: message, isLoading: false });
           return { success: false, error: message };
         }
@@ -46,15 +69,16 @@ const useAuthStore = create(
             const again = await get().login(saved.email, saved.password);
             if (again.success) return { success: true };
           }
-          const response = await authApi.betaLogin();
+          const response = await authApi.betaLogin(currentLang());
           const { accessToken, refreshToken, user, email, password } = response.data;
           localStorage.setItem('accessToken', accessToken);
           localStorage.setItem('refreshToken', refreshToken);
           localStorage.setItem('betaGuest', JSON.stringify({ email, password }));
           set({ user, isAuthenticated: true, isLoading: false });
+          syncLanguage(user, false, set);
           return { success: true };
         } catch (error) {
-          const message = error.response?.data?.error?.message || '베타로 시작하지 못했어요.';
+          const message = error.response?.data?.error?.message || i18n.t('errors.betaFailed');
           set({ error: message, isLoading: false });
           return { success: false, error: message };
         }
@@ -64,11 +88,11 @@ const useAuthStore = create(
       signup: async (data) => {
         set({ isLoading: true, error: null });
         try {
-          await authApi.signup(data);
+          await authApi.signup({ language: currentLang(), ...data });
           set({ isLoading: false });
           return { success: true };
         } catch (error) {
-          const message = error.response?.data?.error?.message || '회원가입에 실패했습니다.';
+          const message = error.response?.data?.error?.message || i18n.t('errors.signupFailed');
           set({ error: message, isLoading: false });
           return { success: false, error: message };
         }

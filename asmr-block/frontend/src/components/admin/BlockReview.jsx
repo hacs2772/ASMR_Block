@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { IoCheckmarkCircle, IoFilm, IoReturnUpBack } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { adminApi, errorMessage } from '../../api/api';
-import { colorOf, formatDuration, iconOf, noteOf, TALK_LABEL } from '../../lib/blocks';
+import { colorOf, formatDuration, iconOf, noteOf, talkLabel } from '../../lib/blocks';
 import BlockLoader from '../brand/BlockLoader';
 import Brick from '../brand/Brick';
 import { useVideoModal } from '../block/VideoModal';
@@ -90,7 +90,7 @@ function ReviewCard({ block, status, onDone }) {
 
   const meta = [
     block.category?.parentName ? `${block.category.parentName} › ${block.category.name}` : block.category?.name,
-    TALK_LABEL[block.talkType || 'NONE'],
+    talkLabel(block.talkType),
     formatDuration(block.duration),
     block.recordedPlace,
     serverTime(block.createdAt)?.toLocaleDateString('ko-KR'),

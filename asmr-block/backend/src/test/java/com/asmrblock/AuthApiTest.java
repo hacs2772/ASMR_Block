@@ -90,6 +90,22 @@ class AuthApiTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("가입할 때 화면 언어를 주면 계정 언어로 (없으면 ko, ko·en 말고는 400)")
+    void signupLanguage() throws Exception {
+        String email = "lang-" + java.util.UUID.randomUUID() + "@test.com";
+        postJson("/api/v1/auth/signup",
+                "{\"email\":\"%s\",\"password\":\"password123\",\"nickname\":\"Tester\",\"language\":\"en\"}".formatted(email))
+                .andExpect(status().isCreated());
+        getWithToken("/api/v1/users/me", login(email, "password123").accessToken())
+                .andExpect(jsonPath("$.data.language").value("en"));
+        getWithToken("/api/v1/users/me", newUser().accessToken())
+                .andExpect(jsonPath("$.data.language").value("ko"));
+        postJson("/api/v1/auth/signup",
+                "{\"email\":\"x-%s\",\"password\":\"password123\",\"nickname\":\"Tester\",\"language\":\"fr\"}".formatted(email))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     @DisplayName("이미 있는 이메일로 가입하면 409")
     void duplicateEmail() throws Exception {
         postJson("/api/v1/auth/signup",
@@ -119,6 +135,11 @@ class AuthApiTest extends IntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.length()", greaterThanOrEqualTo(1)))
                 .andExpect(jsonPath("$.data[*].price", everyItem(is(0))));
+        // 영어 화면에서 누르면 손님 이름·계정 언어도 영어
+        postJson("/api/v1/auth/beta-login?lang=en", "")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.user.nickname", startsWith("Guest")))
+                .andExpect(jsonPath("$.data.user.language").value("en"));
         // 로그아웃 뒤에도 이 기기에 저장한 이메일·비밀번호로 같은 계정에 다시 로그인
         assertThat(login(email, password).accessToken()).isNotBlank();
         // 두 번 누르면 다른 손님 (기기마다 따로)

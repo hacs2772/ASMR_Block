@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { colorOf, iconOf } from '../../lib/blocks';
+import { useTranslation } from 'react-i18next';
 import Brick from '../brand/Brick';
 
 /** 첫째 줄을 반복까지 펼쳐서 [시작, 길이, 블록] 목록으로 */
@@ -27,13 +28,14 @@ export function blockAt(combo, timeline, t) {
  * 영상이 없는 블록 차례면 그 블록의 겉면(사진·스티커)을 크게. 영상 보기는 "진짜 그 장면이구나" 하는 용도라 가볍게
  */
 function BlockVideoPanel({ combo, currentTime, playing }) {
+  const { t } = useTranslation();
   const timeline = useMemo(() => mainTimeline(combo), [combo]);
   const cycle = Math.max(1, combo.totalDuration || 1);
-  const t = currentTime % cycle;
-  const now = blockAt(combo, timeline, t);
+  const at = currentTime % cycle;
+  const now = blockAt(combo, timeline, at);
   const videoRef = useRef(null);
   const url = now?.item.design?.videoUrl;
-  const offset = now ? t - now.start : 0;
+  const offset = now ? at - now.start : 0;
 
   // 블록이 바뀌면 그 블록 영상으로, 소리와 2초 넘게 어긋나면 맞춤 (영상이 블록보다 짧으면 되풀이)
   useEffect(() => {
@@ -56,11 +58,11 @@ function BlockVideoPanel({ combo, currentTime, playing }) {
         <div className="flex flex-col items-center gap-3 text-center">
           <Brick color={colorOf(item.category)} width={240} height={84} icon={iconOf(item.category)} minutes={item.duration / 60}
             design={item.design && { ...item.design, hasVideo: false }} />
-          <p className="text-sm text-muted">{item.design?.hasVideo ? '이 블록 영상은 블록을 담으면 볼 수 있어요' : '이 블록은 소리만 있어요'}</p>
+          <p className="text-sm text-muted">{item.design?.hasVideo ? t('videoPanel.locked') : t('videoPanel.soundOnly')}</p>
         </div>
       )}
       <span className="absolute bottom-3 left-3 rounded-md bg-black/65 px-2.5 py-1 text-xs font-bold text-white">
-        지금: {item.title}{url ? ' · 영상' : ''}
+        {t('videoPanel.now', { title: item.title })}{url ? ` · ${t('block.video')}` : ''}
       </span>
     </div>
   );

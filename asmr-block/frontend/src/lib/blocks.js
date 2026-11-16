@@ -1,3 +1,4 @@
+import i18n from '../locales';
 import {
   IoAirplane, IoAlarm, IoBagHandle, IoBasketball, IoBeaker, IoBed, IoBicycle, IoBoat, IoBonfire, IoBook, IoBrush,
   IoBulb, IoBus, IoBusiness, IoCafe, IoCar, IoChatbubbleEllipses, IoChatbubbles, IoCloud, IoColorFill,
@@ -21,7 +22,24 @@ export const TRIGGER_COLOR = {
 };
 export const FALLBACK_COLOR = '#9AA0AE';
 
-export const TALK_LABEL = { NONE: '노토킹', WHISPER: '속삭임', TALK: '말하기' };
+/**
+ * 분류 이름 (지금 언어). 한국어는 서버 이름 그대로(관리자가 바꾼 이름), 영어는 사전(cat.코드)에서 — 관리자가 새로 만든 건 서버 이름.
+ * 묶음 이름: 블록의 category(소분류)면 groupCode(서버 블록 응답) · parentName, 묶음 자체면 code
+ */
+const catKey = (code) => `cat.${String(code).replace(/\./g, '__')}`;
+const isEn = () => i18n.language === 'en';
+export const categoryName = (code, fallback) => (code && isEn() ? i18n.t(catKey(code), { defaultValue: fallback || '' }) : fallback || '');
+export const categoryLabel = (cat) => (cat ? categoryName(cat.code, cat.name) : '');
+/** 소분류 코드 'tap.tapping'의 앞부분 = 묶음 코드 */
+const groupCodeOf = (cat) => cat.groupCode || cat.parentCode || (cat.code ? String(cat.code).split('.')[0] : null);
+export const groupLabel = (cat) => (!cat ? '' : cat.parentName || cat.groupCode || cat.parentCode
+  ? categoryName(groupCodeOf(cat), cat.parentName) : categoryName(cat.code, cat.name));
+export const groupDescription = (group) => (group?.code && isEn()
+  ? i18n.t(`catDesc.${group.code}`, { defaultValue: group.description || '' }) : group?.description || '');
+
+/** 말소리 종류 (NONE 노토킹 / WHISPER 속삭임 / TALK 말하기) → 지금 언어 이름 */
+export const TALK_TYPES = ['NONE', 'WHISPER', 'TALK'];
+export const talkLabel = (type) => i18n.t(`talk.${type || 'NONE'}`);
 
 /**
  * 카테고리 아이콘: Ionicons 이름 → 웹 아이콘. 관리자 페이지에서 고를 수 있는 목록도 이것 (앱 Ionicons에도 다 있음).
@@ -83,17 +101,18 @@ export function formatDuration(seconds) {
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`;
 }
 
-/** 초 → "34분", "1시간 5분" */
+/** 초 → "34분", "1시간 5분" (영어: "34 min", "1 hr 5 min") */
 export function formatLength(seconds) {
   const s = Math.round(seconds || 0);
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;
-  return [h ? `${h}시간` : '', m ? `${m}분` : '', !h && sec ? `${sec}초` : ''].filter(Boolean).join(' ') || '0분';
+  return [h ? i18n.t('time.hours', { count: h }) : '', m ? i18n.t('time.minutes', { count: m }) : '',
+    !h && sec ? i18n.t('time.seconds', { count: sec }) : ''].filter(Boolean).join(' ') || i18n.t('time.minutes', { count: 0 });
 }
 
 /** 얼마나 들을까요 분 → "1시간", "30분" */
-export const listenLabel = (minutes) => (minutes >= 60 ? `${minutes / 60}시간` : `${minutes}분`);
+export const listenLabel = (minutes) => (minutes >= 60 ? i18n.t('time.hours', { count: minutes / 60 }) : i18n.t('time.minutes', { count: minutes }));
 
 /** 블록 소개에서 앞의 [테스트용 합성 음원] 같은 꼬리표를 뺌 */
 export const noteOf = (description) => (description || '').replace(/^\[[^\]]*\]\s*/, '');

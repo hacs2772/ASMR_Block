@@ -78,7 +78,8 @@ public class QuickStartService {
         List<Block> picks = roundRobin(perTrigger);
         libraryService.addFree(userId, picks.stream().map(Block::getId).toList());
 
-        String title = ("나의 첫 팅글 · " + String.join("·", names));
+        String title = request.title() != null && !request.title().isBlank()
+                ? request.title().trim() : ("나의 첫 팅글 · " + String.join("·", names));
         if (title.length() > 100) {
             title = title.substring(0, 100);
         }

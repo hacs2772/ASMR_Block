@@ -76,9 +76,10 @@
 
 **회원가입 요청**
 ```json
-{ "email": "user@example.com", "password": "password123", "nickname": "음악좋아" }
+{ "email": "user@example.com", "password": "password123", "nickname": "음악좋아", "language": "ko" }
 ```
 - 이메일은 대소문자 구분 없음, 비밀번호 8~64자, 닉네임 2~20자
+- `language`(선택) = 화면 언어 `ko`·`en` (없으면 `ko`, 그 밖은 400). 웹은 지금 화면 언어를 보냄 → 나중에 알림·메일을 이 언어로
 - 응답 `data`: [UserResponse](#3-회원-user)
 
 **로그인 요청 / 응답**
@@ -101,8 +102,8 @@
 - 갱신 응답: `{ "accessToken": "...", "refreshToken": "...(새 값)" }` → **둘 다 저장**
 - 한 번 쓴 refreshToken을 다시 보내면 탈취로 판단해 그 사용자의 모든 refreshToken 폐기 (401)
 
-**베타로 바로 시작** `POST /auth/beta-login` (요청 본문 없음)
-- 새 손님 계정(닉네임 `베타손님1234`)을 만들고 로그인 응답과 같은 토큰을 줌 + 인기 무료 블록 `app.beta.starter-blocks`개를 내 블록함에 담아 줌
+**베타로 바로 시작** `POST /auth/beta-login?lang=en` (요청 본문 없음, `lang` 선택)
+- 새 손님 계정(닉네임 `베타손님1234`, `lang=en`이면 `Guest1234` + 계정 언어 `en`)을 만들고 로그인 응답과 같은 토큰을 줌 + 인기 무료 블록 `app.beta.starter-blocks`개를 내 블록함에 담아 줌
 - 응답에 `email`, `password`도 들어 있음 → 앱/웹이 그 기기에 저장해 두었다가, 로그아웃 뒤 다시 누르면 **같은 계정으로 로그인**
 - ⚠ 정식 출시 때 `app.beta.quick-login=false`(`APP_BETA_QUICK_LOGIN=false`) → 404, 앱/웹은 `GET /auth/beta`가 false면 버튼을 숨김
 
@@ -187,7 +188,7 @@
 | Method | URL | 인증 | 설명 |
 |------|------|------|------|
 | GET | `/blocks` | - (로그인하면 `owned` 표시) | 목록 (승인된 블록만) |
-| GET | `/creators/{userId}` | - | **크리에이터 페이지 머리**: `{ "id", "nickname", "blockCount", "collectorCount", "playCount", "triggers": ["탭핑·타건", …], "since" }` — 블록 수는 상점에 보이는 승인 블록, `collectorCount` = 내 블록함에 담은 다른 사람 수(본인 빼고), `triggers` = 많이 올린 트리거 묶음 최대 3개. 없거나 탈퇴한 사람은 404. 블록 목록은 `GET /blocks?uploaderId={id}` |
+| GET | `/creators/{userId}` | - | **크리에이터 페이지 머리**: `{ "id", "nickname", "blockCount", "collectorCount", "playCount", "triggers": ["탭핑·타건", …], "triggerCodes": ["tap", …], "since" }` — 블록 수는 상점에 보이는 승인 블록, `collectorCount` = 내 블록함에 담은 다른 사람 수(본인 빼고), `triggers` = 많이 올린 트리거 묶음 최대 3개(이름), `triggerCodes` = 같은 순서의 코드(화면 언어로 이름을 바꿀 때). 없거나 탈퇴한 사람은 404. 블록 목록은 `GET /blocks?uploaderId={id}` |
 | GET | `/blocks/trending` | - | **요즘 뜨는 소리**: 최근 `days`(기본 7)일 재생 수 순, `size` 기본 10 → `recentPlays` 포함. 재생 기록이 모자라면 많이 들은 순 → 새로 올라온 순으로 채움(`recentPlays` 없음) |
 | GET | `/blocks/upload-policy` | - | **업로드 규칙**: `{ "maxPrice": 100, "maxFileMb": 50, "minSeconds": 10, "maxSeconds": 1200, "extensions": [...], "maxVideoMb": 200, "videoExtensions": [...], "maxImageMb": 10, "imageExtensions": [...], "stickers": ["flagjp", ...], "patterns": ["dots", "lines", "none"] }` |
 | GET | `/blocks/{id}` | - | 상세 (승인 전이면 404) |
@@ -329,7 +330,7 @@
 | PUT | `/playlists/{id}` | 본인 | 수정 (트랙을 통째로 교체) |
 | DELETE | `/playlists/{id}` | 본인 | 삭제 |
 | POST | `/playlists/{id}/play` | 필요 | 재생 기록 (블록과 같은 규칙) |
-| POST | `/playlists/quick-start` | 필요 | **첫 조합 바로 만들기** `{ "triggers": ["tap", "rain"], "listenMinutes": 60 }` (트리거 묶음 코드 1~5개, 시간 생략 시 60분) → 201 상세. 트리거마다 많이 들은 무료 블록(상점에 보이는 것) 2개까지 내 블록함에 담고, 트리거를 돌아가며 이어 붙여 15분 안팎 한 바퀴(블록이 하나면 반복)로 **비공개** 조합 "나의 첫 팅글 · 탭핑·타건·빗소리·물"을 만들고 완성본까지 시작. 모르는 코드·무료 블록이 없는 트리거만 고르면 400 |
+| POST | `/playlists/quick-start` | 필요 | **첫 조합 바로 만들기** `{ "triggers": ["tap", "rain"], "listenMinutes": 60, "title": "My first tingles · Tapping & Typing" }` (트리거 묶음 코드 1~5개, 시간 생략 시 60분, `title`은 선택·100자까지 — 영어 화면이 영어 이름을 보냄, 없으면 아래 한국어 이름) → 201 상세. 트리거마다 많이 들은 무료 블록(상점에 보이는 것) 2개까지 내 블록함에 담고, 트리거를 돌아가며 이어 붙여 15분 안팎 한 바퀴(블록이 하나면 반복)로 **비공개** 조합 "나의 첫 팅글 · 탭핑·타건·빗소리·물"을 만들고 완성본까지 시작. 모르는 코드·무료 블록이 없는 트리거만 고르면 400 |
 | PATCH | `/playlists/{id}/visibility` | 필요 | **공개·비공개만 바꾸기** `{ "isPublic": true }` → 상세. 내 조합만(남의 것 403). 담아 온 복사본은 공개 불가(400, 원래 조합을 공유) — 공유하기 전에 씀 |
 | POST | `/playlists/{id}/listened` | 필요 | **오래 들음** `{ "minutes": 10 }` (1~600) → `{ "counted": true }`. 듣기 화면이 10분 넘게 재생하면 한 번 보냄, 같은 조합·같은 분은 6시간에 한 번만 셈. 볼 수 없는 조합이면 403 (V10, 관리자 통계용) |
 | POST | `/playlists/{id}/collect` | 필요 | **조합 한 번에 담기** (7.4) |
@@ -526,7 +527,7 @@
 
 | Method | URL | 설명 |
 |------|------|------|
-| GET | `/me/notifications?page=0&size=30` | 내 알림 (최근에 바뀐 순). 한 줄: `{ "id", "type", "message", "note", "target": { "kind": "BLOCK|UPLOADS|COMBO", "id" }, "read", "at" }` |
+| GET | `/me/notifications?page=0&size=30` | 내 알림 (최근에 바뀐 순). 한 줄: `{ "id", "type", "message", "title", "actor", "count", "note", "target": { "kind": "BLOCK|UPLOADS|COMBO", "id" }, "read", "at" }` — `message`는 한국어 문장, `title`(블록·조합 이름)·`actor`(담은 사람 닉네임, 여러 명이면 마지막 사람)·`count`(묶인 수)로 화면 언어에 맞게 문장을 새로 만들 수 있음 |
 | GET | `/me/notifications/summary` | 종 아이콘용 `{ "unread": 2, "settings": { "review": true, "collect": true } }` (앱·웹이 1분마다) |
 | POST | `/me/notifications/read` | 읽음 `{ "ids": [1, 2] }`, 비우면 전부 → summary |
 | PUT | `/me/notifications/settings` | 끄기·켜기 `{ "review": false, "collect": true }` (둘 다 필수) → summary, 둘 다 끄면 `"알림을 모두 껐어요."` |

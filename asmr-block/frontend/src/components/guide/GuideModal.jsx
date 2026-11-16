@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { IoClose } from 'react-icons/io5';
+import { useTranslation } from 'react-i18next';
 import { create } from 'zustand';
 import { GUIDE_KEYS, GUIDE_STEPS, guideSeen, markGuideSeen } from '../../lib/guide';
+import { GUIDE_STEPS_EN } from '../../lib/guide.en';
 import GuideArt from './GuideArt';
 
 /** 지금 열린 사용법 안내 (welcome · editor · full). 어디서든 useGuide.getState().show('full')로 다시 보기 */
@@ -28,15 +30,14 @@ export function useFirstRunGuide(which, enabled = true) {
   }, [which, enabled]);
 }
 
-const FINISH = { welcome: '시작하기', editor: '해 볼게요', full: '알겠어요' };
-
 /** 사용법 팝업: 움직이는 그림 + 한 줄 설명, 점(몇 번째), 건너뛰기·다음. ←/→ 키, Esc 닫기 */
 export function GuideModal() {
+  const { t, i18n } = useTranslation();
   const open = useGuide((s) => s.open);
   const close = useGuide((s) => s.close);
   const [index, setIndex] = useState(0);
   const dialogRef = useRef(null);
-  const steps = open ? GUIDE_STEPS[open] : null;
+  const steps = open ? (i18n.language === 'en' ? GUIDE_STEPS_EN : GUIDE_STEPS)[open] : null;
   const last = steps ? index >= steps.length - 1 : false;
 
   useEffect(() => { setIndex(0); }, [open]);
@@ -58,26 +59,26 @@ export function GuideModal() {
   return (
     <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/75 p-4 sm:items-center" role="presentation">
       <div ref={dialogRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="guide-title" className="card relative w-full max-w-md p-5 shadow-2xl outline-none" data-testid="guide-modal">
-        <button type="button" className="btn-ghost absolute right-3 top-3 z-10 p-1.5" onClick={close} aria-label="안내 닫기"><IoClose size={20} /></button>
+        <button type="button" className="btn-ghost absolute right-3 top-3 z-10 p-1.5" onClick={close} aria-label={t('guideModal.close')}><IoClose size={20} /></button>
         <div className="flex justify-center overflow-hidden rounded-xl bg-night py-4">
-          <GuideArt key={`${open}-${index}`} kind={step.art} />
+          <GuideArt key={`${open}-${index}-${i18n.language}`} kind={step.art} />
         </div>
         <p className="mt-4 text-xs font-extrabold text-pink-text">{index + 1} / {steps.length}</p>
         <p id="guide-title" className="mt-1 text-xl font-extrabold tracking-tight" data-testid="guide-title">{step.title}</p>
         <p className="mt-2 min-h-[63px] text-sm leading-relaxed text-muted">{step.body}</p>
         <div className="my-4 flex justify-center gap-2">
           {steps.map((s, i) => (
-            <button key={s.title} type="button" onClick={() => setIndex(i)} aria-label={`${i + 1}번째 안내`} aria-current={i === index}
+            <button key={s.title} type="button" onClick={() => setIndex(i)} aria-label={t('guideModal.nth', { n: i + 1 })} aria-current={i === index}
               className={`h-2 rounded-full transition-all ${i === index ? 'w-5 bg-pink' : 'w-2 bg-line-strong hover:bg-muted'}`} />
           ))}
         </div>
         <div className="flex gap-2">
           {last ? <span className="flex-1" /> : (
-            <button type="button" className="btn-ghost flex-1 justify-center" onClick={close} data-testid="guide-skip">건너뛰기</button>
+            <button type="button" className="btn-ghost flex-1 justify-center" onClick={close} data-testid="guide-skip">{t('guideModal.skip')}</button>
           )}
           <button type="button" className="btn-pink flex-1 justify-center" data-testid="guide-next"
             onClick={() => (last ? close() : setIndex(index + 1))}>
-            {last ? FINISH[open] : '다음'}
+            {last ? t(`guideModal.finish.${open}`) : t('guideModal.next')}
           </button>
         </div>
       </div>

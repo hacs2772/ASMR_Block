@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { IoClose } from 'react-icons/io5';
+import { useTranslation } from 'react-i18next';
 import { usePreviewStore } from '../../hooks/usePreview';
 
 /** 블록 영상 보기 (상점·블록함에서 "영상 보기"): 영상은 소리 없이, 소리는 블록 음원으로 같이 */
@@ -11,6 +12,7 @@ export const useVideoModal = create((set) => ({
 }));
 
 export function VideoModal() {
+  const { t } = useTranslation();
   const { block, close } = useVideoModal();
   const videoRef = useRef(null);
   useEffect(() => {
@@ -30,14 +32,14 @@ export function VideoModal() {
   return (
     <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/80 p-4" onClick={close} role="presentation">
       <div className="card relative w-full max-w-2xl overflow-hidden" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true"
-        aria-label={`${block.title} 영상`} data-testid="video-modal">
+        aria-label={t('block.videoTitle', { title: block.title })} data-testid="video-modal">
         <video ref={videoRef} src={block.design.videoUrl} className="aspect-video w-full bg-black" autoPlay muted loop playsInline />
         <div className="flex items-center gap-3 p-4">
           <div className="min-w-0 flex-1">
             <p className="truncate font-bold">{block.title}</p>
-            <p className="text-xs text-muted">영상은 소리 없이, 소리는 블록 음원으로 같이 나와요</p>
+            <p className="text-xs text-muted">{t('block.videoNote')}</p>
           </div>
-          <button type="button" className="btn-line btn-sm" onClick={close}><IoClose /> 닫기</button>
+          <button type="button" className="btn-line btn-sm" onClick={close}><IoClose /> {t('common.close')}</button>
         </div>
       </div>
     </div>

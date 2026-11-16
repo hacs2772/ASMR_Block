@@ -1,4 +1,5 @@
 import { toast } from 'react-toastify';
+import i18n from '../locales';
 
 /** 공유 링크 (서버가 카톡 미리보기 카드를 만들어 줌): 조합 /s/{id}, 블록 /s/b/{id}, 크리에이터 /s/c/{id} */
 export const shareLinks = {
@@ -19,8 +20,8 @@ export async function shareLink(title, url, text = `${title} — ASMR Block`) {
   }
   try {
     await navigator.clipboard.writeText(url);
-    toast.success('링크를 복사했어요. 카톡에 붙여 넣으면 미리보기 카드가 나와요.');
+    toast.success(i18n.t('share.copied'));
   } catch {
-    window.prompt('이 링크를 복사해서 보내 주세요', url);
+    window.prompt(i18n.t('share.copyPrompt'), url);
   }
 }

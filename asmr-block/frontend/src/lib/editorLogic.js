@@ -5,6 +5,9 @@
  * - 블록 길이 = 소리 길이 (1분 = PX_PER_MINUTE)
  */
 
+import i18n from '../locales';
+import { listenLabel } from './blocks';
+
 export const MAX_TOTAL_SECONDS = 10 * 60 * 60;
 export const MAX_REPEAT = 200;
 export const PX_PER_MINUTE = 26;
@@ -12,13 +15,9 @@ export const PX_PER_SECOND = PX_PER_MINUTE / 60;
 export const MIN_BRICK_WIDTH = 44;
 export const SNAP_SECONDS = 5;
 export const MAGNET_PX = 10;
-export const LISTEN_OPTIONS = [
-  { minutes: 0, label: '한 바퀴' },
-  { minutes: 30, label: '30분' },
-  { minutes: 60, label: '1시간' },
-  { minutes: 180, label: '3시간' },
-  { minutes: 480, label: '8시간' },
-];
+/** 얼마나 들을까요 (0 = 한 바퀴만). 이름은 listenOptionLabel로 (지금 언어) */
+export const LISTEN_OPTIONS = [0, 30, 60, 180, 480].map((minutes) => ({ minutes }));
+export const listenOptionLabel = (minutes) => (minutes === 0 ? i18n.t('time.onceAround') : listenLabel(minutes));
 
 let counter = 0;
 export const newKey = () => `b${Date.now().toString(36)}${(counter++).toString(36)}`;
@@ -119,9 +118,9 @@ export function itemsFromDetail(p) {
 /** 이름을 안 적으면: "숲속 바람 외 2개" */
 export function autoTitle(state) {
   const first = state.main.items[0]?.block.title;
-  if (!first) return '나만의 조합';
+  if (!first) return i18n.t('editor.autoTitleEmpty');
   const others = new Set(state.main.items.map((i) => i.block.id)).size - 1;
-  return others > 0 ? `${first} 외 ${others}개` : first;
+  return others > 0 ? i18n.t('editor.autoTitle', { first, count: others }) : first;
 }
 
 /** t초에 각 줄에서 어느 블록을 몇 초부터 틀어야 하는지 */

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IoArrowForward } from 'react-icons/io5';
+import { useTranslation } from 'react-i18next';
 import { TRIGGER_COLOR } from '../../lib/blocks';
 import Brick from '../brand/Brick';
 
@@ -13,7 +14,9 @@ const ASSEMBLE_MS = 1250;
  * 가장 중요한 버튼 "조합 만들기": 레고 블록 모양(분홍 · 오른쪽 돌기 · 아래 두께) + 움직이는 소리 막대.
  * 누르면 블록 셋이 사방에서 날아와 딸깍 조립되고 편집기로 이동. "동작 줄이기"를 켠 사람은 바로 이동
  */
-function AssembleButton({ to = '/create', label = '조합 만들기', className = '' }) {
+function AssembleButton({ to = '/create', label, className = '' }) {
+  const { t } = useTranslation();
+  const text = label || t('nav.create');
   const navigate = useNavigate();
   const [assembling, setAssembling] = useState(false);
   const timer = useRef(null);
@@ -36,7 +39,7 @@ function AssembleButton({ to = '/create', label = '조합 만들기', className 
           <span className="make-bars" aria-hidden="true">
             {BARS.map((b, i) => <i key={i} style={{ height: `${b.h * 100}%`, '--spd': `${b.spd}ms`, '--low': 0.35 }} />)}
           </span>
-          {label}
+          {text}
           <IoArrowForward size={20} />
         </span>
       </button>
@@ -48,7 +51,7 @@ function AssembleButton({ to = '/create', label = '조합 만들기', className 
             <Brick color={TRIGGER_COLOR.crinkle} width={104} height={70} bars="crinkle" minutes={3} />
             <Brick color={TRIGGER_COLOR.whisper} width={104} height={70} bars="whisper" minutes={3} />
           </div>
-          <p className="assemble-text">딸깍! 블록 쌓으러 가요</p>
+          <p className="assemble-text">{t('misc.assemble')}</p>
         </div>
       )}
     </>

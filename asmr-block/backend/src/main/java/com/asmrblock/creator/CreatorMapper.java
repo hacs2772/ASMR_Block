@@ -12,5 +12,5 @@ public interface CreatorMapper {
     Optional<CreatorStats> findStats(Long userId);
 
     /** 많이 올린 트리거 묶음 이름 (많은 순, 최대 3개) */
-    List<String> topTriggers(Long userId);
+    List<CreatorTrigger> topTriggers(Long userId);
 }

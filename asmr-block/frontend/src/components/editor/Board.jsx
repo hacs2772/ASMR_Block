@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useMemo, useState } from 'react';
 import { IoPlay, IoStop } from 'react-icons/io5';
 import { brickWidth, cycleLength, mixEnd, PX_PER_MINUTE, PX_PER_SECOND, SNAP_SECONDS, xAtTime } from '../../lib/editorLogic';
@@ -29,6 +30,7 @@ function placeSlots(list) {
  * 끄는 동안 다른 블록은 미끄러져 자리를 비켜 줌 (left만 바뀌고 CSS가 스르륵)
  */
 function Board({ playing, onTogglePlay }) {
+  const { t } = useTranslation();
   const main = useEditorStore((s) => s.main);
   const mix = useEditorStore((s) => s.mix);
   const mixTarget = useEditorStore((s) => s.mixTarget);
@@ -78,11 +80,11 @@ function Board({ playing, onTogglePlay }) {
         <button type="button" onClick={onTogglePlay} disabled={main.items.length === 0}
           className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-bold disabled:opacity-40 ${
             playing ? 'border-pink bg-pink text-white' : 'border-line-strong bg-pink-soft text-pink-text'}`} data-testid="play-all">
-          {playing ? <IoStop /> : <IoPlay />} {playing ? '멈춤' : '전체 듣기'}
+          {playing ? <IoStop /> : <IoPlay />} {playing ? t('board.stop') : t('board.playAll')}
         </button>
-        <span className="min-w-0 text-xs text-faint">1칸 = 1분<span className="hidden sm:inline"> · 한 바퀴 {formatDuration(total)}</span></span>
+        <span className="min-w-0 truncate text-xs text-faint">{t('board.scale')}<span className="hidden sm:inline"> · {t('common.loop', { length: formatDuration(total) })}</span></span>
         <button type="button" onClick={mix.enabled ? hideMix : showMix} className="ml-auto shrink-0 whitespace-nowrap rounded-full border border-line px-3 py-1 text-xs font-semibold text-muted hover:text-ink" data-testid="toggle-mix">
-          {mix.enabled ? '레이어드 숨기기' : '＋ 레이어드'}
+          {mix.enabled ? t('board.hideLayer') : t('board.showLayer')}
         </button>
       </div>
 
@@ -112,7 +114,7 @@ function Board({ playing, onTogglePlay }) {
           {/* 레이어드 */}
           {mix.enabled && (
             <>
-              <p className="absolute text-[11px] text-muted" style={{ left: PAD, top: LANE_TOP - 22 }}>② 레이어드 · 빈 곳을 눌러 시간을 정하거나, 블록을 원하는 시간에 끌어다 놓기</p>
+              <p className="absolute text-[11px] text-muted" style={{ left: PAD, top: LANE_TOP - 22 }}>{t('board.layerHint')}</p>
               <div ref={(el) => { geo.lane = el; }} onClick={onLaneClick} role="presentation" data-testid="lane"
                 className="absolute cursor-pointer rounded-lg border border-dashed border-line bg-white/[0.02]"
                 style={{ left: PAD, top: LANE_TOP - 4, height: MIX_H + 8, width: contentWidth - PAD * 2 }}>
@@ -122,12 +124,12 @@ function Board({ playing, onTogglePlay }) {
                 ))}
                 {preview?.row === 'mix' && source && (
                   <span className="drop-slot" style={{ left: preview.start * PX_PER_SECOND, top: 4, width: brickWidth(source.block.duration), height: MIX_H }}>
-                    <Bubble text={`${formatDuration(preview.start)}부터`} />
+                    <Bubble text={t('board.fromTime', { time: formatDuration(preview.start) })} />
                   </span>
                 )}
                 {mixTarget !== null && !source && (
                   <span className="pointer-events-none absolute top-0 h-full w-[3px] rounded bg-pink-text" style={{ left: mixTarget * PX_PER_SECOND }}>
-                    <Bubble text={`${formatDuration(mixTarget)}에 넣기`} />
+                    <Bubble text={t('board.insertAt', { time: formatDuration(mixTarget) })} />
                   </span>
                 )}
               </div>
@@ -142,6 +144,7 @@ function Board({ playing, onTogglePlay }) {
 
 /** 바닥판 위 블록: 누르면 선택, 끌면 옮기기 (블록함으로 끌면 빼기) */
 function BoardBrick({ row, item, left, top = 0, width, height, hole, z, enter }) {
+  const { t } = useTranslation();
   const selected = useEditorStore((s) => s.selected?.key === item.key);
   const select = useEditorStore((s) => s.select);
   const pop = useEditorStore((s) => (s.pop?.key === item.key ? s.pop.at : 0));
@@ -149,8 +152,8 @@ function BoardBrick({ row, item, left, top = 0, width, height, hole, z, enter })
   useEffect(() => {
     if (!pop) return undefined;
     setPopping(true);
-    const t = setTimeout(() => setPopping(false), 340);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setPopping(false), 340);
+    return () => clearTimeout(timer);
   }, [pop]);
 
   const handlers = dragHandlers({
@@ -163,7 +166,7 @@ function BoardBrick({ row, item, left, top = 0, width, height, hole, z, enter })
   return (
     <div {...handlers} className={`slide absolute cursor-grab touch-pan-x select-none ${enter ? 'drop-in' : ''}`}
       style={{ left, top, zIndex: selected ? 50 : z }} title={item.block.title}
-      role="button" aria-label={`${row === 'main' ? '첫째 줄' : '레이어드'} ${item.block.title}`} data-testid={`brick-${row}-${item.block.id}`}>
+      role="button" aria-label={`${row === 'main' ? t('board.mainRow') : t('board.layerRow')} ${item.block.title}`} data-testid={`brick-${row}-${item.block.id}`}>
       <div className={popping ? 'brick-pop' : undefined} style={hole ? { opacity: 0.25, outline: '2px dashed #ff85af', outlineOffset: 1, borderRadius: 6 } : undefined}>
         <Brick color={colorOf(item.block.category)} width={width} height={height} icon={iconOf(item.block.category)} label={label}
           minutes={item.block.duration / 60} selected={selected} dim={!item.block.owned} design={item.block.design} />

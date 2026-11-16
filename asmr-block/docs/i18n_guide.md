@@ -1,416 +1,75 @@
-# ASMR Block - 다국어 지원 가이드 (i18n)
+# ASMR Block - 다국어 가이드 (한국어 · English)
 
-> 최종 수정일: 2026-01-13  
-> 버전: MVP 1.0
-
----
-
-## 개요
-
-ASMR Block은 글로벌 서비스를 목표로 다국어를 지원합니다.
-
-### 지원 언어
-
-| 언어 | 코드 | 우선순위 |
-|------|------|----------|
-| 한국어 | ko | MVP |
-| English | en | MVP |
-| 日本語 | ja | v2.0 |
-| 中文 | zh | v2.0 |
+> 최종 수정일: 2026-11-16
+> 1단계 **웹사이트 영어판** 끝 → 2단계 앱 영어판 → 3단계 서버 글(오류 메시지·알림 문장·공유 미리보기·트리거 이름)
 
 ---
 
-## 기술 스택
+## 1. 언어가 정해지는 순서 (웹)
 
-### Frontend
-- **react-i18next**: React용 다국어 라이브러리
-- **i18next-browser-languagedetector**: 브라우저 언어 자동 감지
+1. 주소에 `?lang=en` / `?lang=ko` → 그 언어 (그리고 기억)
+2. 이 브라우저에서 직접 고른 언어 (`localStorage` `asmr.lang`)
+3. 브라우저 언어: 한국어면 한국어, 그 밖은 **English**
+4. 로그인할 때: 2번(직접 고른 것)이 없으면 **계정 언어**(`users.language`)를 따름
 
-### Backend
-- 사용자별 언어 설정 DB 저장 (users.language)
-- API 응답 메시지는 프론트에서 처리
+- 고르는 곳: PC 머리글 `KO/EN` 버튼, 휴대폰 메뉴 아래, 바닥글, 내 정보 → 언어 (`locales/LanguageSwitch.jsx`)
+- 로그인 중에 바꾸면 계정에도 저장 (`PUT /users/me { language }`), 가입·베타 손님도 지금 화면 언어로 만들어짐 (`signup`의 `language`, `beta-login?lang=en` → 손님 이름 `Guest1234`)
+- `<html lang>`도 같이 바뀜
 
----
-
-## 폴더 구조
+## 2. 파일
 
 ```
-frontend/
-└── src/
-    └── locales/
-        ├── index.js          # i18n 설정
-        ├── ko/
-        │   ├── common.json   # 공통 (버튼, 메뉴 등)
-        │   ├── auth.json     # 인증 관련
-        │   ├── block.json    # 블록 관련
-        │   └── playlist.json # 플레이리스트 관련
-        └── en/
-            ├── common.json
-            ├── auth.json
-            ├── block.json
-            └── playlist.json
+frontend/src/
+├── locales/
+│   ├── index.js            # i18next 설정, detectLang, setLang, localeOf(ko-KR/en-US)
+│   ├── ko.json  en.json    # 화면 글자 사전 (키가 똑같아야 함)
+│   ├── LanguageSwitch.jsx
+│   └── locales.test.js     # 안전 검사 (아래)
+├── content/
+│   ├── legal.ko.js         # 약관·개인정보 처리방침 원문
+│   ├── legal.en.js         # 영어 번역 (조항·목록 수가 원문과 같아야 함, "한국어 원문이 우선" 안내)
+│   └── contact.js          # help@asmrblock.com
+├── lib/guide.en.js         # 처음 사용법 안내 영어 (원문 guide.js는 앱과 글자까지 같아야 해서 따로)
+├── lib/recording.en.js     # 녹음 가이드 영어 (원문 recording.js)
+└── codeSafety.test.js      # 없는 이름을 쓰면 실패 (화면이 하얗게 멈추는 것 방지)
 ```
 
----
-
-## 언어 파일 예시
-
-### ko/common.json
-```json
-{
-  "header": {
-    "home": "홈",
-    "explore": "탐색",
-    "myPlaylist": "내 조합",
-    "profile": "프로필",
-    "login": "로그인",
-    "signup": "회원가입",
-    "logout": "로그아웃"
-  },
-  "button": {
-    "save": "저장",
-    "cancel": "취소",
-    "delete": "삭제",
-    "edit": "수정",
-    "confirm": "확인",
-    "play": "재생",
-    "pause": "일시정지",
-    "add": "추가"
-  },
-  "message": {
-    "loading": "로딩 중...",
-    "error": "오류가 발생했습니다.",
-    "success": "성공적으로 처리되었습니다.",
-    "confirmDelete": "정말 삭제하시겠습니까?"
-  },
-  "time": {
-    "minute": "분",
-    "second": "초",
-    "total": "총"
-  }
-}
-```
-
-### en/common.json
-```json
-{
-  "header": {
-    "home": "Home",
-    "explore": "Explore",
-    "myPlaylist": "My Playlist",
-    "profile": "Profile",
-    "login": "Login",
-    "signup": "Sign Up",
-    "logout": "Logout"
-  },
-  "button": {
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "edit": "Edit",
-    "confirm": "Confirm",
-    "play": "Play",
-    "pause": "Pause",
-    "add": "Add"
-  },
-  "message": {
-    "loading": "Loading...",
-    "error": "An error occurred.",
-    "success": "Successfully processed.",
-    "confirmDelete": "Are you sure you want to delete?"
-  },
-  "time": {
-    "minute": "min",
-    "second": "sec",
-    "total": "Total"
-  }
-}
-```
-
-### ko/block.json
-```json
-{
-  "title": "ASMR 블록",
-  "explore": "블록 탐색",
-  "preview": "미리듣기",
-  "duration": "재생 시간",
-  "category": "카테고리",
-  "tags": "태그",
-  "playCount": "재생 횟수",
-  "noResults": "검색 결과가 없습니다.",
-  "filter": {
-    "all": "전체",
-    "nature": "자연",
-    "object": "사물",
-    "body": "신체",
-    "food": "음식",
-    "environment": "환경"
-  }
-}
-```
-
-### en/block.json
-```json
-{
-  "title": "ASMR Blocks",
-  "explore": "Explore Blocks",
-  "preview": "Preview",
-  "duration": "Duration",
-  "category": "Category",
-  "tags": "Tags",
-  "playCount": "Play Count",
-  "noResults": "No results found.",
-  "filter": {
-    "all": "All",
-    "nature": "Nature",
-    "object": "Object",
-    "body": "Body",
-    "food": "Food",
-    "environment": "Environment"
-  }
-}
-```
-
-### ko/playlist.json
-```json
-{
-  "title": "내 조합",
-  "create": "새 조합 만들기",
-  "edit": "조합 수정",
-  "empty": "아직 만든 조합이 없습니다.",
-  "blockCount": "개 블록",
-  "totalDuration": "총 재생 시간",
-  "addBlock": "블록 추가",
-  "removeBlock": "블록 제거",
-  "saveSuccess": "조합이 저장되었습니다.",
-  "deleteSuccess": "조합이 삭제되었습니다.",
-  "placeholder": {
-    "title": "조합 제목을 입력하세요",
-    "description": "설명을 입력하세요 (선택)"
-  }
-}
-```
-
-### en/playlist.json
-```json
-{
-  "title": "My Playlists",
-  "create": "Create New Playlist",
-  "edit": "Edit Playlist",
-  "empty": "You haven't created any playlists yet.",
-  "blockCount": "blocks",
-  "totalDuration": "Total Duration",
-  "addBlock": "Add Block",
-  "removeBlock": "Remove Block",
-  "saveSuccess": "Playlist saved successfully.",
-  "deleteSuccess": "Playlist deleted successfully.",
-  "placeholder": {
-    "title": "Enter playlist title",
-    "description": "Enter description (optional)"
-  }
-}
-```
-
----
-
-## i18n 설정 파일
-
-### src/locales/index.js
-```javascript
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
-
-// 언어 파일 import
-import koCommon from './ko/common.json';
-import koAuth from './ko/auth.json';
-import koBlock from './ko/block.json';
-import koPlaylist from './ko/playlist.json';
-
-import enCommon from './en/common.json';
-import enAuth from './en/auth.json';
-import enBlock from './en/block.json';
-import enPlaylist from './en/playlist.json';
-
-const resources = {
-  ko: {
-    common: koCommon,
-    auth: koAuth,
-    block: koBlock,
-    playlist: koPlaylist,
-  },
-  en: {
-    common: enCommon,
-    auth: enAuth,
-    block: enBlock,
-    playlist: enPlaylist,
-  },
-};
-
-i18n
-  .use(LanguageDetector)        // 브라우저 언어 감지
-  .use(initReactI18next)
-  .init({
-    resources,
-    fallbackLng: 'ko',          // 기본 언어
-    defaultNS: 'common',        // 기본 네임스페이스
-    interpolation: {
-      escapeValue: false,
-    },
-  });
-
-export default i18n;
-```
-
----
-
-## 컴포넌트에서 사용법
-
-### 기본 사용
-```jsx
-import { useTranslation } from 'react-i18next';
-
-function Header() {
-  const { t } = useTranslation('common');
-  
-  return (
-    <nav>
-      <a href="/">{t('header.home')}</a>
-      <a href="/explore">{t('header.explore')}</a>
-      <button>{t('button.login')}</button>
-    </nav>
-  );
-}
-```
-
-### 다른 네임스페이스 사용
-```jsx
-import { useTranslation } from 'react-i18next';
-
-function BlockList() {
-  const { t } = useTranslation('block');
-  
-  return (
-    <div>
-      <h1>{t('explore')}</h1>
-      <p>{t('noResults')}</p>
-    </div>
-  );
-}
-```
-
-### 여러 네임스페이스 동시 사용
-```jsx
-import { useTranslation } from 'react-i18next';
-
-function PlaylistEditor() {
-  const { t } = useTranslation(['playlist', 'common']);
-  
-  return (
-    <div>
-      <h1>{t('playlist:create')}</h1>
-      <button>{t('common:button.save')}</button>
-    </div>
-  );
-}
-```
-
----
-
-## 언어 변경 UI
-
-### LanguageSelector.jsx
-```jsx
-import { useTranslation } from 'react-i18next';
-
-function LanguageSelector() {
-  const { i18n } = useTranslation();
-  
-  const languages = [
-    { code: 'ko', label: '한국어', flag: '🇰🇷' },
-    { code: 'en', label: 'English', flag: '🇺🇸' },
-  ];
-  
-  const changeLanguage = (langCode) => {
-    i18n.changeLanguage(langCode);
-    // 로그인된 사용자면 서버에도 저장
-    // updateUserLanguage(langCode);
-  };
-  
-  return (
-    <div className="language-selector">
-      <span>🌐</span>
-      <select 
-        value={i18n.language} 
-        onChange={(e) => changeLanguage(e.target.value)}
-      >
-        {languages.map((lang) => (
-          <option key={lang.code} value={lang.code}>
-            {lang.flag} {lang.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-export default LanguageSelector;
-```
-
----
-
-## 언어 저장 우선순위
-
-1. **로그인 사용자**: DB에 저장된 언어 설정 (users.language)
-2. **비로그인 사용자**: localStorage에 저장
-3. **최초 접속**: 브라우저 언어 자동 감지
-4. **감지 실패**: 한국어 (ko) 기본값
-
----
-
-## 카테고리/태그 다국어 처리
-
-카테고리와 태그 이름은 **DB에서 관리**하지 않고, **프론트에서 코드로 매핑**:
+## 3. 글자 넣는 법
 
 ```jsx
-// utils/categoryMap.js
-export const categoryNames = {
-  ko: {
-    nature: '자연',
-    object: '사물',
-    body: '신체',
-    food: '음식',
-    environment: '환경',
-  },
-  en: {
-    nature: 'Nature',
-    object: 'Object',
-    body: 'Body',
-    food: 'Food',
-    environment: 'Environment',
-  },
-};
-
-// 사용
-const getCategoryName = (categoryKey, lang) => {
-  return categoryNames[lang]?.[categoryKey] || categoryKey;
-};
+const { t } = useTranslation();
+<p>{t('sell.title')}</p>
+<p>{t('sell.tooShort', { sec: 10 })}</p>                 // "{{sec}}초보다 길어야 해요"
+<p>{t('common.coins', { count: 30 })}</p>                // 영어는 coins_one / coins_other, 한국어는 하나
+<Trans i18nKey="auth.newHere" components={{ link: <Link to="/signup" /> }} />   // 글 안의 링크·굵은 글씨
 ```
 
-이렇게 하면 DB에는 영문 키만 저장하고, 화면에는 언어별로 다르게 표시.
+- 사전에 키를 넣을 때는 **ko.json과 en.json 둘 다** (같은 자리, 같은 `{{변수}}`)
+- 영어는 한국어보다 30~50% 길어요 → 버튼·칩·블록 안 글자는 짧게. 좁은 칸은 `truncate`·`whitespace-nowrap`·줄바꿈 자리를 미리 생각
+- 컴포넌트 안에서 `t`라는 이름의 다른 변수를 만들지 않기 (`const t = ...` → 번역 함수가 가려짐). 시간 변수는 `at`·`sec`·`timer`
+- 숫자·날짜 모양은 `localeOf()` (ko-KR / en-US)
+- 그대로 두는 것: 크리에이터가 쓴 글(블록 이름·소개·녹음한 곳·닉네임·조합 이름), 관리자 화면(운영자 전용, 한국어)
 
----
+## 4. 분류(트리거) 이름
 
-## 체크리스트
+- 한국어: 서버 이름 그대로 (관리자가 바꾼 이름)
+- 영어: 코드로 사전에서 `cat.tap`, `cat.tap__tapping` (점은 `__`), 설명은 `catDesc.tap`
+- 함수: `lib/blocks.js` `categoryLabel(cat)`·`groupLabel(cat)`(블록 응답의 `groupCode` 사용)·`groupDescription(group)`
+- 관리자가 새로 만든 분류는 사전에 없으니 서버 이름 (3단계에서 DB에 영어 이름 칸 추가 예정)
+- 스티커도 같은 방식: `stickers.{code}` → `stickerName(sticker)`
 
-### MVP
-- [ ] react-i18next 설치 및 설정
-- [ ] ko, en 언어 파일 작성
-- [ ] LanguageSelector 컴포넌트 구현
-- [ ] 모든 화면 텍스트 t() 함수로 교체
-- [ ] 사용자 언어 설정 저장 (DB + localStorage)
+## 5. 안전 검사 (CI가 자동으로)
 
-### v2.0
-- [ ] 일본어 (ja) 추가
-- [ ] 중국어 (zh) 추가
-- [ ] 언어별 SEO 메타태그
+| 검사 | 하는 일 |
+|------|---------|
+| `locales/locales.test.js` | ko·en 키가 같음 · en에 한국어 없음 · `{{변수}}`가 같음 · **화면 코드에 한국어를 바로 쓰지 않음**(사전·원문 파일·관리자 화면만 예외, 꼭 필요하면 그 줄에 `i18n-ok`) · 코드의 `t('키')`가 사전에 있음 |
+| `lib/content.en.test.js` | 사용법 안내·녹음 가이드 영어판이 원문과 순서·그림·항목 수가 같음 |
+| `content/legal.test.js` | 약관·방침 영어판이 원문과 조항·목록·굵은 글씨·링크 수가 같음 |
+| `lib/blocks.test.js` | 분류 이름이 언어에 맞게 (블록 카드·묶음·판매 미리보기 모양 모두) |
+| `codeSafety.test.js` | 정의하지 않은 이름을 쓰지 않음 |
+| `e2e/tests/web-english.spec.js` | 영어 브라우저로 주요 화면이 영어로 열리고 · 휴대폰에서 옆으로 넘치지 않고 · 머리글·바닥글·제목·버튼에 한국어가 없음 · 언어 바꾸기·계정 저장 · 영어 베타 손님 |
+
+## 6. 다음 단계
+
+- **2단계 앱 영어판**: `mobile/src`에 같은 방식(`expo-localization`으로 기기 언어 → 사전). 웹 사전 `ko.json`·`en.json`의 키를 최대한 같이 씀. 사용법·녹음 가이드 영어 글은 웹 `lib/guide.en.js`·`lib/recording.en.js`를 옮겨 오고 jest로 같은지 검사
+- **3단계 서버**: 오류 메시지(`Accept-Language` 또는 계정 언어), 알림 문장(지금은 `title`·`actor`·`count`로 웹이 영어 문장을 만듦), 공유 미리보기(og 태그) 영어, 트리거·스티커 영어 이름을 DB에(`name_en`), 베타 손님 첫 블록·샘플 블록 영어 제목

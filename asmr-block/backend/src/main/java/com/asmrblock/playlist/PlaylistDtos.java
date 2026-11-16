@@ -244,7 +244,7 @@ public final class PlaylistDtos {
 
     /**
      * 첫 조합 바로 만들기: 트리거 묶음 코드(tap·rain…) 1~5개 → 무료 블록을 담고 조합을 쌓아 완성본까지 바로 시작.
-     * listenMinutes 생략 시 60분
+     * listenMinutes 생략 시 60분. title = 조합 이름 (화면 언어로, 생략하면 "나의 첫 팅글 · 트리거들")
      */
     public record QuickStartRequest(
             @jakarta.validation.constraints.NotEmpty(message = "트리거를 하나 이상 골라 주세요.")
@@ -253,6 +253,9 @@ public final class PlaylistDtos {
 
             @Min(value = 0, message = "재생 시간은 0분 이상이어야 합니다.")
             @Max(value = MAX_LISTEN_MINUTES, message = "재생 시간은 최대 10시간까지 고를 수 있습니다.")
-            Integer listenMinutes) {
+            Integer listenMinutes,
+
+            @Size(max = 100, message = "조합 이름은 100자까지예요.")
+            String title) {
     }
 }

@@ -21,6 +21,7 @@ describe('서버 시간 (알림 "5분 전")', () => {
   it('웹 lib/time.js와 계산이 글자까지 같음', () => {
     const strip = (src: string) => src
       .replace(/\/\*\*[\s\S]*?\*\//g, '')
+      .replace(/: Record<string, \{ now: string; min: string; hour: string; day: string \}>/g, '')
       .replace(/: (string \| Date \| null \| undefined|string \| null \| undefined|number|string|Date \| null)(?=[,)=\s{])/g, '')
       .replace(/\s+/g, '');
     const app = readFileSync(join(__dirname, '../src/lib/time.ts'), 'utf8');

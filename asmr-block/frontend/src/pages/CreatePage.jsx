@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { IoArrowBack, IoCopy, IoMoon, IoTrash } from 'react-icons/io5';
 import { toast } from 'react-toastify';
+import { Trans, useTranslation } from 'react-i18next';
 import { errorMessage, libraryApi, playlistApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
 import BetaLoginButton from '../components/common/BetaLoginButton';
@@ -9,7 +10,7 @@ import { useFirstRunGuide } from '../components/guide/GuideModal';
 import Board from '../components/editor/Board';
 import BlockShelf, { DragGhost } from '../components/editor/BlockShelf';
 import { useMixPreview, usePreviewClock } from '../components/editor/useMixPreview';
-import { autoTitle, cycleLength, LISTEN_OPTIONS, mainLayout, MAX_TOTAL_SECONDS, toSaveRequest } from '../lib/editorLogic';
+import { autoTitle, cycleLength, LISTEN_OPTIONS, listenOptionLabel, mainLayout, MAX_TOTAL_SECONDS, toSaveRequest } from '../lib/editorLogic';
 import { formatDuration, formatLength } from '../lib/blocks';
 import useAuthStore from '../store/authStore';
 import useEditorStore from '../store/editorStore';
@@ -19,6 +20,7 @@ import useEditorStore from '../store/editorStore';
  * 왼쪽 바닥판 + 오른쪽 내 블록함 → 얼마나 들을까요 → 저장하면 완성본을 만들고 듣기 화면으로
  */
 function CreatePage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -64,18 +66,18 @@ function CreatePage() {
     return (
       <div className="page pt-16">
         <div className="card mx-auto flex max-w-lg flex-col items-center gap-4 p-10 text-center">
-          <p className="text-xl font-extrabold">로그인하면 조합을 만들 수 있어요</p>
-          <p className="text-sm text-muted">담은 블록을 레고처럼 이어 붙여서 나만의 ASMR을 만들어 보세요.</p>
+          <p className="text-xl font-extrabold">{t('create.loginTitle')}</p>
+          <p className="text-sm text-muted">{t('create.loginBody')}</p>
           <BetaLoginButton className="w-full" />
           <div className="flex gap-2">
-            <Link to="/login" state={{ from: '/create' }} className="btn-pink">로그인</Link>
-            <Link to="/signup" className="btn-line">회원가입</Link>
+            <Link to="/login" state={{ from: '/create' }} className="btn-pink">{t('create.login')}</Link>
+            <Link to="/signup" className="btn-line">{t('create.signup')}</Link>
           </div>
         </div>
       </div>
     );
   }
-  if (!ready) return <BlockLoader className="pt-24" label="조합을 불러오는 중" />;
+  if (!ready) return <BlockLoader className="pt-24" label={t('create.loading')} />;
 
   const cycle = cycleLength(editor);
   const blockCount = editor.main.items.length + (editor.mix.enabled ? editor.mix.items.length : 0);
@@ -92,10 +94,10 @@ function CreatePage() {
   const save = async () => {
     preview.stop();
     const s = useEditorStore.getState();
-    if (s.main.items.length === 0) return toast.info('첫째 줄에 블록을 1개 이상 놓아 주세요.');
-    if (cycleLength(s) > MAX_TOTAL_SECONDS) return toast.info('한 바퀴는 최대 10시간이에요.');
+    if (s.main.items.length === 0) return toast.info(t('create.needBlock'));
+    if (cycleLength(s) > MAX_TOTAL_SECONDS) return toast.info(t('create.tooLong'));
     if ([...s.main.items, ...(s.mix.enabled ? s.mix.items : [])].some((i) => !i.block.owned)) {
-      return toast.info('내 블록함에 없는 블록이 있어요. 블록 상점에서 담거나 그 블록을 빼 주세요.');
+      return toast.info(t('create.notOwned'));
     }
     if (!s.title.trim()) s.setTitle(autoTitle(s));
     setSaving(true);
@@ -104,10 +106,10 @@ function CreatePage() {
       const saved = s.playlistId ? await playlistApi.update(s.playlistId, request) : await playlistApi.create(request);
       useEditorStore.getState().markSaved(saved.id);
       await playlistApi.requestRender(saved.id).catch(() => null);
-      toast.success('저장했어요! 완성본을 만들고 있어요.');
+      toast.success(t('create.saved'));
       navigate(`/listen/${saved.id}`);
     } catch (e) {
-      toast.error(errorMessage(e, '저장하지 못했어요.'));
+      toast.error(errorMessage(e, t('create.saveFailed')));
     } finally {
       setSaving(false);
     }
@@ -118,28 +120,28 @@ function CreatePage() {
     <div className="page pt-6">
       {/* 이름 · 공개 · 저장 */}
       <div className="flex flex-wrap items-center gap-3">
-        <Link to="/me/combos" className="btn-ghost p-2" aria-label="내 조합으로"><IoArrowBack size={20} /></Link>
+        <Link to="/me/combos" className="btn-ghost p-2" aria-label={t('create.back')}><IoArrowBack size={20} /></Link>
         <div className="min-w-0 flex-1 basis-60">
           <input className="w-full bg-transparent text-xl font-black sm:text-2xl tracking-tight outline-none placeholder:text-faint" value={editor.title}
-            onChange={(e) => editor.setTitle(e.target.value)} placeholder={editor.playlistId ? '조합 이름' : '새 조합 (이름은 자동)'}
-            maxLength={100} aria-label="조합 이름" data-testid="title-input" />
+            onChange={(e) => editor.setTitle(e.target.value)} placeholder={editor.playlistId ? t('create.namePh') : t('create.newPh')}
+            maxLength={100} aria-label={t('create.namePh')} data-testid="title-input" />
           <p className="mt-0.5 text-xs text-muted" data-testid="editor-meta">
-            한 바퀴 {formatLength(cycle)} · 블록 {blockCount}개 · {editor.listenMinutes > 0 ? `${LISTEN_OPTIONS.find((o) => o.minutes === editor.listenMinutes)?.label} 반복` : '한 바퀴만'}
+            {t('common.loop', { length: formatLength(cycle) })} · {t('common.blocks', { count: blockCount })} · {editor.listenMinutes > 0 ? t('common.repeat', { time: listenOptionLabel(editor.listenMinutes) }) : t('time.onceOnly')}
           </p>
         </div>
         <label className="ml-auto flex cursor-pointer items-center gap-2 text-sm text-muted">
           <input type="checkbox" className="h-4 w-4 accent-[#F7609A]" checked={editor.isPublic} onChange={(e) => editor.setIsPublic(e.target.checked)} />
-          공개 <span className="hidden text-xs text-faint sm:inline">(추천 조합에 올라가요)</span>
+          {t('create.public')} <span className="hidden text-xs text-faint sm:inline">{t('create.publicHint')}</span>
         </label>
-        <button type="button" className="btn-pink px-6" onClick={save} disabled={saving} data-testid="save">{saving ? '저장 중…' : '저장'}</button>
+        <button type="button" className="btn-pink px-6" onClick={save} disabled={saving} data-testid="save">{saving ? t('create.saving') : t('create.save')}</button>
       </div>
 
       {/* 얼마나 들을까요 */}
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <span className="mr-1 flex items-center gap-1 text-sm font-bold text-muted"><IoMoon className="text-pink-text" /> 얼마나 들을까요?</span>
+        <span className="mr-1 flex items-center gap-1 text-sm font-bold text-muted"><IoMoon className="text-pink-text" /> {t('create.howLong')}</span>
         {LISTEN_OPTIONS.map((o) => (
           <button key={o.minutes} type="button" className={`chip px-3 py-1 ${editor.listenMinutes === o.minutes ? 'chip-on' : ''}`}
-            onClick={() => editor.setListenMinutes(o.minutes)}>{o.label}</button>
+            onClick={() => editor.setListenMinutes(o.minutes)}>{listenOptionLabel(o.minutes)}</button>
         ))}
       </div>
 
@@ -153,19 +155,19 @@ function CreatePage() {
               <span className="mr-auto truncate text-sm"><b>{selectedItem.block.title}</b> <span className="text-faint">{formatDuration(selectedItem.block.duration)}</span></span>
               {editor.selected.row === 'mix' && (
                 <>
-                  <button type="button" className="btn-line btn-sm" onClick={() => editor.nudge(selectedItem.key, -10)}>◀ 10초</button>
-                  <button type="button" className="btn-line btn-sm" onClick={() => editor.nudge(selectedItem.key, 10)}>10초 ▶</button>
+                  <button type="button" className="btn-line btn-sm" onClick={() => editor.nudge(selectedItem.key, -10)}>{t('create.back10')}</button>
+                  <button type="button" className="btn-line btn-sm" onClick={() => editor.nudge(selectedItem.key, 10)}>{t('create.fwd10')}</button>
                 </>
               )}
-              <button type="button" className="btn-line btn-sm" onClick={() => editor.duplicate(selectedItem.key)} data-testid="dup"><IoCopy /> 복제</button>
-              <button type="button" className="btn-line btn-sm hover:text-danger" onClick={() => editor.remove(selectedItem.key)} data-testid="remove"><IoTrash /> 빼기</button>
+              <button type="button" className="btn-line btn-sm" onClick={() => editor.duplicate(selectedItem.key)} data-testid="dup"><IoCopy /> {t('create.dup')}</button>
+              <button type="button" className="btn-line btn-sm hover:text-danger" onClick={() => editor.remove(selectedItem.key)} data-testid="remove"><IoTrash /> {t('create.remove')}</button>
             </div>
           ) : (
-            <p className="px-1 text-xs text-faint">블록을 누르면 <b className="text-muted">복제·빼기</b>, 끌면 <b className="text-muted">옮기기</b>. 블록함으로 끌어다 놓으면 빠져요.</p>
+            <p className="px-1 text-xs text-faint"><Trans i18nKey="create.hint" components={{ b: <b className="text-muted" /> }} /></p>
           )}
           {editor.mix.enabled && (
             <label className="flex items-center gap-3 px-1 text-xs text-muted">
-              레이어드 소리 크기
+              {t('create.layerVolume')}
               <input type="range" min={0} max={100} value={Math.round(editor.mix.volume * 100)} className="w-40 accent-[#F7609A]"
                 onChange={(e) => editor.setMixVolume(Number(e.target.value) / 100)} />
               {Math.round(editor.mix.volume * 100)}%

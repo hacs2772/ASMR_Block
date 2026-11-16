@@ -44,7 +44,8 @@ class CreatorApiTest extends IntegrationTest {
                 .andExpect(jsonPath("$.data.nickname").value("테스터"))
                 .andExpect(jsonPath("$.data.blockCount").value(2))
                 .andExpect(jsonPath("$.data.collectorCount").value(0))
-                .andExpect(jsonPath("$.data.triggers[0]").isString());
+                .andExpect(jsonPath("$.data.triggers[0]").isString())
+                .andExpect(jsonPath("$.data.triggerCodes[0]").isString());
 
         collect(newUser().accessToken(), a, b);
         collect(newUser().accessToken(), a);

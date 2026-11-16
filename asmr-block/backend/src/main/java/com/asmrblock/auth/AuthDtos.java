@@ -3,6 +3,7 @@ package com.asmrblock.auth;
 import com.asmrblock.user.UserResponse;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /** 인증 API 요청/응답 */
@@ -23,7 +24,11 @@ public final class AuthDtos {
 
             @NotBlank(message = "닉네임은 필수입니다.")
             @Size(min = 2, max = 20, message = "닉네임은 2~20자여야 합니다.")
-            String nickname) {
+            String nickname,
+
+            /** 화면 언어 (선택, 없으면 ko) — 나중에 알림·메일을 이 언어로 */
+            @Pattern(regexp = "ko|en", message = "언어는 ko 또는 en이어야 합니다.")
+            String language) {
     }
 
     public record LoginRequest(

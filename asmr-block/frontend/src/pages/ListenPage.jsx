@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { IoCreate, IoMoon, IoPause, IoPlay, IoStar, IoVideocam } from 'react-icons/io5';
+import { Trans, useTranslation } from 'react-i18next';
 import { errorMessage, playlistApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
 import BetaLoginButton from '../components/common/BetaLoginButton';
@@ -20,6 +21,7 @@ const isWorking = (r) => r?.status === 'PENDING' || r?.status === 'PROCESSING';
  * "얼마나 들을까요?"가 정해져 있으면 한 바퀴를 그 시간 동안 반복하고, 끝에 스르르 작아지며 꺼짐
  */
 function ListenPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { isAuthenticated, user } = useAuthStore();
   const [combo, setCombo] = useState(null);
@@ -42,8 +44,8 @@ function ListenPage() {
   useEffect(() => { meter.current = createListenMeter(); }, [id]);
   useEffect(() => {
     if (!playing) return undefined;
-    const t = setInterval(checkListened, 15000);
-    return () => clearInterval(t);
+    const timer = setInterval(checkListened, 15000);
+    return () => clearInterval(timer);
   }, [playing, checkListened]);
   // 영상도 같이 보기: 기본은 꺼짐(소리만). 화면을 벗어나거나 잠들기 타이머가 끝나 가면 저절로 꺼짐
   const [showVideo, setShowVideo] = useState(false);
@@ -71,8 +73,8 @@ function ListenPage() {
   // 만드는 중이면 1.5초마다 확인
   useEffect(() => {
     if (!isWorking(render)) return undefined;
-    const t = setInterval(() => playlistApi.render(id).then(setRender).catch(() => {}), 1500);
-    return () => clearInterval(t);
+    const timer = setInterval(() => playlistApi.render(id).then(setRender).catch(() => {}), 1500);
+    return () => clearInterval(timer);
   }, [id, render]);
 
   // 수면 타이머: 끝나는 시각(endsAt)과 시계로만 판단 → 화면이 꺼져 타이머가 늦어져도
@@ -95,8 +97,8 @@ function ListenPage() {
   }, []);
   useEffect(() => {
     if (!endsAt || !playing) return undefined;
-    const t = setInterval(() => { setNow(Date.now()); applySleep(); }, 500);
-    return () => clearInterval(t);
+    const timer = setInterval(() => { setNow(Date.now()); applySleep(); }, 500);
+    return () => clearInterval(timer);
   }, [endsAt, playing, applySleep]);
   useEffect(() => {
     const back = () => { if (!document.hidden) { setNow(Date.now()); applySleep(); checkListened(); } };
@@ -168,7 +170,7 @@ function ListenPage() {
       ms.metadata = new window.MediaMetadata({
         title: combo.title,
         artist: `@${combo.owner?.nickname ?? ''} · ASMR Block`,
-        album: combo.listenMinutes > 0 ? `${listenLabel(combo.listenMinutes)} 반복` : '나만의 팅글',
+        album: combo.listenMinutes > 0 ? t('common.repeat', { time: listenLabel(combo.listenMinutes) }) : t('listen.myTingle'),
         artwork: [
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
@@ -210,7 +212,7 @@ function ListenPage() {
   };
 
   if (error) return <div className="page pt-16"><p className="card p-8 text-center text-muted">{error}</p></div>;
-  if (!combo) return <BlockLoader className="pt-24" label="조합을 불러오는 중" />;
+  if (!combo) return <BlockLoader className="pt-24" label={t('listen.loading')} />;
 
   const mine = user && combo.owner?.id === user.id;
   const videoCount = [...(combo.main?.items || []), ...(combo.mix?.items || [])].filter((i) => i.design?.hasVideo).length;
@@ -224,7 +226,7 @@ function ListenPage() {
         {/* 조합 그림: 첫째 줄 + 레이어드 (블록 폭 = 소리 길이). 누르거나 끌면 그 시간으로 */}
         <div className="studs bg-plate px-6 pb-6 pt-8">
           <div className={`relative ${ready ? 'cursor-pointer touch-none' : ''}`} {...(ready ? seekHandlers : {})}
-            role={ready ? 'slider' : undefined} aria-label="블록을 눌러 그 시간으로" aria-valuemin={0}
+            role={ready ? 'slider' : undefined} aria-label={t('listen.seekLabel')} aria-valuemin={0}
             aria-valuemax={Math.round(time.duration || 0)} aria-valuenow={Math.round(time.current)} data-testid="listen-strip">
           <div className="flex h-14 overflow-hidden rounded-md">
             {(combo.main?.items || []).flatMap((it) => Array.from({ length: it.repeat }, (_, n) => (
@@ -245,24 +247,24 @@ function ListenPage() {
               style={{ left: `${time.duration ? (time.current / time.duration) * 100 : 0}%` }} data-testid="listen-playhead" />
           )}
           </div>
-          {ready && <p className="mt-3 text-center text-[11px] text-faint">블록을 누르거나 끌면 그 시간으로 가요</p>}
+          {ready && <p className="mt-3 text-center text-[11px] text-faint">{t('listen.seekHint')}</p>}
         </div>
 
         <div className="p-6 sm:p-8">
           <h1 className="text-2xl font-black tracking-tight sm:text-3xl" data-testid="listen-title">{combo.title}</h1>
           <p className="mt-2 text-sm text-muted">
-            @{combo.owner?.nickname} · 한 바퀴 {formatLength(combo.totalDuration)}{combo.mix ? ' · 레이어드' : ''}
-            {combo.listenMinutes > 0 ? ` · ${listenLabel(combo.listenMinutes)} 반복 재생` : ''}
+            @{combo.owner?.nickname} · {t('common.loop', { length: formatLength(combo.totalDuration) })}{combo.mix ? ` · ${t('common.layered')}` : ''}
+            {combo.listenMinutes > 0 ? ` · ${t('common.repeatPlay', { time: listenLabel(combo.listenMinutes) })}` : ''}
           </p>
-          {combo.collect?.sourceOwner && <p className="mt-1 text-xs text-pink-text">★ @{combo.collect.sourceOwner.nickname}님의 조합을 담아 왔어요</p>}
+          {combo.collect?.sourceOwner && <p className="mt-1 text-xs text-pink-text">{t('listen.collectedFrom', { nickname: combo.collect.sourceOwner.nickname })}</p>}
           {videoCount > 0 && ready && (
             <button type="button" onClick={() => setShowVideo((v) => !v)} aria-pressed={showVideo} data-testid="video-toggle"
               className="mt-4 inline-flex items-center gap-2 rounded-full border border-line-strong bg-card-active py-1.5 pl-1.5 pr-3.5 text-sm font-bold">
               <span className={`relative block h-5 w-9 shrink-0 rounded-full transition-colors ${showVideo ? 'bg-pink' : 'bg-line-strong'}`}>
                 <span className={`absolute left-0 top-0.5 block h-4 w-4 rounded-full bg-white transition-transform ${showVideo ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
               </span>
-              <IoVideocam className="text-pink-text" /> 영상도 같이 보기
-              <span className="text-xs font-semibold text-faint">영상 블록 {videoCount}개</span>
+              <IoVideocam className="text-pink-text" /> {t('listen.videoToggle')}
+              <span className="text-xs font-semibold text-faint">{t('listen.videoCount', { count: videoCount })}</span>
             </button>
           )}
 
@@ -270,14 +272,14 @@ function ListenPage() {
             {ready ? (
               <div className="flex items-center gap-5">
                 <button type="button" onClick={toggle} className="flex h-16 w-16 items-center justify-center rounded-full bg-pink text-white hover:bg-[#ff74a8]"
-                  aria-label={playing ? '멈춤' : '재생'} data-testid="listen-play">
+                  aria-label={playing ? t('listen.pause') : t('listen.play')} data-testid="listen-play">
                   {playing ? <IoPause size={28} /> : <IoPlay size={28} className="ml-1" />}
                 </button>
                 <div className="flex-1">
                   <input type="range" min={0} max={time.duration || 0} step={1} value={time.current} className="w-full accent-[#F7609A]"
-                    onChange={(e) => { if (audioRef.current) audioRef.current.currentTime = Number(e.target.value); }} aria-label="재생 위치" />
+                    onChange={(e) => { if (audioRef.current) audioRef.current.currentTime = Number(e.target.value); }} aria-label={t('listen.position')} />
                   <div className="mt-1 flex justify-between text-xs text-faint"><span>{formatDuration(time.current)}</span><span>{formatDuration(time.duration)}</span></div>
-                  {left !== null && <p className="mt-1 flex items-center gap-1 text-xs text-pink-text"><IoMoon /> {formatDuration(left)} 뒤에 스르르 꺼져요</p>}
+                  {left !== null && <p className="mt-1 flex items-center gap-1 text-xs text-pink-text"><IoMoon /> {t('listen.fadesIn', { time: formatDuration(left) })}</p>}
                 </div>
                 <audio ref={audioRef} src={render.fileUrl} preload="metadata"
                   onPlay={() => setPlayback('playing')} onPause={() => setPlayback('paused')}
@@ -287,30 +289,30 @@ function ListenPage() {
             ) : isWorking(render) || requesting ? (
               <div className="rounded-xl bg-card-active p-5 text-center">
                 <BlockLoader small />
-                <p className="text-sm text-muted">블록들을 하나로 합치는 중이에요… {render?.progress ?? 0}%</p>
+                <p className="text-sm text-muted">{t('listen.building', { progress: render?.progress ?? 0 })}</p>
                 <div className="mx-auto mt-3 h-1.5 max-w-sm rounded bg-line"><div className="h-1.5 rounded bg-pink transition-all" style={{ width: `${render?.progress ?? 0}%` }} /></div>
               </div>
             ) : !isAuthenticated ? (
               <div className="rounded-xl bg-card-active p-5 text-center text-sm text-muted">
-                <p>로그인하면 이 조합을 끊김 없는 완성본으로 들을 수 있어요.</p>
+                <p>{t('listen.loginToListen')}</p>
                 {/* 베타: 링크로 처음 온 사람도 가입 없이 바로 듣게 (누르면 이 화면 그대로 완성본 만들기 시작) */}
                 <BetaLoginButton className="mx-auto mt-3 max-w-xs" />
-                <p className="mt-3">계정이 있으면 <Link to="/login" state={{ from: `/listen/${id}` }} className="font-bold text-pink-text">로그인</Link></p>
+                <p className="mt-3"><Trans i18nKey="listen.haveAccount" components={{ login: <Link to="/login" state={{ from: `/listen/${id}` }} className="font-bold text-pink-text" /> }} /></p>
               </div>
             ) : (
-              <button type="button" className="btn-pink" onClick={request}>{render?.status === 'FAILED' ? '다시 만들기' : '완성본 만들기'}</button>
+              <button type="button" className="btn-pink" onClick={request}>{render?.status === 'FAILED' ? t('listen.retry') : t('listen.build')}</button>
             )}
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-line pt-6">
             {mine ? (
               <>
-                <Link to={`/create/${combo.id}`} className="btn-line"><IoCreate /> 블록 편집</Link>
+                <Link to={`/create/${combo.id}`} className="btn-line"><IoCreate /> {t('listen.edit')}</Link>
                 <ShareButton combo={combo} mine onChanged={setCombo} className="ml-auto" />
               </>
             ) : (
               <>
-                <span className="flex items-center gap-1 text-sm text-muted"><IoStar className="text-pink-text" /> 담은 사람 {combo.collect?.collectCount ?? 0}명</span>
+                <span className="flex items-center gap-1 text-sm text-muted"><IoStar className="text-pink-text" /> {t('combo.collectors', { count: combo.collect?.collectCount ?? 0 })}</span>
                 <ReportButton target={{ type: 'PLAYLIST', id: combo.id, title: combo.title }} owner={combo.owner?.id ? combo.owner : null}
                   testId="report-combo" />
                 <ShareButton combo={combo} className="ml-auto" />

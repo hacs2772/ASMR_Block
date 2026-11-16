@@ -6,6 +6,7 @@ import { adminApi, errorMessage } from '../../api/api';
 import { REPORT_REASONS } from '../common/Report';
 import BlockLoader from '../brand/BlockLoader';
 import { shortDateTime } from '../../lib/time';
+import { useTranslation } from 'react-i18next';
 
 const FILTERS = [
   { status: 'OPEN', label: '새 신고' },
@@ -88,6 +89,7 @@ function ReportList({ onOpenCount }) {
 }
 
 function ReportCard({ item, status, busy, onResolve }) {
+  const { t } = useTranslation();
   const [ban, setBan] = useState(false);
   const [note, setNote] = useState('');
   const type = TYPES[item.targetType];
@@ -108,7 +110,7 @@ function ReportCard({ item, status, busy, onResolve }) {
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
         {item.targetType !== 'USER' && item.ownerNickname && <span>올린 사람 @{item.ownerNickname}</span>}
         <span className="font-bold text-pink-text">신고 {item.count}건</span>
-        {reasons.map((r) => <span key={r.key} className="rounded-full border border-line px-2 py-0.5">{r.short} {item.reasons[r.key]}</span>)}
+        {reasons.map((r) => <span key={r.key} className="rounded-full border border-line px-2 py-0.5">{t(`report.short.${r.key}`)} {item.reasons[r.key]}</span>)}
         <span className="text-faint">{shortDateTime(item.lastAt)}</span>
       </div>
       {item.details && <p className="mt-3 whitespace-pre-wrap break-words rounded-lg bg-card-active p-3 text-sm leading-relaxed">{item.details}</p>}

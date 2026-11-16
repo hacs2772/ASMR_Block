@@ -16,4 +16,13 @@ describe('서버 시간', () => {
     expect(ago('2026-11-14T04:10:00Z', now)).toBe('2일 전');
     expect(ago('2026-11-01T04:10:00Z', now)).toMatch(/^11월 1일$/);
   });
+
+  it('영어: just now · 5m ago · 3h ago · 2d ago · Nov 1', () => {
+    const now = Date.parse('2026-11-16T04:10:00Z');
+    expect(ago('2026-11-16T04:09:30Z', now, 'en')).toBe('just now');
+    expect(ago('2026-11-16T04:05:00Z', now, 'en')).toBe('5m ago');
+    expect(ago('2026-11-16T01:10:00', now, 'en')).toBe('3h ago');
+    expect(ago('2026-11-14T04:10:00Z', now, 'en')).toBe('2d ago');
+    expect(ago('2026-11-01T04:10:00Z', now, 'en')).toBe('Nov 1');
+  });
 });

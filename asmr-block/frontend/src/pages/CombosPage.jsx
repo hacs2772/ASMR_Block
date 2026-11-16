@@ -1,19 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { IoStar } from 'react-icons/io5';
+import { Trans, useTranslation } from 'react-i18next';
 import { playlistApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
 import AssembleButton from '../components/home/AssembleButton';
 import ComboCard from '../components/playlist/ComboCard';
 import useAuthStore from '../store/authStore';
 
-const SORTS = [
-  { key: 'trending', label: '요즘 뜨는' },
-  { key: 'latest', label: '새로 올라온' },
-  { key: 'popular', label: '많이 들은' },
-];
+const SORTS = ['trending', 'latest', 'popular'];
 
 /** ★ 추천 조합: 다른 사람이 쌓은 조합을 들어 보고, 마음에 들면 한 번에 담기 (블록 + 조합) */
 function CombosPage() {
+  const { t } = useTranslation();
   const [sort, setSort] = useState('trending');
   const [combos, setCombos] = useState(null);
   const userId = useAuthStore((s) => s.user?.id);
@@ -28,20 +26,20 @@ function CombosPage() {
 
   return (
     <div className="page pt-10">
-      <p className="eyebrow flex items-center gap-1"><IoStar /> 추천 조합</p>
-      <h1 className="text-3xl font-black tracking-tight sm:text-4xl">다른 사람은 이렇게 쌓았어요</h1>
+      <p className="eyebrow flex items-center gap-1"><IoStar /> {t('combos.eyebrow')}</p>
+      <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{t('combos.title')}</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted">
-        들어 보고 마음에 들면 <b className="text-pink-text">한 번에 담기</b>. 조합에 들어간 블록은 내 블록함에, 조합은 내 조합에 들어와서 바로 듣거나 내 마음대로 고칠 수 있어요.
+        <Trans i18nKey="combos.lead" components={{ b: <b className="text-pink-text" /> }} />
       </p>
       <div className="mt-6 flex flex-wrap gap-2">
         {SORTS.map((s) => (
-          <button key={s.key} type="button" className={`chip ${sort === s.key ? 'chip-on' : ''}`} onClick={() => setSort(s.key)}>{s.label}</button>
+          <button key={s} type="button" className={`chip ${sort === s ? 'chip-on' : ''}`} onClick={() => setSort(s)}>{t(`combos.sort.${s}`)}</button>
         ))}
       </div>
       <div className="mt-8">
         {combos === null ? <BlockLoader /> : combos.length === 0 ? (
           <div className="card flex flex-col items-center gap-4 p-10 text-center">
-            <p className="text-muted">아직 추천할 조합이 없어요. 조합을 만들어 공개로 저장하면 여기에 올라와요.</p>
+            <p className="text-muted">{t('combos.empty')}</p>
             <AssembleButton />
           </div>
         ) : (

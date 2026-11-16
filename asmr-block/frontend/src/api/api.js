@@ -1,10 +1,11 @@
 import axiosInstance from './axiosInstance';
+import i18n from '../locales';
 
 /** 응답에서 data만 꺼냄 (서버 응답 형식: { success, message, data, error }) */
 const data = (promise) => promise.then((res) => res.data.data);
 
 /** 서버 오류 메시지 (없으면 기본 문구) */
-export const errorMessage = (e, fallback = '잠시 후 다시 시도해 주세요.') =>
+export const errorMessage = (e, fallback = i18n.t('errors.generic')) =>
   e?.response?.data?.error?.message || e?.message || fallback;
 
 export const catalogApi = {
@@ -66,7 +67,8 @@ export const playlistApi = {
   /** 조합 한 번에 담기: 블록은 내 블록함에, 조합은 내 조합(비공개 복사본)으로 */
   collect: (id) => data(axiosInstance.post(`/playlists/${id}/collect`)),
   /** 첫 조합 바로 만들기: 트리거 묶음 코드(tap·rain…) → 무료 블록 담기 + 조합 + 완성본 시작 */
-  quickStart: (triggers, listenMinutes = 60) => data(axiosInstance.post('/playlists/quick-start', { triggers, listenMinutes })),
+  /** title: 조합 이름 (영어 화면이면 영어로, 없으면 서버가 "나의 첫 팅글 · …") */
+  quickStart: (triggers, listenMinutes = 60, title) => data(axiosInstance.post('/playlists/quick-start', { triggers, listenMinutes, title })),
   requestRender: (id) => data(axiosInstance.post(`/playlists/${id}/render`)),
   render: (id) => data(axiosInstance.get(`/playlists/${id}/render`)),
 };

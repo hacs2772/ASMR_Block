@@ -1,20 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { IoSearch } from 'react-icons/io5';
+import { useTranslation } from 'react-i18next';
 import { catalogApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
 import BlockProductCard from '../components/block/BlockProductCard';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
-import { TALK_LABEL } from '../lib/blocks';
+import { categoryLabel, talkLabel } from '../lib/blocks';
 
-const TABS = [
-  { key: 'trending', label: '요즘 뜨는' },
-  { key: 'latest', label: '전체' },
-  { key: 'free', label: '무료' },
-];
+const TABS = ['trending', 'latest', 'free'];
 
 /** 블록 상점: 트리거 묶음(대분류) › 소분류, 말소리 거르기, 이름·크리에이터·녹음한 곳으로 찾기 */
 function ShopPage() {
+  const { t } = useTranslation();
   useStopPreviewOnLeave();
   const [params, setParams] = useSearchParams();
   const tab = params.get('tab') || 'trending';
@@ -36,8 +34,8 @@ function ShopPage() {
   useEffect(() => { catalogApi.categories().then(setGroups).catch(() => setGroups([])); }, []);
   // 검색어는 잠깐 멈췄을 때 찾기
   useEffect(() => {
-    const t = setTimeout(() => setQuery(keyword.trim()), 300);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setQuery(keyword.trim()), 300);
+    return () => clearTimeout(timer);
   }, [keyword]);
 
   // 고른 트리거 묶음이나 소분류 → 서버 categoryId (대분류로 찾으면 하위 포함)
@@ -62,32 +60,32 @@ function ShopPage() {
 
   return (
     <div className="page pt-10">
-      <p className="eyebrow">블록 구매</p>
+      <p className="eyebrow">{t('shop.eyebrow')}</p>
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-3xl font-black tracking-tight sm:text-4xl">블록 상점</h1>
+        <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{t('shop.title')}</h1>
         <label className="relative w-full sm:w-80">
           <IoSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-faint" />
           <input className="input pl-10" value={keyword} onChange={(e) => setKeyword(e.target.value)}
-            placeholder="이름 · @크리에이터 · 녹음한 곳" aria-label="블록 찾기" data-testid="shop-search" />
+            placeholder={t('shop.searchPh')} aria-label={t('shop.search')} data-testid="shop-search" />
         </label>
       </div>
-      <p className="mt-2 text-sm text-muted">무료 블록은 바로 담고, 유료 블록은 앞 30초를 먼저 들어 볼 수 있어요. 담은 블록은 조합 만들기에서 몇 번이고 복제해 써요.</p>
+      <p className="mt-2 text-sm text-muted">{t('shop.lead')}</p>
 
       <div className="mt-6 flex gap-2 border-b border-line">
-        {TABS.map((t) => (
-          <button key={t.key} type="button" onClick={() => set({ tab: t.key === 'trending' ? null : t.key })}
-            className={`-mb-px border-b-2 px-3 pb-3 text-sm font-bold ${tab === t.key ? 'border-pink text-ink' : 'border-transparent text-muted hover:text-ink'}`}>
-            {t.label}
+        {TABS.map((key) => (
+          <button key={key} type="button" onClick={() => set({ tab: key === 'trending' ? null : key })}
+            className={`-mb-px border-b-2 px-3 pb-3 text-sm font-bold ${tab === key ? 'border-pink text-ink' : 'border-transparent text-muted hover:text-ink'}`}>
+            {t(`shop.tabs.${key}`)}
           </button>
         ))}
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">
-        <button type="button" className={`chip ${!groupId ? 'chip-on' : ''}`} onClick={() => set({ group: null, sub: null })}>전체 트리거</button>
+        <button type="button" className={`chip ${!groupId ? 'chip-on' : ''}`} onClick={() => set({ group: null, sub: null })}>{t('shop.allTriggers')}</button>
         {groups.map((g) => (
           <button key={g.id} type="button" className={`chip ${groupId === g.id ? 'chip-on' : ''}`} onClick={() => set({ group: g.id, sub: null })}
             data-testid={`shop-group-${g.code}`}>
-            <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: g.color }} />{g.name}
+            <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: g.color }} />{categoryLabel(g)}
           </button>
         ))}
       </div>
@@ -95,25 +93,25 @@ function ShopPage() {
         <div className="mt-3 flex flex-wrap gap-2 border-l-2 pl-3" style={{ borderColor: group.color }}>
           {group.children.map((c) => (
             <button key={c.id} type="button" className={`chip px-3 py-1 text-xs ${subId === c.id ? 'chip-on' : ''}`}
-              onClick={() => set({ sub: subId === c.id ? null : c.id })}>{c.name}</button>
+              onClick={() => set({ sub: subId === c.id ? null : c.id })}>{categoryLabel(c)}</button>
           ))}
         </div>
       )}
       <div className="mt-3 flex flex-wrap gap-2">
-        {['', 'NONE', 'WHISPER'].map((t) => (
-          <button key={t || 'all'} type="button" className={`chip px-3 py-1 text-xs ${talk === t ? 'chip-on' : ''}`} onClick={() => set({ talk: t })}>
-            {t ? `${TALK_LABEL[t]}만` : '말소리 전체'}
+        {['', 'NONE', 'WHISPER'].map((type) => (
+          <button key={type || 'all'} type="button" className={`chip px-3 py-1 text-xs ${talk === type ? 'chip-on' : ''}`} onClick={() => set({ talk: type })}>
+            {type ? t('shop.onlyTalk', { talk: talkLabel(type) }) : t('shop.allTalk')}
           </button>
         ))}
       </div>
 
       <div className="mt-8">
         {error ? (
-          <p className="card p-8 text-center text-muted">서버에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.</p>
+          <p className="card p-8 text-center text-muted">{t('shop.offline')}</p>
         ) : blocks === null ? (
           <BlockLoader />
         ) : blocks.length === 0 ? (
-          <p className="card p-8 text-center text-muted">조건에 맞는 블록이 없어요. 다른 트리거를 골라 보세요.</p>
+          <p className="card p-8 text-center text-muted">{t('shop.empty')}</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {blocks.map((b, i) => <BlockProductCard key={b.id} block={b} rank={tab === 'trending' && !filtered && i < 10 ? i + 1 : null} />)}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useEffect, useRef, useState } from 'react';
 import { IoPause, IoPlay } from 'react-icons/io5';
 import { formatDuration } from '../../lib/blocks';
@@ -11,6 +12,7 @@ const KEY_STEP = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1, Page
  * 계산은 lib/trim.js (앱 lib/trim.ts와 같은 규칙)
  */
 function Trimmer({ src, duration, peaks, range, onChange, min, max, video = false }) {
+  const { t } = useTranslation();
   const trackRef = useRef(null);
   const audioRef = useRef(null);
   const headRef = useRef(null);
@@ -77,15 +79,15 @@ function Trimmer({ src, duration, peaks, range, onChange, min, max, video = fals
     if (e.button !== undefined && e.button !== 0) return;
     e.preventDefault();
     e.stopPropagation();
-    const t = timeOf(e);
+    const at = timeOf(e);
     let mode = which;
     if (which === 'track') {
-      mode = nearestHandle(rangeRef.current, t);
-      const next = moveHandle(rangeRef.current, mode, t, rules);
+      mode = nearestHandle(rangeRef.current, at);
+      const next = moveHandle(rangeRef.current, mode, at, rules);
       onChange(next);
       showFrame(next, mode);
     }
-    dragRef.current = { mode, offset: mode === 'move' ? t - rangeRef.current.start : 0 };
+    dragRef.current = { mode, offset: mode === 'move' ? at - rangeRef.current.start : 0 };
     trackRef.current.setPointerCapture?.(e.pointerId);
   };
   // 영상이면 멈춰 있을 때 손잡이를 옮기는 곳의 장면을 보여 줌
@@ -96,8 +98,8 @@ function Trimmer({ src, duration, peaks, range, onChange, min, max, video = fals
   const onMove = (e) => {
     const drag = dragRef.current;
     if (!drag) return;
-    const t = timeOf(e);
-    const next = moveHandle(rangeRef.current, drag.mode, drag.mode === 'move' ? t - drag.offset : t, rules);
+    const at = timeOf(e);
+    const next = moveHandle(rangeRef.current, drag.mode, drag.mode === 'move' ? at - drag.offset : at, rules);
     onChange(next);
     showFrame(next, drag.mode);
   };
@@ -115,15 +117,15 @@ function Trimmer({ src, duration, peaks, range, onChange, min, max, video = fals
   };
 
   const bars = fitPeaks(peaks, Math.max(40, Math.min(peaks.length, Math.floor(width / 3))));
-  const pct = (t) => `${(t / duration) * 100}%`;
+  const pct = (sec) => `${(sec / duration) * 100}%`;
   const length = range.end - range.start;
 
   return (
     <div className="rounded-xl bg-card-active p-3.5" data-testid="trimmer">
       <div className="mb-2.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <p className="text-sm font-bold">구간 고르기</p>
+        <p className="text-sm font-bold">{t('trim.title')}</p>
         <p className="text-xs text-muted">
-          고른 길이 <b className="text-pink-text" data-testid="trim-length">{formatDuration(length)}</b> · 전체 {formatDuration(duration)}
+          {t('trim.picked')} <b className="text-pink-text" data-testid="trim-length">{formatDuration(length)}</b> · {t('trim.total', { time: formatDuration(duration) })}
         </p>
       </div>
 
@@ -135,11 +137,11 @@ function Trimmer({ src, duration, peaks, range, onChange, min, max, video = fals
         onPointerDown={begin('track')} onPointerMove={onMove} onPointerUp={endDrag} onPointerCancel={endDrag} data-testid="trim-track">
         <svg viewBox={`0 0 ${bars.length} 100`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
           {bars.map((p, i) => {
-            const t = ((i + 0.5) / bars.length) * duration;
+            const at = ((i + 0.5) / bars.length) * duration;
             const h = Math.max(3, p * 88);
             return (
               <rect key={i} x={i + 0.18} width={0.64} y={(100 - h) / 2} height={h} rx={0.3}
-                className={t >= range.start && t <= range.end ? 'fill-pink' : 'fill-line-strong'} />
+                className={at >= range.start && at <= range.end ? 'fill-pink' : 'fill-line-strong'} />
             );
           })}
         </svg>
@@ -148,7 +150,7 @@ function Trimmer({ src, duration, peaks, range, onChange, min, max, video = fals
         <div className="absolute inset-y-0 cursor-grab border-y-2 border-pink/80 active:cursor-grabbing"
           style={{ left: pct(range.start), width: pct(length) }} onPointerDown={begin('move')} data-testid="trim-region" />
         {['start', 'end'].map((which) => (
-          <div key={which} role="slider" tabIndex={0} aria-label={which === 'start' ? '구간 시작' : '구간 끝'}
+          <div key={which} role="slider" tabIndex={0} aria-label={which === 'start' ? t('trim.startHandle') : t('trim.endHandle')}
             aria-valuemin={0} aria-valuemax={Math.round(duration)} aria-valuenow={Math.round(range[which])} aria-valuetext={clock(range[which])}
             onPointerDown={begin(which)} onKeyDown={onKey(which)} data-testid={`trim-handle-${which}`}
             className="absolute inset-y-0 z-10 flex w-7 -translate-x-1/2 cursor-ew-resize justify-center outline-none focus-visible:[&>span]:ring-2 focus-visible:[&>span]:ring-white"
@@ -161,17 +163,17 @@ function Trimmer({ src, duration, peaks, range, onChange, min, max, video = fals
       </div>
 
       <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
-        <Nudge label="시작" value={range.start} onStep={(s) => step('start', s)} testId="trim-start" />
-        <Nudge label="끝" value={range.end} onStep={(s) => step('end', s)} testId="trim-end" />
+        <Nudge label={t('trim.start')} value={range.start} onStep={(s) => step('start', s)} testId="trim-start" />
+        <Nudge label={t('trim.end')} value={range.end} onStep={(s) => step('end', s)} testId="trim-end" />
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <button type="button" className="btn-line btn-sm" onClick={playing ? stop : () => play(range.start)} data-testid="trim-play">
-          {playing ? <><IoPause /> 멈춤</> : <><IoPlay /> 고른 부분 듣기</>}
+          {playing ? <><IoPause /> {t('trim.pause')}</> : <><IoPlay /> {t('trim.playPart')}</>}
         </button>
-        <button type="button" className="btn-ghost btn-sm" onClick={() => play(Math.max(range.start, range.end - 5))}>끝 5초 듣기</button>
+        <button type="button" className="btn-ghost btn-sm" onClick={() => play(Math.max(range.start, range.end - 5))}>{t('trim.playEnd')}</button>
       </div>
       <p className="mt-2 text-[11px] leading-relaxed text-faint">
-        손잡이를 끌어 시작과 끝을 고르고, 가운데를 끌면 구간째 옮겨져요.{video ? ' 영상은 소리와 같은 구간으로 같이 잘려요.' : ''} 잘린 앞뒤 {FADE_SECONDS}초는 부드럽게 커지고 작아져요.
+        {t('trim.help')}{video ? ` ${t('trim.helpVideo')}` : ''} {t('trim.helpFade', { seconds: FADE_SECONDS })}
       </p>
       {!video && <audio ref={audioRef} src={src} preload="auto" onPause={() => setPlaying(false)} />}
     </div>
@@ -179,11 +181,12 @@ function Trimmer({ src, duration, peaks, range, onChange, min, max, video = fals
 }
 
 function Nudge({ label, value, onStep, testId }) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-1 text-xs">
-      <button type="button" className="btn-line btn-sm px-2" onClick={() => onStep(-1)} aria-label={`${label} 1초 앞으로`}>−1초</button>
+      <button type="button" className="btn-line btn-sm px-2" onClick={() => onStep(-1)} aria-label={t('trim.back1', { label })}>{t('trim.minus1')}</button>
       <span className="min-w-[84px] text-center tabular-nums text-muted" data-testid={testId}>{label} <b className="text-ink">{clock(value)}</b></span>
-      <button type="button" className="btn-line btn-sm px-2" onClick={() => onStep(1)} aria-label={`${label} 1초 뒤로`}>+1초</button>
+      <button type="button" className="btn-line btn-sm px-2" onClick={() => onStep(1)} aria-label={t('trim.fwd1', { label })}>{t('trim.plus1')}</button>
     </div>
   );
 }

@@ -16,13 +16,13 @@
         WHERE u.id = #{userId} AND u.is_active = true
     </select>
 
-    <select id="topTriggers" resultType="string">
-        SELECT COALESCE(p.name, c.name) AS name
+    <select id="topTriggers" resultType="com.asmrblock.creator.CreatorTrigger">
+        SELECT COALESCE(p.code, c.code) AS code, COALESCE(p.name, c.name) AS name
         FROM block b
         JOIN sound_category c ON c.id = b.category_id
         LEFT JOIN sound_category p ON p.id = c.parent_id
         WHERE b.uploader_id = #{userId} AND b.status = 'APPROVED' AND b.is_active = true AND b.is_listed = true
-        GROUP BY COALESCE(p.name, c.name)
+        GROUP BY COALESCE(p.code, c.code), COALESCE(p.name, c.name)
         ORDER BY COUNT(*) DESC, MIN(b.created_at)
         LIMIT 3
     </select>

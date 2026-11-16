@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { create } from 'zustand';
 import axiosInstance from '../api/axiosInstance';
+import i18n from '../locales';
 
 /**
  * 블록 겉면 스티커 (C안: 사진이 없을 때 보임).
@@ -27,11 +28,13 @@ const BUILTIN = {
 };
 
 
-export const PATTERNS = [
-  { key: 'dots', label: '점' },
-  { key: 'lines', label: '빗금' },
-  { key: 'none', label: '없음' },
-];
+/** 무늬 (이름은 patternLabel로, 지금 언어) */
+export const PATTERNS = [{ key: 'dots' }, { key: 'lines' }, { key: 'none' }];
+export const patternLabel = (key) => i18n.t(`stickers.pattern.${key}`);
+
+/** 스티커 이름: 기본 16개는 지금 언어로, 관리자가 새로 넣은 건 서버 이름 그대로 */
+export const stickerName = (sticker) => (!sticker ? '' : i18n.language === 'en'
+  ? i18n.t(`stickers.${sticker.code}`, { defaultValue: sticker.name || '' }) : sticker.name || '');
 export const MAX_STICKERS = 3;
 
 const builtinList = Object.entries(BUILTIN).map(([code, s]) => ({ code, name: s.label, svg: s.svg, imageUrl: null, active: true }));
@@ -75,5 +78,5 @@ export function stickerSrc(sticker) {
 export function StickerImage({ sticker, className = '' }) {
   const src = stickerSrc(sticker);
   if (!src) return null;
-  return React.createElement('img', { src, alt: sticker.name || '', className, draggable: false });
+  return React.createElement('img', { src, alt: stickerName(sticker), className, draggable: false });
 }

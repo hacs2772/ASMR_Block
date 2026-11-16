@@ -1,19 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { IoCloudUpload, IoShareSocial } from 'react-icons/io5';
+import { useTranslation } from 'react-i18next';
 import { catalogApi, errorMessage } from '../api/api';
 import Brick from '../components/brand/Brick';
 import BlockLoader from '../components/brand/BlockLoader';
 import BlockProductCard from '../components/block/BlockProductCard';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
-import { colorOf, iconOf, TRIGGER_COLOR } from '../lib/blocks';
+import { categoryName, colorOf, iconOf, TRIGGER_COLOR } from '../lib/blocks';
 import { shareLink, shareLinks } from '../lib/share';
 import useAuthStore from '../store/authStore';
 
-const SORTS = [
-  { key: 'latest', label: '새로 올린 순' },
-  { key: 'popular', label: '많이 들은 순' },
-];
+const SORTS = ['latest', 'popular'];
 const PAGE = 24;
 
 /**
@@ -21,6 +19,7 @@ const PAGE = 24;
  * ?block=12 로 오면 그 블록을 맨 위에 "공유받은 블록"으로
  */
 function CreatorPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const [params] = useSearchParams();
   const pinnedId = Number(params.get('block')) || null;
@@ -35,7 +34,7 @@ function CreatorPage() {
   useEffect(() => {
     setCreator(null);
     setError(null);
-    catalogApi.creator(id).then(setCreator).catch((e) => setError(errorMessage(e, '크리에이터를 찾을 수 없어요.')));
+    catalogApi.creator(id).then(setCreator).catch((e) => setError(errorMessage(e, t('creator.notFound'))));
   }, [id]);
 
   useEffect(() => {
@@ -62,7 +61,7 @@ function CreatorPage() {
   }, [creator]);
 
   if (error) return <div className="page pt-16"><p className="card mx-auto max-w-md p-8 text-center text-muted">{error}</p></div>;
-  if (!creator) return <BlockLoader className="pt-24" label="불러오는 중" />;
+  if (!creator) return <BlockLoader className="pt-24" label={t('common.loading')} />;
 
   const mine = me && String(me.id) === String(creator.id);
   const items = (list?.items || []).filter((b) => b.id !== pinned?.id);
@@ -78,29 +77,31 @@ function CreatorPage() {
                 icon={b ? iconOf(b.category) : null} />
             ))}
           </div>
-          <p className="eyebrow">크리에이터</p>
+          <p className="eyebrow">{t('creator.eyebrow')}</p>
           <h1 className="truncate text-3xl font-black tracking-tight sm:text-4xl" data-testid="creator-name">@{creator.nickname}</h1>
           <p className="mt-2 text-sm text-muted" data-testid="creator-stats">
-            블록 {creator.blockCount}개 · 담은 사람 {creator.collectorCount}명 · 들은 횟수 {creator.playCount}번
+            {t('creator.stats', { blocks: creator.blockCount, collectors: creator.collectorCount, plays: creator.playCount })}
           </p>
           {creator.triggers?.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {creator.triggers.map((t) => <span key={t} className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted">{t}</span>)}
+              {creator.triggers.map((name, i) => (
+                <span key={name} className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted">{categoryName(creator.triggerCodes?.[i], name)}</span>
+              ))}
             </div>
           )}
         </div>
         <div className="flex shrink-0 gap-2">
           <button type="button" className="btn-line" data-testid="share-creator"
-            onClick={() => shareLink(`@${creator.nickname}의 ASMR 블록`, shareLinks.creator(creator.id), `@${creator.nickname}님이 녹음한 ASMR 블록 — ASMR Block`)}>
-            <IoShareSocial /> 공유하기
+            onClick={() => shareLink(t('creator.shareTitle', { nickname: creator.nickname }), shareLinks.creator(creator.id), t('creator.shareText', { nickname: creator.nickname }))}>
+            <IoShareSocial /> {t('share.button')}
           </button>
-          {mine && <Link to="/sell" className="btn-pink"><IoCloudUpload /> 블록 올리기</Link>}
+          {mine && <Link to="/sell" className="btn-pink"><IoCloudUpload /> {t('creator.upload')}</Link>}
         </div>
       </section>
 
       {pinned && (
         <section className="mt-10" data-testid="pinned-block">
-          <p className="eyebrow">공유받은 블록</p>
+          <p className="eyebrow">{t('creator.pinned')}</p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <div className="rounded-2xl ring-2 ring-pink ring-offset-2 ring-offset-night"><BlockProductCard block={pinned} /></div>
           </div>
@@ -109,16 +110,16 @@ function CreatorPage() {
 
       <section className="mt-10">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="mr-auto text-xl font-extrabold">{pinned ? '이 크리에이터의 다른 블록' : '올린 블록'}</h2>
+          <h2 className="mr-auto text-xl font-extrabold">{pinned ? t('creator.others') : t('creator.uploaded')}</h2>
           {SORTS.map((s) => (
-            <button key={s.key} type="button" className={`chip ${sort === s.key ? 'chip-on' : ''}`} onClick={() => setSort(s.key)}>{s.label}</button>
+            <button key={s} type="button" className={`chip ${sort === s ? 'chip-on' : ''}`} onClick={() => setSort(s)}>{t(`creator.sort.${s}`)}</button>
           ))}
         </div>
         <div className="mt-5">
-          {list === null ? <BlockLoader small label="불러오는 중" /> : items.length === 0 ? (
+          {list === null ? <BlockLoader small label={t('common.loading')} /> : items.length === 0 ? (
             <div className="card p-8 text-center text-sm text-muted">
-              {pinned ? '다른 블록은 아직 없어요.' : '아직 상점에 올라간 블록이 없어요.'}
-              {mine && <div className="mt-4"><Link to="/sell" className="btn-pink btn-sm">첫 블록 올리기</Link></div>}
+              {pinned ? t('creator.noOthers') : t('creator.noBlocks')}
+              {mine && <div className="mt-4"><Link to="/sell" className="btn-pink btn-sm">{t('creator.first')}</Link></div>}
             </div>
           ) : (
             <>
@@ -127,7 +128,7 @@ function CreatorPage() {
               </div>
               {list.hasNext && (
                 <div className="mt-6 text-center">
-                  <button type="button" className="btn-line" onClick={() => load(list.page + 1)}>더 보기</button>
+                  <button type="button" className="btn-line" onClick={() => load(list.page + 1)}>{t('common.more')}</button>
                 </div>
               )}
             </>

@@ -26,8 +26,9 @@ export const authApi = {
   },
 
   // 베타 기간만: 가입 없이 손님 계정을 만들어 바로 로그인 (email/password도 돌려줌 → 이 브라우저에 저장)
-  betaLogin: async () => {
-    const response = await axiosInstance.post('/auth/beta-login');
+  // lang = 화면 언어 (en이면 손님 이름·계정 언어도 영어)
+  betaLogin: async (lang) => {
+    const response = await axiosInstance.post('/auth/beta-login', null, { params: lang ? { lang } : undefined });
     return response.data;
   },
 

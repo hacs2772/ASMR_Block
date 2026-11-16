@@ -77,6 +77,10 @@ class QuickStartApiTest extends IntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.message").value("모르는 트리거예요: 없는트리거"));
         postJson("/api/v1/playlists/quick-start", "{\"triggers\":[]}", token).andExpect(status().isBadRequest());
+        // 화면 언어로 이름을 주면 그 이름으로 (영어 화면)
+        postJson("/api/v1/playlists/quick-start", "{\"triggers\":[\"%s\"],\"title\":\"My first tingles · Tapping\"}".formatted(codesWithFreeBlocks().getFirst()), token)
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.title").value("My first tingles · Tapping"));
         postJson("/api/v1/playlists/quick-start", "{\"triggers\":[\"a\",\"b\",\"c\",\"d\",\"e\",\"f\"]}", token)
                 .andExpect(status().isBadRequest());
         mvc.perform(post("/api/v1/playlists/quick-start").contentType("application/json").content("{\"triggers\":[\"tap\"]}"))

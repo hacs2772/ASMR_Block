@@ -47,7 +47,10 @@ class NotificationApiTest extends IntegrationTest {
                 .andExpect(jsonPath("$.data.settings.collect").value(true));
         getWithToken("/api/v1/me/notifications", creator)
                 .andExpect(jsonPath("$.data.content[0].type").value("BLOCK_COLLECTED"))
-                .andExpect(jsonPath("$.data.content[0].message").value("@테스터님 외 1명이 ‘테스트 톤 610’ 블록을 담았어요"));
+                .andExpect(jsonPath("$.data.content[0].message").value("@테스터님 외 1명이 ‘테스트 톤 610’ 블록을 담았어요"))
+                .andExpect(jsonPath("$.data.content[0].title").value("테스트 톤 610"))
+                .andExpect(jsonPath("$.data.content[0].actor").value("테스터"))
+                .andExpect(jsonPath("$.data.content[0].count").value(2));
 
         postJson("/api/v1/me/notifications/read", "{}", creator).andExpect(jsonPath("$.data.unread").value(0));
         // 읽은 뒤에 또 담으면 새 줄

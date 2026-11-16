@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { brickWidth, editorBlockOf } from '../../lib/editorLogic';
-import { colorOf, formatDuration, iconOf } from '../../lib/blocks';
+import { categoryName, colorOf, formatDuration, iconOf } from '../../lib/blocks';
 import useEditorStore from '../../store/editorStore';
 import Brick from '../brand/Brick';
 import BlockLoader from '../brand/BlockLoader';
@@ -14,6 +15,7 @@ const TILE_H = 40;
  * 바닥판 블록을 여기로 끌어오면 빼기
  */
 function BlockShelf({ library }) {
+  const { t } = useTranslation();
   const [groupId, setGroupId] = useState(null);
   const mixTarget = useEditorStore((s) => s.mixTarget);
   const setMixTarget = useEditorStore((s) => s.setMixTarget);
@@ -24,7 +26,7 @@ function BlockShelf({ library }) {
     const map = new Map();
     (library || []).forEach((b) => {
       const c = b.category;
-      if (c) map.set(c.parentId ?? c.id, { id: c.parentId ?? c.id, name: c.parentName ?? c.name, color: c.color });
+      if (c) map.set(c.parentId ?? c.id, { id: c.parentId ?? c.id, code: c.groupCode ?? c.parentCode ?? c.code, name: c.parentName ?? c.name, color: c.color });
     });
     return [...map.values()];
   }, [library]);
@@ -35,35 +37,35 @@ function BlockShelf({ library }) {
       <div className="flex items-baseline gap-2 border-b border-line px-5 py-4">
         {mixTarget !== null ? (
           <>
-            <p className="text-lg font-extrabold">레이어드에 넣을 블록</p>
-            <span className="text-xs text-pink-text">{formatDuration(mixTarget)}부터</span>
-            <button type="button" className="ml-auto text-sm font-bold text-muted hover:text-ink" onClick={() => setMixTarget(null)}>취소</button>
+            <p className="text-lg font-extrabold">{t('shelf.forLayer')}</p>
+            <span className="text-xs text-pink-text">{t('shelf.from', { time: formatDuration(mixTarget) })}</span>
+            <button type="button" className="ml-auto text-sm font-bold text-muted hover:text-ink" onClick={() => setMixTarget(null)}>{t('common.cancel')}</button>
           </>
         ) : (
           <>
-            <p className="text-lg font-extrabold">내 블록함 <span className="text-sm font-semibold text-faint">{library?.length ?? ''}</span></p>
-            <Link to="/shop" className="ml-auto text-sm font-bold text-pink-text hover:underline">＋ 더 담기</Link>
+            <p className="text-lg font-extrabold">{t('shelf.title')} <span className="text-sm font-semibold text-faint">{library?.length ?? ''}</span></p>
+            <Link to="/shop" className="ml-auto text-sm font-bold text-pink-text hover:underline">{t('shelf.more')}</Link>
           </>
         )}
       </div>
 
       {library === null ? <BlockLoader small /> : library.length === 0 ? (
         <div className="flex flex-col items-center gap-3 p-6 text-center">
-          <p className="font-bold">내 블록함이 비어 있어요</p>
-          <p className="text-sm text-muted">블록 상점에서 마음에 드는 소리를 담아 오세요. 담은 블록은 몇 번을 복제해도 무료예요.</p>
-          <Link to="/shop" className="btn-pink">블록 상점 가기</Link>
+          <p className="font-bold">{t('shelf.emptyTitle')}</p>
+          <p className="text-sm text-muted">{t('shelf.emptyBody')}</p>
+          <Link to="/shop" className="btn-pink">{t('shelf.goShop')}</Link>
         </div>
       ) : (
         <>
           <div className="flex gap-1.5 overflow-x-auto px-5 pt-3">
-            <button type="button" className={`chip px-3 py-1 text-xs ${groupId === null ? 'chip-on' : ''}`} onClick={() => setGroupId(null)}>전체</button>
+            <button type="button" className={`chip px-3 py-1 text-xs ${groupId === null ? 'chip-on' : ''}`} onClick={() => setGroupId(null)}>{t('shelf.all')}</button>
             {groups.map((g) => (
               <button key={g.id} type="button" className={`chip px-3 py-1 text-xs ${groupId === g.id ? 'chip-on' : ''}`} onClick={() => setGroupId(g.id)}>
-                <span className="h-2 w-2 rounded-[2px]" style={{ background: g.color }} />{g.name}
+                <span className="h-2 w-2 rounded-[2px]" style={{ background: g.color }} />{categoryName(g.code, g.name)}
               </button>
             ))}
           </div>
-          <p className="px-5 pt-2 text-[11px] text-faint">누르면 첫째 줄 끝에 딸깍 · 끌어서 원하는 자리에</p>
+          <p className="px-5 pt-2 text-[11px] text-faint">{t('shelf.tapHint')}</p>
           <div className="grid grid-cols-2 gap-x-3 gap-y-4 overflow-y-auto p-5">
             {blocks.map((b) => <Tile key={b.id} block={b} />)}
           </div>
@@ -73,7 +75,7 @@ function BlockShelf({ library }) {
       {dragFromBoard && (
         <div className={`pointer-events-none absolute inset-2 flex items-center justify-center rounded-xl border-2 border-dashed border-danger text-base font-extrabold text-danger ${
           dropHere ? 'bg-[rgba(70,16,28,0.95)]' : 'bg-[rgba(24,12,18,0.9)]'}`}>
-          🗑 여기에 놓으면 빼요
+          {t('shelf.dropToRemove')}
         </div>
       )}
     </aside>
@@ -81,6 +83,7 @@ function BlockShelf({ library }) {
 }
 
 function Tile({ block }) {
+  const { t } = useTranslation();
   const width = Math.min(brickWidth(block.duration), 130);
   const add = () => {
     const e = useEditorStore.getState();
@@ -100,7 +103,7 @@ function Tile({ block }) {
     <div className="min-w-0">
       <div {...handlers} className="cursor-grab select-none pr-2 transition-transform hover:-translate-y-0.5" role="button" tabIndex={0}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); add(); } }}
-        aria-label={`${block.title} 넣기`} data-testid={`tile-${block.id}`}>
+        aria-label={t('shelf.insert', { title: block.title })} data-testid={`tile-${block.id}`}>
         <Brick color={colorOf(block.category)} width={Math.max(width, 60)} height={TILE_H} icon={iconOf(block.category)} minutes={block.duration / 60}
           design={block.design} />
       </div>
