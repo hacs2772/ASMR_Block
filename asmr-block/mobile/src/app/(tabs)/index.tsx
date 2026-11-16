@@ -16,6 +16,8 @@ import { Button } from '@/components/ui';
 import { formatMinutes } from '@/lib/format';
 import { useAuth } from '@/store/auth';
 import { colors, radius, space } from '@/theme';
+import { useTranslation } from 'react-i18next';
+import { minutesLabel } from '@/lib/labels';
 
 const MORE_LIMIT = 4;
 
@@ -29,6 +31,7 @@ function play(id: number) {
  * 설명·단어장은 오른쪽 위 ? 도움말로, 다른 사람 조합은 ★추천 조합 탭으로.
  */
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const status = useAuth((s) => s.status);
   const user = useAuth((s) => s.user);
   const mine = useQuery({ queryKey: ['playlists', 'mine'], queryFn: playlistApi.mine, enabled: status === 'signedIn' });
@@ -46,25 +49,25 @@ export default function HomeScreen() {
           onRefresh={() => { void mine.refetch(); void trending.refetch(); }} tintColor={colors.muted} />
       }
     >
-      <Text style={styles.eyebrow}>{user ? `${user.nickname}님의 조합` : '내 조합'}</Text>
-      <Text style={styles.title}>바로 듣기</Text>
+      <Text style={styles.eyebrow}>{user ? t('home.mineOf', { nickname: user.nickname }) : t('home.mine')}</Text>
+      <Text style={styles.title}>{t('home.listenNow')}</Text>
 
       {status !== 'signedIn' ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>로그인하면 내가 만든 조합을 여기서 바로 들을 수 있어요</Text>
+          <Text style={styles.emptyTitle}>{t('home.loginEmpty')}</Text>
           <BetaLoginButton style={{ marginTop: space.md }} />
-          <Button title="로그인" onPress={() => router.push('/login')} style={{ alignSelf: 'stretch' }} testID="home-login" />
+          <Button title={t('home.login')} onPress={() => router.push('/login')} style={{ alignSelf: 'stretch' }} testID="home-login" />
         </View>
       ) : mine.isLoading ? (
         <BlockLoader style={{ marginVertical: space.lg }} />
       ) : !first ? (
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>어떤 소리에 팅글이 오세요?</Text>
-          <Text style={styles.emptyText}>트리거만 고르면 첫 조합을 바로 쌓아서 들려드려요. 블록을 직접 쌓거나 다른 사람 조합을 담아 와도 돼요.</Text>
+          <Text style={styles.emptyTitle}>{t('home.pickTitle')}</Text>
+          <Text style={styles.emptyText}>{t('home.pickBody')}</Text>
           <TriggerPicker />
           <View style={styles.emptyActions}>
-            <Button title="새로 만들기" icon="add" onPress={() => router.push({ pathname: '/editor/[id]', params: { id: 'new' } })} style={{ flex: 1 }} />
-            <Button title="추천 조합" icon="star" variant="secondary" onPress={() => router.push('/combos')} style={{ flex: 1 }} />
+            <Button title={t('home.newCombo')} icon="add" onPress={() => router.push({ pathname: '/editor/[id]', params: { id: 'new' } })} style={{ flex: 1 }} />
+            <Button title={t('home.combos')} icon="star" variant="secondary" onPress={() => router.push('/combos')} style={{ flex: 1 }} />
           </View>
         </View>
       ) : (
@@ -75,7 +78,7 @@ export default function HomeScreen() {
           ))}
           {rest.length > MORE_LIMIT && (
             <Pressable accessibilityRole="button" onPress={() => router.push('/library')} style={styles.moreLink} testID="home-all-combos">
-              <Text style={styles.moreText}>내 조합 전체 보기 ({combos.length})</Text>
+              <Text style={styles.moreText}>{t('home.seeAll', { count: combos.length })}</Text>
               <Ionicons name="chevron-forward" size={14} color={colors.primaryText} />
             </Pressable>
           )}
@@ -84,15 +87,15 @@ export default function HomeScreen() {
 
       {(trending.data?.length ?? 0) > 0 && (
         <View style={styles.section}>
-          <Text style={styles.eyebrow}>최근 7일</Text>
-          <Text style={[styles.sectionTitle, { marginBottom: space.md }]}>요즘 팅글 많이 오는 블록</Text>
+          <Text style={styles.eyebrow}>{t('home.trendEyebrow')}</Text>
+          <Text style={[styles.sectionTitle, { marginBottom: space.md }]}>{t('home.trendTitle')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
             {trending.data!.map((b, i) => (
               <BlockCard key={b.id} block={b} rank={i + 1} style={styles.trendCard}
                 previewing={preview.previewId === b.id} onPreview={() => preview.toggle(b)} />
             ))}
           </ScrollView>
-          <Button title="블록 구매에서 더 보기" variant="secondary" icon="storefront-outline" onPress={() => router.push('/explore')}
+          <Button title={t('home.moreShop')} variant="secondary" icon="storefront-outline" onPress={() => router.push('/explore')}
             style={{ marginTop: space.md }} />
         </View>
       )}
@@ -104,12 +107,13 @@ export default function HomeScreen() {
 
 /** 가장 최근 조합: 크게, 누르면 바로 재생 (지금 재생 중이면 멈춤/이어 듣기) */
 function HeroCombo({ playlist }: { playlist: PlaylistSummary }) {
+  const { t } = useTranslation();
   const player = usePlayer();
   const current = player.nowPlaying?.playlistId === playlist.id;
   const playing = current && player.status.playing;
   const onPress = () => (current ? player.toggle() : play(playlist.id));
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={`${playlist.title} 바로 듣기`} onPress={onPress}
+    <Pressable accessibilityRole="button" accessibilityLabel={t('home.heroA11y', { title: playlist.title })} onPress={onPress}
       style={({ pressed }) => [styles.hero, pressed && { backgroundColor: colors.cardActive }]} testID={`hero-${playlist.id}`}>
       <View style={styles.heroBricks}>
         {playlist.previewColors.slice(0, 8).map((color, i) => (
@@ -122,8 +126,8 @@ function HeroCombo({ playlist }: { playlist: PlaylistSummary }) {
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.heroTitle} numberOfLines={1}>{playlist.title}</Text>
           <Text style={styles.heroMeta} numberOfLines={1}>
-            한 바퀴 {formatMinutes(playlist.totalDuration)} · 블록 {playlist.blockCount}개{playlist.hasMix ? ' · 레이어드' : ''}
-            {playlist.listenMinutes >= 60 ? ` · ${playlist.listenMinutes / 60}시간 반복` : playlist.listenMinutes > 0 ? ` · ${playlist.listenMinutes}분 반복` : ''}
+            {t('combo.loop', { length: formatMinutes(playlist.totalDuration) })} · {t('combo.blocks', { count: playlist.blockCount })}{playlist.hasMix ? ` · ${t('combo.layered')}` : ''}
+            {playlist.listenMinutes > 0 ? ` · ${t('home.repeat', { time: minutesLabel(playlist.listenMinutes) })}` : ''}
           </Text>
         </View>
         <View style={styles.heroPlay}>

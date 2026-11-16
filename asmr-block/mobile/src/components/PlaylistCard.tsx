@@ -4,6 +4,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { PlaylistSummary } from '@/api/types';
 import { formatMinutes } from '@/lib/format';
 import { colors, radius, space } from '@/theme';
+import { useTranslation } from 'react-i18next';
+import { minutesLabel } from '@/lib/labels';
 
 type Props = {
   playlist: PlaylistSummary;
@@ -16,12 +18,13 @@ type Props = {
 
 /** 조합 카드: 첫째 줄 블록 색을 옆으로 누운 작은 레고처럼 이어서 보여줌 (둘째 줄이 있으면 아래에 얇게) */
 export function PlaylistCard({ playlist, onPress, onEdit, showOwner, footer }: Props) {
+  const { t } = useTranslation();
   const bricks = playlist.previewColors.slice(0, 4);
   const source = playlist.collect?.sourceOwner;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${playlist.title} 재생`}
+      accessibilityLabel={t('combo.playA11y', { title: playlist.title })}
       onPress={onPress}
       style={({ pressed }) => [styles.card, pressed && { backgroundColor: colors.cardActive }]}
       testID={`playlist-${playlist.id}`}
@@ -40,14 +43,14 @@ export function PlaylistCard({ playlist, onPress, onEdit, showOwner, footer }: P
       <View style={styles.info}>
         <Text style={styles.title} numberOfLines={1}>{playlist.title}</Text>
         <Text style={styles.meta} numberOfLines={1}>
-          {formatMinutes(playlist.totalDuration)} · 블록 {playlist.blockCount}개
-          {playlist.hasMix ? ' · 레이어드' : ''}
-          {playlist.listenMinutes >= 60 ? ` · ${playlist.listenMinutes / 60}시간` : playlist.listenMinutes > 0 ? ` · ${playlist.listenMinutes}분` : ''}
-          {showOwner ? ` · @${playlist.owner.nickname}` : source ? ` · @${source.nickname} 조합` : playlist.isPublic ? ' · 공개' : ' · 비공개'}
+          {formatMinutes(playlist.totalDuration)} · {t('combo.blocks', { count: playlist.blockCount })}
+          {playlist.hasMix ? ` · ${t('combo.layered')}` : ''}
+          {playlist.listenMinutes > 0 ? ` · ${minutesLabel(playlist.listenMinutes)}` : ''}
+          {showOwner ? ` · @${playlist.owner.nickname}` : source ? ` · ${t('combo.byOwner', { nickname: source.nickname })}` : ` · ${playlist.isPublic ? t('combo.public') : t('combo.private')}`}
         </Text>
       </View>
       {onEdit ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={`${playlist.title} 편집`} hitSlop={10} onPress={onEdit} style={styles.edit}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('combo.editA11y', { title: playlist.title })} hitSlop={10} onPress={onEdit} style={styles.edit}>
           <Ionicons name="create-outline" size={20} color={colors.muted} />
         </Pressable>
       ) : (

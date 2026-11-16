@@ -193,6 +193,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
 export function usePlayer(): PlayerContextValue {
   const context = useContext(PlayerContext);
-  if (!context) throw new Error('usePlayer는 PlayerProvider 안에서만 쓸 수 있어요.');
+  if (!context) throw new Error('usePlayer는 PlayerProvider 안에서만 쓸 수 있어요.'); // i18n-ok (개발자용)
   return context;
 }

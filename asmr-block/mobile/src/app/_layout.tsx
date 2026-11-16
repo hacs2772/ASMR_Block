@@ -9,6 +9,8 @@ import { PlayerProvider } from '@/audio/PlayerProvider';
 import { StartupScreen } from '@/components/BlockLoader';
 import { useAuth } from '@/store/auth';
 import { colors } from '@/theme';
+import { useTranslation } from 'react-i18next';
+import { loadLang } from '@/locales';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -23,8 +25,12 @@ const theme = {
 const STARTUP_MIN_MS = 1100;
 
 export default function RootLayout() {
+  const { t } = useTranslation();
   const status = useAuth((s) => s.status);
   const [introDone, setIntroDone] = useState(false);
+  // 전에 고른 언어를 시작 화면이 떠 있는 동안 불러옴 (화면이 한 번 다른 언어로 깜빡이지 않게)
+  const [langReady, setLangReady] = useState(false);
+  useEffect(() => { void loadLang().finally(() => setLangReady(true)); }, []);
   useEffect(() => {
     const timer = setTimeout(() => setIntroDone(true), STARTUP_MIN_MS);
     return () => clearTimeout(timer);
@@ -38,7 +44,7 @@ export default function RootLayout() {
     useAuth.getState().bootstrap();
   }, []);
 
-  if (status === 'loading' || !introDone) return <StartupScreen />;
+  if (status === 'loading' || !introDone || !langReady) return <StartupScreen />;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -49,15 +55,15 @@ export default function RootLayout() {
             <StatusBar style="light" />
             <Stack screenOptions={{ headerStyle: { backgroundColor: colors.bg }, headerTintColor: colors.text, contentStyle: { backgroundColor: colors.bg } }}>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="login" options={{ title: '로그인', presentation: 'modal' }} />
-              <Stack.Screen name="signup" options={{ title: '회원가입', presentation: 'modal' }} />
-              <Stack.Screen name="editor/[id]" options={{ title: '조합 만들기', gestureEnabled: false }} />
+              <Stack.Screen name="login" options={{ title: t('nav.login'), presentation: 'modal' }} />
+              <Stack.Screen name="signup" options={{ title: t('nav.signup'), presentation: 'modal' }} />
+              <Stack.Screen name="editor/[id]" options={{ title: t('nav.editor'), gestureEnabled: false }} />
               <Stack.Screen name="player/[id]" options={{ title: '', presentation: 'modal' }} />
-              <Stack.Screen name="help" options={{ title: '도움말', presentation: 'modal' }} />
-              <Stack.Screen name="recording-guide" options={{ title: '녹음 가이드' }} />
+              <Stack.Screen name="help" options={{ title: t('nav.help'), presentation: 'modal' }} />
+              <Stack.Screen name="recording-guide" options={{ title: t('nav.recGuide') }} />
               <Stack.Screen name="creator/[id]" options={{ title: '' }} />
-              <Stack.Screen name="notifications" options={{ title: '알림' }} />
-              <Stack.Screen name="profile" options={{ title: '내 정보' }} />
+              <Stack.Screen name="notifications" options={{ title: t('nav.notifications') }} />
+              <Stack.Screen name="profile" options={{ title: t('nav.profile') }} />
             </Stack>
           </PlayerProvider>
         </ThemeProvider>

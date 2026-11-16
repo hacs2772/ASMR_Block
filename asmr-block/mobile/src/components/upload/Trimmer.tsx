@@ -10,6 +10,7 @@ import { seekVideo } from '@/audio/playerControls';
 import { formatDuration } from '@/lib/format';
 import { clock, FADE_SECONDS, fitPeaks, moveHandle, nearestHandle, timeAt, type Handle, type TrimRange } from '@/lib/trim';
 import { colors, radius, space } from '@/theme';
+import { Trans, useTranslation } from 'react-i18next';
 
 type Props = {
   uri: string;
@@ -69,6 +70,7 @@ function useDragGesture(mode: Handle, live: RefObject<Live>) {
  * ±1초 버튼, ▶ 고른 부분 듣기 · 끝 5초 듣기. 계산은 lib/trim.ts (웹 lib/trim.js와 같은 규칙)
  */
 export function Trimmer({ uri, duration, peaks, range, onChange: setRange, min, max, video = false }: Props) {
+  const { t } = useTranslation();
   const [width, setWidth] = useState(0);
   // 영상: 손잡이를 옮긴 곳의 장면을 보여 줌
   const [scrub, setScrub] = useState(range.start);
@@ -109,8 +111,8 @@ export function Trimmer({ uri, duration, peaks, range, onChange: setRange, min, 
     runOnJS: true,
     onActivate: (e) => {
       const r = live.current.range;
-      const t = timeAt(e.x, live.current.width, duration);
-      onChange(moveHandle(r, nearestHandle(r, t), t, { duration, min, max }));
+      const sec = timeAt(e.x, live.current.width, duration);
+      onChange(moveHandle(r, nearestHandle(r, sec), sec, { duration, min, max }));
     },
   });
 
@@ -120,15 +122,16 @@ export function Trimmer({ uri, duration, peaks, range, onChange: setRange, min, 
     step(which, e.nativeEvent.actionName === 'increment' ? 1 : -1);
 
   const bars = fitPeaks(peaks, Math.max(30, Math.min(peaks.length, Math.floor(width / 4))));
-  const x = (t: number) => (t / duration) * width;
+  const x = (sec: number) => (sec / duration) * width;
   const barW = bars.length ? Math.max(1.5, (width / bars.length) * 0.62) : 2;
 
   return (
     <View style={styles.box} testID="trimmer">
       <View style={styles.header}>
-        <Text style={styles.title}>구간 고르기</Text>
+        <Text style={styles.title}>{t('trim.title')}</Text>
         <Text style={styles.meta}>
-          고른 길이 <Text style={styles.length} testID="trim-length">{formatDuration(Math.round(range.end - range.start))}</Text> · 전체 {formatDuration(Math.round(duration))}
+          <Trans i18nKey="trim.picked" values={{ picked: formatDuration(Math.round(range.end - range.start)), total: formatDuration(Math.round(duration)) }}
+            components={{ len: <Text style={styles.length} testID="trim-length" /> }} />
         </Text>
       </View>
 
@@ -137,8 +140,8 @@ export function Trimmer({ uri, duration, peaks, range, onChange: setRange, min, 
         <GestureDetector gesture={tap}>
           <View style={styles.bars} collapsable={false} testID="trim-track">
             {bars.map((p, i) => {
-              const t = ((i + 0.5) / bars.length) * duration;
-              const on = t >= range.start && t <= range.end;
+              const sec = ((i + 0.5) / bars.length) * duration;
+              const on = sec >= range.start && sec <= range.end;
               return <View key={i} style={{ width: barW, height: Math.max(3, p * (TRACK_H - 14)), borderRadius: 1, backgroundColor: on ? colors.primary : colors.borderStrong }} />;
             })}
           </View>
@@ -153,7 +156,7 @@ export function Trimmer({ uri, duration, peaks, range, onChange: setRange, min, 
             {(['start', 'end'] as const).map((which) => (
               <GestureDetector key={which} gesture={which === 'start' ? startPan : endPan}>
                 <View collapsable={false} style={[styles.handle, { left: x(range[which]) - HANDLE_W / 2 }]}
-                  accessible accessibilityRole="adjustable" accessibilityLabel={which === 'start' ? '구간 시작' : '구간 끝'}
+                  accessible accessibilityRole="adjustable" accessibilityLabel={which === 'start' ? t('trim.startHandle') : t('trim.endHandle')}
                   accessibilityValue={{ text: clock(range[which]) }}
                   accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]} onAccessibilityAction={onA11y(which)}
                   testID={`trim-handle-${which}`}>
@@ -168,34 +171,35 @@ export function Trimmer({ uri, duration, peaks, range, onChange: setRange, min, 
       </View>
 
       <View style={styles.nudges}>
-        <Nudge label="시작" value={range.start} onStep={(s) => step('start', s)} testID="trim-start" />
-        <Nudge label="끝" value={range.end} onStep={(s) => step('end', s)} testID="trim-end" />
+        <Nudge label={t('trim.start')} value={range.start} onStep={(s) => step('start', s)} testID="trim-start" />
+        <Nudge label={t('trim.end')} value={range.end} onStep={(s) => step('end', s)} testID="trim-end" />
       </View>
       <View style={styles.actions}>
         <Pressable accessibilityRole="button" onPress={playing ? stop : () => play(range.start)} style={[styles.action, styles.actionLine]} testID="trim-play">
           <Ionicons name={playing ? 'pause' : 'play'} size={15} color={colors.text} />
-          <Text style={styles.actionText}>{playing ? '멈춤' : '고른 부분 듣기'}</Text>
+          <Text style={styles.actionText}>{playing ? t('trim.pause') : t('trim.playPart')}</Text>
         </Pressable>
         <Pressable accessibilityRole="button" onPress={() => play(Math.max(range.start, range.end - 5))} style={styles.action}>
-          <Text style={[styles.actionText, { color: colors.muted }]}>끝 5초 듣기</Text>
+          <Text style={[styles.actionText, { color: colors.muted }]}>{t('trim.playEnd')}</Text>
         </Pressable>
       </View>
       <Text style={styles.hint}>
-        손잡이를 끌어 시작과 끝을 고르고, 가운데를 끌면 구간째 옮겨져요.{video ? ' 영상은 소리와 같은 구간으로 같이 잘려요.' : ''} 잘린 앞뒤 {FADE_SECONDS}초는 부드럽게 커지고 작아져요.
+        {t('trim.help')}{video ? ` ${t('trim.helpVideo')}` : ''} {t('trim.helpFade', { seconds: FADE_SECONDS })}
       </Text>
     </View>
   );
 }
 
 function Nudge({ label, value, onStep, testID }: { label: string; value: number; onStep: (s: number) => void; testID: string }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.nudge}>
-      <Pressable accessibilityRole="button" accessibilityLabel={`${label} 1초 앞으로`} onPress={() => onStep(-1)} style={styles.nudgeBtn} hitSlop={4}>
-        <Text style={styles.nudgeText}>−1초</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('trim.back1', { label })} onPress={() => onStep(-1)} style={styles.nudgeBtn} hitSlop={4}>
+        <Text style={styles.nudgeText}>{t('trim.minus1')}</Text>
       </Pressable>
       <Text style={styles.nudgeValue} testID={testID}>{label} <Text style={{ color: colors.text, fontWeight: '800' }}>{clock(value)}</Text></Text>
-      <Pressable accessibilityRole="button" accessibilityLabel={`${label} 1초 뒤로`} onPress={() => onStep(1)} style={styles.nudgeBtn} hitSlop={4}>
-        <Text style={styles.nudgeText}>+1초</Text>
+      <Pressable accessibilityRole="button" accessibilityLabel={t('trim.fwd1', { label })} onPress={() => onStep(1)} style={styles.nudgeBtn} hitSlop={4}>
+        <Text style={styles.nudgeText}>{t('trim.plus1')}</Text>
       </Pressable>
     </View>
   );

@@ -12,6 +12,8 @@ import { notify } from '@/lib/dialog';
 import { ago } from '@/lib/time';
 import { useAuth } from '@/store/auth';
 import { colors, radius, space } from '@/theme';
+import { useTranslation } from 'react-i18next';
+import { notificationText } from '@/lib/notifications';
 
 const ICON: Record<NotificationType, { name: keyof typeof Ionicons.glyphMap; color: string }> = {
   BLOCK_APPROVED: { name: 'checkmark-circle', color: colors.success },
@@ -25,6 +27,7 @@ const ICON: Record<NotificationType, { name: keyof typeof Ionicons.glyphMap; col
  * 열면 모두 읽음으로. 맨 위에서 종류별로 끌 수 있음 (끄면 아예 만들지 않음)
  */
 export default function NotificationsScreen() {
+  const { t, i18n } = useTranslation();
   const me = useAuth((s) => s.user);
   const queryClient = useQueryClient();
   const summary = useNotificationSummary();
@@ -41,15 +44,15 @@ export default function NotificationsScreen() {
   const settings = useMutation({
     mutationFn: (next: NotificationSettings) => notificationApi.settings(next),
     onSuccess: (s) => queryClient.setQueryData(NOTIFICATION_SUMMARY_KEY, s),
-    onError: (e) => notify('바꾸지 못했어요', (e as Error).message),
+    onError: (e) => notify(t('notif.changeFailed'), (e as Error).message),
   });
 
   const open = (n: NotificationItem) => {
-    const t = n.target;
-    if (!t) return;
-    if (t.kind === 'BLOCK' && me) router.push({ pathname: '/creator/[id]', params: { id: String(me.id), block: String(t.id) } });
-    else if (t.kind === 'UPLOADS') router.navigate('/upload');
-    else if (t.kind === 'COMBO' && t.id) router.push({ pathname: '/player/[id]', params: { id: String(t.id) } });
+    const target = n.target;
+    if (!target) return;
+    if (target.kind === 'BLOCK' && me) router.push({ pathname: '/creator/[id]', params: { id: String(me.id), block: String(target.id) } });
+    else if (target.kind === 'UPLOADS') router.navigate('/upload');
+    else if (target.kind === 'COMBO' && target.id) router.push({ pathname: '/player/[id]', params: { id: String(target.id) } });
   };
 
   const s = summary.data?.settings;
@@ -63,10 +66,10 @@ export default function NotificationsScreen() {
       refreshControl={<RefreshControl refreshing={list.isRefetching} onRefresh={() => void list.refetch()} tintColor={colors.muted} />}
       ListHeaderComponent={s ? (
         <View style={styles.settings} testID="notif-settings">
-          <Text style={styles.settingsTitle}>{allOff ? '알림을 꺼 두었어요' : '알림 받기'}</Text>
-          <SettingRow title="검수 결과" hint="내 블록이 승인되거나 돌려보내졌을 때" value={s.review}
+          <Text style={styles.settingsTitle}>{allOff ? t('notif.offAll') : t('notif.settingsTitle')}</Text>
+          <SettingRow title={t('notif.review')} hint={t('notif.reviewHint')} value={s.review}
             onChange={(v) => settings.mutate({ ...s, review: v })} testID="notif-toggle-review" />
-          <SettingRow title="담김 소식" hint="누가 내 블록이나 조합을 담았을 때" value={s.collect}
+          <SettingRow title={t('notif.collect')} hint={t('notif.collectHint')} value={s.collect}
             onChange={(v) => settings.mutate({ ...s, collect: v })} testID="notif-toggle-collect" />
         </View>
       ) : undefined}
@@ -77,18 +80,18 @@ export default function NotificationsScreen() {
             style={({ pressed }) => [styles.item, !n.read && styles.unread, pressed && { opacity: 0.8 }]} testID={`notif-${n.id}`}>
             <Ionicons name={icon.name} size={19} color={icon.color} style={{ marginTop: 1 }} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.message}>{n.message}</Text>
-              {n.note ? <Text style={styles.note}>이유: {n.note}</Text> : null}
-              <Text style={styles.time}>{ago(n.at)}</Text>
+              <Text style={styles.message}>{notificationText(n)}</Text>
+              {n.note ? <Text style={styles.note}>{t('notif.reason', { note: n.note })}</Text> : null}
+              <Text style={styles.time}>{ago(n.at, undefined, i18n.language)}</Text>
             </View>
-            {!n.read ? <View style={styles.dot} accessibilityLabel="새 알림" /> : null}
+            {!n.read ? <View style={styles.dot} accessibilityLabel={t('notif.new')} /> : null}
           </Pressable>
         );
       }}
       ItemSeparatorComponent={() => <View style={{ height: space.sm }} />}
       ListEmptyComponent={list.isLoading ? <BlockLoader style={{ marginTop: space.lg }} /> : (
-        <EmptyState icon="notifications-outline" title="아직 알림이 없어요"
-          message="블록을 올리면 검수 결과와 담은 소식이 여기에 와요." />
+        <EmptyState icon="notifications-outline" title={t('notif.emptyTitle')}
+          message={t('notif.emptyBody')} />
       )}
     />
   );
@@ -97,6 +100,7 @@ export default function NotificationsScreen() {
 function SettingRow({ title, hint, value, onChange, testID }: {
   title: string; hint: string; value: boolean; onChange: (v: boolean) => void; testID: string;
 }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.row}>
       <View style={{ flex: 1 }}>
@@ -104,7 +108,7 @@ function SettingRow({ title, hint, value, onChange, testID }: {
         <Text style={styles.rowHint}>{hint}</Text>
       </View>
       <Switch value={value} onValueChange={onChange} trackColor={{ true: colors.primary, false: colors.border }} thumbColor={colors.white}
-        accessibilityLabel={`${title} 알림`} testID={testID} />
+        accessibilityLabel={t('notif.switchA11y', { title })} testID={testID} />
     </View>
   );
 }

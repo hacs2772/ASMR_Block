@@ -1,6 +1,7 @@
 import { Platform, Share } from 'react-native';
 import { notify } from '@/lib/dialog';
 import { SITE_URL } from '@/lib/links';
+import i18n from '@/locales';
 
 /** 공유 링크 (서버가 카톡 미리보기 카드를 만들어 줌): 조합 /s/{id}, 블록 /s/b/{id}, 크리에이터 /s/c/{id} */
 export const shareLinks = {
@@ -16,9 +17,9 @@ export async function shareLink(title: string, url: string, text = `${title} —
   } catch {
     try {
       await globalThis.navigator?.clipboard?.writeText(url);
-      notify('링크를 복사했어요', '카톡에 붙여 넣으면 미리보기 카드가 나와요.');
+      notify(i18n.t('share.copied'), i18n.t('share.copiedBody'));
     } catch {
-      notify('이 링크를 보내 주세요', url);
+      notify(i18n.t('share.sendThis'), url);
     }
   }
 }

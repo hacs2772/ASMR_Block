@@ -6,9 +6,11 @@ import type { IconName } from '@/components/ui';
 import { formatDuration } from '@/lib/format';
 import { mainLayout, NUDGE_SECONDS, useEditor } from '@/store/editor';
 import { categoryFallbackColor, colors, radius, space } from '@/theme';
+import { Trans, useTranslation } from 'react-i18next';
 
 /** 고른 블록으로 할 일: 복제 · 듣기 · 옮기기(첫째 줄: 왼쪽/오른쪽, 둘째 줄: ±10초) · 빼기 */
 export function ActionPanel() {
+  const { t } = useTranslation();
   const editor = useEditor();
   const preview = usePreview();
   const { selected } = editor;
@@ -20,7 +22,7 @@ export function ActionPanel() {
   if (!selected || !block) {
     return (
       <View style={[styles.panel, styles.hintPanel]}>
-        <Text style={styles.hint}>블록을 누르면 <Text style={styles.hintStrong}>복제·빼기</Text> · 꾹 눌러 끌면 <Text style={styles.hintStrong}>옮기기</Text></Text>
+        <Text style={styles.hint}><Trans i18nKey="action.hint" components={{ b: <Text style={styles.hintStrong} /> }} /></Text>
       </View>
     );
   }
@@ -34,28 +36,28 @@ export function ActionPanel() {
         <View style={[styles.dot, { backgroundColor: color }]} />
         <Text style={styles.title} numberOfLines={1}>{block.title}</Text>
         <Text style={styles.time}>{formatDuration(from)} ~ {formatDuration(from + block.duration)}</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="선택 해제" onPress={() => editor.select(null)} hitSlop={8} style={styles.close}>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('action.deselect')} onPress={() => editor.select(null)} hitSlop={8} style={styles.close}>
           <Ionicons name="close" size={18} color={colors.muted} />
         </Pressable>
       </View>
-      {!block.owned && <Text style={styles.warn}>내 블록함에 없는 블록이에요. 블록 상점에서 담아야 저장할 수 있어요.</Text>}
+      {!block.owned && <Text style={styles.warn}>{t('action.notOwned')}</Text>}
       <View style={styles.row}>
-        <Action icon="copy-outline" label="복제" primary onPress={() => editor.duplicate(selected.key)} testID="action-duplicate" />
-        <Action icon={preview.previewId === block.id ? 'pause' : 'play'} label="듣기" disabled={!block.fileUrl}
+        <Action icon="copy-outline" label={t('action.duplicate')} primary onPress={() => editor.duplicate(selected.key)} testID="action-duplicate" />
+        <Action icon={preview.previewId === block.id ? 'pause' : 'play'} label={t('action.listen')} disabled={!block.fileUrl}
           onPress={() => { usePreviewClock.getState().stop(); preview.toggle(block); }} />
         {mainIndex >= 0 ? (
           <>
-            <Action icon="chevron-back" label="왼쪽" disabled={mainIndex === 0} onPress={() => editor.moveMain(selected.key, mainIndex - 1)} />
-            <Action icon="chevron-forward" label="오른쪽" disabled={mainIndex === editor.main.items.length - 1}
+            <Action icon="chevron-back" label={t('action.left')} disabled={mainIndex === 0} onPress={() => editor.moveMain(selected.key, mainIndex - 1)} />
+            <Action icon="chevron-forward" label={t('action.right')} disabled={mainIndex === editor.main.items.length - 1}
               onPress={() => editor.moveMain(selected.key, mainIndex + 1)} />
           </>
         ) : (
           <>
-            <Action icon="chevron-back" label={`−${NUDGE_SECONDS}초`} disabled={from === 0} onPress={() => editor.nudge(selected.key, -NUDGE_SECONDS)} />
-            <Action icon="chevron-forward" label={`+${NUDGE_SECONDS}초`} onPress={() => editor.nudge(selected.key, NUDGE_SECONDS)} />
+            <Action icon="chevron-back" label={t('action.minus', { sec: NUDGE_SECONDS })} disabled={from === 0} onPress={() => editor.nudge(selected.key, -NUDGE_SECONDS)} />
+            <Action icon="chevron-forward" label={t('action.plus', { sec: NUDGE_SECONDS })} onPress={() => editor.nudge(selected.key, NUDGE_SECONDS)} />
           </>
         )}
-        <Action icon="trash-outline" label="빼기" danger onPress={() => editor.remove(selected.key)} testID="action-remove" />
+        <Action icon="trash-outline" label={t('action.remove')} danger onPress={() => editor.remove(selected.key)} testID="action-remove" />
       </View>
     </View>
   );

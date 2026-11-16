@@ -21,6 +21,7 @@ import { SITE_URL } from '@/lib/links';
 import { formatDuration, formatMinutes } from '@/lib/format';
 import { useAuth } from '@/store/auth';
 import { categoryFallbackColor, colors, radius, space } from '@/theme';
+import { useTranslation } from 'react-i18next';
 
 const isWorking = (r?: Render) => r?.status === 'PENDING' || r?.status === 'PROCESSING';
 /** 트랙 블록 색 (반복은 최대 3개까지 펼쳐서) */
@@ -29,6 +30,7 @@ const colorsOf = (track: Track | null) =>
 
 /** 전체 화면 플레이어: 완성본 만들기 → 재생, 수면 타이머, 오프라인 저장 */
 export default function PlayerScreen() {
+  const { t } = useTranslation();
   const { id, offline, autoplay } = useLocalSearchParams<{ id: string; offline?: string; autoplay?: string }>();
   const playlistId = Number(id);
   const queryClient = useQueryClient();
@@ -55,13 +57,13 @@ export default function PlayerScreen() {
   });
 
   useEffect(() => {
-    listSaved().then((tracks) => setSaved(tracks.find((t) => t.playlistId === playlistId) ?? null));
+    listSaved().then((tracks) => setSaved(tracks.find((track) => track.playlistId === playlistId) ?? null));
   }, [playlistId]);
 
   const request = useMutation({
     mutationFn: () => playlistApi.requestRender(playlistId),
     onSuccess: (r) => queryClient.setQueryData(['render', playlistId], r),
-    onError: (e) => notify('완성본을 만들지 못했어요', (e as Error).message),
+    onError: (e) => notify(t('player.renderFailed'), (e as Error).message),
   });
 
   const isCurrent = player.nowPlaying?.playlistId === playlistId;
@@ -124,14 +126,14 @@ export default function PlayerScreen() {
 
   const download = useMutation({
     mutationFn: async () => {
-      if (!p || !r?.fileUrl) throw new Error('완성본이 아직 없어요.');
+      if (!p || !r?.fileUrl) throw new Error(t('player.noRender'));
       await saveTrack(r.fileUrl, {
         playlistId, title: p.title, subtitle: `${p.owner.nickname} · ASMR Block`,
         colors: colorsOf(p.main), duration: r.duration ?? p.totalDuration,
       });
-      setSaved((await listSaved()).find((t) => t.playlistId === playlistId) ?? null);
+      setSaved((await listSaved()).find((track) => track.playlistId === playlistId) ?? null);
     },
-    onError: (e) => notify('저장하지 못했어요', (e as Error).message),
+    onError: (e) => notify(t('player.saveFailed'), (e as Error).message),
   });
 
   const removeSaved = async () => {
@@ -154,7 +156,7 @@ export default function PlayerScreen() {
   // ---------- 화면 ----------
   if (offline !== '1' && detail.isLoading) return <BlockLoader style={{ marginTop: 80 }} />;
   if (offline !== '1' && detail.isError && !saved) {
-    return <EmptyState icon="alert-circle-outline" title="조합을 불러오지 못했어요" message={(detail.error as Error).message} />;
+    return <EmptyState icon="alert-circle-outline" title={t('player.loadFailed')} message={(detail.error as Error).message} />;
   }
 
   const title = p?.title ?? saved?.title ?? '';
@@ -173,28 +175,28 @@ export default function PlayerScreen() {
     const shareId = p.collect.sourcePlaylistId ?? p.id;
     if (shareId === p.id && !p.isPublic) {
       if (!user || p.owner.id !== user.id) return;
-      const ok = await confirm('비공개 조합은 친구가 열 수 없어요', '공개로 바꾸고 공유할까요? 추천 조합에도 보여요.', '공개로 바꾸고 공유');
+      const ok = await confirm(t('player.privateTitle'), t('player.privateBody'), t('player.makePublic'));
       if (!ok) return;
       try {
         const updated = await playlistApi.setPublic(p.id, true);
         queryClient.setQueryData(['playlist', playlistId], updated);
         void queryClient.invalidateQueries({ queryKey: ['playlists'] });
       } catch (e) {
-        notify('공개로 바꾸지 못했어요', (e as Error).message);
+        notify(t('player.publicFailed'), (e as Error).message);
         return;
       }
     }
     const url = `${SITE_URL}/s/${shareId}`;
-    const message = `${p.title} — ASMR Block에서 쌓은 나만의 팅글 조합\n${url}`;
+    const message = `${t('player.shareMessage', { title: p.title })}\n${url}`;
     try {
-      await Share.share(Platform.OS === 'ios' ? { message: `${p.title} — ASMR Block에서 쌓은 나만의 팅글 조합`, url } : { message, title: p.title });
+      await Share.share(Platform.OS === 'ios' ? { message: t('player.shareMessage', { title: p.title }), url } : { message, title: p.title });
     } catch {
       // 웹 미리보기 등 공유 창이 없으면 링크 복사
       try {
         await globalThis.navigator?.clipboard?.writeText(url);
-        notify('링크를 복사했어요', '카톡에 붙여 넣으면 미리보기 카드가 나와요.');
+        notify(t('share.copied'), t('share.copiedBody'));
       } catch {
-        notify('이 링크를 보내 주세요', url);
+        notify(t('share.sendThis'), url);
       }
     }
   };
@@ -206,12 +208,12 @@ export default function PlayerScreen() {
           title: '',
           headerRight: () => (
             <View style={styles.headerActions}>
-              {p && <IconButton icon="share-social-outline" label="공유하기" onPress={() => void share()} testID="share-combo" />}
+              {p && <IconButton icon="share-social-outline" label={t('player.share')} onPress={() => void share()} testID="share-combo" />}
               {p && p.owner.id !== user?.id && (
-                <IconButton icon="flag-outline" label="신고하기" onPress={() => setReporting(true)} testID="report-combo" />
+                <IconButton icon="flag-outline" label={t('player.report')} onPress={() => setReporting(true)} testID="report-combo" />
               )}
               {p && user && p.owner.id === user.id && (
-                <IconButton icon="create-outline" label="편집" onPress={() => router.push({ pathname: '/editor/[id]', params: { id: String(playlistId) } })} />
+                <IconButton icon="create-outline" label={t('player.edit')} onPress={() => router.push({ pathname: '/editor/[id]', params: { id: String(playlistId) } })} />
               )}
             </View>
           ),
@@ -225,23 +227,23 @@ export default function PlayerScreen() {
       <Text style={styles.title} testID="player-title">{title}</Text>
       <Text style={styles.subtitle}>
         {p
-          ? `${p.owner.nickname} · 한 바퀴 ${formatMinutes(p.totalDuration)}${p.listenMinutes > 0 ? ` · ${sleepOptionLabel(p.listenMinutes)} 반복 재생` : ''}${p.mix ? ' · 레이어드' : ''}`
-          : '휴대폰에 저장된 완성본'}
+          ? `${t('player.subtitle', { owner: p.owner.nickname, length: formatMinutes(p.totalDuration) })}${p.listenMinutes > 0 ? ` · ${t('player.repeatFor', { time: sleepOptionLabel(p.listenMinutes) })}` : ''}${p.mix ? ` · ${t('player.layered')}` : ''}`
+          : t('player.savedOnPhone')}
       </Text>
       {videoCount > 0 && canPlay && (
         <View style={styles.videoRow}>
           <Ionicons name="videocam" size={16} color={colors.primaryText} />
-          <Text style={styles.videoLabel}>영상도 같이 보기 <Text style={styles.videoHint}>· 영상 블록 {videoCount}개</Text></Text>
+          <Text style={styles.videoLabel}>{t('player.videoToo')} <Text style={styles.videoHint}>· {t('player.videoBlocks', { count: videoCount })}</Text></Text>
           <Switch value={videoOn} onValueChange={setShowVideo} disabled={!isCurrent || sleepEnding}
-            trackColor={{ true: colors.primary, false: colors.border }} thumbColor="#fff" accessibilityLabel="영상도 같이 보기" testID="video-toggle" />
+            trackColor={{ true: colors.primary, false: colors.border }} thumbColor="#fff" accessibilityLabel={t('player.videoToo')} testID="video-toggle" />
         </View>
       )}
       {p?.collect.sourceOwner && (
-        <Text style={styles.source}>★ @{p.collect.sourceOwner.nickname}님의 조합을 담아 왔어요</Text>
+        <Text style={styles.source}>{t('player.collectedFrom', { nickname: p.collect.sourceOwner.nickname })}</Text>
       )}
       {p && user && p.owner.id !== user.id && (
         <View style={styles.collectRow}>
-          <Text style={styles.collectInfo}>담은 사람 {p.collect.collectCount}명</Text>
+          <Text style={styles.collectInfo}>{t('player.collectors', { count: p.collect.collectCount })}</Text>
           <CollectButton playlist={p} style={styles.collectBtn} />
         </View>
       )}
@@ -253,22 +255,22 @@ export default function PlayerScreen() {
             <>
               <BlockLoader />
               <Text style={styles.renderText} testID="render-progress">
-                블록들을 하나로 합치는 중이에요… {r?.progress ?? 0}%{'\n'}
-                {(p?.totalDuration ?? 0) > 3600 ? '긴 조합은 몇 분 걸릴 수 있어요. 다른 화면에 다녀와도 괜찮아요' : '보통 몇 초~수십 초 걸려요'}
+                {t('player.rendering', { p: r?.progress ?? 0 })}{'\n'}
+                {(p?.totalDuration ?? 0) > 3600 ? t('player.renderLong') : t('player.renderShort')}
               </Text>
               <View style={styles.progressTrack}><View style={[styles.progressBar, { width: `${r?.progress ?? 0}%` }]} /></View>
             </>
           ) : authStatus !== 'signedIn' ? (
             <>
-              <Text style={styles.renderText}>로그인하면 이 조합을 끊김 없는 완성본으로 들을 수 있어요</Text>
-              <Button title="로그인" onPress={() => router.push('/login')} style={{ alignSelf: 'stretch' }} />
+              <Text style={styles.renderText}>{t('player.loginToListen')}</Text>
+              <Button title={t('player.login')} onPress={() => router.push('/login')} style={{ alignSelf: 'stretch' }} />
             </>
           ) : (
             <>
               <Text style={styles.renderText}>
-                {r?.status === 'FAILED' ? '완성본을 만들지 못했어요. 다시 시도해주세요.' : '블록들을 끊김 없이 이어 붙인 완성본을 만들어 들어요'}
+                {r?.status === 'FAILED' ? t('player.renderFailedRetry') : t('player.renderIntro')}
               </Text>
-              <Button title={r?.status === 'FAILED' ? '다시 만들기' : '완성본 만들기'} icon="sparkles" onPress={() => request.mutate()} style={{ alignSelf: 'stretch' }} testID="make-render" />
+              <Button title={r?.status === 'FAILED' ? t('player.retry') : t('player.makeRender')} icon="sparkles" onPress={() => request.mutate()} style={{ alignSelf: 'stretch' }} testID="make-render" />
             </>
           )}
         </View>
@@ -286,7 +288,7 @@ export default function PlayerScreen() {
             minimumTrackTintColor={colors.primary}
             maximumTrackTintColor={colors.border}
             thumbTintColor={colors.text}
-            accessibilityLabel="재생 위치"
+            accessibilityLabel={t('player.position')}
           />
           <View style={styles.times}>
             <Text style={styles.time}>{formatDuration(position)}</Text>
@@ -294,41 +296,41 @@ export default function PlayerScreen() {
           </View>
 
           <View style={styles.controls}>
-            <IconButton icon="play-back" label="15초 뒤로" size={30} onPress={() => isCurrent && player.seekBy(-15)} />
+            <IconButton icon="play-back" label={t('player.back15')} size={30} onPress={() => isCurrent && player.seekBy(-15)} />
             <IconButton
               icon={isCurrent && status.playing ? 'pause-circle' : 'play-circle'}
-              label={isCurrent && status.playing ? '일시정지' : '재생'}
+              label={isCurrent && status.playing ? t('common.pause') : t('common.play')}
               size={76}
               color={colors.primary}
               onPress={playOrToggle}
             />
-            <IconButton icon="play-forward" label="15초 앞으로" size={30} onPress={() => isCurrent && player.seekBy(15)} />
+            <IconButton icon="play-forward" label={t('player.fwd15')} size={30} onPress={() => isCurrent && player.seekBy(15)} />
           </View>
 
           <View style={styles.row}>
-            <Chip label={player.loop ? '반복 재생 켜짐' : '반복 재생'} active={player.loop} onPress={() => player.setLoop(!player.loop)} />
+            <Chip label={player.loop ? t('player.loopOn') : t('player.loop')} active={player.loop} onPress={() => player.setLoop(!player.loop)} />
             {canDownload && (saved ? (
-              <Chip label="저장됨 · 삭제" active onPress={removeSaved} color={colors.success} />
+              <Chip label={t('player.savedDelete')} active onPress={removeSaved} color={colors.success} />
             ) : (
-              <Chip label={download.isPending ? '저장 중…' : '휴대폰에 저장'} onPress={() => download.mutate()} />
+              <Chip label={download.isPending ? t('player.saving') : t('player.saveToPhone')} onPress={() => download.mutate()} />
             ))}
           </View>
 
           <View style={styles.sleep}>
             <View style={styles.sleepHeader}>
               <Ionicons name="moon" size={16} color={colors.muted} />
-              <Text style={styles.sleepTitle}>수면 타이머</Text>
+              <Text style={styles.sleepTitle}>{t('player.sleepTitle')}</Text>
               {player.sleepRemainingMs !== null && (
-                <Text style={styles.sleepRemaining}>{formatRemaining(player.sleepRemainingMs)} 남음</Text>
+                <Text style={styles.sleepRemaining}>{t('player.remaining', { time: formatRemaining(player.sleepRemainingMs) })}</Text>
               )}
             </View>
             <View style={styles.row}>
               {SLEEP_OPTIONS_MIN.map((m) => (
                 <Chip key={m} label={sleepOptionLabel(m)} onPress={() => player.startSleepTimer(m)} />
               ))}
-              {player.sleepEndsAt !== null && <Chip label="끄기" onPress={player.cancelSleepTimer} />}
+              {player.sleepEndsAt !== null && <Chip label={t('player.off')} onPress={player.cancelSleepTimer} />}
             </View>
-            <Text style={styles.sleepHint}>끝나기 30초 전부터 소리가 서서히 작아지다가 멈춰요</Text>
+            <Text style={styles.sleepHint}>{t('player.sleepHint')}</Text>
           </View>
         </>
       )}
@@ -348,6 +350,7 @@ function TimelineArt({ main, mix, total, fallbackColors, progress, onSeek }: {
   /** 블록 그림을 누르거나 끌면 그 위치(0~1)로 */
   onSeek?: (ratio: number) => void;
 }) {
+  const { t } = useTranslation();
   const width = 300;
   const seek = (x: number) => onSeek?.(Math.min(1, Math.max(0, x / width)));
   const pan = usePanGesture({ runOnJS: true, minDistance: 0, enabled: !!onSeek, onBegin: (e) => seek(e.x), onUpdate: (e) => seek(e.x) });
@@ -360,7 +363,7 @@ function TimelineArt({ main, mix, total, fallbackColors, progress, onSeek }: {
     <LinearGradient colors={[colors.cardActive, colors.bg]} style={styles.art}>
       <GestureDetector gesture={pan}>
       <View style={{ width, alignSelf: 'center', gap: 10 }} collapsable={false} testID="timeline-art"
-        accessibilityRole={onSeek ? 'adjustable' : undefined} accessibilityLabel="블록을 눌러 그 시간으로">
+        accessibilityRole={onSeek ? 'adjustable' : undefined} accessibilityLabel={t('player.artA11y')}>
         {mix && (
           <View style={styles.artLane}>
             {mix.items.map((i, k) => (
@@ -376,7 +379,7 @@ function TimelineArt({ main, mix, total, fallbackColors, progress, onSeek }: {
         {progress !== null && <View pointerEvents="none" style={[styles.artHead, { left: progress * width - 1 }]} />}
       </View>
       </GestureDetector>
-      {onSeek && <Text style={styles.artHint}>블록을 누르거나 끌면 그 시간으로 가요</Text>}
+      {onSeek && <Text style={styles.artHint}>{t('player.artHint')}</Text>}
       <View style={styles.artGround} />
     </LinearGradient>
   );

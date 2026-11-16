@@ -4,6 +4,7 @@ import { AccessibilityInfo, Animated, Easing, StyleSheet, Text, View } from 'rea
 import { Brick } from '@/components/editor/Brick';
 import type { GuideArtKind } from '@/lib/guide';
 import { colors, radius, triggerColor } from '@/theme';
+import { useTranslation } from 'react-i18next';
 
 /**
  * 사용법 카드 위의 움직이는 그림 (264×150). 진짜 화면처럼 바닥판·블록함·블록으로 보여 줌.
@@ -47,6 +48,7 @@ function Piece({ color, icon, width, x, y }: { color: string; icon: Parameters<t
 
 /** 블록함 → 바닥판으로 꾹 눌러 끌어 놓기 */
 function DragArt() {
+  const { t } = useTranslation();
   const p = useLoop(3400);
   const from = { x: 102, y: 108 };
   const to = { x: 152, y: 18 };
@@ -60,13 +62,13 @@ function DragArt() {
   return (
     <View style={art.box} testID="guide-art-drag">
       <View style={[art.plate, { top: 6, height: 58 }]}>
-        <Text style={art.tag}>바닥판</Text>
+        <Text style={art.tag}>{t('guideArt.plate')}</Text>
       </View>
       <Piece color={triggerColor.tap} icon="hand-left" width={64} x={14} y={18} />
       <Piece color={triggerColor.rain} icon="rainy" width={72} x={80} y={18} />
       <Animated.View style={[art.slot, { left: to.x, top: to.y, width: 62, opacity: slot }]} />
       <View style={[art.shelf, { top: 92, height: 54 }]}>
-        <Text style={art.tag}>내 블록함</Text>
+        <Text style={art.tag}>{t('guideArt.myBlocks')}</Text>
       </View>
       <Piece color={triggerColor.whisper} icon="chatbubble-ellipses" width={58} x={22} y={from.y} />
       <View style={[art.ghost, { left: from.x, top: from.y, width: 62 }]} />
@@ -81,6 +83,7 @@ function DragArt() {
 
 /** 상점 카드의 "블록 담기" → 내 블록함으로 쏙 */
 function CollectArt() {
+  const { t } = useTranslation();
   const p = useLoop(3000);
   const pulse = at(p, [0, 0.1, 0.16, 0.22, 1], [1, 1, 0.9, 1, 1]);
   const fly = at(p, [0, 0.22, 0.62, 1], [0, 0, 1, 1]);
@@ -95,12 +98,12 @@ function CollectArt() {
       <Piece color={triggerColor.tap} icon="hand-left" width={92} x={24} y={34} />
       <Animated.View style={[art.pill, { left: 26, top: 94, transform: [{ scale: pulse }] }]}>
         <Ionicons name="add-circle" size={13} color={colors.white} />
-        <Text style={art.pillText}>블록 담기</Text>
+        <Text style={art.pillText}>{t('guideArt.add')}</Text>
       </Animated.View>
       <Ionicons name="arrow-forward" size={18} color={colors.faint} style={{ position: 'absolute', left: 148, top: 62 }} />
       <Animated.View style={[art.tray, { transform: [{ scale: bump }] }]}>
         <Ionicons name="file-tray-full" size={34} color={colors.primaryText} />
-        <Text style={art.trayText}>내 블록함</Text>
+        <Text style={art.trayText}>{t('guideArt.myBlocks')}</Text>
       </Animated.View>
       <Animated.View style={{ position: 'absolute', left: 40, top: 34, opacity: op, transform: [{ translateX: tx }, { translateY: ty }, { scale: sc }] }}>
         <Brick color={triggerColor.tap} width={60} height={BRICK_H} icon="hand-left" title="" labelMinWidth={NO_NAME} />
@@ -109,49 +112,52 @@ function CollectArt() {
   );
 }
 
-const TIMES = ['한 바퀴', '30분', '1시간', '3시간', '8시간'];
+/** 사전 guideArt.* 키 */
+const TIMES = ['loop', 'm30', 'h1', 'h3', 'h8'];
 const CHIP_W = 48;
 /** 얼마나 들을까요? 고르기 → 저장 → 완성본 만드는 중 */
 function TimeArt() {
+  const { t } = useTranslation();
   const p = useLoop(3600);
   const x = at(p, [0, 0.12, 0.2, 0.32, 0.4, 1], [CHIP_W * 1, CHIP_W * 1, CHIP_W * 2, CHIP_W * 2, CHIP_W * 4, CHIP_W * 4]);
   const save = at(p, [0, 0.46, 0.52, 0.58, 1], [1, 1, 0.9, 1, 1]);
   const fill = at(p, [0, 0.58, 0.95, 1], [-200, -200, 0, 0]);
   return (
     <View style={art.box} testID="guide-art-time">
-      <Text style={[art.caption, { top: 6 }]}>얼마나 들을까요?</Text>
+      <Text style={[art.caption, { top: 6 }]}>{t('guideArt.howLong')}</Text>
       <View style={{ position: 'absolute', left: 12, top: 28, flexDirection: 'row' }}>
-        {TIMES.map((t) => <View key={t} style={art.chip}><Text style={art.chipText}>{t}</Text></View>)}
+        {TIMES.map((k) => <View key={k} style={art.chip}><Text style={art.chipText} numberOfLines={1}>{t(`guideArt.${k}`)}</Text></View>)}
         <Animated.View style={[art.chipOn, { transform: [{ translateX: x }] }]} />
       </View>
-      <Animated.View style={[art.save, { transform: [{ scale: save }] }]}><Text style={art.saveText}>저장</Text></Animated.View>
+      <Animated.View style={[art.save, { transform: [{ scale: save }] }]}><Text style={art.saveText}>{t('guideArt.save')}</Text></Animated.View>
       <View style={art.barTrack}>
         <Animated.View style={[art.barFill, { transform: [{ translateX: fill }] }]} />
       </View>
-      <Text style={[art.caption, { top: 126 }]}>끊김 없는 완성본을 만들어요</Text>
+      <Text style={[art.caption, { top: 126 }]}>{t('guideArt.building')}</Text>
     </View>
   );
 }
 
 /** 화면을 꺼도 들리고, 정한 시간에 스르르 */
 function SleepArt() {
+  const { t } = useTranslation();
   const p = useLoop(3200);
   const dim = at(p, [0, 0.3, 0.45, 0.85, 1], [0, 0, 0.55, 0.55, 0]);
   const bars = [0, 1, 2, 3].map((i) => at(p, [0, 0.25, 0.5, 0.75, 1], i % 2 ? [0.5, 1, 0.4, 0.9, 0.5] : [1, 0.4, 0.9, 0.5, 1]));
   return (
     <View style={art.box} testID="guide-art-sleep">
       <View style={art.phone}>
-        <Text style={art.clock}>오후 11:40</Text>
+        <Text style={art.clock}>{t('guideArt.clock')}</Text>
         <View style={art.lockCard}>
           <View style={{ flex: 1 }}>
-            <Text style={art.lockTitle} numberOfLines={1}>비 오는 밤</Text>
+            <Text style={art.lockTitle} numberOfLines={1}>{t('guideArt.comboName')}</Text>
             <View style={{ flexDirection: 'row', gap: 3, height: 16, alignItems: 'center', marginTop: 4 }}>
               {bars.map((s, i) => <Animated.View key={i} style={[art.bar, { transform: [{ scaleY: s }] }]} />)}
             </View>
           </View>
           <Ionicons name="pause" size={16} color={colors.text} />
         </View>
-        <Text style={art.sleepText}>29:58 뒤에 스르르 꺼져요</Text>
+        <Text style={art.sleepText}>{t('guideArt.fades')}</Text>
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, art.dim, { opacity: dim }]} />
       </View>
       <Ionicons name="moon" size={22} color={colors.primaryText} style={{ position: 'absolute', right: 34, top: 18 }} />
@@ -161,6 +167,7 @@ function SleepArt() {
 
 /** 바닥판 블록 누르면 복제·빼기, 레이어드로 둘째 줄 */
 function EditArt() {
+  const { t } = useTranslation();
   const p = useLoop(3400);
   const bubble = at(p, [0, 0.08, 0.16, 0.5, 0.58, 1], [0, 0, 1, 1, 0, 0]);
   const layer = at(p, [0, 0.5, 0.62, 0.92, 1], [0, 0, 1, 1, 0]);
@@ -174,12 +181,12 @@ function EditArt() {
       </View>
       <Piece color={triggerColor.whisper} icon="chatbubble-ellipses" width={66} x={156} y={52} />
       <Animated.View style={[art.bubble, { opacity: bubble }]}>
-        <Text style={art.bubbleText}>복제 · 빼기</Text>
+        <Text style={art.bubbleText}>{t('guideArt.copyRemove')}</Text>
       </Animated.View>
       <Animated.View style={{ position: 'absolute', left: 60, top: 98, opacity: layer, transform: [{ translateX: layerX }] }}>
         <Brick color={triggerColor.rain} width={120} height={24} icon="rainy" title="" labelMinWidth={NO_NAME} />
       </Animated.View>
-      <Animated.Text style={[art.layerTag, { opacity: layer }]}>레이어드</Animated.Text>
+      <Animated.Text style={[art.layerTag, { opacity: layer }]}>{t('guideArt.layered')}</Animated.Text>
     </View>
   );
 }

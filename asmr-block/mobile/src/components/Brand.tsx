@@ -3,6 +3,7 @@ import { Brick } from '@/components/editor/Brick';
 import { shade } from '@/components/editor/colors';
 import type { IconName } from '@/components/ui';
 import { colors, triggerColor } from '@/theme';
+import { useTranslation } from 'react-i18next';
 
 /** 앱 이름 표시: 분홍 블록 + ASMR Block */
 export function BrandTitle() {
@@ -18,17 +19,18 @@ export function BrandTitle() {
 }
 
 const STACK: { label: string; color: string; icon: IconName; width: number; minutes: number }[] = [
-  { label: '탭핑', color: triggerColor.tap, icon: 'hand-left', width: 92, minutes: 3 },
-  { label: '바스락', color: triggerColor.crinkle, icon: 'bag-handle', width: 104, minutes: 3.5 },
-  { label: '귓속말', color: triggerColor.whisper, icon: 'chatbubble-ellipses', width: 98, minutes: 3.3 },
+  { label: 'brand.tap', color: triggerColor.tap, icon: 'hand-left', width: 92, minutes: 3 },
+  { label: 'brand.crinkle', color: triggerColor.crinkle, icon: 'bag-handle', width: 104, minutes: 3.5 },
+  { label: 'brand.whisper', color: triggerColor.whisper, icon: 'chatbubble-ellipses', width: 98, minutes: 3.3 },
 ];
 
 /** 홈 첫 화면: 트리거 블록 3개가 딸깍 이어진 모습 (블록을 쌓는다는 걸 바로 보여줌) */
 export function BrickStack() {
+  const { t } = useTranslation();
   return (
-    <View style={styles.stack} accessibilityLabel="탭핑, 바스락, 귓속말 블록을 이어 붙인 모습">
+    <View style={styles.stack} accessibilityLabel={t('brand.stack')}>
       {STACK.map((b) => (
-        <Brick key={b.label} color={b.color} width={b.width} height={34} icon={b.icon} title={b.label} minutes={b.minutes} labelMinWidth={60} />
+        <Brick key={b.label} color={b.color} width={b.width} height={34} icon={b.icon} title={t(b.label)} minutes={b.minutes} labelMinWidth={60} />
       ))}
     </View>
   );

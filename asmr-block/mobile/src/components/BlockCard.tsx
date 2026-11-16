@@ -10,7 +10,9 @@ import { useCategoryIcon } from '@/components/editor/useCategoryIcon';
 import { formatDuration } from '@/lib/format';
 import { shareLink, shareLinks } from '@/lib/share';
 import { useAuth } from '@/store/auth';
-import { categoryFallbackColor, colors, radius, space, talkLabel } from '@/theme';
+import { categoryFallbackColor, colors, radius, space } from '@/theme';
+import { useTranslation } from 'react-i18next';
+import { groupLabel, talkLabel } from '@/lib/labels';
 
 type Props = {
   block: Block;
@@ -45,13 +47,14 @@ const noteOf = (b: Block) => (b.description ?? '').replace(/^\[[^\]]*\]\s*/, '')
  * 아래 = 이름, 트리거·말소리, @크리에이터, 녹음한 곳, 담기
  */
 export function BlockCard({ block, previewing, onPreview, rank, showNote, right, style, reportable = true, hideCreator = false }: Props) {
+  const { t } = useTranslation();
   const iconOf = useCategoryIcon();
   const color = block.category?.color ?? categoryFallbackColor;
   const taste = block.price > 0 && !block.owned;
   const canPreview = !!(block.fileUrl ?? block.previewUrl);
   const [watching, setWatching] = useState(false);
   const closeVideo = () => { setWatching(false); if (previewing) onPreview(); };
-  const group = block.category?.parentName ?? block.category?.name ?? '기타';
+  const group = groupLabel(block.category) || t('common.other');
   const me = useAuth((s) => s.user);
   const canReport = reportable && block.uploader.id !== me?.id;
   return (
@@ -71,45 +74,46 @@ export function BlockCard({ block, previewing, onPreview, rank, showNote, right,
           title={formatDuration(block.duration)} minutes={block.duration / 60} labelMinWidth={60} style={styles.product}
           design={block.design && { ...block.design, hasVideo: false }} />
         {block.design?.hasVideo && (
-          <Pressable accessibilityRole="button" accessibilityLabel={`${block.title} 영상 보기`} disabled={!block.design.videoUrl}
+          <Pressable accessibilityRole="button" accessibilityLabel={t('block.videoA11y', { title: block.title })} disabled={!block.design.videoUrl}
             onPress={() => { setWatching(true); if (!previewing && canPreview) onPreview(); }} hitSlop={6} style={styles.video} testID={`watch-${block.id}`}>
             <Ionicons name="videocam" size={11} color={colors.white} />
-            <Text style={styles.videoText}>{block.design.videoUrl ? '영상 보기' : '영상'}</Text>
+            <Text style={styles.videoText}>{block.design.videoUrl ? t('block.watchVideo') : t('common.video')}</Text>
           </Pressable>
         )}
         <View style={[styles.tag, block.price === 0 && styles.tagFree]}>
           <View style={styles.tagHole} />
-          <Text style={[styles.tagText, block.price === 0 && { color: colors.success }]}>{block.price > 0 ? `${block.price}코인` : '무료'}</Text>
+          <Text style={[styles.tagText, block.price === 0 && { color: colors.success }]}>{block.price > 0 ? t('common.coins', { count: block.price }) : t('common.free')}</Text>
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`${block.title} ${previewing ? '멈춤' : taste ? '30초 들어보기' : '들어보기'}`}
+          accessibilityLabel={t(previewing ? 'block.a11yStop' : taste ? 'block.a11yTaste' : 'block.a11yListen', { title: block.title })}
           onPress={onPreview}
           disabled={!canPreview}
           hitSlop={8}
           style={[styles.listen, previewing && styles.listenOn, !canPreview && { opacity: 0.4 }]}
         >
           <Ionicons name={previewing ? 'pause' : 'play'} size={11} color={previewing ? colors.white : colors.text} />
-          {taste ? <Text style={[styles.listenText, previewing && { color: colors.white }]}>30초</Text> : null}
+          {taste ? <Text style={[styles.listenText, previewing && { color: colors.white }]}>{t('block.sec30')}</Text> : null}
         </Pressable>
       </View>
       <View style={styles.body}>
         <Text style={styles.title} numberOfLines={1}>
-          {rank ? <Text style={styles.rank}>{rank}위 </Text> : null}{block.title}
+          {rank ? <Text style={styles.rank}>{t('block.rank', { rank })}</Text> : null}{block.title}
         </Text>
-        <Text style={styles.tags} numberOfLines={1}>
-          <Text style={{ color }}>■ </Text>{group}<Text style={styles.talk}> · {talkLabel[block.talkType ?? 'NONE']}</Text>
+        {/* 영어는 트리거 이름이 길어서 두 줄까지 (한국어는 한 줄에 들어감) */}
+        <Text style={styles.tags} numberOfLines={2}>
+          <Text style={{ color }}>■ </Text>{group}<Text style={styles.talk}> · {talkLabel(block.talkType)}</Text>
         </Text>
         <View style={styles.byRow}>
           {hideCreator ? <View style={{ flex: 1 }} /> : reportable ? (
-            <Pressable accessibilityRole="link" accessibilityLabel={`@${block.uploader.nickname} 크리에이터 페이지`} hitSlop={6} style={{ flexShrink: 1, marginRight: 'auto' }}
+            <Pressable accessibilityRole="link" accessibilityLabel={t('block.creatorA11y', { nickname: block.uploader.nickname })} hitSlop={6} style={{ flexShrink: 1, marginRight: 'auto' }}
               onPress={() => router.push({ pathname: '/creator/[id]', params: { id: String(block.uploader.id) } })} testID={`creator-link-${block.id}`}>
               <Text style={styles.by} numberOfLines={1}>@{block.uploader.nickname}</Text>
             </Pressable>
           ) : <Text style={[styles.by, { marginRight: 'auto' }]} numberOfLines={1}>@{block.uploader.nickname}</Text>}
           {reportable ? (
-            <Pressable onPress={() => void shareLink(block.title, shareLinks.block(block.id), `${block.title} — @${block.uploader.nickname}님의 ASMR 블록`)}
-              hitSlop={10} accessibilityRole="button" accessibilityLabel={`${block.title} 공유하기`} testID={`share-block-${block.id}`} style={{ padding: 2 }}>
+            <Pressable onPress={() => void shareLink(block.title, shareLinks.block(block.id), t('block.shareText', { title: block.title, nickname: block.uploader.nickname }))}
+              hitSlop={10} accessibilityRole="button" accessibilityLabel={t('block.shareA11y', { title: block.title })} testID={`share-block-${block.id}`} style={{ padding: 2 }}>
               <Ionicons name="share-social-outline" size={13} color={colors.faint} />
             </Pressable>
           ) : null}

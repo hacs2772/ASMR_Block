@@ -7,18 +7,20 @@ import { slotAt } from '@/lib/videoSlot';
 import { Brick } from '@/components/editor/Brick';
 import { useCategoryIcon } from '@/components/editor/useCategoryIcon';
 import { categoryFallbackColor, colors, radius } from '@/theme';
+import { useTranslation } from 'react-i18next';
 
 /**
  * "영상도 같이 보기": 지금 나오는 블록의 영상을 소리 없이 (소리는 완성본).
  * 영상이 없는 블록이면 그 블록의 겉면(사진·스티커)을 크게. "진짜 그 장면이구나" 하는 용도라 가볍게
  */
 export function BlockVideoPanel({ playlist, position, playing }: { playlist: PlaylistDetail; position: number; playing: boolean }) {
+  const { t } = useTranslation();
   const iconOf = useCategoryIcon();
   const cycle = Math.max(1, playlist.totalDuration);
-  const t = position % cycle;
-  const slot = useMemo(() => slotAt(playlist, t), [playlist, t]);
+  const at = position % cycle;
+  const slot = useMemo(() => slotAt(playlist, at), [playlist, at]);
   const url = slot?.item.design?.videoUrl ?? null;
-  const offset = slot ? t - slot.start : 0;
+  const offset = slot ? at - slot.start : 0;
   const player = useVideoPlayer(null, (v) => {
     v.muted = true;
     v.loop = true;
@@ -55,10 +57,10 @@ export function BlockVideoPanel({ playlist, position, playing }: { playlist: Pla
         <View style={styles.still}>
           <Brick color={item.category?.color ?? categoryFallbackColor} width={220} height={74} icon={iconOf(item.category)}
             title={item.title} minutes={item.duration / 60} design={item.design && { ...item.design, hasVideo: false }} />
-          <Text style={styles.stillText}>{item.design?.hasVideo ? '이 블록 영상은 블록을 담으면 볼 수 있어요' : '이 블록은 소리만 있어요'}</Text>
+          <Text style={styles.stillText}>{item.design?.hasVideo ? t('videoPanel.locked') : t('videoPanel.soundOnly')}</Text>
         </View>
       )}
-      <View style={styles.caption}><Text style={styles.captionText} numberOfLines={1}>지금: {item.title}{url ? ' · 영상' : ''}</Text></View>
+      <View style={styles.caption}><Text style={styles.captionText} numberOfLines={1}>{t('videoPanel.now', { title: item.title })}{url ? ` · ${t('common.video')}` : ''}</Text></View>
     </View>
   );
 }

@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import type { Block, BlockDesign, Category, ItemRequest, PlaylistDetail, PlaylistSaveRequest, TrackItem } from '@/api/types';
+import { minutesLabel } from '@/lib/labels';
+import i18n from '@/locales';
 
 /**
  * 블록 편집기 상태 — 옆으로 누운 레고 블록이 왼쪽 → 오른쪽으로 흐름
@@ -23,13 +25,10 @@ export const SNAP_SECONDS = 5;
 /** 첫째 줄 블록 경계·옆 블록 끝에서 이만큼(px) 가까우면 착 붙음 */
 export const MAGNET_PX = 8;
 export const NUDGE_SECONDS = 10;
-export const LISTEN_OPTIONS = [
-  { minutes: 0, label: '한 바퀴' },
-  { minutes: 30, label: '30분' },
-  { minutes: 60, label: '1시간' },
-  { minutes: 180, label: '3시간' },
-  { minutes: 480, label: '8시간' },
-] as const;
+/** 얼마나 들을까요? 고르기 (0 = 한 바퀴만). 이름은 listenOptionLabel */
+export const LISTEN_OPTIONS = [{ minutes: 0 }, { minutes: 30 }, { minutes: 60 }, { minutes: 180 }, { minutes: 480 }] as const;
+/** "한 바퀴" · "30분" · "1시간" (영어 "One loop" · "30 min" · "1 hr") */
+export const listenOptionLabel = (minutes: number): string => (minutes <= 0 ? i18n.t('time.onceAround') : minutesLabel(minutes));
 
 export type EditorBlock = {
   id: number;
@@ -163,21 +162,22 @@ export function toSaveRequest(state: EditorState): PlaylistSaveRequest {
 
 /** "얼마나 들을까요?" 설명 문구 */
 export function listenNote(cycleSeconds: number, listenMinutes: number): string {
-  if (cycleSeconds <= 0) return '블록 상자에서 블록을 눌러 시작해요';
+  if (cycleSeconds <= 0) return i18n.t('editor.noteEmpty');
   const cycle = formatLength(cycleSeconds);
-  if (listenMinutes <= 0) return `한 바퀴(${cycle}) 듣고 끝나요`;
+  if (listenMinutes <= 0) return i18n.t('editor.noteOnce', { cycle });
   const listen = formatLength(listenMinutes * 60);
-  if (cycleSeconds >= listenMinutes * 60) return `${listen} 뒤에 스르르 작아지며 꺼져요`;
-  return `한 바퀴(${cycle})를 이어서 ${listen} 동안 들려줘요 · 약 ${Math.ceil((listenMinutes * 60) / cycleSeconds)}바퀴`;
+  if (cycleSeconds >= listenMinutes * 60) return i18n.t('editor.noteFade', { listen });
+  return i18n.t('editor.noteLoop', { cycle, listen, count: Math.ceil((listenMinutes * 60) / cycleSeconds) });
 }
 
-/** 초 → "34분", "1시간 5분", "2분 30초" */
+/** 초 → "34분", "1시간 5분", "2분 30초" (영어 "34 min", "1 hr 5 min", "2 min 30 sec") */
 export function formatLength(seconds: number): string {
   const s = Math.round(seconds);
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;
-  return [h ? `${h}시간` : '', m ? `${m}분` : '', sec ? `${sec}초` : ''].filter(Boolean).join(' ') || '0분';
+  return [h ? i18n.t('time.hours', { count: h }) : '', m ? i18n.t('time.minutes', { count: m }) : '', sec ? i18n.t('time.seconds', { count: sec }) : '']
+    .filter(Boolean).join(' ') || i18n.t('time.minutes', { count: 0 });
 }
 
 // ===================== 스토어 =====================
@@ -379,7 +379,7 @@ export function xAtTime(items: MainItem[], t: number): number {
 /** 조합 이름을 안 적었을 때 자동 이름: "숲속 바람 외 3개" */
 export function autoTitle(state: Pick<EditorState, 'main'>): string {
   const first = state.main.items[0]?.block.title;
-  if (!first) return '새 조합';
+  if (!first) return i18n.t('editor.autoTitleEmpty');
   const others = new Set(state.main.items.map((i) => i.block.id)).size - 1;
-  return others > 0 ? `${first} 외 ${others}개` : `${first} 조합`;
+  return others > 0 ? i18n.t('editor.autoTitle', { first, count: others }) : i18n.t('editor.autoTitleOne', { first });
 }

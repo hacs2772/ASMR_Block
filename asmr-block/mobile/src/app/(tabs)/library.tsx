@@ -14,9 +14,11 @@ import { Button, EmptyState, SectionTitle } from '@/components/ui';
 import { formatMinutes } from '@/lib/format';
 import { useAuth } from '@/store/auth';
 import { colors, radius, space } from '@/theme';
+import { useTranslation } from 'react-i18next';
 
 /** 블록 편집: 새로 만들기(+ 트리거로 빠르게 시작) + 내 조합 + 휴대폰에 저장한 완성본(오프라인) */
 export default function LibraryScreen() {
+  const { t } = useTranslation();
   const status = useAuth((s) => s.status);
   const mine = useQuery({ queryKey: ['playlists', 'mine'], queryFn: playlistApi.mine, enabled: status === 'signedIn' });
   const [saved, setSaved] = useState<SavedTrack[]>([]);
@@ -30,9 +32,9 @@ export default function LibraryScreen() {
   if (status !== 'signedIn') {
     return (
       <View style={styles.screen}>
-        <EmptyState icon="albums-outline" title="로그인하면 나만의 조합을 만들 수 있어요" message="담은 블록을 레고처럼 이어 붙여서 나만의 ASMR을 만들어보세요.">
+        <EmptyState icon="albums-outline" title={t('library.loginTitle')} message={t('library.loginBody')}>
           <BetaLoginButton style={{ marginTop: space.md }} />
-          <Button title="로그인" onPress={() => router.push('/login')} style={{ marginTop: space.md, alignSelf: 'stretch' }} />
+          <Button title={t('library.login')} onPress={() => router.push('/login')} style={{ marginTop: space.md, alignSelf: 'stretch' }} />
         </EmptyState>
       </View>
     );
@@ -49,15 +51,15 @@ export default function LibraryScreen() {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={mine.isRefetching} onRefresh={() => void mine.refetch()} tintColor={colors.muted} />}
     >
-      <Button title="새로 만들기" icon="add" onPress={() => router.push({ pathname: '/editor/[id]', params: { id: 'new' } })} testID="new-playlist" />
+      <Button title={t('library.newCombo')} icon="add" onPress={() => router.push({ pathname: '/editor/[id]', params: { id: 'new' } })} testID="new-playlist" />
 
       {/* 트리거로 빠르게 시작: 좋아하는 소리를 고르면 무료 블록으로 첫 조합을 쌓아 줌 (처음 온 사람용, 접어 둠) */}
       <View style={styles.quick}>
         <Pressable accessibilityRole="button" accessibilityState={{ expanded: quickOpen }} onPress={() => setQuickOpen((v) => !v)}
           style={styles.quickHead} testID="quick-start">
           <Ionicons name="flash-outline" size={16} color={colors.primaryText} />
-          <Text style={styles.quickTitle}>트리거로 빠르게 시작</Text>
-          <Text style={styles.quickHint} numberOfLines={1}>좋아하는 소리만 고르면 첫 조합을 쌓아 줘요</Text>
+          <Text style={styles.quickTitle}>{t('library.quickTitle')}</Text>
+          <Text style={styles.quickHint} numberOfLines={1}>{t('library.quickHint')}</Text>
           <Ionicons name={quickOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.muted} />
         </Pressable>
         {quickOpen && <TriggerPicker />}
@@ -65,7 +67,7 @@ export default function LibraryScreen() {
 
       {canDownload && saved.length > 0 && (
         <View style={styles.section}>
-          <SectionTitle>휴대폰에 저장됨</SectionTitle>
+          <SectionTitle>{t('library.saved')}</SectionTitle>
           {saved.map((track) => (
             <Pressable key={track.playlistId} onPress={() => playSaved(track)} style={styles.savedRow} accessibilityRole="button">
               <Ionicons name="download" size={18} color={colors.success} />
@@ -77,13 +79,13 @@ export default function LibraryScreen() {
       )}
 
       <View style={styles.section}>
-        <SectionTitle>내 조합</SectionTitle>
+        <SectionTitle>{t('library.mine')}</SectionTitle>
         {mine.isLoading ? (
           <BlockLoader size="small" />
         ) : mine.isError ? (
-          <EmptyState icon="cloud-offline-outline" title="서버에 연결할 수 없어요" message={(mine.error as Error).message} />
+          <EmptyState icon="cloud-offline-outline" title={t('errors.offline')} message={(mine.error as Error).message} />
         ) : (mine.data?.content.length ?? 0) === 0 ? (
-          <EmptyState icon="construct-outline" title="아직 만든 조합이 없어요" message="위의 버튼으로 첫 조합을 만들어보세요." />
+          <EmptyState icon="construct-outline" title={t('library.emptyTitle')} message={t('library.emptyBody')} />
         ) : (
           mine.data!.content.map((p) => (
             <PlaylistCard

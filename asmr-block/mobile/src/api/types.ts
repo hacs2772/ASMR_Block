@@ -93,7 +93,14 @@ export type NotificationType = 'BLOCK_APPROVED' | 'BLOCK_REJECTED' | 'BLOCK_COLL
 export type NotificationItem = {
   id: number;
   type: NotificationType;
+  /** 한국어 문장 (서버). 영어 화면은 title·actor·count로 문장을 새로 만듦 (lib/notifications.ts) */
   message: string;
+  /** 블록·조합 이름 */
+  title: string | null;
+  /** 담은 사람 닉네임 (여러 명이면 마지막 사람) */
+  actor: string | null;
+  /** 묶인 수 */
+  count: number;
   note: string | null;
   target: { kind: 'BLOCK' | 'UPLOADS' | 'COMBO'; id: number | null } | null;
   read: boolean;
@@ -112,6 +119,8 @@ export type Creator = {
   collectorCount: number;
   playCount: number;
   triggers: string[];
+  /** triggers와 같은 순서의 트리거 묶음 코드 (영어 화면에서 이름을 사전으로) */
+  triggerCodes?: string[];
   since: string;
 };
 

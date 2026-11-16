@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { notificationApi } from '@/api/endpoints';
 import { useAuth } from '@/store/auth';
 import { colors } from '@/theme';
+import { useTranslation } from 'react-i18next';
 
 export const NOTIFICATION_SUMMARY_KEY = ['notifications', 'summary'] as const;
 
@@ -21,12 +22,13 @@ export function useNotificationSummary() {
 
 /** 머리 오른쪽 종 아이콘 (안 읽은 수 배지) → 알림 화면 */
 export function NotificationBell() {
+  const { t } = useTranslation();
   const signedIn = useAuth((s) => s.status === 'signedIn');
   const summary = useNotificationSummary();
   if (!signedIn) return null;
   const unread = summary.data?.unread ?? 0;
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={unread > 0 ? `알림 ${unread}개 새로 옴` : '알림'} hitSlop={8}
+    <Pressable accessibilityRole="button" accessibilityLabel={unread > 0 ? t('common.notifNew', { count: unread }) : t('common.notifications')} hitSlop={8}
       onPress={() => router.push('/notifications')} style={styles.btn} testID="open-notifications">
       <Ionicons name={unread > 0 ? 'notifications' : 'notifications-outline'} size={23} color={unread > 0 ? colors.primaryText : colors.muted} />
       {unread > 0 ? (

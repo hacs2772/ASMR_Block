@@ -37,3 +37,30 @@ describe('처음 사용법 안내', () => {
     expect(FULL_STEPS[4].art).toBe('edit');
   });
 });
+
+describe('사용법 안내 영어판', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const en = require('@/lib/guide.en') as typeof import('@/lib/guide.en');
+  const webEn = readFileSync(join(__dirname, '../../frontend/src/lib/guide.en.js'), 'utf8');
+  const webEnSteps = (name: string) => {
+    const start = webEn.indexOf(`export const ${name} = [`);
+    const body = webEn.slice(start, webEn.indexOf('\n];', start));
+    return [...body.matchAll(/art: '(\w+)',\s*title: '([^']+)'/g)].map((m) => [m[1], m[2]]);
+  };
+
+  it('한국어 원문과 순서·그림이 같고, 제목은 웹 영어판과 같음', () => {
+    expect(en.WELCOME_STEPS_EN.map((s) => s.art)).toEqual(WELCOME_STEPS.map((s) => s.art));
+    expect(en.EDITOR_STEPS_EN.map((s) => s.art)).toEqual(EDITOR_STEPS.map((s) => s.art));
+    expect(en.FULL_STEPS_EN.map((s) => s.art)).toEqual(FULL_STEPS.map((s) => s.art));
+    expect(webEnSteps('WELCOME_STEPS_EN')).toEqual(pairs(en.WELCOME_STEPS_EN));
+    expect(webEnSteps('EDITOR_STEPS_EN')).toEqual(pairs(en.EDITOR_STEPS_EN));
+  });
+
+  it('영어만, 휴대폰 한 화면에 들어가는 길이', () => {
+    for (const s of [...en.WELCOME_STEPS_EN, ...en.EDITOR_STEPS_EN]) {
+      expect(/[가-힣]/.test(s.title + s.body)).toBe(false);
+      expect(s.title.length).toBeLessThanOrEqual(34);
+      expect(s.body.length).toBeLessThanOrEqual(190);
+    }
+  });
+});

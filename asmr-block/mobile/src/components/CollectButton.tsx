@@ -6,6 +6,7 @@ import type { CollectInfo } from '@/api/types';
 import { Button } from '@/components/ui';
 import { notify } from '@/lib/dialog';
 import { useAuth } from '@/store/auth';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   playlist: { id: number; owner: { id: number }; collect: CollectInfo };
@@ -17,6 +18,7 @@ type Props = {
  * 이미 담았으면 "내 조합에 있어요"(누르면 내 복사본 열기), 아직 없는 유료 블록이 있으면 구매 준비 중.
  */
 export function CollectButton({ playlist, style }: Props) {
+  const { t } = useTranslation();
   const status = useAuth((s) => s.status);
   const user = useAuth((s) => s.user);
   const queryClient = useQueryClient();
@@ -27,28 +29,28 @@ export function CollectButton({ playlist, style }: Props) {
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
       queryClient.invalidateQueries({ queryKey: ['playlist', playlist.id] });
       queryClient.invalidateQueries({ queryKey: ['library'] });
-      notify('내 조합에 담았어요', '홈에서 바로 듣거나, 블록 편집에서 내 마음대로 고칠 수 있어요.');
+      notify(t('combo.collectedTitle'), t('combo.collectedBody'));
     },
-    onError: (e) => notify('담지 못했어요', (e as Error).message),
+    onError: (e) => notify(t('combo.collectFailed'), (e as Error).message),
   });
 
   if (status !== 'signedIn') {
-    return <Button title="로그인하고 담기" variant="secondary" icon="star-outline" onPress={() => router.push('/login')} style={style} />;
+    return <Button title={t('combo.loginToCollect')} variant="secondary" icon="star-outline" onPress={() => router.push('/login')} style={style} />;
   }
   if (user && playlist.owner.id === user.id) return null;
 
   const copyId = playlist.collect.collectedId;
   if (copyId) {
     return (
-      <Button title="내 조합에 있어요" variant="secondary" icon="checkmark-circle" style={style} testID={`collected-${playlist.id}`}
+      <Button title={t('combo.inMine')} variant="secondary" icon="checkmark-circle" style={style} testID={`collected-${playlist.id}`}
         onPress={() => router.push({ pathname: '/player/[id]', params: { id: String(copyId) } })} />
     );
   }
   if (playlist.collect.lockedCount > 0) {
-    return <Button title={`유료 블록 ${playlist.collect.lockedCount}개 · 구매 준비 중`} variant="secondary" icon="lock-closed" disabled onPress={() => {}} style={style} />;
+    return <Button title={t('combo.locked', { count: playlist.collect.lockedCount })} variant="secondary" icon="lock-closed" disabled onPress={() => {}} style={style} />;
   }
   return (
-    <Button title="한 번에 담기" icon="star" loading={collect.isPending} onPress={() => collect.mutate()} style={style}
+    <Button title={t('combo.collect')} icon="star" loading={collect.isPending} onPress={() => collect.mutate()} style={style}
       testID={`collect-${playlist.id}`} />
   );
 }

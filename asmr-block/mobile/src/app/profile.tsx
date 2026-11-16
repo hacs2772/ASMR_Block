@@ -6,8 +6,11 @@ import { API_URL } from '@/lib/config';
 import { confirm, notify } from '@/lib/dialog';
 import { useAuth } from '@/store/auth';
 import { colors, radius, space } from '@/theme';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitch } from '@/locales/LanguageSwitch';
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const { status, user, logout, deleteAccount } = useAuth();
   const player = usePlayer();
 
@@ -17,14 +20,14 @@ export default function ProfileScreen() {
   };
 
   const handleDelete = async () => {
-    const ok = await confirm('회원 탈퇴', '정말 탈퇴할까요? 내 조합이 모두 삭제되고 되돌릴 수 없어요.', '탈퇴', true);
+    const ok = await confirm(t('profile.leaveTitle'), t('profile.leaveConfirm'), t('profile.leaveOk'), true);
     if (!ok) return;
     try {
       player.stop();
       await deleteAccount();
-      notify('탈퇴 처리되었어요.');
+      notify(t('profile.left'));
     } catch (e) {
-      notify('탈퇴하지 못했어요', (e as Error).message);
+      notify(t('profile.leaveFailed'), (e as Error).message);
     }
   };
 
@@ -34,26 +37,30 @@ export default function ProfileScreen() {
         <View style={styles.card}>
           <Text style={styles.nickname}>{user.nickname}</Text>
           <Text style={styles.email}>{user.email}</Text>
-          {user.role === 'ADMIN' && <Text style={styles.badge}>관리자</Text>}
+          {user.role === 'ADMIN' && <Text style={styles.badge}>{t('profile.admin')}</Text>}
         </View>
       ) : (
-        <EmptyState icon="person-circle-outline" title="로그인하고 나만의 조합을 저장하세요">
-          <Button title="로그인" onPress={() => router.push('/login')} style={{ marginTop: space.md, alignSelf: 'stretch' }} />
-          <Button title="회원가입" variant="secondary" onPress={() => router.push('/signup')} style={{ alignSelf: 'stretch' }} />
+        <EmptyState icon="person-circle-outline" title={t('profile.loginPrompt')}>
+          <Button title={t('profile.login')} onPress={() => router.push('/login')} style={{ marginTop: space.md, alignSelf: 'stretch' }} />
+          <Button title={t('profile.signup')} variant="secondary" onPress={() => router.push('/signup')} style={{ alignSelf: 'stretch' }} />
         </EmptyState>
       )}
 
       {status === 'signedIn' && (
         <View style={styles.actions}>
-          <Button title="로그아웃" variant="secondary" onPress={handleLogout} />
-          <Button title="회원 탈퇴" variant="danger" onPress={handleDelete} />
+          <Button title={t('profile.logout')} variant="secondary" onPress={handleLogout} />
+          <Button title={t('profile.leave')} variant="danger" onPress={handleDelete} />
         </View>
       )}
 
+      <View style={styles.info} testID="language-card">
+        <LanguageSwitch />
+      </View>
+
       <View style={styles.info}>
-        <Text style={styles.infoLabel}>연결된 서버</Text>
+        <Text style={styles.infoLabel}>{t('profile.server')}</Text>
         <Text style={styles.infoValue} selectable>{API_URL}</Text>
-        <Text style={styles.infoHint}>연결이 안 되면 PC에서 서버가 켜져 있는지, 휴대폰과 PC가 같은 와이파이인지 확인하세요.</Text>
+        <Text style={styles.infoHint}>{t('profile.serverHint')}</Text>
       </View>
     </ScrollView>
   );

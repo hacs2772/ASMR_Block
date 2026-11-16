@@ -73,7 +73,8 @@ const rel = (p) => path.relative(SRC, p).split(path.sep).join('/');
 /** 주석을 빼고 (줄 번호는 그대로) */
 function stripComments(code) {
   return code
-    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    // 'audio/*' 같은 글자 속 /* 는 주석이 아님 → 줄 처음·공백·{ ( , ; 뒤의 /* 만
+    .replace(/(^|[\s{(,;])\/\*[\s\S]*?\*\//g, (m, pre) => pre + m.slice(pre.length).replace(/[^\n]/g, ' '))
     .replace(/(^|[^:"'`\\])\/\/.*$/gm, '$1');
 }
 

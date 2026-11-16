@@ -17,12 +17,15 @@ import { Button, EmptyState } from '@/components/ui';
 import { confirm, notify } from '@/lib/dialog';
 import { useAuth } from '@/store/auth';
 import {
-  autoTitle, cycleLength, editorBlockOf, formatLength, LISTEN_OPTIONS, mainLayout, MAX_TOTAL_SECONDS, toSaveRequest, useEditor,
+  autoTitle, cycleLength, editorBlockOf, formatLength, LISTEN_OPTIONS, listenOptionLabel, mainLayout, MAX_TOTAL_SECONDS, toSaveRequest, useEditor,
 } from '@/store/editor';
 import { colors, radius, space } from '@/theme';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/locales';
 
 /** 블록 편집기. id가 "new"면 새로 만들기 */
 export default function EditorScreen() {
+  const { t } = useTranslation();
   // start=17,19,20: 홈의 트리거 고르기에서 넘어오면 그 블록들로 첫째 줄을 채워 시작
   const { id, start } = useLocalSearchParams<{ id: string; start?: string }>();
   const playlistId = id && id !== 'new' ? Number(id) : null;
@@ -65,7 +68,7 @@ export default function EditorScreen() {
             if (block) useEditor.getState().addMain(editorBlockOf(block));
           }
         })
-        .catch(() => notify('내 블록함을 불러오지 못했어요'));
+        .catch(() => notify(i18n.t('editorScreen.libraryFailed')));
     } else if (detail.data) useEditor.getState().load(detail.data);
   }, [sessionKey, routeKey, playlistId, detail.data, start, queryClient]);
 
@@ -83,39 +86,39 @@ export default function EditorScreen() {
       if (render) queryClient.setQueryData(['render', saved.id], render);
       router.replace({ pathname: '/player/[id]', params: { id: String(saved.id), autoplay: '1' } });
     },
-    onError: (e) => notify('저장하지 못했어요', (e as Error).message),
+    onError: (e) => notify(t('editorScreen.saveFailed'), (e as Error).message),
   });
 
   const handleSave = () => {
     mixPreview.stop();
     const state = useEditor.getState();
     if (!state.title.trim()) state.setTitle(autoTitle(state));
-    if (state.main.items.length === 0) return notify('첫째 줄에 블록을 1개 이상 놓아주세요.');
-    if (cycleLength(state) > MAX_TOTAL_SECONDS) return notify('한 바퀴는 최대 10시간이에요.');
+    if (state.main.items.length === 0) return notify(t('editorScreen.needBlock'));
+    if (cycleLength(state) > MAX_TOTAL_SECONDS) return notify(t('editorScreen.tooLong'));
     const notOwned = [...state.main.items, ...(state.mix.enabled ? state.mix.items : [])].some((i) => !i.block.owned);
-    if (notOwned) return notify('내 블록함에 없는 블록이 있어요', '블록 상점에서 담거나, 그 블록을 빼고 저장해주세요.');
+    if (notOwned) return notify(t('editorScreen.notOwned'), t('editorScreen.notOwnedBody'));
     save.mutate();
   };
 
   const handleDelete = async () => {
-    if (!playlistId || !(await confirm('조합 삭제', '이 조합을 삭제할까요?', '삭제', true))) return;
-    await playlistApi.remove(playlistId).catch((e) => notify('삭제하지 못했어요', (e as Error).message));
+    if (!playlistId || !(await confirm(t('editorScreen.deleteTitle'), t('editorScreen.deleteBody'), t('editorScreen.delete'), true))) return;
+    await playlistApi.remove(playlistId).catch((e) => notify(t('editorScreen.deleteFailed'), (e as Error).message));
     queryClient.invalidateQueries({ queryKey: ['playlists'] });
     router.back();
   };
 
   if (status !== 'signedIn') {
     return (
-      <EmptyState icon="lock-closed-outline" title="로그인이 필요해요">
+      <EmptyState icon="lock-closed-outline" title={t('editorScreen.loginNeeded')}>
         <BetaLoginButton style={{ marginTop: space.md }} />
-        <Button title="로그인" onPress={() => router.push('/login')} style={{ alignSelf: 'stretch', marginTop: space.md }} />
+        <Button title={t('editorScreen.login')} onPress={() => router.push('/login')} style={{ alignSelf: 'stretch', marginTop: space.md }} />
       </EmptyState>
     );
   }
   if (sessionKey !== routeKey) {
     return detail.isError
-      ? <EmptyState icon="alert-circle-outline" title="불러오지 못했어요" message={(detail.error as Error).message} />
-      : <BlockLoader style={{ marginTop: 60 }} label="조합을 불러오는 중" />;
+      ? <EmptyState icon="alert-circle-outline" title={t('editorScreen.loadFailed')} message={(detail.error as Error).message} />
+      : <BlockLoader style={{ marginTop: 60 }} label={t('editorScreen.loading')} />;
   }
 
   /** 전체 듣기 시작 위치: 고른 블록이 있으면 거기서부터 */
@@ -140,8 +143,8 @@ export default function EditorScreen() {
     >
       <Stack.Screen
         options={{
-          title: playlistId ? '조합 수정' : '새 조합',
-          headerRight: () => <Button title="저장" onPress={handleSave} loading={save.isPending} style={styles.headerSave} testID="save" />,
+          title: playlistId ? t('editorScreen.editTitle') : t('editorScreen.newTitle'),
+          headerRight: () => <Button title={t('editorScreen.save')} onPress={handleSave} loading={save.isPending} style={styles.headerSave} testID="save" />,
         }}
       />
       <ScrollView ref={scrollRef} contentContainerStyle={[styles.content, boxExpanded && { paddingBottom: screenH * 0.5 }]}
@@ -152,20 +155,20 @@ export default function EditorScreen() {
               style={styles.titleInput}
               value={editor.title}
               onChangeText={editor.setTitle}
-              placeholder="이름 (안 적으면 자동으로)"
+              placeholder={t('editorScreen.namePh')}
               placeholderTextColor={colors.faint}
               maxLength={100}
-              accessibilityLabel="조합 이름"
+              accessibilityLabel={t('editorScreen.nameA11y')}
               testID="title-input"
             />
             <Text style={styles.meta} numberOfLines={1} testID="editor-meta">
-              한 바퀴 {formatLength(cycle)} · 블록 {blockCount}개 · {listen && listen.minutes > 0 ? `${listen.label} 반복` : '한 바퀴만'}
+              {t('editorScreen.meta', { length: formatLength(cycle), count: blockCount, listen: listen && listen.minutes > 0 ? t('editorScreen.repeat', { time: listenOptionLabel(listen.minutes) }) : t('editorScreen.onceOnly') })}
             </Text>
           </View>
           <View style={styles.publicBox}>
-            <Text style={styles.publicLabel}>공개</Text>
+            <Text style={styles.publicLabel}>{t('editorScreen.public')}</Text>
             <Switch value={editor.isPublic} onValueChange={editor.setIsPublic}
-              trackColor={{ true: colors.primary, false: colors.border }} thumbColor="#fff" accessibilityLabel="공개" />
+              trackColor={{ true: colors.primary, false: colors.border }} thumbColor="#fff" accessibilityLabel={t('editorScreen.public')} />
           </View>
         </View>
 
@@ -176,7 +179,7 @@ export default function EditorScreen() {
         <ActionPanel />
 
         {playlistId !== null && (
-          <Button title="이 조합 삭제" variant="danger" onPress={handleDelete} style={{ marginTop: space.md }} />
+          <Button title={t('editorScreen.deleteThis')} variant="danger" onPress={handleDelete} style={{ marginTop: space.md }} />
         )}
       </ScrollView>
       <BlockBox />

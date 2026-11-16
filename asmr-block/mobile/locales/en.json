@@ -1,0 +1,5 @@
+{
+  "ios": {
+    "NSPhotoLibraryUsageDescription": "To choose a cover photo or a video for your block, the app needs to open your photo library."
+  }
+}

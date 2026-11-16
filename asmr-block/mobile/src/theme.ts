@@ -28,8 +28,6 @@ export const radius = { sm: 8, md: 12, lg: 16, pill: 999 } as const;
 
 export const categoryFallbackColor = '#9AA0AE';
 
-/** 말소리 표시 이름 */
-export const talkLabel = { NONE: '노토킹', WHISPER: '속삭임', TALK: '말하기' } as const;
 
 /** 트리거 묶음 색 (서버 분류 색과 같은 값, 홈 장식처럼 데이터 없이 그릴 때만) */
 export const triggerColor = {

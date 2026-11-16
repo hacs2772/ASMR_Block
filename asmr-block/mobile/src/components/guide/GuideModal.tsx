@@ -4,11 +4,13 @@ import type { GuideStep } from '@/lib/guide';
 import { colors, radius, space } from '@/theme';
 import { Button } from '@/components/ui';
 import { GuideArt } from './GuideArt';
+import { useTranslation } from 'react-i18next';
 
 type Props = { visible: boolean; steps: GuideStep[]; onClose: () => void; finishLabel?: string };
 
 /** 사용법 팝업: 움직이는 그림 + 한 줄 설명, 점으로 몇 번째인지, 건너뛰기·다음 */
-export function GuideModal({ visible, steps, onClose, finishLabel = '시작하기' }: Props) {
+export function GuideModal({ visible, steps, onClose, finishLabel }: Props) {
+  const { t } = useTranslation();
   const [index, setIndex] = useState(0);
   const { width } = useWindowDimensions();
   // 닫을 때 처음 장으로 돌려 둠 (다시 열면 1장부터)
@@ -27,16 +29,16 @@ export function GuideModal({ visible, steps, onClose, finishLabel = '시작하�
           <Text style={styles.body}>{step.body}</Text>
           <View style={styles.dots}>
             {steps.map((s, i) => (
-              <Pressable key={s.title} onPress={() => setIndex(i)} hitSlop={8} accessibilityRole="button" accessibilityLabel={`${i + 1}번째 안내`}>
+              <Pressable key={s.title} onPress={() => setIndex(i)} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('guideModal.nth', { n: i + 1 })}>
                 <View style={[styles.dot, i === index && styles.dotOn]} />
               </Pressable>
             ))}
           </View>
           <View style={styles.row}>
             {last ? <View style={{ flex: 1 }} /> : (
-              <Button title="건너뛰기" variant="ghost" onPress={finish} style={{ flex: 1 }} testID="guide-skip" />
+              <Button title={t('guideModal.skip')} variant="ghost" onPress={finish} style={{ flex: 1 }} testID="guide-skip" />
             )}
-            <Button title={last ? finishLabel : '다음'} onPress={() => (last ? finish() : setIndex(index + 1))}
+            <Button title={last ? finishLabel ?? t('guideModal.finishWelcome') : t('guideModal.next')} onPress={() => (last ? finish() : setIndex(index + 1))}
               style={{ flex: 1 }} testID="guide-next" />
           </View>
         </View>

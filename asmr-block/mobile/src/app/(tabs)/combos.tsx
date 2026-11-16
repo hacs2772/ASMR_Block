@@ -11,16 +11,19 @@ import { PlaylistCard } from '@/components/PlaylistCard';
 import { Chip, EmptyState } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { colors, space } from '@/theme';
+import { Trans, useTranslation } from 'react-i18next';
 
 type Sort = 'trending' | 'latest' | 'popular';
-const SORTS: { key: Sort; label: string }[] = [
-  { key: 'trending', label: '요즘 뜨는' },
-  { key: 'latest', label: '새로 올라온' },
-  { key: 'popular', label: '많이 들은' },
+/** 이름 = 사전 combos.sort.{key} */
+const SORTS: { key: Sort }[] = [
+  { key: 'trending' },
+  { key: 'latest' },
+  { key: 'popular' },
 ];
 
 /** ★ 추천 조합: 다른 사람이 쌓은 조합을 들어 보고, 마음에 들면 한 번에 담기 (블록 + 조합) */
 export default function CombosScreen() {
+  const { t } = useTranslation();
   const [sort, setSort] = useState<Sort>('trending');
   const userId = useAuth((s) => s.user?.id ?? null);
   const query = useQuery({
@@ -40,9 +43,9 @@ export default function CombosScreen() {
       refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} tintColor={colors.muted} />}
       ListHeaderComponent={
         <View style={styles.head}>
-          <Text style={styles.lead}>다른 사람이 쌓은 조합을 들어 보고, 마음에 들면 <Text style={styles.em}>한 번에 담기</Text>. 블록은 내 블록함에, 조합은 내 조합에 들어와요.</Text>
+          <Text style={styles.lead}><Trans i18nKey="combos.lead" components={{ em: <Text style={styles.em} /> }} /></Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-            {SORTS.map((s) => <Chip key={s.key} label={s.label} active={sort === s.key} onPress={() => setSort(s.key)} testID={`sort-${s.key}`} />)}
+            {SORTS.map((s) => <Chip key={s.key} label={t(`combos.sort.${s.key}`)} active={sort === s.key} onPress={() => setSort(s.key)} testID={`sort-${s.key}`} />)}
           </ScrollView>
         </View>
       }
@@ -60,10 +63,10 @@ export default function CombosScreen() {
                     <View style={styles.statLine}>
                       <Ionicons name="star" size={12} color={colors.primaryText} />
                       <Text style={styles.statText}>
-                        {item.collect.collectCount > 0 ? `담은 사람 ${item.collect.collectCount}명` : '새 조합'}
+                        {item.collect.collectCount > 0 ? t('combos.collectors', { count: item.collect.collectCount }) : t('combos.new')}
                       </Text>
                     </View>
-                    {item.recentPlays ? <Text style={styles.statText}>이번 주 {item.recentPlays}번 들음</Text> : null}
+                    {item.recentPlays ? <Text style={styles.statText}>{t('combos.weekPlays', { count: item.recentPlays })}</Text> : null}
                   </View>
                   <CollectButton playlist={item} style={styles.collect} />
                 </View>
@@ -74,8 +77,8 @@ export default function CombosScreen() {
       )}
       ListEmptyComponent={
         query.isLoading ? <BlockLoader style={{ marginTop: 40 }} />
-          : query.isError ? <EmptyState icon="cloud-offline-outline" title="서버에 연결할 수 없어요" message={(query.error as Error).message} />
-            : <EmptyState icon="star-outline" title="아직 추천할 조합이 없어요" message="조합을 만들고 공개로 저장하면 여기에 올라와요." />
+          : query.isError ? <EmptyState icon="cloud-offline-outline" title={t('errors.offline')} message={(query.error as Error).message} />
+            : <EmptyState icon="star-outline" title={t('combos.emptyTitle')} message={t('combos.emptyBody')} />
       }
     />
   );

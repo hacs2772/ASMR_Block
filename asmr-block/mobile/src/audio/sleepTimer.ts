@@ -1,12 +1,13 @@
+import { minutesLabel } from '@/lib/labels';
+
 /** 수면 타이머: 끝나기 전 FADE_MS 동안 볼륨을 서서히 줄이고, 끝나면 멈춤 */
 export const FADE_MS = 30_000;
 
 /** 수면 타이머 선택지(분). 밤새 듣는 사람을 위해 8시간까지 */
 export const SLEEP_OPTIONS_MIN = [15, 30, 60, 120, 240, 480] as const;
 
-export function sleepOptionLabel(minutes: number): string {
-  return minutes < 60 ? `${minutes}분` : `${minutes / 60}시간`;
-}
+/** "15분" · "2시간" (영어 "15 min" · "2 hr") */
+export const sleepOptionLabel = (minutes: number): string => minutesLabel(minutes);
 
 /** 남은 시간(ms)에 따른 볼륨 (0 ~ baseVolume) */
 export function sleepTimerVolume(remainingMs: number, baseVolume = 1, fadeMs = FADE_MS): number {

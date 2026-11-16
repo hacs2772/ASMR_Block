@@ -1,13 +1,14 @@
 import { Alert, Platform } from 'react-native';
+import i18n from '@/locales';
 
 /** 확인 창 (휴대폰: 시스템 알림창 / 웹 미리보기: 브라우저 confirm) */
-export function confirm(title: string, message: string, confirmText = '확인', destructive = false): Promise<boolean> {
+export function confirm(title: string, message: string, confirmText = i18n.t('common.ok'), destructive = false): Promise<boolean> {
   if (Platform.OS === 'web') {
     return Promise.resolve(globalThis.confirm?.(`${title}\n\n${message}`) ?? false);
   }
   return new Promise((resolve) => {
     Alert.alert(title, message, [
-      { text: '취소', style: 'cancel', onPress: () => resolve(false) },
+      { text: i18n.t('common.cancel'), style: 'cancel', onPress: () => resolve(false) },
       { text: confirmText, style: destructive ? 'destructive' : 'default', onPress: () => resolve(true) },
     ]);
   });

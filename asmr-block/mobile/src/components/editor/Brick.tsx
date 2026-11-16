@@ -8,6 +8,7 @@ import { StickerArt } from '@/components/StickerArt';
 import { useStickers } from '@/store/stickers';
 import { shade } from './colors';
 import { colors } from '@/theme';
+import { useTranslation } from 'react-i18next';
 
 export const BRICK_HEIGHT = 46;
 export const MIX_BRICK_HEIGHT = 34;
@@ -45,6 +46,7 @@ const EDGE = 1.5;
  * 폭 = 소리 길이, 겉면 홈 한 칸 = 1분, 색 = 트리거, 아이콘으로 구분하고 넓으면 글자까지.
  */
 export function Brick({ color, width, height = BRICK_HEIGHT, icon, title, minutes, selected, hole, dimmed, labelMinWidth = NAME_MIN_WIDTH, design, style }: Props) {
+  const { t } = useTranslation();
   const base = shade(color, -0.12);
   const edge = shade(base, -0.42);
   const top = shade(base, 0.32);
@@ -102,7 +104,7 @@ export function Brick({ color, width, height = BRICK_HEIGHT, icon, title, minute
         )}
         {design?.hasVideo && (
           <View style={styles.film} pointerEvents="none">
-            <Text style={styles.filmText}>▶{width > 100 && height >= BRICK_HEIGHT ? ' 영상' : ''}</Text>
+            <Text style={styles.filmText}>▶{width > 100 && height >= BRICK_HEIGHT ? ` ${t('common.video')}` : ''}</Text>
           </View>
         )}
       </View>

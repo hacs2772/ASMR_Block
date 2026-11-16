@@ -19,8 +19,11 @@ import { Trimmer } from '@/components/upload/Trimmer';
 import { canTrim, initialRange, trimParams, type TrimRange } from '@/lib/trim';
 import { useStickers } from '@/store/stickers';
 import { useAuth } from '@/store/auth';
-import { categoryFallbackColor, colors, radius, space, talkLabel } from '@/theme';
+import { categoryFallbackColor, colors, radius, space } from '@/theme';
 import { RecordingGuideLink } from '@/components/upload/RecordingGuideLink';
+import { useTranslation } from 'react-i18next';
+import { categoryLabel, patternLabel, stickerName, talkLabel } from '@/lib/labels';
+import i18n from '@/locales';
 
 const PRICE_STEPS = [10, 20, 30, 50, 100];
 const TALKS: TalkType[] = ['NONE', 'WHISPER', 'TALK'];
@@ -48,6 +51,7 @@ function appendMedia(form: FormData, field: string, media: PickedMedia, fallback
  * 아래에서 내가 올린 블록의 검수 상태와 담은 사람 수를 봄.
  */
 export default function UploadScreen() {
+  const { t } = useTranslation();
   const status = useAuth((s) => s.status);
   const user = useAuth((s) => s.user);
   const queryClient = useQueryClient();
@@ -115,7 +119,7 @@ export default function UploadScreen() {
     if (!picked) return;
     const limit = kind === 'video' ? maxVideoMb : maxFileMb;
     if (picked.size && picked.size > limit * 1024 * 1024) {
-      notify('파일이 너무 커요', `${kind === 'video' ? '영상은' : '소리 파일은'} ${limit}MB까지 올릴 수 있어요.`);
+      notify(t('upload.tooBig'), t(kind === 'video' ? 'upload.videoMax' : 'upload.audioMax', { mb: limit }));
       return;
     }
     setFile(picked);
@@ -133,7 +137,7 @@ export default function UploadScreen() {
       setDraft(d);
       setRange(initialRange(d.duration, maxSeconds));
     } catch (e) {
-      if (token === draftToken.current) notify('파형을 만들지 못했어요', `${(e as Error).message}\n구간 고르기 없이 파일 그대로 올릴 수 있어요.`);
+      if (token === draftToken.current) notify(t('upload.draftFailed'), `${(e as Error).message}\n${t('upload.draftFailedBody')}`);
     } finally {
       if (token === draftToken.current) setDraftPending(false);
     }
@@ -145,7 +149,7 @@ export default function UploadScreen() {
     const picked = result.assets[0];
     const maxMb = policy.data?.maxImageMb ?? 10;
     if (picked.fileSize && picked.fileSize > maxMb * 1024 * 1024) {
-      notify('파일이 너무 커요', `${maxMb}MB까지 올릴 수 있어요.`);
+      notify(t('upload.tooBig'), t('upload.imageMax', { mb: maxMb }));
       return;
     }
     setCover(picked);
@@ -196,23 +200,23 @@ export default function UploadScreen() {
     onSuccess: () => {
       reset();
       queryClient.invalidateQueries({ queryKey: ['my-uploads'] });
-      notify('올렸어요!', '검수가 끝나면 상점에 나와요. 아래 "내가 올린 블록"에서 상태를 볼 수 있어요.');
+      notify(t('upload.uploaded'), t('upload.uploadedBody'));
     },
-    onError: (e) => notify('올리지 못했어요', (e as Error).message),
+    onError: (e) => notify(t('upload.uploadFailed'), (e as Error).message),
   });
 
   const tooShort = draft && !canTrim(draft.duration, minSeconds);
-  const missing = !file ? (kind === 'video' ? '영상을 골라주세요' : '소리 파일을 골라주세요') : draftPending ? '파일 올리는 중…'
-    : tooShort ? `${minSeconds}초보다 긴 소리를 골라주세요` : !title.trim() ? '이름을 적어주세요' : !categoryId ? '트리거 종류를 골라주세요'
-    : !ownRecording ? '직접 녹음한 소리인지 확인해주세요' : null;
+  const missing = !file ? t(kind === 'video' ? 'upload.needVideo' : 'upload.needAudio') : draftPending ? t('upload.drafting')
+    : tooShort ? t('upload.tooShort', { sec: minSeconds }) : !title.trim() ? t('upload.needTitle') : !categoryId ? t('upload.needTrigger')
+    : !ownRecording ? t('upload.needOwn') : null;
 
   if (status !== 'signedIn') {
     return (
       <View style={styles.screen}>
-        <EmptyState icon="cloud-upload-outline" title="로그인하면 내 트리거를 블록으로 팔 수 있어요"
-          message="직접 녹음한 탭핑·바스락·귓속말이면 돼요. 검수 후 블록 상점에 올라가요.">
+        <EmptyState icon="cloud-upload-outline" title={t('upload.loginTitle')}
+          message={t('upload.loginBody')}>
           <BetaLoginButton style={{ marginTop: space.md }} />
-          <Button title="로그인" onPress={() => router.push('/login')} style={{ marginTop: space.md, alignSelf: 'stretch' }} />
+          <Button title={t('upload.login')} onPress={() => router.push('/login')} style={{ marginTop: space.md, alignSelf: 'stretch' }} />
           <RecordingGuideLink style={{ marginTop: space.lg, alignSelf: 'stretch' }} />
         </EmptyState>
       </View>
@@ -224,13 +228,13 @@ export default function UploadScreen() {
       refreshControl={<RefreshControl refreshing={mine.isRefetching} onRefresh={() => void mine.refetch()} tintColor={colors.muted} />}>
       <RecordingGuideLink style={{ marginBottom: space.md }} />
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>새 블록 올리기</Text>
+        <Text style={styles.cardTitle}>{t('upload.cardTitle')}</Text>
 
-        <Text style={styles.label}>올릴 것</Text>
+        <Text style={styles.label}>{t('upload.what')}</Text>
         <View style={styles.kinds} accessibilityRole="radiogroup">
           {([
-            { k: 'audio', icon: 'musical-notes', title: '소리만', body: '녹음 파일 (m4a·mp3·wav…)' },
-            { k: 'video', icon: 'videocam', title: '영상', body: '소리는 영상에서, 같은 구간으로 같이 잘려요' },
+            { k: 'audio', icon: 'musical-notes', title: 'upload.kindAudio', body: 'upload.kindAudioBody' },
+            { k: 'video', icon: 'videocam', title: 'upload.kindVideo', body: 'upload.kindVideoBody' },
           ] as const).map((o) => {
             const on = kind === o.k;
             return (
@@ -238,37 +242,37 @@ export default function UploadScreen() {
                 style={[styles.kind, on && styles.kindOn]} testID={`upload-kind-${o.k}`}>
                 <Ionicons name={o.icon} size={18} color={on ? colors.primaryText : colors.faint} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.kindTitle, on && { color: colors.primaryText }]}>{o.title}</Text>
-                  <Text style={styles.kindBody}>{o.body}</Text>
+                  <Text style={[styles.kindTitle, on && { color: colors.primaryText }]}>{t(o.title)}</Text>
+                  <Text style={styles.kindBody}>{t(o.body)}</Text>
                 </View>
               </Pressable>
             );
           })}
         </View>
-        <Pressable accessibilityRole="button" accessibilityLabel={kind === 'video' ? '영상 고르기' : '소리 파일 고르기'} onPress={pick}
+        <Pressable accessibilityRole="button" accessibilityLabel={kind === 'video' ? t('upload.pickVideoA11y') : t('upload.pickAudioA11y')} onPress={pick}
           style={[styles.fileBox, { marginTop: space.sm }]} testID="pick-file">
           <Ionicons name={file ? (kind === 'video' ? 'videocam' : 'musical-note') : kind === 'video' ? 'images-outline' : 'folder-open-outline'}
             size={20} color={file ? colors.primary : colors.muted} />
           <View style={{ flex: 1 }}>
             <Text style={styles.fileName} numberOfLines={1}>
-              {file ? `${file.name} · 눌러서 바꾸기` : kind === 'video' ? '갤러리에서 영상 고르기' : '휴대폰에서 소리 파일 고르기'}
+              {file ? t('upload.change', { name: file.name }) : kind === 'video' ? t('upload.pickVideo') : t('upload.pickAudio')}
             </Text>
             <Text style={styles.fileMeta}>
               {file?.size ? `${(file.size / 1024 / 1024).toFixed(1)}MB · ` : ''}
               {!policy.data ? ' ' : kind === 'video'
-                ? `${policy.data.videoExtensions.join(', ')} · ${maxVideoMb}MB까지 · 듣는 사람이 "영상도 같이 보기"를 켜면 보여요`
-                : `${policy.data.extensions.join(', ')} · ${maxFileMb}MB까지`}
+                ? t('upload.videoLimits', { exts: policy.data.videoExtensions.join(', '), mb: maxVideoMb })
+                : t('upload.audioLimits', { exts: policy.data.extensions.join(', '), mb: maxFileMb })}
             </Text>
           </View>
         </Pressable>
 
         {/* 구간 고르기: 길게 녹음했으면 쓸 부분만 (영상이면 화면도 같이) */}
-        {file && draftPending && <BlockLoader size="small" label="파형을 만드는 중…" style={{ marginTop: space.sm }} />}
+        {file && draftPending && <BlockLoader size="small" label={t('upload.waveMaking')} style={{ marginTop: space.sm }} />}
         {file && draft && range && canTrim(draft.duration, minSeconds) && (
           <>
             {draft.duration > maxSeconds && (
               <Text style={[styles.hint, { color: colors.warn, marginTop: space.sm }]}>
-                {maxSeconds / 60}분이 넘어서 앞 {maxSeconds / 60}분을 골라 뒀어요. 손잡이로 바꿀 수 있어요.
+                {t('upload.overMax', { min: maxSeconds / 60 })}
               </Text>
             )}
             <Trimmer uri={file.uri} duration={draft.duration} peaks={draft.peaks} range={range} onChange={setRange}
@@ -276,16 +280,16 @@ export default function UploadScreen() {
           </>
         )}
 
-        <Text style={styles.label}>블록 꾸미기 <Text style={styles.labelHint}>· 사진이 있으면 사진, 없으면 스티커</Text></Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="겉면 사진 고르기" onPress={() => (cover ? setCover(null) : pickCover())}
+        <Text style={styles.label}>{t('upload.design')} <Text style={styles.labelHint}>· {t('upload.designHint')}</Text></Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={t('upload.coverA11y')} onPress={() => (cover ? setCover(null) : pickCover())}
           style={styles.fileBox} testID="pick-cover">
           {cover ? <Image source={{ uri: cover.uri }} style={styles.coverThumb} /> : <Ionicons name="image-outline" size={20} color={colors.muted} />}
           <View style={{ flex: 1 }}>
-            <Text style={styles.fileName} numberOfLines={1}>{cover ? '겉면 사진 · 눌러서 빼기' : '겉면 사진 고르기 (선택)'}</Text>
-            <Text style={styles.fileMeta}>녹음한 장소나 장면 사진이면 좋아요</Text>
+            <Text style={styles.fileName} numberOfLines={1}>{cover ? t('upload.coverRemove') : t('upload.coverPick')}</Text>
+            <Text style={styles.fileMeta}>{t('upload.coverHint')}</Text>
           </View>
         </Pressable>
-        <Text style={[styles.hint, { marginTop: space.sm }]}>스티커 최대 {MAX_STICKERS}개{cover ? ' (사진을 빼면 보여요)' : ''}</Text>
+        <Text style={[styles.hint, { marginTop: space.sm }]}>{t('upload.stickers', { max: MAX_STICKERS })}{cover ? t('upload.stickersHidden') : ''}</Text>
         <View style={styles.stickerGrid}>
           {stickerChoices.map((st) => {
             const on = stickers.includes(st.code);
@@ -293,62 +297,62 @@ export default function UploadScreen() {
               <Pressable key={st.code} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => toggleSticker(st.code)}
                 style={[styles.sticker, on && styles.stickerOn]} testID={`sticker-${st.code}`}>
                 <StickerArt sticker={st} width={30} height={24} />
-                <Text style={[styles.stickerLabel, on && { color: colors.primaryText }]} numberOfLines={1}>{st.name}</Text>
+                <Text style={[styles.stickerLabel, on && { color: colors.primaryText }]} numberOfLines={1}>{stickerName(st)}</Text>
               </Pressable>
             );
           })}
         </View>
         <View style={[styles.chips, { marginTop: space.sm }]}>
-          {PATTERNS.map((p) => <Chip key={p.key} label={`무늬 ${p.label}`} small active={pattern === p.key} onPress={() => setPattern(p.key)} />)}
+          {PATTERNS.map((p) => <Chip key={p.key} label={t('upload.pattern', { name: patternLabel(p.key) })} small active={pattern === p.key} onPress={() => setPattern(p.key)} />)}
         </View>
 
-        <Text style={styles.label}>이름</Text>
+        <Text style={styles.label}>{t('upload.name')}</Text>
         <TextInput style={styles.input} value={title} onChangeText={setTitle} maxLength={100}
-          placeholder="예: 원목 책상 손톱 탭핑" placeholderTextColor={colors.faint} accessibilityLabel="이름" testID="upload-title" />
+          placeholder={t('upload.namePh')} placeholderTextColor={colors.faint} accessibilityLabel={t('upload.name')} testID="upload-title" />
 
-        <Text style={styles.label}>트리거 종류</Text>
+        <Text style={styles.label}>{t('upload.trigger')}</Text>
         <View style={styles.chips}>
           {(categories.data ?? []).map((g) => (
-            <Chip key={g.id} label={g.name} color={g.color} small active={groupId === g.id}
+            <Chip key={g.id} label={categoryLabel(g)} color={g.color} small active={groupId === g.id}
               onPress={() => { setGroupId(g.id); setCategoryId(null); }} testID={`upload-group-${g.code}`} />
           ))}
         </View>
         {group && (
           <View style={[styles.chips, styles.subChips]}>
             {group.children.map((c) => (
-              <Chip key={c.id} label={c.name} small active={categoryId === c.id} onPress={() => setCategoryId(c.id)} testID={`upload-sub-${c.code}`} />
+              <Chip key={c.id} label={categoryLabel(c)} small active={categoryId === c.id} onPress={() => setCategoryId(c.id)} testID={`upload-sub-${c.code}`} />
             ))}
           </View>
         )}
 
-        <Text style={styles.label}>말소리</Text>
+        <Text style={styles.label}>{t('upload.talk')}</Text>
         <View style={styles.chips}>
-          {TALKS.map((t) => (
-            <Chip key={t} label={talkLabel[t]} small active={talkType === t} onPress={() => setTalkType(t)} testID={`upload-talk-${t}`} />
+          {TALKS.map((tk) => (
+            <Chip key={tk} label={talkLabel(tk)} small active={talkType === tk} onPress={() => setTalkType(tk)} testID={`upload-talk-${tk}`} />
           ))}
         </View>
 
-        <Text style={styles.label}>녹음한 곳 <Text style={styles.labelHint}>· 선택</Text></Text>
+        <Text style={styles.label}>{t('upload.place')} <Text style={styles.labelHint}>· {t('upload.optional')}</Text></Text>
         <TextInput style={styles.input} value={place} onChangeText={setPlace} maxLength={60}
-          placeholder="예: 도쿄 신주쿠역 앞" placeholderTextColor={colors.faint} accessibilityLabel="녹음한 곳" testID="upload-place" />
-        <Text style={styles.hint}>특별한 곳에서 녹음했다면 적어 주세요. 집 주소처럼 너무 자세한 곳은 적지 않아요.</Text>
+          placeholder={t('upload.placePh')} placeholderTextColor={colors.faint} accessibilityLabel={t('upload.place')} testID="upload-place" />
+        <Text style={styles.hint}>{t('upload.placeHint')}</Text>
 
-        <Text style={styles.label}>한 줄 소개 <Text style={styles.labelHint}>· 선택</Text></Text>
+        <Text style={styles.label}>{t('upload.note')} <Text style={styles.labelHint}>· {t('upload.optional')}</Text></Text>
         <TextInput style={styles.input} value={note} onChangeText={setNote} maxLength={80}
-          placeholder="예: 손톱 끝으로 톡톡, 마이크를 아주 가까이 댔어요" placeholderTextColor={colors.faint}
-          accessibilityLabel="한 줄 소개" testID="upload-note" />
+          placeholder={t('upload.notePh')} placeholderTextColor={colors.faint}
+          accessibilityLabel={t('upload.note')} testID="upload-note" />
 
-        <Text style={styles.label}>가격 <Text style={styles.labelHint}>· 최대 {maxPrice}코인</Text></Text>
+        <Text style={styles.label}>{t('upload.price')} <Text style={styles.labelHint}>· {t('upload.priceMax', { max: maxPrice })}</Text></Text>
         <View style={styles.chips}>
-          <Chip label="무료" active={price === 0} onPress={() => setPrice(0)} />
+          <Chip label={t('common.free')} active={price === 0} onPress={() => setPrice(0)} />
           {PRICE_STEPS.filter((p) => p <= maxPrice).map((p) => (
-            <Chip key={p} label={`${p}코인`} active={price === p} onPress={() => setPrice(p)} />
+            <Chip key={p} label={t('common.coins', { count: p })} active={price === p} onPress={() => setPrice(p)} />
           ))}
         </View>
-        <Text style={styles.hint}>유료 블록은 사기 전 앞 30초만 들려줘요. 무료 블록은 누구나 바로 담을 수 있어요.</Text>
+        <Text style={styles.hint}>{t('upload.priceHint')}</Text>
 
-        <Text style={styles.label}>상점에서는 이렇게 보여요</Text>
-        <BlockCard reportable={false} block={previewBlock({ title, note, price, talkType, place, nickname: user?.nickname ?? '나',
+        <Text style={styles.label}>{t('upload.preview')}</Text>
+        <BlockCard reportable={false} block={previewBlock({ title, note, price, talkType, place, nickname: user?.nickname ?? t('upload.me'),
           duration: range ? range.end - range.start : draft?.duration ?? 200,
           category: group?.children.find((c) => c.id === categoryId) ?? null, groupName: group?.name ?? null,
           design: { coverUrl: cover?.uri ?? null, stickers, pattern, hasVideo: !!file && kind === 'video', videoUrl: null } })}
@@ -357,25 +361,25 @@ export default function UploadScreen() {
         <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: ownRecording }} onPress={() => setOwnRecording(!ownRecording)}
           style={styles.check} testID="own-recording">
           <Ionicons name={ownRecording ? 'checkbox' : 'square-outline'} size={22} color={ownRecording ? colors.primary : colors.muted} />
-          <Text style={styles.checkText}>제가 직접 녹음한 소리예요 (다른 사람의 저작물이 아니에요)</Text>
+          <Text style={styles.checkText}>{t('upload.own')}</Text>
         </Pressable>
 
-        <Button title={missing ?? '올리기'} icon="cloud-upload-outline" onPress={() => upload.mutate()}
+        <Button title={missing ?? t('upload.submit')} icon="cloud-upload-outline" onPress={() => upload.mutate()}
           disabled={!!missing} loading={upload.isPending} testID="upload-submit" />
-        <Text style={styles.hint}>올리면 음량을 자동으로 맞추고, 관리자 검수 후 블록 상점에 나와요.</Text>
+        <Text style={styles.hint}>{t('upload.submitHint')}</Text>
       </View>
 
       <View style={styles.sectionRow}>
-        <Text style={[styles.sectionTitle, { marginTop: 0 }]}>내가 올린 블록</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 0 }]}>{t('upload.mine')}</Text>
         {user ? (
           <Pressable accessibilityRole="link" hitSlop={8} testID="my-creator-page"
             onPress={() => router.push({ pathname: '/creator/[id]', params: { id: String(user.id) } })}>
-            <Text style={styles.sectionLink}>내 크리에이터 페이지 ›</Text>
+            <Text style={styles.sectionLink}>{t('upload.myPage')}</Text>
           </Pressable>
         ) : null}
       </View>
       {mine.isLoading ? <BlockLoader size="small" />
-        : (mine.data?.content ?? []).length === 0 ? <Text style={styles.empty}>아직 올린 블록이 없어요</Text>
+        : (mine.data?.content ?? []).length === 0 ? <Text style={styles.empty}>{t('upload.mineEmpty')}</Text>
           : mine.data!.content.map((u) => <UploadRow key={u.id} upload={u} />)}
     </ScrollView>
   );
@@ -387,7 +391,7 @@ function previewBlock(f: {
   category: Block['category']; groupName: string | null; design: BlockDesign;
 }): Block {
   return {
-    id: 7, title: f.title.trim() || '이름 없음', description: f.note.trim() || null, fileUrl: null, previewUrl: null,
+    id: 7, title: f.title.trim() || i18n.t('upload.untitled'), description: f.note.trim() || null, fileUrl: null, previewUrl: null,
     price: f.price, owned: false, duration: Math.round(f.duration), talkType: f.talkType, recordedPlace: f.place.trim() || null, design: f.design,
     license: 'OWN', attribution: null, status: 'PENDING',
     category: f.category ? { ...f.category, parentName: f.groupName } : null,
@@ -395,29 +399,31 @@ function previewBlock(f: {
   };
 }
 
+/** 상태 이름 = 사전 upload.status.{상태} */
 const STATUS = {
-  PENDING: { label: '검수 중', color: colors.warn },
-  APPROVED: { label: '판매 중', color: colors.success },
-  REJECTED: { label: '거절됨', color: colors.danger },
+  PENDING: { color: colors.warn },
+  APPROVED: { color: colors.success },
+  REJECTED: { color: colors.danger },
 } as const;
 
 function UploadRow({ upload }: { upload: MyUpload }) {
+  const { t } = useTranslation();
   const s = STATUS[upload.status];
   return (
     <View style={[styles.row, { borderLeftColor: upload.category?.color ?? categoryFallbackColor }]} testID={`upload-${upload.id}`}>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={styles.rowTitle} numberOfLines={1}>{upload.title}</Text>
         <Text style={styles.rowMeta} numberOfLines={1}>
-          {upload.category?.name ?? '기타'} · {talkLabel[upload.talkType ?? 'NONE']} · {formatDuration(upload.duration)} · {upload.price > 0 ? `${upload.price}코인` : '무료'}
+          {categoryLabel(upload.category) || t('common.other')} · {talkLabel(upload.talkType)} · {formatDuration(upload.duration)} · {upload.price > 0 ? t('common.coins', { count: upload.price }) : t('common.free')}
           {upload.recordedPlace ? ` · ${upload.recordedPlace}` : ''}
         </Text>
         {upload.status === 'REJECTED' && upload.reviewNote ? (
-          <Text style={styles.reviewNote} testID={`review-note-${upload.id}`}>돌려보낸 이유: {upload.reviewNote}</Text>
+          <Text style={styles.reviewNote} testID={`review-note-${upload.id}`}>{t('upload.reviewNote', { note: upload.reviewNote })}</Text>
         ) : null}
       </View>
       <View style={{ alignItems: 'flex-end', gap: 2 }}>
-        <Text style={[styles.badge, { color: s.color, borderColor: s.color }]}>{s.label}</Text>
-        <Text style={styles.rowMeta}>담은 사람 {upload.collectedCount}명</Text>
+        <Text style={[styles.badge, { color: s.color, borderColor: s.color }]}>{t(`upload.status.${upload.status}`)}</Text>
+        <Text style={styles.rowMeta}>{t('upload.collected', { count: upload.collectedCount })}</Text>
       </View>
     </View>
   );

@@ -26,3 +26,22 @@ describe('녹음 가이드', () => {
     expect(RECORDING_DONTS.length).toBeGreaterThan(0);
   });
 });
+
+describe('녹음 가이드 영어판', () => {
+  it('웹 lib/recording.en.js와 글자까지 같고, 한국어 원문과 항목·순서가 같음', () => {
+    const strip = (src: string) => src
+      .replace(/^\/\*\*[\s\S]*?\*\//, '')
+      .replace(/^import type .*$/gm, '')
+      .replace(/: (RecordingCheck|RecordingSection|string)\[\]/g, '')
+      .replace(/\s+/g, '');
+    const app = readFileSync(join(__dirname, '../src/lib/recording.en.ts'), 'utf8');
+    const web = readFileSync(join(__dirname, '../../frontend/src/lib/recording.en.js'), 'utf8');
+    expect(strip(app)).toBe(strip(web));
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const en = require('@/lib/recording.en') as typeof import('@/lib/recording.en');
+    expect(en.RECORDING_CHECKLIST_EN.map((c) => c.key)).toEqual(RECORDING_CHECKLIST.map((c) => c.key));
+    expect(en.RECORDING_SECTIONS_EN.map((s) => [s.key, s.points.length])).toEqual(RECORDING_SECTIONS.map((s) => [s.key, s.points.length]));
+    expect(en.RECORDING_DONTS_EN.length).toBe(RECORDING_DONTS.length);
+    expect(/[가-힣]/.test(JSON.stringify(en))).toBe(false);
+  });
+});

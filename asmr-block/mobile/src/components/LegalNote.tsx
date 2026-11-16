@@ -1,16 +1,17 @@
+import { Trans } from 'react-i18next';
 import { Linking, StyleSheet, Text } from 'react-native';
-import { PRIVACY_URL, TERMS_URL } from '@/lib/links';
+import { privacyUrl, termsUrl } from '@/lib/links';
 import { colors } from '@/theme';
 
-/** "○○하면 이용약관·개인정보 처리방침에 동의하는 거예요" (링크는 웹 페이지로) */
-export function LegalNote({ action = '가입하면', extra }: { action?: string; extra?: string }) {
+/** "가입하면(누르면) 이용약관·개인정보 처리방침에 동의하는 거예요" (링크는 웹 페이지로, 앱 언어 그대로) */
+export function LegalNote({ kind = 'signup', extra }: { kind?: 'signup' | 'beta'; extra?: string }) {
   return (
     <Text style={styles.note}>
-      {action}{' '}
-      <Text style={styles.link} onPress={() => void Linking.openURL(TERMS_URL)} accessibilityRole="link">이용약관</Text>
-      {'과 '}
-      <Text style={styles.link} onPress={() => void Linking.openURL(PRIVACY_URL)} accessibilityRole="link">개인정보 처리방침</Text>
-      에 동의하는 거예요.{extra ? ` ${extra}` : ''}
+      <Trans i18nKey={kind === 'beta' ? 'legal.beta' : 'legal.signup'} components={{
+        terms: <Text style={styles.link} onPress={() => void Linking.openURL(termsUrl())} accessibilityRole="link" />,
+        privacy: <Text style={styles.link} onPress={() => void Linking.openURL(privacyUrl())} accessibilityRole="link" />,
+      }} />
+      {extra ? ` ${extra}` : ''}
     </Text>
   );
 }

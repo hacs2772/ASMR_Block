@@ -3,9 +3,11 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { usePlayer } from '@/audio/PlayerProvider';
 import { colors, radius, space } from '@/theme';
+import { useTranslation } from 'react-i18next';
 
 /** 탭 화면 아래에 떠 있는 작은 플레이어. 누르면 전체 플레이어로 */
 export function MiniPlayer() {
+  const { t } = useTranslation();
   const { nowPlaying, status, toggle } = usePlayer();
   if (!nowPlaying) return null;
   const progress = status.duration > 0 ? Math.min(1, status.currentTime / status.duration) : 0;
@@ -13,7 +15,7 @@ export function MiniPlayer() {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${nowPlaying.title} 플레이어 열기`}
+      accessibilityLabel={t('common.openPlayer', { title: nowPlaying.title })}
       onPress={() => router.push({ pathname: '/player/[id]', params: { id: String(nowPlaying.playlistId) } })}
       style={styles.wrap}
       testID="mini-player"
@@ -30,7 +32,7 @@ export function MiniPlayer() {
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={status.playing ? '일시정지' : '재생'}
+          accessibilityLabel={status.playing ? t('common.pause') : t('common.play')}
           onPress={toggle}
           hitSlop={10}
           style={styles.toggle}

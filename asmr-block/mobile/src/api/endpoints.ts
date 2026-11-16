@@ -29,14 +29,15 @@ const query = (params: Record<string, string | number | boolean | undefined | nu
 export const authApi = {
   login: (email: string, password: string) =>
     api<LoginResponse>('/auth/login', { method: 'POST', body: { email, password } }),
-  signup: (email: string, password: string, nickname: string) =>
-    api<User>('/auth/signup', { method: 'POST', body: { email, password, nickname } }),
+  /** language = 화면 언어 (나중에 알림·메일을 이 언어로) */
+  signup: (email: string, password: string, nickname: string, language?: string) =>
+    api<User>('/auth/signup', { method: 'POST', body: { email, password, nickname, ...(language ? { language } : {}) } }),
   logout: (refreshToken: string) =>
     api<void>('/auth/logout', { method: 'POST', body: { refreshToken } }),
   /** 베타 기간만: "베타로 바로 시작"을 쓸 수 있는지 */
   betaStatus: () => api<{ quickLogin: boolean }>('/auth/beta'),
-  /** 베타 기간만: 가입 없이 손님 계정을 만들어 바로 로그인 */
-  betaLogin: () => api<BetaLoginResponse>('/auth/beta-login', { method: 'POST' }),
+  /** 베타 기간만: 가입 없이 손님 계정을 만들어 바로 로그인 (lang=en이면 손님 이름 "Guest1234"·계정 언어 en) */
+  betaLogin: (lang?: string) => api<BetaLoginResponse>(`/auth/beta-login${lang ? `?lang=${lang}` : ''}`, { method: 'POST' }),
 };
 
 export const userApi = {
@@ -136,9 +137,9 @@ export const playlistApi = {
   listened: (id: number, minutes: number) => api<{ counted: boolean }>(`/playlists/${id}/listened`, { method: 'POST', body: { minutes } }),
   /** 조합 한 번에 담기: 블록은 내 블록함에, 조합은 내 조합(비공개)으로 복사 → 복사본 상세 */
   collect: (id: number) => api<PlaylistDetail>(`/playlists/${id}/collect`, { method: 'POST' }),
-  /** 첫 조합 바로 만들기: 트리거 묶음 코드(tap·rain…) → 무료 블록 담기 + 조합 + 완성본 시작 */
-  quickStart: (triggers: string[], listenMinutes = 60) =>
-    api<PlaylistDetail>('/playlists/quick-start', { method: 'POST', body: { triggers, listenMinutes } }),
+  /** 첫 조합 바로 만들기: 트리거 묶음 코드(tap·rain…) → 무료 블록 담기 + 조합 + 완성본 시작. title = 영어 화면이면 영어 이름 (없으면 서버가 한국어 이름) */
+  quickStart: (triggers: string[], listenMinutes = 60, title?: string) =>
+    api<PlaylistDetail>('/playlists/quick-start', { method: 'POST', body: { triggers, listenMinutes, ...(title ? { title } : {}) } }),
   requestRender: (id: number) => api<Render>(`/playlists/${id}/render`, { method: 'POST' }),
   render: (id: number) => api<Render>(`/playlists/${id}/render`),
 };

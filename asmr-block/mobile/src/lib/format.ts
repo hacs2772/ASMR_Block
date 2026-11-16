@@ -1,3 +1,5 @@
+import i18n from '@/locales';
+
 /** 초 → "3:05" / "1:02:03" */
 export function formatDuration(totalSeconds: number | null | undefined): string {
   const seconds = Math.max(0, Math.floor(totalSeconds ?? 0));
@@ -8,11 +10,12 @@ export function formatDuration(totalSeconds: number | null | undefined): string 
   return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${ss}` : `${m}:${ss}`;
 }
 
-/** 초 → "18분" / "1시간 5분" */
+/** 초 → "18분" / "1시간 5분" (영어 "18 min" / "1 hr 5 min") */
 export function formatMinutes(totalSeconds: number): string {
   const minutes = Math.round(totalSeconds / 60);
-  if (minutes < 60) return `${minutes}분`;
+  if (minutes < 60) return i18n.t('time.minutes', { count: minutes });
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  return m === 0 ? `${h}시간` : `${h}시간 ${m}분`;
+  const hours = i18n.t('time.hours', { count: h });
+  return m === 0 ? hours : `${hours} ${i18n.t('time.minutes', { count: m })}`;
 }

@@ -4,66 +4,67 @@ import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { BrickStack } from '@/components/Brand';
 import { FeedbackForm } from '@/components/FeedbackForm';
 import { GuideModal } from '@/components/guide/GuideModal';
-import { FULL_STEPS } from '@/lib/guide';
-import { PRIVACY_URL, TERMS_URL } from '@/lib/links';
+import { guideSteps } from '@/lib/guide';
+import { privacyUrl, termsUrl } from '@/lib/links';
 import { Glossary, TingleWord } from '@/components/tingle/Tingle';
 import { Button } from '@/components/ui';
 import { colors, radius, space } from '@/theme';
+import { Trans, useTranslation } from 'react-i18next';
+import { LanguageSwitch } from '@/locales/LanguageSwitch';
 
-const STEPS = [
-  { title: '블록 구매', body: '좋아하는 트리거(탭핑·바스락·귓속말…) 블록을 담아요. 무료 블록은 바로, 유료는 30초 맛보기.' },
-  { title: '블록 편집', body: '담은 블록을 눌러 딸깍 이어 붙여요. 꾹 눌러 끌면 원하는 자리로, 레이어드로 두 소리를 겹쳐요.' },
-  { title: '얼마나 들을까요?', body: '30분~8시간 중 고르고 저장하면, 끊김 없는 완성본이 만들어져요.' },
-  { title: '홈에서 바로 듣기', body: '만든 조합은 홈 맨 위에 있어요. 눌러서 바로 들으면 돼요.' },
-];
+/** 사전 help.steps.{key} (title · body) */
+const STEPS = ['s1', 's2', 's3', 's4'];
 
 /** 도움말 (오른쪽 위 ?): 처음 온 사람을 위한 팅글 설명 · 쓰는 법 · 단어장 */
 export default function HelpScreen() {
+  const { t } = useTranslation();
   const [tour, setTour] = useState(false);
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.headline}>나만의 <TingleWord size={26} />을{'\n'}블록으로 쌓아 보세요</Text>
+      <Text style={styles.headline}><Trans i18nKey="help.headline" components={{ tingle: <TingleWord size={26} /> }} /></Text>
       <BrickStack />
       <Text style={styles.lead}>
-        소리 하나가 블록 하나. 탭핑 3분, 바스락 3분, 귓속말 3분처럼 좋아하는 트리거 블록만 골라 딸깍 이어 붙이면 나한테 딱 맞는 ASMR이 돼요.
+        {t('help.lead')}
       </Text>
 
       <View style={styles.box}>
-        <Text style={styles.boxTitle}>팅글이 뭐예요?</Text>
+        <Text style={styles.boxTitle}>{t('tingle.what')}</Text>
         <Text style={styles.boxBody}>
-          ASMR을 들을 때 머리나 목덜미가 간질간질, 찌릿해지는 느낌이에요. 팅글이 오는 소리는 사람마다 달라서 직접 골라 쌓는 게 제일 잘 맞아요.
+          {t('tingle.whatBody')}
         </Text>
       </View>
 
-      <Text style={styles.section}>이렇게 써요</Text>
+      <Text style={styles.section}>{t('help.howTitle')}</Text>
       {STEPS.map((s, i) => (
-        <View key={s.title} style={styles.step}>
+        <View key={s} style={styles.step}>
           <Text style={styles.stepNo}>{i + 1}</Text>
           <View style={{ flex: 1 }}>
-            <Text style={styles.stepTitle}>{s.title}</Text>
-            <Text style={styles.stepBody}>{s.body}</Text>
+            <Text style={styles.stepTitle}>{t(`help.steps.${s}.title`)}</Text>
+            <Text style={styles.stepBody}>{t(`help.steps.${s}.body`)}</Text>
           </View>
         </View>
       ))}
-      <Button title="사용법 다시 보기 (움직이는 안내)" variant="secondary" icon="play-circle-outline" onPress={() => setTour(true)} testID="guide-replay" />
-      <Text style={styles.tip}>★ 추천 조합에서는 다른 사람이 쌓은 조합을 들어 보고, 마음에 들면 한 번에 담을 수 있어요.</Text>
+      <Button title={t('help.replay')} variant="secondary" icon="play-circle-outline" onPress={() => setTour(true)} testID="guide-replay" />
+      <Text style={styles.tip}>{t('help.tip')}</Text>
 
-      <Text style={styles.section}>ASMR 단어장</Text>
+      <Text style={styles.section}>{t('help.glossary')}</Text>
       <Glossary />
 
-      <Text style={styles.section}>의견</Text>
+      <Text style={styles.section}>{t('help.feedback')}</Text>
       <FeedbackForm />
 
+      <LanguageSwitch />
+
       <View style={styles.legal}>
-        <Text style={styles.legalLink} onPress={() => void Linking.openURL(TERMS_URL)} accessibilityRole="link">이용약관</Text>
+        <Text style={styles.legalLink} onPress={() => void Linking.openURL(termsUrl())} accessibilityRole="link">{t('legal.terms')}</Text>
         <Text style={styles.legalDot}>·</Text>
-        <Text style={[styles.legalLink, { fontWeight: '700' }]} onPress={() => void Linking.openURL(PRIVACY_URL)} accessibilityRole="link">
-          개인정보 처리방침
+        <Text style={[styles.legalLink, { fontWeight: '700' }]} onPress={() => void Linking.openURL(privacyUrl())} accessibilityRole="link">
+          {t('legal.privacy')}
         </Text>
       </View>
 
-      <Button title="알겠어요" onPress={() => router.back()} style={{ marginTop: space.md }} />
-      <GuideModal visible={tour} steps={FULL_STEPS} onClose={() => setTour(false)} finishLabel="알겠어요" />
+      <Button title={t('help.gotIt')} onPress={() => router.back()} style={{ marginTop: space.md }} />
+      <GuideModal visible={tour} steps={guideSteps('full')} onClose={() => setTour(false)} finishLabel={t('help.gotIt')} />
     </ScrollView>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { shade } from '@/components/editor/colors';
 import { colors, triggerColor } from '@/theme';
+import { useTranslation } from 'react-i18next';
 
 /** 웹은 네이티브 애니메이션이 없어서 JS로 */
 const NATIVE = Platform.OS !== 'web';
@@ -35,6 +36,7 @@ function useReduceMotion() {
  * 블록 안의 소리 막대도 트리거마다 다른 박자로 움직임.
  */
 export function BlockLoader({ size = 'large', label, style }: { size?: Size; label?: string; style?: StyleProp<ViewStyle> }) {
+  const { t } = useTranslation();
   const reduce = useReduceMotion();
   const [join] = useState(() => new Animated.Value(0));
   const d = SIZES[size];
@@ -56,7 +58,7 @@ export function BlockLoader({ size = 'large', label, style }: { size?: Size; lab
   }, [join, reduce]);
 
   return (
-    <View style={[styles.wrap, style]} accessibilityRole="progressbar" accessibilityLabel={label ?? '불러오는 중'} testID="block-loader">
+    <View style={[styles.wrap, style]} accessibilityRole="progressbar" accessibilityLabel={label ?? t('common.loading')} testID="block-loader">
       <View style={[styles.row, { marginRight: d.stud }]}>
         {BRICKS.map((b, i) => {
           const apart = (i - 1) * d.gap;
@@ -117,11 +119,12 @@ function Bar({ height, width, color, speed, low, still }: { height: number; widt
 
 /** 앱을 켤 때: 첫 화면(정지 그림) 다음에 이어지는 움직이는 시작 화면 */
 export function StartupScreen() {
+  const { t } = useTranslation();
   return (
     <View style={styles.startup} testID="startup">
       <BlockLoader size="large" />
       <Text style={styles.brand}>ASMR <Text style={{ color: colors.primaryText }}>Block</Text></Text>
-      <Text style={styles.tagline}>나만의 팅글을 블록으로</Text>
+      <Text style={styles.tagline}>{t('startup.tagline')}</Text>
     </View>
   );
 }

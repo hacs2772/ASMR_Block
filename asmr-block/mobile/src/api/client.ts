@@ -1,5 +1,6 @@
 import { API_URL } from '@/lib/config';
 import { session, type Tokens } from '@/lib/session';
+import i18n from '@/locales';
 
 /** 서버가 보낸 오류 (ApiResponse.error) */
 export class ApiError extends Error {
@@ -71,7 +72,7 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
       body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
     });
   } catch {
-    throw new ApiError(0, 'NETWORK_ERROR', '서버에 연결할 수 없어요. PC에서 서버가 켜져 있는지, 같은 와이파이인지 확인해주세요.');
+    throw new ApiError(0, 'NETWORK_ERROR', i18n.t('errors.network'));
   }
 
   if (res.status === 401 && retryOnUnauthorized && tokens && !path.startsWith('/auth/')) {
@@ -87,7 +88,7 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
     throw new ApiError(
       res.status,
       json?.error?.code ?? 'UNKNOWN',
-      json?.error?.message ?? '요청을 처리하지 못했어요.',
+      json?.error?.message ?? i18n.t('errors.generic'),
     );
   }
   return json.data as T;

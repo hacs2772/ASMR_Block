@@ -1,3 +1,6 @@
+import i18n from '@/locales';
+import { EDITOR_STEPS_EN, FULL_STEPS_EN, WELCOME_STEPS_EN } from './guide.en';
+
 /**
  * 처음 쓰는 사람을 위한 사용법 안내 (팝업, 처음 한 번만). 웹 frontend/src/lib/guide.js와 제목·순서가 같음 (jest로 확인)
  * art: 카드 위 움직이는 그림 종류 (components/guide/GuideArt)
@@ -45,5 +48,13 @@ export const EDITOR_STEPS: GuideStep[] = [
 
 /** 도움말의 "사용법 다시 보기": 처음 안내 + 고치는 법 */
 export const FULL_STEPS: GuideStep[] = [...WELCOME_STEPS, EDITOR_STEPS[1]];
+
+/** 지금 언어의 안내 (영어는 lib/guide.en.ts) */
+export function guideSteps(which: 'welcome' | 'editor' | 'full'): GuideStep[] {
+  const en = i18n.language === 'en';
+  if (which === 'welcome') return en ? WELCOME_STEPS_EN : WELCOME_STEPS;
+  if (which === 'editor') return en ? EDITOR_STEPS_EN : EDITOR_STEPS;
+  return en ? FULL_STEPS_EN : FULL_STEPS;
+}
 
 export const GUIDE_KEYS = { welcome: 'asmr.guide.welcome.v1', editor: 'asmr.guide.editor.v1' } as const;

@@ -14,18 +14,19 @@ import { Button, Chip, EmptyState, IconButton } from '@/components/ui';
 import { shareLink, shareLinks } from '@/lib/share';
 import { useAuth } from '@/store/auth';
 import { categoryFallbackColor, colors, space } from '@/theme';
+import { useTranslation } from 'react-i18next';
+import { categoryName } from '@/lib/labels';
 
 const PAGE = 24;
-const SORTS = [
-  { key: 'latest', label: '새로 올린 순' },
-  { key: 'popular', label: '많이 들은 순' },
-] as const;
+/** 이름 = 사전 creator.sort.{key} */
+const SORTS = [{ key: 'latest' }, { key: 'popular' }] as const;
 
 /**
  * 크리에이터 페이지 (블록 카드의 @닉네임): 그 사람이 올린 블록을 모아 보기.
  * block 파라미터로 오면 그 블록을 맨 위에 "공유받은 블록"으로 (웹 /creator/{id}?block=와 같음)
  */
 export default function CreatorScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ id: string; block?: string }>();
   const id = Number(params.id);
   const pinnedId = params.block ? Number(params.block) : null;
@@ -48,7 +49,7 @@ export default function CreatorScreen() {
   });
 
   if (creator.isError) {
-    return <View style={styles.screen}><EmptyState icon="person-outline" title="크리에이터를 찾을 수 없어요" message={(creator.error as Error).message} /></View>;
+    return <View style={styles.screen}><EmptyState icon="person-outline" title={t('creator.notFound')} message={(creator.error as Error).message} /></View>;
   }
   if (!creator.data) return <View style={styles.screen}><BlockLoader style={{ marginTop: 60 }} /></View>;
 
@@ -59,7 +60,7 @@ export default function CreatorScreen() {
   const items: (Block | null)[] = all.filter((b) => b.id !== top?.id);
   if (items.length % 2 === 1) items.push(null); // 두 칸 맞추기
   const deco = all.slice(0, 3);
-  const share = () => void shareLink(`@${c.nickname}의 ASMR 블록`, shareLinks.creator(c.id), `@${c.nickname}님이 녹음한 ASMR 블록 — ASMR Block`);
+  const share = () => void shareLink(t('creator.shareTitle', { nickname: c.nickname }), shareLinks.creator(c.id), t('creator.shareText', { nickname: c.nickname }));
   const card = (b: Block) => (
     <BlockCard block={b} hideCreator showNote previewing={preview.previewId === b.id} onPreview={() => preview.toggle(b)}
       right={<BlockCollectButton block={b} />} style={{ flex: 1 }} />
@@ -69,7 +70,7 @@ export default function CreatorScreen() {
     <View style={styles.screen}>
       <Stack.Screen options={{
         title: '',
-        headerRight: () => <IconButton icon="share-social-outline" label="크리에이터 페이지 공유하기" onPress={share} testID="share-creator" />,
+        headerRight: () => <IconButton icon="share-social-outline" label={t('creator.shareA11y')} onPress={share} testID="share-creator" />,
       }} />
       <FlatList
         data={items}
@@ -87,32 +88,32 @@ export default function CreatorScreen() {
                   icon={b ? iconOf(b.category) : null} title="" />
               ))}
             </View>
-            <Text style={styles.eyebrow}>크리에이터</Text>
+            <Text style={styles.eyebrow}>{t('creator.eyebrow')}</Text>
             <Text style={styles.name} numberOfLines={1} testID="creator-name">@{c.nickname}</Text>
-            <Text style={styles.stats} testID="creator-stats">블록 {c.blockCount}개 · 담은 사람 {c.collectorCount}명 · 들은 횟수 {c.playCount}번</Text>
+            <Text style={styles.stats} testID="creator-stats">{t('creator.stats', { blocks: c.blockCount, collectors: c.collectorCount, plays: c.playCount })}</Text>
             {c.triggers.length > 0 ? (
               <View style={styles.triggers}>
-                {c.triggers.map((t) => <View key={t} style={styles.trigger}><Text style={styles.triggerText}>{t}</Text></View>)}
+                {c.triggers.map((name, i) => <View key={name} style={styles.trigger}><Text style={styles.triggerText}>{categoryName(c.triggerCodes?.[i], name)}</Text></View>)}
               </View>
             ) : null}
-            {mine ? <Button title="블록 올리기" icon="cloud-upload-outline" variant="secondary" onPress={() => router.navigate('/upload')} style={{ marginTop: space.xs }} /> : null}
+            {mine ? <Button title={t('creator.upload')} icon="cloud-upload-outline" variant="secondary" onPress={() => router.navigate('/upload')} style={{ marginTop: space.xs }} /> : null}
 
             {top ? (
               <View style={{ marginTop: space.md, gap: space.sm }} testID="pinned-block">
-                <Text style={styles.eyebrow}>공유받은 블록</Text>
+                <Text style={styles.eyebrow}>{t('creator.pinned')}</Text>
                 <View style={styles.pinned}>{card(top)}</View>
               </View>
             ) : null}
 
             <View style={styles.sortRow}>
-              <Text style={styles.section}>{top ? '다른 블록' : '올린 블록'}</Text>
-              {SORTS.map((s) => <Chip key={s.key} small label={s.label} active={sort === s.key} onPress={() => setSort(s.key)} />)}
+              <Text style={styles.section}>{top ? t('creator.others') : t('creator.uploaded')}</Text>
+              {SORTS.map((s) => <Chip key={s.key} small label={t(`creator.sort.${s.key}`)} active={sort === s.key} onPress={() => setSort(s.key)} />)}
             </View>
           </View>
         }
         renderItem={({ item }) => (item ? card(item) : <View style={{ flex: 1 }} />)}
         ListEmptyComponent={list.isLoading ? <BlockLoader style={{ marginTop: space.lg }} /> : (
-          <EmptyState icon="cube-outline" title={top ? '다른 블록은 아직 없어요' : '아직 상점에 올라간 블록이 없어요'} />
+          <EmptyState icon="cube-outline" title={top ? t('creator.emptyOthers') : t('creator.empty')} />
         )}
         ListFooterComponent={list.isFetchingNextPage ? <BlockLoader size="small" /> : undefined}
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}

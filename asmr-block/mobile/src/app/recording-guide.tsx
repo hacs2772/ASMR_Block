@@ -6,21 +6,33 @@ import { Brick } from '@/components/editor/Brick';
 import { Button } from '@/components/ui';
 import { RECORDING_CHECKLIST, RECORDING_DONTS, RECORDING_SECTIONS, type RecordingSection } from '@/lib/recording';
 import { colors, radius, space, triggerColor } from '@/theme';
+import { useTranslation } from 'react-i18next';
+import { RECORDING_CHECKLIST_EN, RECORDING_DONTS_EN, RECORDING_SECTIONS_EN } from '@/lib/recording.en';
 
 const SECTION_ICON: Record<RecordingSection['key'], keyof typeof Ionicons.glyphMap> = {
   what: 'locate', room: 'moon', mic: 'phone-portrait-outline', record: 'mic', check: 'headset',
 };
 
+/** 지금 언어의 녹음 가이드 내용 (영어는 lib/recording.en.ts) */
+function useRecording() {
+  const { i18n } = useTranslation();
+  return i18n.language === 'en'
+    ? { checklist: RECORDING_CHECKLIST_EN, sections: RECORDING_SECTIONS_EN, donts: RECORDING_DONTS_EN }
+    : { checklist: RECORDING_CHECKLIST, sections: RECORDING_SECTIONS, donts: RECORDING_DONTS };
+}
+
 /** 녹음 가이드 (블록 판매 → 녹음 가이드): 휴대폰 하나로 듣기 좋은 블록 녹음하는 법. 웹 /sell/guide와 같은 내용 */
 export default function RecordingGuideScreen() {
+  const { t } = useTranslation();
+  const { sections, donts } = useRecording();
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.headline}>휴대폰 하나면 돼요</Text>
-      <Text style={styles.lead}>조용한 곳에서, 한 뼘 거리로, 트리거 하나만 또렷하게. 이것만 지켜도 듣기 좋은 블록이 돼요.</Text>
+      <Text style={styles.headline}>{t('rec.headline')}</Text>
+      <Text style={styles.lead}>{t('rec.lead')}</Text>
 
       <Checklist />
 
-      {RECORDING_SECTIONS.map((s, i) => (
+      {sections.map((s, i) => (
         <View key={s.key} style={styles.card} testID={`rec-section-${s.key}`}>
           <View style={styles.cardHead}>
             <View style={styles.cardIcon}><Ionicons name={SECTION_ICON[s.key]} size={17} color={colors.primaryText} /></View>
@@ -39,37 +51,39 @@ export default function RecordingGuideScreen() {
       <View style={[styles.card, styles.donts]} testID="rec-donts">
         <View style={styles.cardHead}>
           <Ionicons name="ban" size={18} color={colors.warn} />
-          <Text style={styles.cardTitle}>이런 소리는 올릴 수 없어요</Text>
+          <Text style={styles.cardTitle}>{t('rec.dontsTitle')}</Text>
         </View>
-        {RECORDING_DONTS.map((d) => (
+        {donts.map((d) => (
           <View key={d} style={styles.point}>
             <View style={[styles.dot, { backgroundColor: colors.warn }]} />
             <Text style={[styles.pointText, { color: colors.text }]}>{d}</Text>
           </View>
         ))}
-        <Text style={styles.note}>직접 녹음한 내 소리만 올려 주세요. 이런 소리는 검수에서 돌려보내고, 올라간 뒤라도 신고가 들어오면 내려갈 수 있어요.</Text>
+        <Text style={styles.note}>{t('rec.dontsNote')}</Text>
       </View>
 
-      <Text style={styles.end}>길게 녹음했어도 괜찮아요. 올릴 때 파형을 보며 좋은 부분만 골라요.</Text>
-      <Button title="블록 올리러 가기" icon="cloud-upload-outline" onPress={() => router.navigate('/upload')} testID="rec-go-sell" />
+      <Text style={styles.end}>{t('rec.endBody')}</Text>
+      <Button title={t('rec.go')} icon="cloud-upload-outline" onPress={() => router.navigate('/upload')} testID="rec-go-sell" />
     </ScrollView>
   );
 }
 
 /** 녹음 버튼 누르기 전 체크 (이 화면에서만, 저장하지 않음) */
 function Checklist() {
+  const { t } = useTranslation();
   const [done, setDone] = useState<Record<string, boolean>>({});
-  const count = RECORDING_CHECKLIST.filter((c) => done[c.key]).length;
-  const all = count === RECORDING_CHECKLIST.length;
+  const { checklist } = useRecording();
+  const count = checklist.filter((c) => done[c.key]).length;
+  const all = count === checklist.length;
   return (
     <View style={styles.card} testID="rec-checklist">
       <View style={[styles.cardHead, { justifyContent: 'space-between' }]}>
-        <Text style={styles.cardTitle}>녹음 버튼 누르기 전에</Text>
+        <Text style={styles.cardTitle}>{t('rec.checkTitle')}</Text>
         <Text style={[styles.count, all && { color: colors.primaryText }]} testID="rec-check-count">
-          {all ? '준비 끝!' : `${count}/${RECORDING_CHECKLIST.length}`}
+          {all ? t('rec.ready') : `${count}/${checklist.length}`}
         </Text>
       </View>
-      {RECORDING_CHECKLIST.map((c) => {
+      {checklist.map((c) => {
         const on = !!done[c.key];
         return (
           <Pressable key={c.key} accessibilityRole="checkbox" accessibilityState={{ checked: on }}
@@ -82,28 +96,32 @@ function Checklist() {
           </Pressable>
         );
       })}
-      {all ? <Text style={styles.ready}>좋아요, 이제 녹음을 시작하세요. 앞 5초는 조용히!</Text> : null}
+      {all ? <Text style={styles.ready}>{t('rec.readyMsg')}</Text> : null}
     </View>
   );
 }
 
+/** 좁으면 "·"에서만 줄바꿈 (영어 "15–20 cm"가 갈라지지 않게 — 띄어쓰기·대시 뒤에 줄바꿈 금지 글자) */
+const keepTogether = (text: string) => text.split(' · ').map((part) => part.replace(/ /g, '\u00A0').replace(/–/g, '–\u2060')).join(' · ');
+
 /** 휴대폰 마이크와 소리 사이 "한 뼘" 그림 */
 function MicDistance() {
+  const { t } = useTranslation();
   return (
-    <View style={styles.diagram} accessibilityLabel="휴대폰 마이크를 소리 나는 곳에서 한 뼘, 15에서 20센티미터 거리에 둬요">
+    <View style={styles.diagram} accessibilityLabel={t('rec.diagramA11y')}>
       <View style={styles.phoneWrap}>
         <View style={styles.phone}><View style={styles.mic} /></View>
-        <Text style={styles.micLabel}>마이크</Text>
+        <Text style={styles.micLabel}>{t('rec.mic')}</Text>
       </View>
       <View style={styles.ruler}>
-        <Text style={styles.rulerText}>한 뼘 · 15~20cm</Text>
+        <Text style={styles.rulerText}>{keepTogether(t('rec.distance'))}</Text>
         <View style={styles.rulerLine}>
           <View style={styles.tick} /><View style={styles.line} /><View style={styles.tick} />
         </View>
       </View>
       <View style={{ alignItems: 'center' }}>
-        <Brick color={triggerColor.tap} width={84} height={34} icon="finger-print" title="탭핑" minutes={3} />
-        <Text style={styles.micLabel}>소리 나는 곳</Text>
+        <Brick color={triggerColor.tap} width={84} height={34} icon="finger-print" title={t('rec.tap')} minutes={3} />
+        <Text style={styles.micLabel}>{t('rec.source')}</Text>
       </View>
     </View>
   );

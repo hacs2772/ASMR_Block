@@ -12,19 +12,13 @@ import { BlockCollectButton } from '@/components/BlockCollectButton';
 import { Button, Chip, EmptyState } from '@/components/ui';
 import { useAuth } from '@/store/auth';
 import { colors, radius, space } from '@/theme';
+import { useTranslation } from 'react-i18next';
+import { categoryLabel, groupDescription } from '@/lib/labels';
 
 type Tab = 'hot' | 'all' | 'free' | 'mine';
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'hot', label: '요즘 뜨는' },
-  { key: 'all', label: '전체' },
-  { key: 'free', label: '무료' },
-  { key: 'mine', label: '내 블록함' },
-];
-const TALKS: { key: TalkType | null; label: string }[] = [
-  { key: null, label: '말소리 전체' },
-  { key: 'NONE', label: '노토킹만' },
-  { key: 'WHISPER', label: '속삭임만' },
-];
+/** 이름 = 사전 shop.tabs.{key} · shop.talk.{key ?? ALL} */
+const TABS: Tab[] = ['hot', 'all', 'free', 'mine'];
+const TALKS: (TalkType | null)[] = [null, 'NONE', 'WHISPER'];
 
 /** 요즘 뜨는 / 내 블록함은 서버 필터가 없어서 화면에서 거름 */
 function matches(b: Block, groupId: number | null, subId: number | null, talk: TalkType | null, keyword: string) {
@@ -44,6 +38,7 @@ function matches(b: Block, groupId: number | null, subId: number | null, talk: T
  * 담은 블록은 내 블록함에 들어가고, 편집기에서는 담은 블록만 써요 (몇 번 복제해도 무료)
  */
 export default function ShopScreen() {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('hot');
   const [groupId, setGroupId] = useState<number | null>(null);
   const [subId, setSubId] = useState<number | null>(null);
@@ -51,8 +46,8 @@ export default function ShopScreen() {
   const [typed, setTyped] = useState('');
   const [keyword, setKeyword] = useState('');
   useEffect(() => {
-    const t = setTimeout(() => setKeyword(typed.trim()), 300);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setKeyword(typed.trim()), 300);
+    return () => clearTimeout(timer);
   }, [typed]);
 
   const signedIn = useAuth((s) => s.status === 'signedIn');
@@ -82,41 +77,41 @@ export default function ShopScreen() {
       <View style={styles.searchRow}>
         <View style={styles.search}>
           <Ionicons name="search" size={15} color={colors.faint} />
-          <TextInput value={typed} onChangeText={setTyped} placeholder="소리, 크리에이터, 녹음한 곳" placeholderTextColor={colors.faint}
-            style={styles.searchInput} returnKeyType="search" accessibilityLabel="소리 찾기" testID="shop-search" />
+          <TextInput value={typed} onChangeText={setTyped} placeholder={t('shop.searchPh')} placeholderTextColor={colors.faint}
+            style={styles.searchInput} returnKeyType="search" accessibilityLabel={t('shop.searchA11y')} testID="shop-search" />
         </View>
       </View>
 
       <View style={styles.tabs}>
-        {TABS.map((t) => (
-          <Pressable key={t.key} accessibilityRole="tab" accessibilityState={{ selected: tab === t.key }} onPress={() => setTab(t.key)}
-            style={[styles.tab, tab === t.key && styles.tabOn]} testID={`tab-${t.key}`}>
-            <Text style={[styles.tabText, tab === t.key && styles.tabTextOn]}>
-              {t.label}{t.key === 'mine' && signedIn ? ` ${mine.data?.length ?? ''}` : ''}
+        {TABS.map((key) => (
+          <Pressable key={key} accessibilityRole="tab" accessibilityState={{ selected: tab === key }} onPress={() => setTab(key)}
+            style={[styles.tab, tab === key && styles.tabOn]} testID={`tab-${key}`}>
+            <Text style={[styles.tabText, tab === key && styles.tabTextOn]} numberOfLines={1}>
+              {t(`shop.tabs.${key}`)}{key === 'mine' && signedIn ? ` ${mine.data?.length ?? ''}` : ''}
             </Text>
           </Pressable>
         ))}
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipBar} contentContainerStyle={styles.chips}>
-        <Chip label="모든 트리거" active={groupId === null} onPress={() => pickGroup(null)} small />
+        <Chip label={t('shop.allTriggers')} active={groupId === null} onPress={() => pickGroup(null)} small />
         {(categories.data ?? []).map((g) => (
-          <Chip key={g.id} label={g.name} color={g.color} active={groupId === g.id} onPress={() => pickGroup(g.id)} small testID={`group-${g.code}`} />
+          <Chip key={g.id} label={categoryLabel(g)} color={g.color} active={groupId === g.id} onPress={() => pickGroup(g.id)} small testID={`group-${g.code}`} />
         ))}
       </ScrollView>
       {group && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipBar} contentContainerStyle={styles.chips}>
-          <Chip label={`${group.name} 전체`} active={subId === null} onPress={() => setSubId(null)} small />
+          <Chip label={t('shop.groupAll', { name: categoryLabel(group) })} active={subId === null} onPress={() => setSubId(null)} small />
           {group.children.map((c) => (
-            <Chip key={c.id} label={c.name} active={subId === c.id} onPress={() => setSubId(c.id)} small />
+            <Chip key={c.id} label={categoryLabel(c)} active={subId === c.id} onPress={() => setSubId(c.id)} small />
           ))}
         </ScrollView>
       )}
       <View style={styles.talkRow}>
-        {TALKS.map((t) => (
-          <Pressable key={t.label} accessibilityRole="button" accessibilityState={{ selected: talk === t.key }} onPress={() => setTalk(t.key)}
-            hitSlop={6} testID={`talk-${t.key ?? 'ALL'}`}>
-            <Text style={[styles.talkText, talk === t.key && styles.talkOn]}>{t.label}</Text>
+        {TALKS.map((key) => (
+          <Pressable key={key ?? 'ALL'} accessibilityRole="button" accessibilityState={{ selected: talk === key }} onPress={() => setTalk(key)}
+            hitSlop={6} testID={`talk-${key ?? 'ALL'}`}>
+            <Text style={[styles.talkText, talk === key && styles.talkOn]}>{t(`shop.talk.${key ?? 'ALL'}`)}</Text>
           </Pressable>
         ))}
       </View>
@@ -130,10 +125,10 @@ export default function ShopScreen() {
         keyExtractor={(b) => (b ? String(b.id) : 'spacer')}
         ListHeaderComponent={
           <Text style={styles.caption}>
-            {tab === 'hot' ? '최근 7일 동안 팅글 많이 온 블록이에요 · 블록 길이 = 소리 길이'
-              : tab === 'mine' ? '담은 블록은 편집기 블록 상자에 나와요 · 몇 번을 복제해도 무료'
-                : tab === 'free' ? '무료 블록은 바로 내 블록함에 담을 수 있어요'
-                  : group?.description ?? '코인 결제는 준비 중이라 지금은 무료 블록만 담을 수 있어요'}
+            {tab === 'hot' ? t('shop.hintHot')
+              : tab === 'mine' ? t('shop.hintMine')
+                : tab === 'free' ? t('shop.hintFree')
+                  : (group && groupDescription(group)) || t('shop.hintCoins')}
           </Text>
         }
         renderItem={({ item, index }) => !item ? <View style={styles.card} /> : (
@@ -143,13 +138,13 @@ export default function ShopScreen() {
         )}
         ListEmptyComponent={
           tab === 'mine' && !signedIn ? (
-            <EmptyState icon="lock-closed-outline" title="로그인하면 블록을 담을 수 있어요">
-              <Button title="로그인" onPress={() => router.push('/login')} style={{ alignSelf: 'stretch', marginTop: space.md }} />
+            <EmptyState icon="lock-closed-outline" title={t('shop.loginTitle')}>
+              <Button title={t('shop.login')} onPress={() => router.push('/login')} style={{ alignSelf: 'stretch', marginTop: space.md }} />
             </EmptyState>
           ) : query.isLoading ? <BlockLoader style={{ marginTop: 40 }} />
-            : query.isError ? <EmptyState icon="cloud-offline-outline" title="서버에 연결할 수 없어요" message={(query.error as Error).message} />
-              : tab === 'mine' && raw.length === 0 ? <EmptyState icon="cube-outline" title="아직 담은 블록이 없어요" message="무료 블록부터 담아보세요" />
-                : <EmptyState icon="musical-notes-outline" title="찾는 소리가 없어요" message="다른 트리거나 이름으로 찾아보세요" />
+            : query.isError ? <EmptyState icon="cloud-offline-outline" title={t('errors.offline')} message={(query.error as Error).message} />
+              : tab === 'mine' && raw.length === 0 ? <EmptyState icon="cube-outline" title={t('shop.mineEmptyTitle')} message={t('shop.mineEmptyBody')} />
+                : <EmptyState icon="musical-notes-outline" title={t('shop.notFoundTitle')} message={t('shop.notFoundBody')} />
         }
       />
     </View>

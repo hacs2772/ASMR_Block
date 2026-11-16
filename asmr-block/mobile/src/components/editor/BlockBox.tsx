@@ -16,6 +16,8 @@ import { categoryFallbackColor, colors, radius, space } from '@/theme';
 import { Brick } from './Brick';
 import { board, useDrag, useDragHandlers } from './drag';
 import { useCategoryIcon } from './useCategoryIcon';
+import { useTranslation } from 'react-i18next';
+import { groupLabel } from '@/lib/labels';
 
 const TILE_HEIGHT = 38;
 const MIN_BOX = 160;
@@ -71,6 +73,7 @@ function useBoxHeight(onSettled: () => void) {
  * 누르면 첫째 줄 끝에 붙고, 꾹 눌러 끌면 원하는 자리·시간에. 바닥판 블록을 여기로 끌어오면 빼기
  */
 export function BlockBox() {
+  const { t } = useTranslation();
   const library = useQuery({ queryKey: ['library'], queryFn: libraryApi.mine });
   const [groupId, setGroupId] = useState<number | null>(null);
   const mixTarget = useEditor((s) => s.mixTarget);
@@ -91,7 +94,7 @@ export function BlockBox() {
     const map = new Map<number, { id: number; name: string; color: string }>();
     for (const b of library.data ?? []) {
       const c = b.category;
-      if (c) map.set(c.parentId ?? c.id, { id: c.parentId ?? c.id, name: c.parentName ?? c.name, color: c.color });
+      if (c) map.set(c.parentId ?? c.id, { id: c.parentId ?? c.id, name: groupLabel(c), color: c.color });
     }
     return [...map.values()];
   }, [library.data]);
@@ -102,31 +105,31 @@ export function BlockBox() {
     <View ref={boxRef} collapsable={false} onLayout={measureBox} style={{ flex: 1 }} testID="block-box">
       {/* 손잡이: 위아래로 끌어서 크기 조절, 누르면 작게 ↔ 크게 */}
       <GestureDetector gesture={box.handleGesture}>
-        <View collapsable={false} style={styles.handleArea} accessibilityRole="adjustable" accessibilityLabel="블록함 크기 조절" testID="box-handle">
+        <View collapsable={false} style={styles.handleArea} accessibilityRole="adjustable" accessibilityLabel={t('shelf.sizeA11y')} testID="box-handle">
           <View style={styles.handle} />
         </View>
       </GestureDetector>
       <View style={styles.head}>
         {mixTarget !== null ? (
           <>
-            <Text style={styles.title}>겹칠 소리 고르기</Text>
-            <Text style={styles.hint} numberOfLines={1}>둘째 줄 {formatDuration(mixTarget)}부터</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="취소" onPress={() => setMixTarget(null)} hitSlop={8} style={styles.headLink}>
-              <Text style={styles.linkText}>취소</Text>
+            <Text style={styles.title}>{t('shelf.forLayer')}</Text>
+            <Text style={styles.hint} numberOfLines={1}>{t('shelf.from', { time: formatDuration(mixTarget) })}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={t('shelf.cancel')} onPress={() => setMixTarget(null)} hitSlop={8} style={styles.headLink}>
+              <Text style={styles.linkText}>{t('shelf.cancel')}</Text>
             </Pressable>
           </>
         ) : (
           <>
-            <Text style={styles.title}>내 블록함 <Text style={styles.count}>{(library.data ?? []).length}</Text></Text>
-            <Text style={styles.hint} numberOfLines={1}>누르면 끝에 딸깍 · 꾹 눌러 끌기</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel={box.large ? '블록함 작게' : '블록함 크게'} onPress={box.toggle}
+            <Text style={styles.title}>{t('shelf.title')} <Text style={styles.count}>{(library.data ?? []).length}</Text></Text>
+            <Text style={styles.hint} numberOfLines={1}>{t('shelf.tapHint')}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={box.large ? t('shelf.smaller') : t('shelf.larger')} onPress={box.toggle}
               hitSlop={8} style={styles.sizeBtn} testID="box-size">
               <Ionicons name={box.large ? 'contract-outline' : 'expand-outline'} size={13} color={colors.muted} />
-              <Text style={styles.sizeText}>{box.large ? '작게' : '크게'}</Text>
+              <Text style={styles.sizeText}>{box.large ? t('shelf.small') : t('shelf.large')}</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel="블록 상점에서 더 담기" onPress={() => router.push('/explore')}
+            <Pressable accessibilityRole="button" accessibilityLabel={t('shelf.moreA11y')} onPress={() => router.push('/explore')}
               hitSlop={8} testID="go-shop">
-              <Text style={styles.linkText}>＋ 더 담기</Text>
+              <Text style={styles.linkText}>{t('shelf.more')}</Text>
             </Pressable>
           </>
         )}
@@ -136,14 +139,14 @@ export function BlockBox() {
         <BlockLoader size="small" style={{ marginTop: space.lg }} />
       ) : (library.data ?? []).length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>내 블록함이 비어 있어요</Text>
-          <Text style={styles.emptyText}>블록 상점에서 마음에 드는 소리를 담아오세요. 담은 블록은 몇 번을 복제해도 무료예요.</Text>
-          <Button title="블록 상점 가기" icon="storefront-outline" onPress={() => router.push('/explore')} style={{ alignSelf: 'stretch' }} testID="empty-go-shop" />
+          <Text style={styles.emptyTitle}>{t('shelf.emptyTitle')}</Text>
+          <Text style={styles.emptyText}>{t('shelf.emptyBody')}</Text>
+          <Button title={t('shelf.goShop')} icon="storefront-outline" onPress={() => router.push('/explore')} style={{ alignSelf: 'stretch' }} testID="empty-go-shop" />
         </View>
       ) : (
         <>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipBar} contentContainerStyle={styles.chips}>
-            <Chip label="전체" active={groupId === null} onPress={() => setGroupId(null)} />
+            <Chip label={t('shelf.all')} active={groupId === null} onPress={() => setGroupId(null)} />
             {groups.map((g) => (
               <Chip key={g.id} label={g.name} color={g.color} active={groupId === g.id} onPress={() => setGroupId(g.id)} />
             ))}
@@ -156,7 +159,7 @@ export function BlockBox() {
 
       {dragging && (
         <View pointerEvents="none" style={[styles.drop, dropHere && styles.dropHot]}>
-          <Text style={styles.dropText}>🗑 여기에 놓으면 빼요</Text>
+          <Text style={styles.dropText}>{t('shelf.dropToRemove')}</Text>
         </View>
       )}
     </View>
@@ -166,6 +169,7 @@ export function BlockBox() {
 
 /** 블록 상자 블록: 누르면 추가(둘째 줄 시간을 골라 뒀으면 그 시간에), 꾹 눌러 끌면 원하는 곳에 */
 function Tile({ block }: { block: Block }) {
+  const { t } = useTranslation();
   const handlers = useDragHandlers();
   const iconOf = useCategoryIcon();
   const width = Math.min(brickWidth(block.duration), 180);
@@ -194,7 +198,7 @@ function Tile({ block }: { block: Block }) {
   return (
     <View style={[styles.tile, { width: Math.max(width, 80) }]}>
       <GestureDetector gesture={gesture}>
-        <View collapsable={false} accessibilityRole="button" accessibilityLabel={`${block.title} 넣기`} testID={`tile-${block.id}`}>
+        <View collapsable={false} accessibilityRole="button" accessibilityLabel={t('shelf.insert', { title: block.title })} testID={`tile-${block.id}`}>
           <Brick color={block.category?.color ?? categoryFallbackColor} width={width} height={TILE_HEIGHT}
             icon={iconOf(block.category)} title={block.title} minutes={block.duration / 60} design={block.design} />
         </View>

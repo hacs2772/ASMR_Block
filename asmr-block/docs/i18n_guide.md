@@ -1,7 +1,7 @@
 # ASMR Block - 다국어 가이드 (한국어 · English)
 
 > 최종 수정일: 2026-11-16
-> 1단계 **웹사이트 영어판** 끝 → 2단계 앱 영어판 → 3단계 서버 글(오류 메시지·알림 문장·공유 미리보기·트리거 이름)
+> 1단계 **웹사이트 영어판** 끝 → 2단계 **앱 영어판** 끝 → 3단계 서버 글(오류 메시지·알림 문장·공유 미리보기·트리거 이름)
 
 ---
 
@@ -69,7 +69,28 @@ const { t } = useTranslation();
 | `codeSafety.test.js` | 정의하지 않은 이름을 쓰지 않음 |
 | `e2e/tests/web-english.spec.js` | 영어 브라우저로 주요 화면이 영어로 열리고 · 휴대폰에서 옆으로 넘치지 않고 · 머리글·바닥글·제목·버튼에 한국어가 없음 · 언어 바꾸기·계정 저장 · 영어 베타 손님 |
 
-## 6. 다음 단계
+## 6. 앱 (2단계)
 
-- **2단계 앱 영어판**: `mobile/src`에 같은 방식(`expo-localization`으로 기기 언어 → 사전). 웹 사전 `ko.json`·`en.json`의 키를 최대한 같이 씀. 사용법·녹음 가이드 영어 글은 웹 `lib/guide.en.js`·`lib/recording.en.js`를 옮겨 오고 jest로 같은지 검사
-- **3단계 서버**: 오류 메시지(`Accept-Language` 또는 계정 언어), 알림 문장(지금은 `title`·`actor`·`count`로 웹이 영어 문장을 만듦), 공유 미리보기(og 태그) 영어, 트리거·스티커 영어 이름을 DB에(`name_en`), 베타 손님 첫 블록·샘플 블록 영어 제목
+같은 규칙을 앱(`mobile/src`)에도:
+
+| 무엇 | 어디 |
+|------|------|
+| 설정·언어 정하기 | `src/locales/index.ts` — i18next(`createInstance`, `initAsync: false`) + `expo-localization`(휴대폰 언어) + `intl-pluralrules`(휴대폰 자바스크립트에 복수형 규칙이 없을 때) |
+| 사전 | `src/locales/ko.json`·`en.json`. 웹과 같은 묶음 `cat`·`catDesc`·`stickers`·`talk`·`time`·`lang`·`guideArt`·`notif.msg`는 글자까지 같음 |
+| 언어 순서 | 고른 것(SecureStore `asmr.lang`, 시작 화면이 떠 있는 동안 `loadLang()`) → 휴대폰 언어(한국어가 아니면 영어) → 로그인 때 계정 언어(고른 적 없을 때만) |
+| 고르는 곳 | 내 정보·도움말 `src/locales/LanguageSwitch.tsx` → `useAuth().changeLanguage` (로그인 중이면 계정에도). 가입은 `language`, 베타 손님은 `?lang=` |
+| 이름 함수 | `src/lib/labels.ts` — `categoryLabel`·`groupLabel`·`groupDescription`·`talkLabel`·`stickerName`·`patternLabel`·`minutesLabel` |
+| 안내 글 | `lib/guide.ts`(원문, 웹과 같음) + `lib/guide.en.ts`(제목은 웹 영어판과 같고 설명은 앱 메뉴 이름) → `guideSteps('welcome'|'editor'|'full')`, `lib/recording.ts` + `lib/recording.en.ts`(웹 영어판과 글자까지 같음) |
+| 알림 문장 | `lib/notifications.ts` `notificationText(n)` — 영어면 `title`·`actor`·`count`로 |
+| 약관 링크 | `lib/links.ts` `termsUrl()`·`privacyUrl()` = 웹 페이지 `?lang=` |
+| 휴대폰 권한 문구 | `app.json` `locales` → `mobile/locales/ko.json`·`en.json`(아이폰 사진 보관함 문구), 플러그인 `expo-localization` `supportedLocales` ko·en |
+| 검사 | `__tests__/locales.test.ts`(사전 짝·영어에 한국어 없음·변수·웹과 같은 묶음·**화면 코드에 한국어 직접 쓰기 금지**·키 존재), `guide.test.ts`·`recording.test.ts`(영어판), E2E `app.spec.js` "앱 영어판" |
+
+- 영어 탭 이름: **Home · Shop · Combos · Build · Sell** (안내 글도 이 이름을 씀)
+- 컴포넌트에서는 `const { t } = useTranslation()` — 언어를 바꾸면 그 컴포넌트가 다시 그려짐. 컴포넌트 밖(스토어·계산)은 `import i18n from '@/locales'` 후 `i18n.t`
+- 좁은 칸: 영어가 길면 `numberOfLines`로 잘리니, 꼭 보여야 하는 줄은 두 줄 허용(블록 카드 트리거 줄)하거나 영어를 짧게
+- `'audio/*'` 같은 글자 속 `/*`는 주석이 아님 — 검사는 줄 처음·공백·`{ ( , ;` 뒤의 `/*`만 주석으로 봄
+
+## 7. 다음 단계
+
+- **3단계 서버**: 오류 메시지(`Accept-Language` 또는 계정 언어), 알림 문장(지금은 `title`·`actor`·`count`로 웹·앱이 영어 문장을 만듦), 공유 미리보기(og 태그) 영어, 트리거·스티커 영어 이름을 DB에(`name_en`), 베타 손님 첫 블록·샘플 블록 영어 제목

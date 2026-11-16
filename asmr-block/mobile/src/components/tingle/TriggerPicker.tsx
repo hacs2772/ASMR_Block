@@ -10,6 +10,8 @@ import { notify } from '@/lib/dialog';
 import { formatDuration } from '@/lib/format';
 import { useAuth } from '@/store/auth';
 import { categoryFallbackColor, colors, radius, space } from '@/theme';
+import { useTranslation } from 'react-i18next';
+import { categoryLabel } from '@/lib/labels';
 
 const FIRST_PICKS = ['tap', 'crinkle', 'whisper'];
 const TARGET_SECONDS = 15 * 60;
@@ -38,6 +40,7 @@ export function starterSequence(picks: Block[]) {
  * 누르면 무료 블록은 담고 편집기를 그 조합으로 열어 줌 (유료는 30초 미리 듣기만)
  */
 export function TriggerPicker() {
+  const { t, i18n } = useTranslation();
   const signedIn = useAuth((s) => s.status === 'signedIn');
   const queryClient = useQueryClient();
   const categories = useQuery({ queryKey: ['categories'], queryFn: catalogApi.categories, staleTime: Infinity });
@@ -73,10 +76,10 @@ export function TriggerPicker() {
         queryClient.invalidateQueries({ queryKey: ['blocks'] });
       }
       const usable = seq.filter((b) => b.owned || b.price === 0);
-      if (usable.length === 0) return notify('바로 쓸 수 있는 블록이 없어요', '무료 트리거를 하나 더 골라 주세요.');
+      if (usable.length === 0) return notify(t('trigger.noUsable'), t('trigger.noUsableBody'));
       router.push({ pathname: '/editor/[id]', params: { id: 'new', start: usable.map((b) => b.id).join(',') } });
     } catch (e) {
-      notify('담지 못했어요', (e as Error).message);
+      notify(t('trigger.addFailed'), (e as Error).message);
     } finally {
       setStarting(false);
     }
@@ -87,12 +90,15 @@ export function TriggerPicker() {
     if (!signedIn) return router.push('/login');
     setListening(true);
     try {
-      const combo = await playlistApi.quickStart(picked, 60);
+      // 영어 화면이면 조합 이름도 영어로 (한국어는 서버가 정한 이름 그대로)
+      const names = picked.map((code) => categoryLabel(groups.find((g) => g.code === code))).filter(Boolean).join(' · ');
+      const title = i18n.language === 'en' ? t('trigger.comboTitle', { names }).slice(0, 100) : undefined;
+      const combo = await playlistApi.quickStart(picked, 60, title);
       void queryClient.invalidateQueries({ queryKey: ['playlists'] });
       void queryClient.invalidateQueries({ queryKey: ['library'] });
       router.push({ pathname: '/player/[id]', params: { id: String(combo.id) } });
     } catch (e) {
-      notify('조합을 쌓지 못했어요', (e as Error).message);
+      notify(t('trigger.buildFailed'), (e as Error).message);
     } finally {
       setListening(false);
     }
@@ -105,22 +111,22 @@ export function TriggerPicker() {
     <View style={{ gap: space.md }}>
       <View style={styles.chips}>
         {groups.map((g) => (
-          <Chip key={g.id} label={g.name} color={g.color} active={picked.includes(g.code!)} onPress={() => toggle(g.code!)}
+          <Chip key={g.id} label={categoryLabel(g)} color={g.color} active={picked.includes(g.code!)} onPress={() => toggle(g.code!)}
             testID={`pick-${g.code}`} />
         ))}
       </View>
       <View style={styles.links}>
-        <Pressable onPress={pickPopular} hitSlop={6} accessibilityRole="button"><Text style={styles.link}>잘 모르겠어요 · 많이 듣는 걸로</Text></Pressable>
-        <Pressable onPress={() => setPicked([])} hitSlop={6} accessibilityRole="button"><Text style={styles.link}>다시 고르기</Text></Pressable>
+        <Pressable onPress={pickPopular} hitSlop={6} accessibilityRole="button"><Text style={styles.link}>{t('trigger.popular')}</Text></Pressable>
+        <Pressable onPress={() => setPicked([])} hitSlop={6} accessibilityRole="button"><Text style={styles.link}>{t('trigger.reset')}</Text></Pressable>
       </View>
 
       <View style={styles.result} testID="pick-result">
-        <Text style={styles.resultTitle}>나의 첫 팅글 조합</Text>
+        <Text style={styles.resultTitle}>{t('trigger.resultTitle')}</Text>
         {picks.length === 0 ? (
-          <Text style={styles.empty}>위에서 끌리는 트리거를 하나 이상 골라 주세요.</Text>
+          <Text style={styles.empty}>{t('trigger.empty')}</Text>
         ) : (
           <>
-            <Text style={styles.meta}>한 바퀴 {formatDuration(total)} · 블록 {seq.length}개 · 고른 트리거 {picks.length}개</Text>
+            <Text style={styles.meta}>{t('trigger.meta', { length: formatDuration(total), blocks: t('combo.blocks', { count: seq.length }), triggers: t('trigger.pickedN', { count: picks.length }) })}</Text>
             <View style={styles.chain}>
               {seq.map((b, i) => (
                 <View key={i} style={[styles.brick, { flex: b.duration, backgroundColor: b.category?.color ?? categoryFallbackColor }]}>
@@ -132,13 +138,13 @@ export function TriggerPicker() {
             {picks.map((b) => (
               <View key={b.id} style={styles.pickRow}>
                 <Text style={styles.pickName} numberOfLines={1}>{b.title} <Text style={styles.pickBy}>@{b.uploader.nickname}</Text></Text>
-                <Text style={[styles.pickPrice, b.price === 0 && { color: colors.success }]}>{b.price > 0 ? `${b.price}코인` : '무료'}</Text>
+                <Text style={[styles.pickPrice, b.price === 0 && { color: colors.success }]}>{b.price > 0 ? t('common.coins', { count: b.price }) : t('common.free')}</Text>
               </View>
             ))}
-            <Button title={signedIn ? '이걸로 바로 듣기 (1시간)' : '로그인하고 바로 듣기'} icon="play" onPress={() => void listenNow()}
+            <Button title={signedIn ? t('trigger.listenNow') : t('trigger.loginListen')} icon="play" onPress={() => void listenNow()}
               loading={listening} style={{ marginTop: space.sm }} testID="pick-listen" />
-            <Button title="편집기에서 직접 쌓기" icon="layers" variant="secondary" onPress={start} loading={starting} testID="pick-start" />
-            {hasPaid && <Text style={styles.note}>유료 블록은 지금은 30초만 들어 볼 수 있어서, 무료 블록만으로 시작해요.</Text>}
+            <Button title={t('trigger.buildSelf')} icon="layers" variant="secondary" onPress={start} loading={starting} testID="pick-start" />
+            {hasPaid && <Text style={styles.note}>{t('trigger.paidNote')}</Text>}
           </>
         )}
       </View>

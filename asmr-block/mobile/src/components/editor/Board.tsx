@@ -18,6 +18,7 @@ import {
 import { useCategoryIcon } from './useCategoryIcon';
 import { RowTwoVolume } from './EditorCards';
 import { usePreviewClock } from '@/audio/useMixPreview';
+import { useTranslation } from 'react-i18next';
 
 const LONG_PRESS_MS = 200;
 const NATIVE = Platform.OS !== 'web';
@@ -38,6 +39,7 @@ const GHOST_SLOT = 46;
  * 블록 길이 = 소리 길이 (1분 = 18px)
  */
 export function Board({ playing, onTogglePlay }: { playing: boolean; onTogglePlay: () => void }) {
+  const { t } = useTranslation();
   const main = useEditor((s) => s.main);
   const mix = useEditor((s) => s.mix);
   const mixTarget = useEditor((s) => s.mixTarget);
@@ -98,16 +100,16 @@ export function Board({ playing, onTogglePlay }: { playing: boolean; onTogglePla
   return (
     <View style={styles.plate}>
       <View style={styles.header}>
-        <Pressable accessibilityRole="button" accessibilityLabel={playing ? '멈춤' : '전체 듣기'} onPress={onTogglePlay}
+        <Pressable accessibilityRole="button" accessibilityLabel={playing ? t('board.stop') : t('board.playAll')} onPress={onTogglePlay}
           hitSlop={6} style={[styles.play, playing && styles.playOn]} testID="play-all">
           <Ionicons name={playing ? 'stop' : 'play'} size={12} color={playing ? '#fff' : colors.primaryText} />
-          <Text style={[styles.playText, playing && { color: '#fff' }]}>{playing ? '멈춤' : '전체 듣기'}</Text>
+          <Text style={[styles.playText, playing && { color: '#fff' }]}>{playing ? t('board.stop') : t('board.playAll')}</Text>
         </Pressable>
-        <Text style={styles.caption}>1칸 = 1분</Text>
+        <Text style={styles.caption}>{t('board.scale')}</Text>
         {!mix.enabled && (
-          <Pressable accessibilityRole="button" accessibilityLabel="레이어드 추가 (둘째 줄에 소리 겹치기)" onPress={showMix}
+          <Pressable accessibilityRole="button" accessibilityLabel={t('board.addLayerA11y')} onPress={showMix}
             hitSlop={8} style={styles.addRow} testID="add-row">
-            <Text style={styles.addRowText}>＋ 레이어드</Text>
+            <Text style={styles.addRowText}>{t('board.addLayer')}</Text>
           </Pressable>
         )}
       </View>
@@ -115,7 +117,7 @@ export function Board({ playing, onTogglePlay }: { playing: boolean; onTogglePla
       <View ref={viewportRef} collapsable={false} onLayout={measure}>
         {/* 둘째 줄 이름 (스크롤해도 제자리, 시간 말풍선보다 뒤에) */}
         {mix.enabled && (
-          <Text style={styles.laneLabel} pointerEvents="none">② 레이어드 · 원하는 시간에 끌어다 놓기</Text>
+          <Text style={styles.laneLabel} pointerEvents="none">{t('board.laneLabel')}</Text>
         )}
         <ScrollView
           ref={scrollRef as never}
@@ -157,7 +159,7 @@ export function Board({ playing, onTogglePlay }: { playing: boolean; onTogglePla
             {mix.enabled && (
               <>
                 <View style={[styles.lane, { left: BOARD_PAD, top: LANE_TOP - 2, width: contentWidth - BOARD_PAD * 2 }]} testID="lane">
-                  <Pressable accessibilityRole="button" accessibilityLabel="이 시간에 소리 넣기"
+                  <Pressable accessibilityRole="button" accessibilityLabel={t('board.putHere')}
                     style={StyleSheet.absoluteFill} onPress={(e) => onLaneTap(e.nativeEvent.locationX)} testID="lane-bg" />
                   {mix.items.map((m) => (
                     <DraggableBrick key={m.key} row="mix" itemKey={m.key} block={m.block} z={0}
@@ -168,12 +170,12 @@ export function Board({ playing, onTogglePlay }: { playing: boolean; onTogglePla
                   ))}
                   {preview?.row === 'mix' && source && (
                     <View pointerEvents="none" style={[styles.dropOutline, { left: preview.start * PX_PER_SECOND, width: brickWidth(source.block.duration) }]}>
-                      <Bubble text={`${formatDuration(preview.start)}부터`} />
+                      <Bubble text={t('board.fromTime', { time: formatDuration(preview.start) })} />
                     </View>
                   )}
                   {mixTarget !== null && !source && (
                     <View pointerEvents="none" style={[styles.mark, { left: mixTarget * PX_PER_SECOND }]}>
-                      <Bubble text={`${formatDuration(mixTarget)}에 넣기`} />
+                      <Bubble text={t('board.insertAt', { time: formatDuration(mixTarget) })} />
                     </View>
                   )}
                 </View>
@@ -240,6 +242,7 @@ function DraggableBrick({ row, itemKey, block, hole, z, left, top, width, height
   row: RowKey; itemKey: string; block: EditorBlock; hole: boolean; z: number; left: number; top: number; width: number; height: number;
   icon: ReturnType<ReturnType<typeof useCategoryIcon>>; timeLabel?: string; animateIn: boolean;
 }) {
+  const { t } = useTranslation();
   const selected = useEditor((s) => s.selected?.key === itemKey);
   const select = useEditor((s) => s.select);
   const handlers = useDragHandlers();
@@ -265,7 +268,7 @@ function DraggableBrick({ row, itemKey, block, hole, z, left, top, width, height
         collapsable={false}
         style={[styles.abs, { left, top, width, height, zIndex: selected ? 500 : z }]}
         accessibilityRole="button"
-        accessibilityLabel={`${row === 'main' ? '첫째 줄' : '둘째 줄'} ${block.title}${block.owned ? '' : ' (내 블록함에 없음)'}`}
+        accessibilityLabel={`${row === 'main' ? t('board.mainRow') : t('board.layerRow')} ${block.title}${block.owned ? '' : t('board.notOwned')}`}
         testID={`brick-${row}-${block.id}`}
       >
         <Animated.View style={motion}>
@@ -303,6 +306,7 @@ function Bubble({ text }: { text: string }) {
 
 /** 전체 보기 슬라이더: 한 바퀴 전체를 색 띠로, 흰 테두리 = 지금 보이는 부분. 밀거나 누르면 그쪽으로 */
 function Minimap() {
+  const { t } = useTranslation();
   const main = useEditor((s) => s.main);
   const mix = useEditor((s) => s.mix);
   const scroll = useBoardScroll();
@@ -327,7 +331,7 @@ function Minimap() {
     <View style={styles.miniWrap}>
       <GestureDetector gesture={pan}>
         <View style={styles.mini} collapsable={false} onLayout={(e) => { widthRef.current = e.nativeEvent.layout.width; }}
-          accessibilityRole="adjustable" accessibilityLabel="전체 보기 슬라이더" testID="minimap">
+          accessibilityRole="adjustable" accessibilityLabel={t('board.minimapA11y')} testID="minimap">
           <View style={styles.miniRow}>
             {mainSegments.map((s) => (
               <View key={s.key} style={[styles.miniSeg, { left: pct(s.start), width: pct(s.length), backgroundColor: s.color }]} />
@@ -345,7 +349,7 @@ function Minimap() {
       </GestureDetector>
       <View style={styles.miniEnds}>
         <Text style={styles.miniText}>0:00</Text>
-        <Text style={styles.miniText}>밀어서 처음 ↔ 끝 보기</Text>
+        <Text style={styles.miniText}>{t('board.minimap')}</Text>
         <Text style={styles.miniText}>{formatDuration(cycleLength({ main, mix }))}</Text>
       </View>
     </View>
