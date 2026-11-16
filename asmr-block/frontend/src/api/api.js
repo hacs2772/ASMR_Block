@@ -97,6 +97,15 @@ export const adminApi = {
   /** 오래된 완성본 지금 정리 → { message, data: { deleted, freedMb } } */
   cleanup: () => axiosInstance.post('/admin/cleanup').then((r) => r.data),
   setSamples: (visible) => axiosInstance.put('/admin/samples', { visible }).then((r) => r.data),
+  /** 신고: status OPEN 새 신고 | HIDDEN 숨긴 것 | DISMISSED 문제없음 (대상별로 묶임) */
+  reports: (status = 'OPEN') => data(axiosInstance.get('/admin/reports', { params: { status } })),
+  /** action HIDE 숨기기 | DISMISS 문제없음 | RESTORE 되돌리기, banOwner = 올린 사람 업로드도 막기 */
+  resolveReport: (body) => axiosInstance.post('/admin/reports/resolve', body).then((r) => r.data),
+};
+
+/** 신고하기 (로그인 없이도 됨). targetType BLOCK | PLAYLIST | USER, reason COPYRIGHT | OFFENSIVE | SPAM | OTHER */
+export const reportApi = {
+  send: (body) => axiosInstance.post('/reports', body).then((res) => res.data),
 };
 
 /** 의견 보내기 (로그인 없이도 됨) */

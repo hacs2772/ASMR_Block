@@ -29,6 +29,7 @@
 - **조합 공유(카톡 미리보기)**: 공유 링크 = `https://asmrblock.com/s/{id}` → 백엔드 `share` 패키지가 og 태그 HTML(조합 이름·설명) + 카드 그림 `/s/{id}/card.png`(Java2D로 블록 두 줄, 글자 없음, `ShareCardRenderer`)을 만들고 사람은 `/listen/{id}`로 넘김. 공개 조합만, 웹 nginx `/s/` → 백엔드, 사이트 주소 `APP_SITE_URL`. 웹 듣기 화면 `components/playlist/ShareButton.jsx`·앱 플레이어 머리 공유 아이콘: 휴대폰 공유 창(없으면 링크 복사), 담아 온 복사본은 원래 조합, 내 비공개 조합은 "공개로 바꾸고 공유"(`PATCH /playlists/{id}/visibility`)
 - **샘플 숨기기(V11)**: 진짜 블록이 모이면 관리자 통계 탭의 "샘플 숨기기"(`PUT /admin/samples`) → 샘플 블록 `is_listed=false`(상점·요즘 뜨는 소리·베타 손님 첫 블록에서 빠짐, `BlockSearchCondition.listedOnly`) + 샘플 조합 비공개. 이미 담은 사람은 그대로 들음. 새로 상점 목록을 만들면 `listedOnly(true)`를 꼭 넣기
 - **공개 서버 안전장치**: `common/RateLimiter`(서버 메모리) + `common/ClientIp`로 베타 손님·가입은 접속 주소당 1시간 20번(베타 손님은 사이트 전체 하루 500), 먼저 올리기는 사람당 1시간 30번, 블록 올리기는 하루 20개(DB로 셈), 관리자는 업로드 제한 없음 → 넘으면 429 (`app.limits.*`, 테스트 프로필은 넉넉, 제한 자체는 `LimitsApiTest`). **오래된 완성본 정리**(V12 `last_used_at`, `render/RenderCleanupService`): 30일 안 들은 완성본 파일을 매일 새벽 4:40(한국)·관리자 버튼으로 지움 → 상태가 `NOT_REQUESTED`가 되어 앱·웹이 저절로 다시 만듦. 관리자 통계에 서버 디스크 남은 공간(`disk`)
+- **신고 + 관리자 숨기기(V13, `report` 패키지)**: 블록 카드·듣기 화면(남의 조합)에 작은 깃발 "신고"(웹 `components/common/Report.jsx`, 앱 `components/ReportSheet.tsx`) → 이 블록·조합 또는 올린 사람(@닉네임), 이유 4가지(저작권·불쾌함·광고·도배·기타) + 적은 말, 로그인 없이도(1시간 10번). 관리자 페이지 **신고** 탭(`components/admin/ReportList.jsx`, 배지 = 통계 `openReports`): 대상별로 묶어 보고 들어 보기 → **숨기기**(블록 = REJECTED + 판매자에게 이유, 조합 = `is_hidden`, 사람 = `upload_banned`) / **문제없음** / 숨긴 것 **되돌리기**, "올린 사람 업로드도 막기". 새로 공개 조합 목록을 만들면 `is_hidden = false`를 꼭 넣기
 - **베타 운영(V9)**: 웹 `/privacy`·`/terms`(베타판 쉬운 말, 연락처 help@asmrblock.com, `pages/LegalPages.jsx`), 가입·베타 버튼 아래 동의 안내. **의견 보내기**: 웹 오른쪽 아래 버튼·바닥글(`components/common/Feedback.jsx`), 앱 도움말(`components/FeedbackForm.tsx`) → `POST /feedback`(로그인 없이도, 10분에 5번). 관리자 페이지 **통계**(`GET /admin/stats`, 관리자·샘플 계정 빼고 한국 시간, 최근 14일)·**의견** 탭
 - **블록 상점 → 내 블록함**: 듣는 사람은 상점에서 블록을 담고(`user_block`), 편집기에는 **담은 블록만**. 같은 블록 복제는 무료. 무료는 바로 담기, 유료는 구매(코인 + 구독, 준비 중) — 사기 전엔 앞 30초 맛보기(`preview_key`)만, 원본 `fileUrl`은 내 것일 때만
 - **플레이리스트 = 옆으로 누운 레고 블록 두 줄** (왼쪽→오른쪽, 블록 길이 = 소리 길이): **첫째 줄**(`MAIN`, 빈틈없이 순서대로) + **둘째 줄**(`MIX`, 선택, 따로 흐름, `startSeconds` 위치에만·사이는 빈칸·겹침 금지). 이어진 같은 블록은 `repeat`(1~200)로 묶어 저장, 줄별 볼륨, 한 바퀴 최대 10시간
@@ -68,7 +69,7 @@ cd asmr-block/mobile && npx tsc --noEmit && npx eslint . && npx jest   # CI와 �
 테스트 계정: `test@asmrblock.com` / `password123` (관리자: `admin@asmrblock.com`)
 
 ## 백엔드 규칙
-- **DB 변경은 새 Flyway 파일로만**: `src/main/resources/db/migration/V{n}__설명.sql`. 이미 있는 V 파일은 절대 수정하지 않는다. (지금 V12까지 있음 → 다음은 V13)
+- **DB 변경은 새 Flyway 파일로만**: `src/main/resources/db/migration/V{n}__설명.sql`. 이미 있는 V 파일은 절대 수정하지 않는다. (지금 V13까지 있음 → 다음은 V14)
 - 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 프로필에서만 실행). 여러 번 실행돼도 안전하게 `ON CONFLICT` 사용.
 - 응답은 항상 `ApiResponse` 형식(`success`, `message`, `data`, `error{code,message}`). 오류는 `ApiException.notFound/badRequest/...` 로 던진다.
 - 요청/응답 DTO는 record로, 기능 패키지의 `*Dtos.java` 안에 모은다. 컨트롤러에서 `Map`으로 응답을 만들지 않는다.
@@ -123,6 +124,7 @@ cd asmr-block/mobile && npx tsc --noEmit && npx eslint . && npx jest   # CI와 �
 - [x] 샘플 숨기기 버튼(V11), 베타 모집 글(`docs/beta_recruit.md`), 안드로이드 APK 빌드 준비
 - [x] 공개 서버 안전장치: 너무 자주 하면 429, 오래된 완성본 정리(V12), 관리자 통계에 디스크
 - [x] 첫 조합 바로 만들기: 트리거만 고르면 조합을 쌓아 바로 듣기 (웹 홈·내 조합, 앱 홈·블록 편집)
+- [x] 신고하기 + 관리자 숨기기·업로드 막기(V13) — 스토어 심사(사용자 콘텐츠 신고 기능)에도 필요
 - [x] **거의 0원으로 먼저 보여 주기**(사용자가 고른 방향): asmrblock.com 공개 중 (지금은 사용자의 회사 PC + Cloudflare Tunnel, 옮기는 법은 README "다른 PC로 옮기기"). 남은 것 = 진짜 녹음 블록 채우기 → 베타 모집(`docs/beta_recruit.md`) → 반응 보기. 사업자·스토어 계정·유료 서버는 그 뒤에
 - [ ] 안드로이드 APK: 설정·안내 준비 끝(`mobile/eas.json`, README) → 사용자가 Expo 가입 후 `eas build -p android --profile preview` → 실기기로 아이콘·첫 화면·잠금화면 재생 확인. 첫 빌드 뒤 `app.json`의 `extra.eas.projectId`를 저장소에 넣기
 - [ ] 아이폰(TestFlight, 애플 개발자 계정 필요), 광고 SDK(AdMob)로 광고 자리 교체

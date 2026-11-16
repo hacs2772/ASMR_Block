@@ -66,6 +66,7 @@ public class UploadDraftService {
         if (file == null || file.isEmpty()) {
             throw ApiException.badRequest(video ? "영상을 골라 주세요." : "소리 파일을 골라 주세요.");
         }
+        BlockUploadService.checkNotBanned(userMapper, userId);
         if (!BlockUploadService.isAdmin(userMapper, userId)) {
             rateLimiter.check("draft:u" + userId, properties.limits().uploadDraftsPerHour(), Duration.ofHours(1),
                     "파일을 너무 자주 올렸어요. 잠시 후 다시 골라 주세요.");

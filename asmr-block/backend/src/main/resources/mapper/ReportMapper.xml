@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.asmrblock.report.ReportMapper">
+
+    <insert id="insert">
+        INSERT INTO report (target_type, target_id, reason, detail, reporter_id, status, resolved_at)
+        VALUES (#{targetType}, #{targetId}, #{reason}, #{detail}, #{reporterId}, #{status},
+                CASE WHEN #{status} = 'OPEN' THEN NULL ELSE NOW() END)
+    </insert>
+
+    <select id="existsOpen" resultType="boolean">
+        SELECT EXISTS (SELECT 1 FROM report WHERE target_type = #{targetType} AND target_id = #{targetId}
+                       AND reporter_id = #{reporterId} AND status = 'OPEN')
+    </select>
+
+    <!-- 대상마다 묶고, 대상 이름·올린 사람·지금 상태를 한 번에 붙임 -->
+    <select id="findTargets" resultType="com.asmrblock.report.ReportTarget">
+        SELECT g.*,
+               CASE g.target_type WHEN 'BLOCK' THEN b.title WHEN 'PLAYLIST' THEN p.title ELSE u.nickname END AS title,
+               CASE g.target_type WHEN 'BLOCK' THEN b.uploader_id WHEN 'PLAYLIST' THEN p.user_id ELSE u.id END AS owner_id,
+               CASE g.target_type WHEN 'BLOCK' THEN ub.nickname WHEN 'PLAYLIST' THEN up.nickname ELSE u.nickname END AS owner_nickname,
+               CASE g.target_type
+                   WHEN 'BLOCK' THEN b.status
+                   WHEN 'PLAYLIST' THEN CASE WHEN p.is_hidden THEN 'HIDDEN' WHEN p.is_public THEN 'PUBLIC' ELSE 'PRIVATE' END
+                   ELSE CASE WHEN u.upload_banned THEN 'BANNED' ELSE 'ACTIVE' END
+               END AS state,
+               b.file_key AS media_key
+        FROM (
+            SELECT target_type, target_id, COUNT(*) AS count,
+                   COUNT(*) FILTER (WHERE reason = 'COPYRIGHT') AS copyright,
+                   COUNT(*) FILTER (WHERE reason = 'OFFENSIVE') AS offensive,
+                   COUNT(*) FILTER (WHERE reason = 'SPAM') AS spam,
+                   COUNT(*) FILTER (WHERE reason = 'OTHER') AS other,
+                   string_agg(detail, ' / ' ORDER BY created_at DESC) FILTER (WHERE detail IS NOT NULL AND detail &lt;&gt; '') AS details,
+                   MIN(created_at) AS first_at, MAX(COALESCE(resolved_at, created_at)) AS last_at
+            FROM report WHERE status = #{status}
+            GROUP BY target_type, target_id
+        ) g
+        LEFT JOIN block b ON g.target_type = 'BLOCK' AND b.id = g.target_id
+        LEFT JOIN users ub ON ub.id = b.uploader_id
+        LEFT JOIN playlist p ON g.target_type = 'PLAYLIST' AND p.id = g.target_id
+        LEFT JOIN users up ON up.id = p.user_id
+        LEFT JOIN users u ON g.target_type = 'USER' AND u.id = g.target_id
+        ORDER BY g.last_at DESC
+        LIMIT 100
+    </select>
+
+    <update id="updateStatus">
+        UPDATE report SET status = #{to}, resolved_at = NOW()
+        WHERE target_type = #{targetType} AND target_id = #{targetId} AND status = #{from}
+    </update>
+
+</mapper>

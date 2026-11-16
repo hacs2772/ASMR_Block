@@ -41,4 +41,8 @@
         WHERE id = #{id}
     </update>
 
+    <update id="updateUploadBanned">
+        UPDATE users SET upload_banned = #{banned} WHERE id = #{id}
+    </update>
+
 </mapper>

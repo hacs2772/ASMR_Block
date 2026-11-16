@@ -499,7 +499,7 @@
 | POST | `/feedback` | 없어도 됨 | 의견 보내기 `{ "message": "2~2000자", "contact": "답장 받을 곳(선택)", "page": "/create", "client": "web|app" }` → 201. 로그인했으면 누가 보냈는지도 남음. **같은 계정·같은 IP는 10분에 5번까지** (넘으면 429) |
 | GET | `/admin/feedback?done=false` | 관리자 | 의견 목록 (`done` 없으면 전부, false 새 의견, true 확인함). `who`(닉네임, 비로그인 null), `beta`(베타 손님인지), `page`, `client` |
 | PATCH | `/admin/feedback/{id}` | 관리자 | 확인함 `{ "done": true }` |
-| GET | `/admin/stats?funnelDays=14` | 관리자 | 숫자 한눈에: `people`(total = 베타 손님 + 가입 회원, newToday·new7d), `activity`(만든 조합·공개 조합·한 번에 담기·재생 24시간/7일/전체), `content`(승인 블록·샘플·사람들이 올린 블록·승인 대기), `newFeedback`, `days`(최근 14일 날짜별 가입·새 조합·재생), **`funnel`**(아래) |
+| GET | `/admin/stats?funnelDays=14` | 관리자 | 숫자 한눈에: `people`(total = 베타 손님 + 가입 회원, newToday·new7d), `activity`(만든 조합·공개 조합·한 번에 담기·재생 24시간/7일/전체), `content`(승인 블록·샘플·사람들이 올린 블록·승인 대기), `newFeedback`, **`openReports`**(처리 안 한 신고 대상 수, V13), `days`(최근 14일 날짜별 가입·새 조합·재생), **`funnel`**(아래) |
 
 | POST | `/admin/cleanup` | 관리자 | **오래된 완성본 지금 정리** → `{ "deleted": 3, "freedMb": 120 }`. `app.cleanup.render-keep-days`(기본 30)일 동안 아무도 안 들은 완성본 파일·오래된 실패 기록을 지움 (매일 새벽 4시 40분에도 저절로). 다시 들으면 상태가 `NOT_REQUESTED`라 앱·웹이 저절로 다시 만듦 |
 | GET | `/admin/samples` | 관리자 | 샘플 상태 `{ "blocks": 20, "listedBlocks": 20, "combos": 5, "publicCombos": 5, "realBlocks": 12, "visible": true }` (공개용 샘플 계정의 블록·조합, `realBlocks` = 상점에 보이는 진짜 블록) |
@@ -519,12 +519,35 @@
 - 사람 수에서 관리자·샘플 계정·탈퇴한 사람은 뺌. 베타 손님 = `beta-…@beta.asmrblock.com`. 날짜는 한국 시간
 - 재생 = 로그인한 사람의 블록·조합 재생 기록 (같은 사람이 30분 안에 다시 들으면 1번)
 
+### 9.5 신고 - V13
+
+누구나(로그인 없이도) 블록·공개 조합·사람을 신고하고, 관리자가 대상별로 묶어 보고 처리해요.
+
+| Method | URL | 인증 | 설명 |
+|------|------|------|------|
+| POST | `/reports` | 없어도 됨 | 신고 `{ "targetType": "BLOCK|PLAYLIST|USER", "targetId": 12, "reason": "COPYRIGHT|OFFENSIVE|SPAM|OTHER", "detail": "500자까지(선택)" }` → 201 `"신고를 받았어요. 관리자가 확인할게요."`. 같은 사람이 처리 전에 또 신고하면 한 번만 셈(`"이미 신고했어요…"`). 대상이 없거나 볼 수 없는 조합(비공개)이면 404. **1시간에 10번** (계정 또는 접속 주소, 넘으면 429) |
+| GET | `/admin/reports?status=OPEN` | 관리자 | 대상별로 묶은 목록 (최근 것부터 100개). `status` = `OPEN` 새 신고 / `HIDDEN` 숨긴 것 / `DISMISSED` 문제없음 |
+| POST | `/admin/reports/resolve` | 관리자 | 처리 `{ "targetType", "targetId", "action": "HIDE|DISMISS|RESTORE", "banOwner": false, "note": "150자(선택)" }` |
+
+목록 한 줄:
+```json
+{ "targetType": "BLOCK", "targetId": 12, "title": "원목 탭핑", "ownerId": 5, "ownerNickname": "탭탭",
+  "count": 3, "reasons": { "COPYRIGHT": 2, "OFFENSIVE": 0, "SPAM": 1, "OTHER": 0 },
+  "details": "유튜브에서 가져온 소리 같아요 / …", "state": "APPROVED", "mediaUrl": "https://…/blocks/….mp3",
+  "firstAt": "…", "lastAt": "…" }
+```
+- `state`: 블록 `APPROVED`·`REJECTED`… / 조합 `PUBLIC`·`PRIVATE`·`HIDDEN` / 사람 `ACTIVE`·`BANNED`. `mediaUrl` = 블록이면 관리자가 바로 들어 볼 음원
+- **HIDE 숨기기**: 블록 = `REJECTED`(상점에서 빠짐, 판매자 "내가 올린 블록"에 `신고로 내려졌어요: note`) / 조합 = `playlist.is_hidden`(공개 목록·요즘 뜨는 조합·공유 카드·남의 보기·담기에서 빠짐, 만든 사람은 그대로 봄) / 사람 = `users.upload_banned`(블록 올리기·먼저 올리기 403). `banOwner: true`면 올린 사람 업로드도 막고 "숨긴 것"에 사람으로도 남김. 신고 없이 바로 숨겨도 "숨긴 것"에 보임
+- **DISMISS 문제없음**: 새 신고만 `DISMISSED`로 (대상은 그대로)
+- **RESTORE 되돌리기**: 블록 = 다시 `APPROVED`, 조합 = 숨김 풀기, 사람 = 업로드 다시 가능. 숨긴 신고는 `DISMISSED`로
+- 이미 담은 블록·담아 온 조합은 숨겨도 그 사람 블록함·조합에서 그대로 들어요 (상점·공개 목록에서만 빠짐)
+
 ---
 
 ## 향후 추가 예정
 - **코인 충전(인앱결제) → 코인으로 블록 구매 + 구독**, 크리에이터 수익 배분 (`play_log` 기반)
 - 유료 원본 보호 강화: S3/R2 서명된 URL
-- 좋아요 / 신고 / 추천
+- 좋아요 / 추천
 - 저장소 S3/R2 + CDN
 
 ---
@@ -554,4 +577,5 @@ API(`/api/v1`) 밖의 주소예요. 웹 nginx가 `/s/`를 백엔드로 넘겨요
 | `POST /blocks/upload-drafts` | 1시간에 30번 | 한 사람 |
 | `POST /blocks` | 하루(24시간)에 20개 | 한 사람 (DB로 셈) |
 | `POST /feedback` | 10분에 5번 | 한 사람 또는 접속 주소 |
+| `POST /reports` | 1시간에 10번 | 한 사람 또는 접속 주소 |
 

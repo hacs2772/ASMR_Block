@@ -7,7 +7,7 @@ const fmt = (n) => (n >= 10000 ? `${(n / 10000).toFixed(n >= 100000 ? 0 : 1)}만
 const dayLabel = (iso) => { const [, m, d] = iso.split('-'); return `${Number(m)}/${Number(d)}`; };
 
 /** 관리자: 베타 반응 숫자 한눈에 (숫자 칸 + 최근 14일 작은 막대 셋 + 표로 보기) */
-function StatsPanel({ onOpenFeedback }) {
+function StatsPanel({ onOpenFeedback, onOpenReports }) {
   const [stats, setStats] = useState(null);
   const [table, setTable] = useState(false);
   const [funnelDays, setFunnelDays] = useState(14);
@@ -46,6 +46,12 @@ function StatsPanel({ onOpenFeedback }) {
       <SampleBar />
       {stats.disk && <DiskBar disk={stats.disk} onCleaned={() => adminApi.stats(funnelDays).then(setStats).catch(() => {})} />}
 
+      {stats.openReports > 0 && (
+        <button type="button" onClick={onOpenReports} data-testid="stats-reports"
+          className="mt-3 flex w-full items-center justify-between rounded-xl bg-pink-soft px-4 py-3 text-left text-sm font-bold text-pink-text hover:bg-pink hover:text-white">
+          새 신고 {stats.openReports}건이 있어요. 들어 보고 처리해 주세요 <span aria-hidden="true">→</span>
+        </button>
+      )}
       {newFeedback > 0 && (
         <button type="button" onClick={onOpenFeedback}
           className="mt-3 flex w-full items-center justify-between rounded-xl bg-pink-soft px-4 py-3 text-left text-sm font-bold text-pink-text hover:bg-pink hover:text-white">

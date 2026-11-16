@@ -3,9 +3,11 @@ import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import type { Block } from '@/api/types';
 import { BlockVideoModal } from '@/components/BlockVideoModal';
+import { ReportFlag } from '@/components/ReportSheet';
 import { Brick } from '@/components/editor/Brick';
 import { useCategoryIcon } from '@/components/editor/useCategoryIcon';
 import { formatDuration } from '@/lib/format';
+import { useAuth } from '@/store/auth';
 import { categoryFallbackColor, colors, radius, space, talkLabel } from '@/theme';
 
 type Props = {
@@ -19,6 +21,8 @@ type Props = {
   /** 아래 오른쪽 버튼 (담기 등) */
   right?: ReactNode;
   style?: StyleProp<ViewStyle>;
+  /** 신고 깃발 (업로드 미리보기에서는 끔). 내가 올린 블록에는 안 보임 */
+  reportable?: boolean;
 };
 
 const BRICK_H = 38;
@@ -36,7 +40,7 @@ const noteOf = (b: Block) => (b.description ?? '').replace(/^\[[^\]]*\]\s*/, '')
  * 블록 길이 = 소리 길이, 색 = 트리거, 아이콘 = 소분류, 블록 위에 길이. 왼쪽 위 가격표, 오른쪽 위 들어보기.
  * 아래 = 이름, 트리거·말소리, @크리에이터, 녹음한 곳, 담기
  */
-export function BlockCard({ block, previewing, onPreview, rank, showNote, right, style }: Props) {
+export function BlockCard({ block, previewing, onPreview, rank, showNote, right, style, reportable = true }: Props) {
   const iconOf = useCategoryIcon();
   const color = block.category?.color ?? categoryFallbackColor;
   const taste = block.price > 0 && !block.owned;
@@ -44,6 +48,8 @@ export function BlockCard({ block, previewing, onPreview, rank, showNote, right,
   const [watching, setWatching] = useState(false);
   const closeVideo = () => { setWatching(false); if (previewing) onPreview(); };
   const group = block.category?.parentName ?? block.category?.name ?? '기타';
+  const me = useAuth((s) => s.user);
+  const canReport = reportable && block.uploader.id !== me?.id;
   return (
     <View style={[styles.card, style]} testID={`block-${block.id}`}>
       <View style={[styles.plate, { backgroundColor: color + '1F' }]}>
@@ -90,7 +96,12 @@ export function BlockCard({ block, previewing, onPreview, rank, showNote, right,
         <Text style={styles.tags} numberOfLines={1}>
           <Text style={{ color }}>■ </Text>{group}<Text style={styles.talk}> · {talkLabel[block.talkType ?? 'NONE']}</Text>
         </Text>
-        <Text style={styles.by} numberOfLines={1}>@{block.uploader.nickname}</Text>
+        <View style={styles.byRow}>
+          <Text style={styles.by} numberOfLines={1}>@{block.uploader.nickname}</Text>
+          {canReport ? (
+            <ReportFlag target={{ type: 'BLOCK', id: block.id, title: block.title }} owner={block.uploader} size={13} testID={`report-block-${block.id}`} />
+          ) : null}
+        </View>
         {block.recordedPlace ? (
           <View style={styles.placeRow}>
             <Ionicons name="location" size={11} color={colors.faint} />
@@ -138,7 +149,8 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: 15, fontWeight: '700' },
   tags: { color: colors.muted, fontSize: 11, fontWeight: '600', marginTop: 1 },
   talk: { color: colors.faint, fontWeight: '400' },
-  by: { color: colors.muted, fontSize: 12 },
+  byRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  by: { color: colors.muted, fontSize: 12, flexShrink: 1 },
   placeRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   place: { color: colors.faint, fontSize: 11, flexShrink: 1 },
   note: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 3 },

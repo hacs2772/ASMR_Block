@@ -70,6 +70,16 @@ export const feedbackApi = {
     api<null>('/feedback', { method: 'POST', body: { client: 'app', ...body } }),
 };
 
+export type ReportTargetType = 'BLOCK' | 'PLAYLIST' | 'USER';
+/** COPYRIGHT 저작권 / OFFENSIVE 불쾌함 / SPAM 광고·도배 / OTHER 기타 */
+export type ReportReason = 'COPYRIGHT' | 'OFFENSIVE' | 'SPAM' | 'OTHER';
+
+/** 신고하기 (로그인 없이도 됨). 관리자가 웹 관리자 페이지에서 보고 숨김 */
+export const reportApi = {
+  send: (body: { targetType: ReportTargetType; targetId: number; reason: ReportReason; detail?: string | null }) =>
+    api<null>('/reports', { method: 'POST', body }),
+};
+
 /** 판매자: ASMR 업로드 */
 export const sellerApi = {
   policy: () => api<UploadPolicy>('/blocks/upload-policy'),

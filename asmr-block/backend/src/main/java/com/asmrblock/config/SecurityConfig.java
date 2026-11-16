@@ -50,7 +50,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login",
                     "/api/v1/auth/refresh", "/api/v1/auth/logout",
                     "/api/v1/auth/beta", "/api/v1/auth/beta-login",
-                    "/api/v1/feedback").permitAll()
+                    "/api/v1/feedback", "/api/v1/reports").permitAll()
                 .requestMatchers(HttpMethod.GET,
                     "/api/v1/categories", "/api/v1/tags", "/api/v1/stickers",
                     "/api/v1/blocks", "/api/v1/blocks/*",

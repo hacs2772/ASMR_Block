@@ -72,6 +72,10 @@
         <foreach collection="sourceIds" item="id" open="(" separator="," close=")">#{id}</foreach>
     </select>
 
+    <update id="updateHidden">
+        UPDATE playlist SET is_hidden = #{hidden} WHERE id = #{id}
+    </update>
+
     <update id="updatePublic">
         UPDATE playlist SET is_public = #{isPublic}, updated_at = NOW() WHERE id = #{id}
     </update>
@@ -109,7 +113,7 @@
 
     <select id="findPublic" resultType="com.asmrblock.playlist.Playlist">
         <include refid="selectPlaylist"/>
-        WHERE p.is_public = true
+        WHERE p.is_public = true AND p.is_hidden = false
         <choose>
             <when test="sort == 'popular'">ORDER BY p.play_count DESC, p.created_at DESC, p.id DESC</when>
             <otherwise>ORDER BY p.created_at DESC, p.id DESC</otherwise>
@@ -120,7 +124,7 @@
     <select id="findTrending" resultType="com.asmrblock.playlist.Playlist">
         SELECT recent.recent_plays, x.* FROM (
             <include refid="selectPlaylist"/>
-            WHERE p.is_public = true
+            WHERE p.is_public = true AND p.is_hidden = false
         ) x
         JOIN (
             SELECT target_id, COUNT(*) AS recent_plays
@@ -133,7 +137,7 @@
     </select>
 
     <select id="countPublic" resultType="long">
-        SELECT COUNT(*) FROM playlist WHERE is_public = true
+        SELECT COUNT(*) FROM playlist WHERE is_public = true AND is_hidden = false
     </select>
 
     <insert id="insertLayer" useGeneratedKeys="true" keyProperty="id">

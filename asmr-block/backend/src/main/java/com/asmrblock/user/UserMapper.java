@@ -12,6 +12,9 @@ public interface UserMapper {
 
     Optional<User> findById(Long id);
 
+    /** 블록 올리기 막기·풀기 (관리자) */
+    void updateUploadBanned(@org.apache.ibatis.annotations.Param("id") Long id, @org.apache.ibatis.annotations.Param("banned") boolean banned);
+
     Optional<User> findByEmail(String email);
 
     boolean existsByEmail(String email);

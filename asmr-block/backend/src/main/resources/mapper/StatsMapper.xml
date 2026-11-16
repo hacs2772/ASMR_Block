@@ -39,7 +39,8 @@
                WHERE b.is_active = true AND b.status = 'APPROVED' AND u.email = 'samples@asmrblock.invalid') AS sample_blocks,
             (SELECT COUNT(*) FROM block b JOIN people u ON u.id = b.uploader_id WHERE b.is_active = true) AS user_uploads,
             (SELECT COUNT(*) FROM block WHERE is_active = true AND status = 'PENDING')            AS pending_blocks,
-            (SELECT COUNT(*) FROM feedback WHERE is_done = false)                                 AS new_feedback
+            (SELECT COUNT(*) FROM feedback WHERE is_done = false)                                 AS new_feedback,
+            (SELECT COUNT(DISTINCT (target_type, target_id)) FROM report WHERE status = 'OPEN')   AS open_reports
     </select>
 
     <!--

@@ -46,7 +46,8 @@ public class StatsService {
         Map<String, Object> f = statsMapper.funnel(days);
         Funnel funnel = new Funnel(days, n(f, "joined"), n(f, "collected"), n(f, "has_combo"), n(f, "made_combo"),
                 n(f, "collected_combo"), n(f, "listened"), n(f, "listened_10m"), n(f, "came_back"), n(f, "can_come_back"));
-        return new StatsResponse(people, activity, content, n(s, "new_feedback"), statsMapper.daily(), funnel, disk());
+        return new StatsResponse(people, activity, content, n(s, "new_feedback"), statsMapper.daily(), funnel, disk(),
+                n(s, "open_reports"));
     }
 
     /** 저장소가 있는 디스크의 남은 공간과 완성본 크기 (못 읽으면 0) */

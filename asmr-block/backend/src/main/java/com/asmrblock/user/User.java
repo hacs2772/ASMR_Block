@@ -23,6 +23,7 @@ public class User {
     private String language;
     private Role role;
     private Boolean isActive;
+    private Boolean uploadBanned;     // 블록 올리기를 막은 사람 (V13)
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -107,6 +107,21 @@ audio_render                           완성본 (구성 해시로 재사용, �
 | page / client | VARCHAR | 보낸 화면 (`/create`) / `web`·`app` |
 | is_done | BOOLEAN | 관리자가 확인함 |
 
+## report (신고, V13)
+웹·앱의 "신고". 관리자 페이지 > 신고에서 대상(`target_type`+`target_id`)별로 묶어 봄
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| target_type / target_id | VARCHAR(20) / BIGINT | `BLOCK`·`PLAYLIST`·`USER` + 그 id (FK 없음: 대상이 지워져도 기록은 남음) |
+| reason | VARCHAR(20) | `COPYRIGHT` 저작권 / `OFFENSIVE` 불쾌함 / `SPAM` 광고·도배 / `OTHER` 기타 |
+| detail | VARCHAR(500) | 적은 말 (선택) |
+| reporter_id | BIGINT NULL | 신고한 사람 (로그인 안 했으면 NULL, 탈퇴하면 NULL). 상대에게는 안 보임 |
+| status | VARCHAR(20) | `OPEN` 새 신고 / `HIDDEN` 숨김 처리 / `DISMISSED` 문제없음 |
+| created_at / resolved_at | TIMESTAMP | 처리하면 resolved_at |
+
+- `playlist.is_hidden` (V13): 관리자가 신고로 숨긴 조합. 공개 목록·요즘 뜨는 조합·공유 링크·남이 보기·담기에서 빠짐, 만든 사람은 그대로 봄
+- `users.upload_banned` (V13): 관리자가 업로드를 막은 사람. 블록 올리기·먼저 올리기가 403
+
 ## block.is_listed (상점에 보이는지, V11)
 `BOOLEAN NOT NULL DEFAULT TRUE`. FALSE면 상점 목록·요즘 뜨는 소리·베타 손님 첫 블록에서만 빠짐 (승인·활성은 그대로라 이미 담은 사람은 그대로 들음). 지금은 관리자의 "샘플 숨기기"가 씀
 

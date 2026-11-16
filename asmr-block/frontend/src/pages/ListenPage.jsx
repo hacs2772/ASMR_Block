@@ -7,6 +7,7 @@ import BetaLoginButton from '../components/common/BetaLoginButton';
 import BlockVideoPanel from '../components/playlist/BlockVideoPanel';
 import { CollectComboButton } from '../components/playlist/ComboCard';
 import ShareButton from '../components/playlist/ShareButton';
+import { ReportButton } from '../components/common/Report';
 import { colorOf, formatDuration, formatLength, listenLabel } from '../lib/blocks';
 import { createListenMeter, LISTEN_MINUTES } from '../lib/listen';
 import { positionState, sleepStep } from '../lib/sleep';
@@ -310,6 +311,8 @@ function ListenPage() {
             ) : (
               <>
                 <span className="flex items-center gap-1 text-sm text-muted"><IoStar className="text-pink-text" /> 담은 사람 {combo.collect?.collectCount ?? 0}명</span>
+                <ReportButton target={{ type: 'PLAYLIST', id: combo.id, title: combo.title }} owner={combo.owner?.id ? combo.owner : null}
+                  testId="report-combo" />
                 <ShareButton combo={combo} className="ml-auto" />
                 <CollectComboButton combo={combo} />
               </>

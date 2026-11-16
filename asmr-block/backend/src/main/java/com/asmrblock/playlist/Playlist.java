@@ -29,6 +29,7 @@ public class Playlist {
     private String description;
     private Integer totalDuration;   // 총 재생 시간 (초)
     private Boolean isPublic;
+    private Boolean isHidden;        // 관리자가 숨긴 조합 (V13, 남에게는 안 보임)
     private Integer listenMinutes;   // 얼마나 들을까요? (0 = 한 바퀴만, 그 외 분)
     private Integer playCount;
     private Long sourcePlaylistId;   // 남의 조합을 담아 온 복사본이면 원본 id
@@ -62,7 +63,8 @@ public class Playlist {
                 .count();
     }
 
+    /** 내 것이거나, 공개이면서 관리자가 숨기지 않은 조합 */
     public boolean isViewableBy(Long userId) {
-        return Boolean.TRUE.equals(isPublic) || this.userId.equals(userId);
+        return this.userId.equals(userId) || (Boolean.TRUE.equals(isPublic) && !Boolean.TRUE.equals(isHidden));
     }
 }

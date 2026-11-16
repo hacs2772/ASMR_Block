@@ -13,7 +13,7 @@ public final class StatsDtos {
      * days: 최근 14일 하루하루 (가입, 새 조합, 재생)
      */
     public record StatsResponse(People people, Activity activity, Content content, long newFeedback, List<Day> days,
-                                Funnel funnel, Disk disk) {
+                                Funnel funnel, Disk disk, long openReports) {
     }
 
     /**

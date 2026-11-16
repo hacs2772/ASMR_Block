@@ -68,6 +68,7 @@ public class BlockUploadService {
     }
 
     public BlockResponse upload(Long uploaderId, BlockUploadRequest request) {
+        checkNotBanned(userMapper, uploaderId);
         validate(request);
         // 하루에 너무 많이 올리면 잠깐 막음 (디스크·검수 대기열 보호, 관리자는 제한 없음)
         int perDay = properties.limits().uploadsPerDay();
@@ -267,6 +268,13 @@ public class BlockUploadService {
         } catch (AudioProcessingException e) {
             log.info("원본 구간 자르기 실패 (원본 보관 안 함): {}", e.getMessage());
             return null;
+        }
+    }
+
+    /** 관리자가 업로드를 막은 사람이면 403 */
+    static void checkNotBanned(UserMapper userMapper, Long userId) {
+        if (userId != null && userMapper.findById(userId).map(u -> Boolean.TRUE.equals(u.getUploadBanned())).orElse(false)) {
+            throw ApiException.forbidden("블록 올리기가 막힌 계정이에요. 잘못된 것 같으면 help@asmrblock.com 으로 알려 주세요.");
         }
     }
 

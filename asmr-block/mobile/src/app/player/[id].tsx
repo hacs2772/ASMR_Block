@@ -9,6 +9,7 @@ import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import { BlockLoader } from '@/components/BlockLoader';
 import { BlockVideoPanel } from '@/components/BlockVideoPanel';
 import { CollectButton } from '@/components/CollectButton';
+import { ReportSheet } from '@/components/ReportSheet';
 import { playlistApi } from '@/api/endpoints';
 import type { PlaylistDetail, Render, Track } from '@/api/types';
 import { canDownload, listSaved, localUriOf, localUriOfSaved, removeTrack, saveTrack, type SavedTrack } from '@/audio/downloads';
@@ -36,6 +37,7 @@ export default function PlayerScreen() {
   const [saved, setSaved] = useState<SavedTrack | null>(null);
   // 영상도 같이 보기: 기본은 꺼짐(소리만). 화면이 꺼지거나 앱을 벗어나면, 잠들기 타이머가 끝나 가면 저절로 꺼짐
   const [showVideo, setShowVideo] = useState(false);
+  const [reporting, setReporting] = useState(false);
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => { if (state !== 'active') setShowVideo(false); });
     return () => sub.remove();
@@ -205,6 +207,9 @@ export default function PlayerScreen() {
           headerRight: () => (
             <View style={styles.headerActions}>
               {p && <IconButton icon="share-social-outline" label="공유하기" onPress={() => void share()} testID="share-combo" />}
+              {p && p.owner.id !== user?.id && (
+                <IconButton icon="flag-outline" label="신고하기" onPress={() => setReporting(true)} testID="report-combo" />
+              )}
               {p && user && p.owner.id === user.id && (
                 <IconButton icon="create-outline" label="편집" onPress={() => router.push({ pathname: '/editor/[id]', params: { id: String(playlistId) } })} />
               )}
@@ -326,6 +331,10 @@ export default function PlayerScreen() {
             <Text style={styles.sleepHint}>끝나기 30초 전부터 소리가 서서히 작아지다가 멈춰요</Text>
           </View>
         </>
+      )}
+      {p && (
+        <ReportSheet visible={reporting} onClose={() => setReporting(false)} target={{ type: 'PLAYLIST', id: p.id, title: p.title }}
+          owner={p.owner} />
       )}
     </ScrollView>
   );

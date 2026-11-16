@@ -27,6 +27,8 @@ public interface PlaylistMapper {
     /** 작성자 닉네임 포함 (동 정보는 findLayers로 따로) */
     Optional<Playlist> findById(Long id);
 
+    void updateHidden(@org.apache.ibatis.annotations.Param("id") Long id, @org.apache.ibatis.annotations.Param("hidden") boolean hidden);
+
     void updatePublic(@org.apache.ibatis.annotations.Param("id") Long id, @org.apache.ibatis.annotations.Param("isPublic") boolean isPublic);
 
     List<Playlist> findByUserId(@Param("userId") Long userId,

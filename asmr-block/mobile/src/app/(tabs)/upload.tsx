@@ -345,7 +345,7 @@ export default function UploadScreen() {
         <Text style={styles.hint}>유료 블록은 사기 전 앞 30초만 들려줘요. 무료 블록은 누구나 바로 담을 수 있어요.</Text>
 
         <Text style={styles.label}>상점에서는 이렇게 보여요</Text>
-        <BlockCard block={previewBlock({ title, note, price, talkType, place, nickname: user?.nickname ?? '나',
+        <BlockCard reportable={false} block={previewBlock({ title, note, price, talkType, place, nickname: user?.nickname ?? '나',
           duration: range ? range.end - range.start : draft?.duration ?? 200,
           category: group?.children.find((c) => c.id === categoryId) ?? null, groupName: group?.name ?? null,
           design: { coverUrl: cover?.uri ?? null, stickers, pattern, hasVideo: !!file && kind === 'video', videoUrl: null } })}

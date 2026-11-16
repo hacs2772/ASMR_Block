@@ -8,6 +8,7 @@ import { colorOf, formatDuration, iconOf, noteOf, TALK_LABEL } from '../../lib/b
 import useAuthStore from '../../store/authStore';
 import Brick from '../brand/Brick';
 import { useVideoModal } from './VideoModal';
+import { ReportButton } from '../common/Report';
 
 /** 상점 블록 폭: 소리 길이에 비례 (너무 짧거나 길어도 카드 안에 들어가게) */
 export const productBrickWidth = (seconds) => Math.round(Math.min(178, Math.max(76, (seconds / 60) * 30)));
@@ -25,6 +26,8 @@ function BlockProductCard({ block, rank, onCollected, preview = false }) {
   const group = block.category?.parentName || block.category?.name;
   const canListen = !!(block.fileUrl || block.previewUrl);
   const openVideo = useVideoModal((s) => s.open);
+  const me = useAuthStore((s) => s.user);
+  const canReport = !preview && block.uploader?.id !== me?.id;
 
   return (
     <article className="card flex flex-col overflow-hidden transition-colors hover:border-line-strong" data-testid={`block-${block.id}`}>
@@ -61,10 +64,16 @@ function BlockProductCard({ block, rank, onCollected, preview = false }) {
           {rank ? <span className="mr-1.5 text-pink-text">{rank}</span> : null}{block.title}
         </h3>
         <p className="text-xs text-muted">{group} · {TALK_LABEL[block.talkType || 'NONE']}</p>
-        <p className="flex items-center gap-1 truncate text-xs text-faint">
-          @{block.uploader?.nickname}
-          {block.recordedPlace && <><span>·</span><IoLocation size={11} />{block.recordedPlace}</>}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="flex min-w-0 flex-1 items-center gap-1 truncate text-xs text-faint">
+            @{block.uploader?.nickname}
+            {block.recordedPlace && <><span>·</span><IoLocation size={11} className="shrink-0" /><span className="truncate">{block.recordedPlace}</span></>}
+          </p>
+          {canReport && (
+            <ReportButton target={{ type: 'BLOCK', id: block.id, title: block.title }} owner={block.uploader?.id ? block.uploader : null}
+              label="" className="shrink-0 p-0.5" testId={`report-block-${block.id}`} />
+          )}
+        </div>
         {noteOf(block.description) && <p className="line-clamp-2 text-xs leading-relaxed text-muted">{noteOf(block.description)}</p>}
         <div className="mt-auto pt-3">
           {preview
