@@ -19,7 +19,7 @@
 - **처음 사용법 팝업**(사용자 피드백: 처음 온 사람이 쓰는 법을 모름): 움직이는 그림 카드로 ① 블록 담기 → ② 꾹 눌러 끌어서 쌓기 → ③ 얼마나 들을지·저장 → ④ 잠들기 전 듣기 (처음 한 번, 건너뛰기·다음·점). 편집기를 처음 열면 끌기·고치기 2장. 다시 보기 = 앱 ? 도움말 "사용법 다시 보기", 웹 바닥글 "사용법 보기"·팅글 가이드 버튼
   - 내용은 앱 `lib/guide.ts` · 웹 `lib/guide.js`(제목·순서·그림이 같아야 함, 앱 jest `__tests__/guide.test.ts`, 설명은 메뉴 이름만 다름). 그림 = 앱 `components/guide/GuideArt.tsx`(RN Animated) · 웹 `components/guide/GuideArt.jsx`(global.css `.g-*`), "동작 줄이기"면 끝난 모습으로 멈춤
   - 본 적 있음 = `asmr.guide.welcome.v1`·`asmr.guide.editor.v1` (앱 SecureStore `lib/prefs.ts`, 웹 localStorage). 내용을 크게 바꿔 다시 보여 주려면 v2로
-- **블록 꾸미기(C안, V7)**: 겉면 = 크리에이터 사진(`thumbnail_key`, 640px jpg)이 있으면 사진 → 없으면 스티커 최대 3개 + 무늬(dots·lines·none) → 둘 다 없으면 트리거 아이콘. 테두리·돌기·아래 띠는 트리거 색 그대로. 스티커 목록·그림은 **V8부터 서버 DB(`sticker` 테이블)**, 앱·웹은 `GET /stickers`로 받아 그림(웹 `<img>`, 앱 `StickerArt`). 웹 `lib/stickers.js`·앱 `lib/stickers.ts`의 기본 16개는 받기 전·오프라인용 (앱 jest가 V8과 같은지 검사)
+- **블록 꾸미기(C안, V7)**: 겉면 = 크리에이터 사진(`thumbnail_key`, 640px jpg)이 있으면 사진 → 없으면 스티커 최대 3개 + 무늬(dots·lines·none) → 둘 다 없으면 트리거 아이콘. 테두리·돌기·아래 띠는 트리거 색 그대로. 스티커 목록·그림은 **V8부터 서버 DB(`sticker` 테이블)**, 앱·웹은 `GET /stickers`로 받아 그림(웹 `<img>`, 앱 `StickerArt`). 웹 `lib/stickers.js`·앱 `lib/stickers.ts`의 기본 16개는 받기 전·오프라인용 (앱 jest가 V8과 같은지 검사). **V21 = 스티커 25개 더**(모두 41개): 유튜브에서 많이 본 ASMR 종류(먹는 소리·마사지·슬라임·빗소리·귀청소)와 트리거 설문에서 많이 꼽힌 소리(속삭임·가위질·탭핑·종이봉투)로 고름 = 연필·책·빗·뽁뽁이·종이봉투·낙엽·귀·면봉·손·크림·슬라임·벌집꿀·탕후루·마카롱·가위·얼음·우산·텐트·눈·고양이·커피·선풍기·촛불·별·베개(영어 이름 포함, 서버에만 있고 받아서 그림). 마이그레이션 스티커가 SVG 검사를 통과하는지 `BuiltInStickersTest`
 - **영상 블록(V7)**: "진짜 그 장소·그 장면이구나" 하고 보는 용도(유튜브처럼 보는 게 아님). 올릴 때 **"소리만" 또는 "영상" 하나만**(사용자가 정함: 소리 따로 + 영상 따로는 싱크가 어긋나서 서버도 400). 영상이면 소리는 영상에서 뽑고, 고른 구간으로 **소리(atrim)와 화면(-ss/-t)을 같이 잘라** 싱크가 맞음. 영상은 **480p·24fps·소리 없는 mp4**로 줄여 저장(원본 영상은 보관 안 함). 들을 때 **기본은 소리만**, "영상도 같이 보기"를 켜면 지금 나오는 블록 영상(영상 없는 블록이면 겉면 그림). **화면이 꺼지거나 앱을 벗어나면, 잠들기 타이머 마지막 20초에는 영상이 꺼짐**. 유료 블록 영상 주소(`design.videoUrl`)는 산 사람만
 - **블록**: 3~4분짜리 ASMR 소리. 판매자가 업로드(가격은 판매자가 정하되 `app.shop.seller-max-price` 이하) → 관리자 승인(APPROVED) → 공개. `price` = 코인(0 무료)
   - **올린 뒤 고치기**(`PATCH /me/uploads/{id}`, `block/MyUploadService`): 이름·한 줄 소개·녹음한 곳·말소리·가격 + **영어 칸**(`title_en` 등, 올릴 때도 "영어로도 적기(선택)") + **상점에서 내리기/다시 올리기**(`is_listed`, 이미 담은 사람은 그대로). 승인된 블록은 다시 검수 안 함(신고로 관리), **돌려보낸 블록을 고치면 다시 검수 대기**. 웹 판매 화면 "내가 올린 블록"의 "고치기"(`components/sell/EditUpload.jsx`·`EnglishFields`) · 앱 블록 판매 탭 줄을 누르면 `app/edit-upload/[id].tsx`(`components/upload/EnglishFields.tsx`)
@@ -92,7 +92,7 @@ cd asmr-block/e2e && npx playwright test     # 화면 검사 (서버·웹·앱 �
 테스트 계정: `test@asmrblock.com` / `password123` (관리자: `admin@asmrblock.com`)
 
 ## 백엔드 규칙
-- **DB 변경은 새 Flyway 파일로만**: `src/main/resources/db/migration/V{n}__설명.sql`. 이미 있는 V 파일은 절대 수정하지 않는다. (지금 V20까지 있음 → 다음은 V21)
+- **DB 변경은 새 Flyway 파일로만**: `src/main/resources/db/migration/V{n}__설명.sql`. 이미 있는 V 파일은 절대 수정하지 않는다. (지금 V21까지 있음 → 다음은 V22)
 - 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 프로필에서만 실행). 여러 번 실행돼도 안전하게 `ON CONFLICT` 사용.
 - 응답은 항상 `ApiResponse` 형식(`success`, `message`, `data`, `error{code,message}`). 오류는 `ApiException.notFound/badRequest/...` 로 던진다.
 - 요청/응답 DTO는 record로, 기능 패키지의 `*Dtos.java` 안에 모은다. 컨트롤러에서 `Map`으로 응답을 만들지 않는다.
@@ -172,3 +172,4 @@ cd asmr-block/e2e && npx playwright test     # 화면 검사 (서버·웹·앱 �
 - [x] **크리에이터 숨기기(V20, 사용자 차단)**: 크리에이터 페이지·신고한 뒤 숨기기, 내 정보에서 다시 보기 → 숨긴 사람의 블록·조합은 나에게 안 보임 (애플 심사 1.2)
 - [x] **잠 기록 다음**: 홈 "잘 잤던 날 들은 조합" 다시 듣기 + 내 정보 이번 주 리포트(잘 잔 밤·틀어 본 밤·들은 시간·지난주와 비교·가장 잘 잔 조합)
 - [x] **디자인 B안 "진짜 장난감 블록"**(시안 A 밤 잡지 · B 장난감 블록 · C 조용한 앱 중 사용자가 고름): 버튼·칩·탭이 블록 모양, 카드는 레고 판, 제목은 도현체, 트리거 색이 주인공 (웹·앱)
+- [x] **스티커 25개 더(V21)**: 유튜브 인기 ASMR·트리거 설문을 보고 고름 (가위·벌집꿀·탕후루·귀·면봉·뽁뽁이·고양이·촛불…, 모두 41개, 영어 이름 포함)

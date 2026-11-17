@@ -124,11 +124,15 @@ class AdminApiTest extends IntegrationTest {
     @DisplayName("스티커: 관리자가 SVG·PNG를 올리면 바로 고를 수 있고, 위험한 SVG는 거절, 숨기면 새로는 못 붙임")
     void manageStickers() throws Exception {
         String admin = admin().accessToken();
-        // 기본 스티커 16개 (로그인 없이 그림까지)
+        // 기본 스티커 (로그인 없이 그림까지)
         mvc.perform(get("/api/v1/stickers"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[?(@.code == 'flagjp')].svg").value(hasItem(startsWith("<svg"))))
-                .andExpect(jsonPath("$.data[?(@.code == 'flagjp')].name").value(hasItem("일본")));
+                .andExpect(jsonPath("$.data[?(@.code == 'flagjp')].name").value(hasItem("일본")))
+                // V21 스티커 25개 더 (유튜브 인기 ASMR·트리거 설문에서 고름): 영어 이름까지
+                .andExpect(jsonPath("$.data[?(@.code == 'scissors')].name").value(hasItem("가위")))
+                .andExpect(jsonPath("$.data[?(@.code == 'scissors')].nameEn").value(hasItem("Scissors")))
+                .andExpect(jsonPath("$.data[?(@.code == 'honey')].svg").value(hasItem(startsWith("<svg"))));
 
         // SVG 추가: xml 선언·주석은 지우고 저장
         String created = json(mvc.perform(bearer(multipart("/api/v1/admin/stickers").file(svgFile(SVG)).param("name", "등대"), admin))
