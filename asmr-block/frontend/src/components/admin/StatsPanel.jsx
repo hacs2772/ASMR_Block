@@ -180,7 +180,7 @@ function AiLine({ ai }) {
           {' '}· 하루 한도 한 사람 {ai.dailyPerUser}번 / 전체 {ai.dailyTotal}번
         </>
       ) : (
-        <>꺼짐 — 한 줄은 낱말로 찾아 쌓아요 (켜려면 docs/ai_guide.md{ai.monthCalls > 0 ? ` · 이번 달 ${ai.monthCalls}번 썼음` : ''})</>
+        <>꺼짐. 한 줄은 낱말로 찾아 쌓아요 (켜려면 docs/ai_guide.md{ai.monthCalls > 0 ? ` · 이번 달 ${ai.monthCalls}번 썼음` : ''})</>
       )}
     </p>
   );

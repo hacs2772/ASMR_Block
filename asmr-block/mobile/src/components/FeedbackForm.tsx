@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { feedbackApi } from '@/api/endpoints';
 import { notify } from '@/lib/dialog';
-import { colors, radius, space } from '@/theme';
+import { colors, plate, radius, space, fonts } from '@/theme';
 import { Button } from './ui';
 import { useTranslation } from 'react-i18next';
 
@@ -48,8 +48,8 @@ export function FeedbackForm({ page = 'app/help' }: { page?: string }) {
 }
 
 const styles = StyleSheet.create({
-  box: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.md, gap: space.sm },
-  title: { color: colors.text, fontSize: 17, fontWeight: '800' },
+  box: { ...plate, padding: space.md, gap: space.sm },
+  title: { color: colors.text, fontSize: 19, fontFamily: fonts.display },
   sub: { color: colors.muted, fontSize: 13, lineHeight: 19 },
   thanks: { color: colors.primaryText, fontSize: 13, fontWeight: '700' },
   input: {

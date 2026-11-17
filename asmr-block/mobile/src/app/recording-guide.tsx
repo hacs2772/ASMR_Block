@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Brick } from '@/components/editor/Brick';
 import { Button } from '@/components/ui';
 import { RECORDING_CHECKLIST, RECORDING_DONTS, RECORDING_SECTIONS, type RecordingSection } from '@/lib/recording';
-import { colors, radius, space, triggerColor } from '@/theme';
+import { colors, plate, radius, space, triggerColor, fonts } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { RECORDING_CHECKLIST_EN, RECORDING_DONTS_EN, RECORDING_SECTIONS_EN } from '@/lib/recording.en';
 
@@ -130,13 +130,13 @@ function MicDistance() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space.lg, paddingBottom: 40, gap: space.md },
-  headline: { color: colors.text, fontSize: 24, fontWeight: '800', letterSpacing: -0.4 },
+  headline: { color: colors.text, fontSize: 24, fontFamily: fonts.display },
   lead: { color: colors.muted, fontSize: 15, lineHeight: 22 },
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.md, gap: space.sm },
+  card: { ...plate, padding: space.md, gap: space.sm },
   donts: { borderColor: 'rgba(233, 188, 85, 0.4)' },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginBottom: 2 },
   cardIcon: { width: 32, height: 32, borderRadius: 9, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { color: colors.text, fontSize: 16, fontWeight: '800', flexShrink: 1 },
+  cardTitle: { color: colors.text, fontSize: 18, flexShrink: 1, fontFamily: fonts.display },
   count: { color: colors.faint, fontSize: 13, fontWeight: '700' },
   point: { flexDirection: 'row', gap: 9, alignItems: 'flex-start' },
   dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.primary, marginTop: 8 },

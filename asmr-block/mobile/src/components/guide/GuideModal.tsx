@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import type { GuideStep } from '@/lib/guide';
-import { colors, radius, space } from '@/theme';
+import { colors, plate, radius, space, fonts } from '@/theme';
 import { Button } from '@/components/ui';
 import { GuideArt } from './GuideArt';
 import { useTranslation } from 'react-i18next';
@@ -49,10 +49,10 @@ export function GuideModal({ visible, steps, onClose, finishLabel }: Props) {
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.78)', alignItems: 'center', justifyContent: 'center', padding: space.lg },
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.lg, gap: space.sm },
+  card: { ...plate, padding: space.lg, gap: space.sm },
   artWrap: { backgroundColor: colors.bg, borderRadius: radius.md, paddingVertical: space.md, marginBottom: space.xs },
   count: { color: colors.primaryText, fontSize: 12, fontWeight: '800' },
-  title: { color: colors.text, fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
+  title: { color: colors.text, fontSize: 20, fontFamily: fonts.display },
   body: { color: colors.muted, fontSize: 14, lineHeight: 21, minHeight: 63 }, // 장마다 버튼이 들썩이지 않게 (세 줄)
   dots: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginVertical: space.sm },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.borderStrong },

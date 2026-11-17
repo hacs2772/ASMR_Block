@@ -7,6 +7,7 @@ import useEditorStore from '../../store/editorStore';
 import Brick from '../brand/Brick';
 import BlockLoader from '../brand/BlockLoader';
 import { dragHandlers, geo, useDragStore } from './drag';
+import TriggerChip from '../common/TriggerChip';
 
 const TILE_H = 40;
 
@@ -60,9 +61,9 @@ function BlockShelf({ library }) {
           <div className="flex gap-1.5 overflow-x-auto px-5 pt-3">
             <button type="button" className={`chip px-3 py-1 text-xs ${groupId === null ? 'chip-on' : ''}`} onClick={() => setGroupId(null)}>{t('shelf.all')}</button>
             {groups.map((g) => (
-              <button key={g.id} type="button" className={`chip px-3 py-1 text-xs ${groupId === g.id ? 'chip-on' : ''}`} onClick={() => setGroupId(g.id)}>
-                <span className="h-2 w-2 rounded-[2px]" style={{ background: g.color }} />{categoryName(g.code, g.name)}
-              </button>
+              <TriggerChip key={g.id} small color={g.color} on={groupId === g.id} onClick={() => setGroupId(g.id)}>
+                {categoryName(g.code, g.name)}
+              </TriggerChip>
             ))}
           </div>
           <p className="px-5 pt-2 text-[11px] text-faint">{t('shelf.tapHint')}</p>

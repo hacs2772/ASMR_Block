@@ -19,7 +19,7 @@ import { Button } from '@/components/ui';
 import { formatMinutes } from '@/lib/format';
 import { tasteNames } from '@/lib/recommend';
 import { useAuth } from '@/store/auth';
-import { colors, radius, space } from '@/theme';
+import { colors, plate, radius, space, fonts } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { minutesLabel } from '@/lib/labels';
 
@@ -164,25 +164,25 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space.lg, paddingBottom: space.xl },
   eyebrow: { color: colors.primaryText, fontSize: 12, fontWeight: '700', marginBottom: 4 },
-  title: { color: colors.text, fontSize: 24, fontWeight: '800', letterSpacing: -0.4, marginBottom: space.md },
+  title: { color: colors.text, fontSize: 24, marginBottom: space.md, fontFamily: fonts.display },
   section: { marginTop: 36 },
   tonight: { marginTop: space.xl },
-  sectionTitle: { color: colors.text, fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
+  sectionTitle: { color: colors.text, fontSize: 20, fontFamily: fonts.display },
   sectionSub: { color: colors.muted, fontSize: 13, marginTop: 2 },
   trendCard: { width: 172 },
-  emptyCard: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.lg, gap: space.sm },
+  emptyCard: { ...plate, padding: space.lg, gap: space.sm },
   emptyTitle: { color: colors.text, fontSize: 15, fontWeight: '700', lineHeight: 21 },
   emptyText: { color: colors.muted, fontSize: 13, lineHeight: 19 },
   emptyActions: { flexDirection: 'row', gap: space.sm, marginTop: space.sm },
   hero: {
-    backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.borderStrong,
+    ...plate, borderColor: colors.borderStrong,
     padding: space.lg, gap: space.md, marginBottom: space.sm,
   },
   heroBricks: { flexDirection: 'row', height: 30, backgroundColor: colors.plate, borderRadius: radius.sm, padding: 6, paddingRight: 10 },
   heroBrick: { flex: 1, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(0,0,0,0.45)', borderBottomWidth: 3 },
   heroStud: { position: 'absolute', right: -3, top: 5, width: 4, height: 7, borderTopRightRadius: 2, borderBottomRightRadius: 2 },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  heroTitle: { color: colors.text, fontSize: 19, fontWeight: '800', letterSpacing: -0.3 },
+  heroTitle: { color: colors.text, fontSize: 19, fontFamily: fonts.display },
   heroMeta: { color: colors.muted, fontSize: 12, marginTop: 4 },
   heroPlay: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   moreLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: space.sm },

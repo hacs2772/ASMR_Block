@@ -74,7 +74,7 @@ function StickerManager() {
             ) : (
               <>
                 <p className="w-full truncate text-center text-sm font-bold">{s.name}{!s.active && <span className="ml-1 text-[10px] text-muted">숨김</span>}</p>
-                <p className="-mt-1.5 w-full truncate text-center text-[11px] text-muted" data-testid={`sticker-en-${s.code}`}>EN {s.nameEn || '—'}</p>
+                <p className="-mt-1.5 w-full truncate text-center text-[11px] text-muted" data-testid={`sticker-en-${s.code}`}>EN {s.nameEn || '-'}</p>
               </>
             )}
             <p className="text-[10px] text-faint">{s.code} · {s.svg ? 'SVG' : 'PNG'}</p>

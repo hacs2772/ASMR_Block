@@ -8,7 +8,7 @@ import { guideSteps } from '@/lib/guide';
 import { privacyUrl, termsUrl } from '@/lib/links';
 import { Glossary, TingleWord } from '@/components/tingle/Tingle';
 import { Button } from '@/components/ui';
-import { colors, radius, space } from '@/theme';
+import { colors, radius, space, fonts } from '@/theme';
 import { Trans, useTranslation } from 'react-i18next';
 import { LanguageSwitch } from '@/locales/LanguageSwitch';
 
@@ -72,12 +72,12 @@ export default function HelpScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space.lg, paddingBottom: space.xl * 2, gap: space.md },
-  headline: { color: colors.text, fontSize: 26, fontWeight: '800', lineHeight: 34, letterSpacing: -0.5 },
+  headline: { color: colors.text, fontSize: 26, lineHeight: 34, fontFamily: fonts.display },
   lead: { color: colors.muted, fontSize: 14, lineHeight: 21 },
   box: { backgroundColor: colors.primarySoft, borderRadius: radius.md, padding: space.md, gap: 4 },
   boxTitle: { color: colors.primaryText, fontSize: 14, fontWeight: '800' },
   boxBody: { color: colors.text, fontSize: 13, lineHeight: 20 },
-  section: { color: colors.text, fontSize: 18, fontWeight: '800', marginTop: space.lg },
+  section: { color: colors.text, fontSize: 20, marginTop: space.lg, fontFamily: fonts.display },
   step: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start' },
   stepNo: {
     width: 26, height: 26, borderRadius: 6, textAlign: 'center', lineHeight: 26, overflow: 'hidden',

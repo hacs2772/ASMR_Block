@@ -19,6 +19,7 @@ import CreatorStats from '../components/sell/CreatorStats';
 import EditUpload, { EnglishFields } from '../components/sell/EditUpload';
 import useAuthStore from '../store/authStore';
 import { RecordingGuideLink } from './RecordingGuidePage';
+import TriggerChip from '../components/common/TriggerChip';
 
 const PRICE_STEPS = [0, 10, 20, 30, 50, 100];
 const STATUS = {
@@ -352,10 +353,8 @@ function SellPage() {
             <Field label={t('sell.trigger')} hint={t('sell.triggerHint')}>
               <div className="flex flex-wrap gap-2">
                 {groups.map((g) => (
-                  <button key={g.id} type="button" className={`chip ${groupId === g.id ? 'chip-on' : ''}`}
-                    onClick={() => { setGroupId(g.id); setCategoryId(null); }} data-testid={`sell-group-${g.code}`}>
-                    <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: g.color }} />{categoryLabel(g)}
-                  </button>
+                  <TriggerChip key={g.id} color={g.color} on={groupId === g.id}
+                    onClick={() => { setGroupId(g.id); setCategoryId(null); }} data-testid={`sell-group-${g.code}`}>{categoryLabel(g)}</TriggerChip>
                 ))}
               </div>
               {group && (

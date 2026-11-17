@@ -6,7 +6,7 @@ import { hiddenApi } from '@/api/endpoints';
 import { Button } from '@/components/ui';
 import { notify } from '@/lib/dialog';
 import { useHidden } from '@/store/hidden';
-import { colors, radius, space } from '@/theme';
+import { colors, plate, space } from '@/theme';
 
 /**
  * 내 정보: 숨긴 크리에이터 (V20) — @닉네임(누르면 크리에이터 페이지) + 다시 보기. 아무도 안 숨겼으면 안 보임
@@ -51,7 +51,7 @@ export function HiddenCreators() {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: space.lg, gap: space.sm },
+  card: { ...plate, padding: space.lg, gap: space.sm },
   head: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   title: { color: colors.text, fontSize: 15, fontWeight: '800' },
   note: { color: colors.muted, fontSize: 12, lineHeight: 17 },

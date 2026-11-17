@@ -1,5 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, Stack, ThemeProvider } from 'expo-router';
+import { DoHyeon_400Regular } from '@expo-google-fonts/do-hyeon/400Regular';
+import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -8,7 +10,7 @@ import { setSessionExpiredHandler } from '@/api/client';
 import { PlayerProvider } from '@/audio/PlayerProvider';
 import { StartupScreen } from '@/components/BlockLoader';
 import { useAuth } from '@/store/auth';
-import { colors } from '@/theme';
+import { colors, fonts } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import i18n, { loadLang } from '@/locales';
 
@@ -27,6 +29,8 @@ const STARTUP_MIN_MS = 1100;
 export default function RootLayout() {
   const { t } = useTranslation();
   const status = useAuth((s) => s.status);
+  // 제목·블록 버튼 글씨(도현체): 시작 화면이 떠 있는 동안 불러옴 (실패해도 기본 글씨로 계속)
+  const [fontsLoaded, fontError] = useFonts({ [fonts.display]: DoHyeon_400Regular });
   const [introDone, setIntroDone] = useState(false);
   // 전에 고른 언어를 시작 화면이 떠 있는 동안 불러옴 (화면이 한 번 다른 언어로 깜빡이지 않게)
   const [langReady, setLangReady] = useState(false);
@@ -51,7 +55,7 @@ export default function RootLayout() {
     useAuth.getState().bootstrap();
   }, []);
 
-  if (status === 'loading' || !introDone || !langReady) return <StartupScreen />;
+  if (status === 'loading' || !introDone || !langReady || (!fontsLoaded && !fontError)) return <StartupScreen />;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -60,7 +64,7 @@ export default function RootLayout() {
         <ThemeProvider value={theme}>
           <PlayerProvider>
             <StatusBar style="light" />
-            <Stack screenOptions={{ headerStyle: { backgroundColor: colors.bg }, headerTintColor: colors.text, contentStyle: { backgroundColor: colors.bg } }}>
+            <Stack screenOptions={{ headerStyle: { backgroundColor: colors.bg }, headerTintColor: colors.text, headerTitleStyle: { fontFamily: fonts.display, fontSize: 20 }, contentStyle: { backgroundColor: colors.bg } }}>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="login" options={{ title: t('nav.login'), presentation: 'modal' }} />
               <Stack.Screen name="signup" options={{ title: t('nav.signup'), presentation: 'modal' }} />

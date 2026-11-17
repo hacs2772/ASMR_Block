@@ -1,23 +1,44 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BottomTabBar, Tabs } from 'expo-router/tabs';
-import { View, type ColorValue } from 'react-native';
+import { StyleSheet, View, type ColorValue } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BrandTitle } from '@/components/Brand';
 import { WelcomeGuide } from '@/components/guide/GuideHost';
 import { HeaderActions } from '@/components/HeaderActions';
 import { MiniPlayer } from '@/components/MiniPlayer';
 import type { IconName } from '@/components/ui';
-import { colors } from '@/theme';
+import { colors, fonts, tones } from '@/theme';
 import { useTranslation } from 'react-i18next';
 
+/** 아래 탭 아이콘: 고른 탭은 분홍 블록 위에 흰 아이콘 (B안 장난감 블록) */
 function tabIcon(name: IconName) {
-  function TabIcon({ color, size }: { color: ColorValue; size: number }) {
-    return <Ionicons name={name} color={color as string} size={size} />;
+  function TabIcon({ color, size, focused }: { color: ColorValue; size: number; focused: boolean }) {
+    if (!focused) return <View style={styles.iconSlot}><Ionicons name={name} color={color as string} size={size - 1} /></View>;
+    return (
+      <View style={styles.iconSlot}>
+        <View style={styles.onBrick}>
+          <View style={styles.onBrickTop} />
+          <Ionicons name={name} color={colors.white} size={size - 5} />
+        </View>
+      </View>
+    );
   }
   return TabIcon;
 }
 
+const styles = StyleSheet.create({
+  iconSlot: { width: 44, height: 28, alignItems: 'center', justifyContent: 'center' },
+  onBrick: {
+    width: 42, height: 28, borderRadius: 5, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', paddingBottom: 2,
+    backgroundColor: tones.pink.base, borderWidth: 1.5, borderColor: tones.pink.edge, borderBottomWidth: 4, borderBottomColor: tones.pink.bottom,
+  },
+  onBrickTop: { position: 'absolute', left: 0, right: 0, top: 0, height: 2.5, backgroundColor: tones.pink.top },
+});
+
 export default function TabsLayout() {
   const { t } = useTranslation();
+  // 고른 탭 블록(28px) + 이름이 다 보이게 탭 바를 조금 높게
+  const insets = useSafeAreaInsets();
   return (
     <>
     <Tabs
@@ -32,8 +53,10 @@ export default function TabsLayout() {
         headerStyle: { backgroundColor: colors.bg },
         headerTintColor: colors.text,
         headerShadowVisible: false,
-        tabBarStyle: { backgroundColor: colors.bg, borderTopColor: colors.border },
-        tabBarActiveTintColor: colors.primary,
+        headerTitleStyle: { fontFamily: fonts.display, fontSize: 21 },
+        tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border, borderTopWidth: 1.5, height: 62 + insets.bottom, paddingTop: 6 },
+        tabBarLabelStyle: { fontSize: 10.5, fontWeight: '600', marginTop: 2 },
+        tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.faint,
         sceneStyle: { backgroundColor: colors.bg },
         headerRight: () => <HeaderActions />,

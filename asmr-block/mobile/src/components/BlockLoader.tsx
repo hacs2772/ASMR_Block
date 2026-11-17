@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, Platform, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { shade } from '@/components/editor/colors';
-import { colors, triggerColor } from '@/theme';
+import { colors, triggerColor, fonts } from '@/theme';
 import { useTranslation } from 'react-i18next';
 
 /** 웹은 네이티브 애니메이션이 없어서 JS로 */
@@ -140,6 +140,6 @@ const styles = StyleSheet.create({
   bars: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   label: { color: colors.muted, fontSize: 13 },
   startup: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', gap: 6 },
-  brand: { color: colors.text, fontSize: 24, fontWeight: '800', letterSpacing: -0.5, marginTop: 18 },
+  brand: { color: colors.text, fontSize: 24, marginTop: 18, fontFamily: fonts.display },
   tagline: { color: colors.muted, fontSize: 13 },
 });

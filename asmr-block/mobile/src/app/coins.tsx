@@ -7,7 +7,7 @@ import { WalletCard } from '@/components/coin/WalletCard';
 import { signed, txKey } from '@/lib/coins';
 import { ago } from '@/lib/time';
 import { currentLang } from '@/locales';
-import { colors, space } from '@/theme';
+import { colors, space, fonts } from '@/theme';
 import { useTranslation } from 'react-i18next';
 
 /** 내 코인 + 코인 내역 (최근 50개) */
@@ -49,7 +49,7 @@ export default function CoinsScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space.lg, gap: 2 },
-  section: { color: colors.text, fontSize: 16, fontWeight: '700', marginTop: space.sm },
+  section: { color: colors.text, fontSize: 18, marginTop: space.sm, fontFamily: fonts.display },
   empty: { color: colors.faint, fontSize: 13 },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.sm, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   label: { color: colors.text, fontSize: 14, fontWeight: '600' },

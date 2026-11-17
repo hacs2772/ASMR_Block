@@ -7,6 +7,7 @@ import { catalogApi, errorMessage, playlistApi } from '../../api/api';
 import authApi from '../../api/authApi';
 import useAuthStore from '../../store/authStore';
 import { categoryLabel, listenLabel } from '../../lib/blocks';
+import TriggerChip from '../common/TriggerChip';
 
 const MAX = 5;
 const LISTEN = [30, 60, 180, 480];
@@ -73,10 +74,8 @@ function QuickStart({ groups: given, title, className = '' }) {
         {groups.map((g) => {
           const on = picked.includes(g.code);
           return (
-            <button key={g.id} type="button" onClick={() => toggle(g.code)} aria-pressed={on}
-              className={`chip ${on ? 'chip-on' : ''}`} data-testid={`home-trigger-${g.code}`}>
-              <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: g.color }} />{categoryLabel(g)}
-            </button>
+            <TriggerChip key={g.id} color={g.color} on={on} onClick={() => toggle(g.code)} aria-pressed={on}
+              data-testid={`home-trigger-${g.code}`}>{categoryLabel(g)}</TriggerChip>
           );
         })}
       </div>

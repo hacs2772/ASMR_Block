@@ -50,7 +50,7 @@ export default function CombosScreen() {
       refreshControl={<RefreshControl refreshing={list.isRefetching} onRefresh={() => void list.refetch()} tintColor={colors.muted} />}
       ListHeaderComponent={
         <View style={styles.head}>
-          <Text style={styles.lead}><Trans i18nKey="combos.lead" components={{ em: <Text style={styles.em} /> }} /></Text>
+          <Text style={styles.lead}><Trans i18nKey="combos.lead" components={{ b: <Text style={styles.em} /> }} /></Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
             {sorts.map((s) => <Chip key={s.key} label={t(`combos.sort.${s.key}`)} active={sort === s.key} onPress={() => setSort(s.key)} testID={`sort-${s.key}`} />)}
           </ScrollView>

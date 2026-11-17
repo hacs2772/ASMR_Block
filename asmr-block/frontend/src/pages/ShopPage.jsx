@@ -10,6 +10,7 @@ import { categoryLabel, talkLabel } from '../lib/blocks';
 import { recommendLine } from '../lib/recommend';
 import useAuthStore from '../store/authStore';
 import useWalletStore from '../store/walletStore';
+import TriggerChip from '../components/common/TriggerChip';
 
 const TABS = ['trending', 'latest', 'free'];
 
@@ -97,10 +98,8 @@ function ShopPage() {
       <div className="chip-row mt-5">
         <button type="button" className={`chip ${!groupId ? 'chip-on' : ''}`} onClick={() => set({ group: null, sub: null })}>{t('shop.allTriggers')}</button>
         {groups.map((g) => (
-          <button key={g.id} type="button" className={`chip ${groupId === g.id ? 'chip-on' : ''}`} onClick={() => set({ group: g.id, sub: null })}
-            data-testid={`shop-group-${g.code}`}>
-            <span className="h-2.5 w-2.5 rounded-[3px]" style={{ background: g.color }} />{categoryLabel(g)}
-          </button>
+          <TriggerChip key={g.id} color={g.color} on={groupId === g.id} onClick={() => set({ group: g.id, sub: null })}
+            data-testid={`shop-group-${g.code}`}>{categoryLabel(g)}</TriggerChip>
         ))}
       </div>
       {group && group.children?.length > 0 && (

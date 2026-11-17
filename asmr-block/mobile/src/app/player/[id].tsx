@@ -20,7 +20,7 @@ import { confirm, notify } from '@/lib/dialog';
 import { shareLinks } from '@/lib/share';
 import { formatDuration, formatMinutes } from '@/lib/format';
 import { useAuth } from '@/store/auth';
-import { categoryFallbackColor, colors, radius, space } from '@/theme';
+import { categoryFallbackColor, colors, plate, radius, space, fonts } from '@/theme';
 import { useTranslation } from 'react-i18next';
 
 const isWorking = (r?: Render) => r?.status === 'PENDING' || r?.status === 'PROCESSING';
@@ -412,16 +412,16 @@ const styles = StyleSheet.create({
   artHint: { color: colors.faint, fontSize: 11, textAlign: 'center', marginTop: 6 },
   artGround: { height: 2, backgroundColor: colors.primary, opacity: 0.5, marginTop: 4 },
   notice: { color: colors.primaryText, fontSize: 12, lineHeight: 17, marginBottom: 6 },
-  title: { color: colors.text, fontSize: 24, fontWeight: '800' },
+  title: { color: colors.text, fontSize: 24, fontFamily: fonts.display },
   subtitle: { color: colors.muted, fontSize: 14, marginTop: 4, marginBottom: space.lg },
-  renderBox: { backgroundColor: colors.card, borderRadius: radius.lg, padding: space.lg, gap: space.md, alignItems: 'center' },
+  renderBox: { ...plate, padding: space.lg, gap: space.md, alignItems: 'center' },
   renderText: { color: colors.muted, fontSize: 14, textAlign: 'center', lineHeight: 21 },
   progress: { width: '100%', height: 36 },
   times: { flexDirection: 'row', justifyContent: 'space-between' },
   time: { color: colors.muted, fontSize: 12 },
   controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: space.xl, marginVertical: space.md },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-  sleep: { marginTop: space.xl, backgroundColor: colors.card, borderRadius: radius.lg, padding: space.md, gap: space.sm },
+  sleep: { marginTop: space.xl, ...plate, padding: space.md, gap: space.sm },
   sleepHeader: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   sleepTitle: { color: colors.text, fontSize: 15, fontWeight: '600', flex: 1 },
   sleepRemaining: { color: colors.primary, fontSize: 14, fontWeight: '700' },

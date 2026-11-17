@@ -5,7 +5,7 @@ import { usePreviewClock } from '@/audio/useMixPreview';
 import type { IconName } from '@/components/ui';
 import { formatDuration } from '@/lib/format';
 import { mainLayout, NUDGE_SECONDS, useEditor } from '@/store/editor';
-import { categoryFallbackColor, colors, radius, space } from '@/theme';
+import { categoryFallbackColor, colors, plate, radius, space } from '@/theme';
 import { Trans, useTranslation } from 'react-i18next';
 
 /** 고른 블록으로 할 일: 복제 · 듣기 · 옮기기(첫째 줄: 왼쪽/오른쪽, 둘째 줄: ±10초) · 빼기 */
@@ -79,7 +79,7 @@ function Action({ icon, label, onPress, primary, danger, disabled, testID }: {
 }
 
 const styles = StyleSheet.create({
-  panel: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.md, gap: space.sm },
+  panel: { ...plate, padding: space.md, gap: space.sm },
   hintPanel: { paddingVertical: space.sm },
   hint: { color: colors.muted, fontSize: 12, textAlign: 'center' },
   hintStrong: { color: colors.text, fontWeight: '600' },

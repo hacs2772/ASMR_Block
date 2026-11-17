@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Brick } from '@/components/editor/Brick';
 import { shade } from '@/components/editor/colors';
 import type { IconName } from '@/components/ui';
-import { colors, triggerColor } from '@/theme';
+import { colors, fonts, triggerColor } from '@/theme';
 import { useTranslation } from 'react-i18next';
 
 /** 앱 이름 표시: 분홍 블록 + ASMR Block */
@@ -40,6 +40,6 @@ const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   logo: { width: 22, height: 16, borderRadius: 2, backgroundColor: colors.primary, borderWidth: 1.5, borderColor: shade(colors.primary, -0.42), borderBottomWidth: 3 },
   logoStud: { position: 'absolute', right: -5, width: 4, height: 4, borderTopRightRadius: 1, borderBottomRightRadius: 1, backgroundColor: colors.primary },
-  name: { color: colors.text, fontSize: 18, fontWeight: '800', letterSpacing: -0.3 },
+  name: { color: colors.text, fontSize: 21, lineHeight: 26, fontFamily: fonts.display },
   stack: { flexDirection: 'row', alignItems: 'center', marginRight: 6 },
 });

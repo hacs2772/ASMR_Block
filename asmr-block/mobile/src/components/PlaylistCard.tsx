@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { PlaylistSummary } from '@/api/types';
 import { formatMinutes } from '@/lib/format';
-import { colors, radius, space } from '@/theme';
+import { colors, plate, radius, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { minutesLabel } from '@/lib/labels';
 import { useHidden } from '@/store/hidden';
@@ -68,8 +68,7 @@ export function PlaylistCard({ playlist, onPress, onEdit, showOwner, footer }: P
 const styles = StyleSheet.create({
   card: {
     gap: space.md,
-    backgroundColor: colors.card, borderRadius: radius.lg, padding: space.md, marginBottom: space.sm,
-    borderWidth: 1, borderColor: colors.border,
+    ...plate, padding: space.md, marginBottom: space.sm,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   thumb: {

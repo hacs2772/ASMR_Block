@@ -7,7 +7,7 @@ import { sleepApi } from '@/api/endpoints';
 import { notify } from '@/lib/dialog';
 import { listenedLabel, nightLabel, RATINGS, thanksOf } from '@/lib/sleepLog';
 import { useAuth } from '@/store/auth';
-import { colors, radius, space } from '@/theme';
+import { colors, plate, radius, space, fonts } from '@/theme';
 
 /**
  * 홈 맨 위, 아침 한 번: "어젯밤 잘 잤어요?" (어젯밤 조합을 틀었고 아직 답하지 않았으면, 새벽 4시부터 — 서버가 정함).
@@ -75,9 +75,9 @@ export function SleepCheck() {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.borderStrong, padding: space.lg, gap: space.sm, marginBottom: space.lg },
+  card: { ...plate, borderColor: colors.borderStrong, padding: space.lg, gap: space.sm, marginBottom: space.lg },
   head: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  title: { flex: 1, color: colors.text, fontSize: 17, fontWeight: '800' },
+  title: { flex: 1, color: colors.text, fontSize: 19, fontFamily: fonts.display },
   skip: { padding: 2 },
   meta: { color: colors.muted, fontSize: 12, lineHeight: 17 },
   row: { flexDirection: 'row', gap: space.sm, marginTop: 4 },

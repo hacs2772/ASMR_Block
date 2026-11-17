@@ -6,7 +6,7 @@ import { hiddenApi, reportApi, type ReportReason, type ReportTargetType } from '
 import { confirm, notify } from '@/lib/dialog';
 import { useAuth } from '@/store/auth';
 import { useHidden } from '@/store/hidden';
-import { colors, radius, space } from '@/theme';
+import { colors, radius, space, fonts } from '@/theme';
 import { Button, Chip } from './ui';
 import { useTranslation } from 'react-i18next';
 
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     padding: space.md, maxHeight: '90%',
   },
   head: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },
-  title: { color: colors.text, fontSize: 17, fontWeight: '800' },
+  title: { color: colors.text, fontSize: 19, fontFamily: fonts.display },
   sub: { color: colors.muted, fontSize: 13, marginTop: 2 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
   reason: {

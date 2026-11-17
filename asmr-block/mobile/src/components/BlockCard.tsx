@@ -10,7 +10,7 @@ import { useCategoryIcon } from '@/components/editor/useCategoryIcon';
 import { formatDuration } from '@/lib/format';
 import { shareLink, shareLinks } from '@/lib/share';
 import { useAuth } from '@/store/auth';
-import { categoryFallbackColor, colors, radius, space } from '@/theme';
+import { categoryFallbackColor, colors, fonts, plate, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { groupLabel, talkLabel } from '@/lib/labels';
 import { useHidden } from '@/store/hidden';
@@ -83,9 +83,9 @@ export function BlockCard({ block, previewing, onPreview, rank, showNote, right,
             <Text style={styles.videoText}>{block.design.videoUrl ? t('block.watchVideo') : t('common.video')}</Text>
           </Pressable>
         )}
-        <View style={[styles.tag, block.price === 0 && styles.tagFree]}>
+        <View style={styles.tag}>
           <View style={styles.tagHole} />
-          <Text style={[styles.tagText, block.price === 0 && { color: colors.success }]}>{block.price > 0 ? t('common.coins', { count: block.price }) : t('common.free')}</Text>
+          <Text style={styles.tagText}>{block.price > 0 ? t('common.coins', { count: block.price }) : t('common.free')}</Text>
         </View>
         <Pressable
           accessibilityRole="button"
@@ -149,20 +149,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: 'rgba(0,0,0,0.7)',
   },
   videoText: { color: colors.white, fontSize: 10, fontWeight: '800' },
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+  card: { ...plate, overflow: 'hidden' },
   plate: { height: 92, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   studs: { position: 'absolute', left: 10, right: 10, top: 10, bottom: 10, justifyContent: 'space-between' },
   studRow: { flexDirection: 'row', justifyContent: 'space-between' },
   plateStud: { width: 9, height: 9, borderRadius: 4.5 },
   product: { marginTop: 14, marginRight: 4 },
+  /** 종이 가격표 (웹 .price-tag와 같은 모양) */
   tag: {
     position: 'absolute', top: 7, left: 7, flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingLeft: 5, paddingRight: 7, height: 20, borderRadius: 5, backgroundColor: colors.bg,
-    borderWidth: 1, borderColor: colors.borderStrong, transform: [{ rotate: '-4deg' }],
+    paddingLeft: 5, paddingRight: 8, height: 22, borderTopLeftRadius: 3, borderBottomLeftRadius: 3,
+    borderTopRightRadius: 9, borderBottomRightRadius: 9, backgroundColor: colors.paper, transform: [{ rotate: '-3deg' }],
   },
-  tagFree: { borderColor: 'rgba(63, 207, 142, 0.45)' },
-  tagHole: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.borderStrong },
-  tagText: { color: colors.text, fontSize: 11, fontWeight: '800', fontVariant: ['tabular-nums'] },
+  tagHole: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.plate },
+  tagText: { color: colors.bg, fontSize: 14, lineHeight: 18, fontFamily: fonts.display },
   listen: {
     position: 'absolute', top: 7, right: 7, flexDirection: 'row', alignItems: 'center', gap: 3,
     height: 22, minWidth: 22, paddingHorizontal: 6, borderRadius: 11, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)',

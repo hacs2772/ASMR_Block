@@ -88,6 +88,25 @@ export function shade(hex, amount) {
   return `#${channel(0)}${channel(2)}${channel(4)}`;
 }
 
+/** 밝은 색이면 true (그 위 글자는 어둡게): 바스락 초록·긁기 노랑처럼 흰 글자가 잘 안 보이는 색 */
+export function isLightColor(hex) {
+  const n = String(hex || FALLBACK_COLOR).replace('#', '').padEnd(6, '0');
+  const lin = (i) => {
+    const c = parseInt(n.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * lin(0) + 0.7152 * lin(2) + 0.0722 * lin(4) > 0.33;
+}
+
+/** 그 색의 블록 버튼·칩 (global.css --bb-*): 트리거 칩을 고르면 그 트리거 색 블록 */
+export function brickVars(color) {
+  const base = shade(color, -0.12);
+  return {
+    '--bb-top': shade(base, 0.32), '--bb-base': base, '--bb-bottom': shade(base, -0.24), '--bb-edge': shade(base, -0.42),
+    color: isLightColor(base) ? '#0C0F15' : '#FFFFFF', textShadow: 'none',
+  };
+}
+
 /** 소리 막대 박자: 트리거마다 다르게 (탭핑 톡톡 · 바스락 촘촘 · 귓속말 잔잔) */
 export const BAR_RHYTHM = {
   tap: { heights: [0.35, 1, 0.35, 0.9], speeds: [170, 260, 210, 240], low: 0.25 },

@@ -7,7 +7,7 @@ import { Button, EmptyState } from '@/components/ui';
 import { API_URL } from '@/lib/config';
 import { confirm, notify } from '@/lib/dialog';
 import { useAuth } from '@/store/auth';
-import { colors, radius, space } from '@/theme';
+import { colors, plate, radius, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitch } from '@/locales/LanguageSwitch';
 import { WalletCard } from '@/components/coin/WalletCard';
@@ -120,7 +120,7 @@ function NicknameForm({ current }: { current: string }) {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space.lg, gap: space.lg },
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: space.lg, gap: 4 },
+  card: { ...plate, padding: space.lg, gap: 4 },
   nickname: { color: colors.text, fontSize: 20, fontWeight: '700' },
   email: { color: colors.muted, fontSize: 14 },
   badge: { color: colors.primary, fontSize: 12, fontWeight: '700', marginTop: 4 },

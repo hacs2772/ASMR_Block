@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { coinApi } from '@/api/endpoints';
-import { colors, radius, space } from '@/theme';
+import { colors, plate, radius, space, fonts } from '@/theme';
 import { useTranslation } from 'react-i18next';
 
 /** 내 정보 "내 코인": 지금 코인(받은·충전) + 충전 안내 + 코인 내역 보기 (웹 WalletCard와 같은 내용). 내역 화면 안에서는 showLink={false} */
@@ -31,10 +31,10 @@ export function WalletCard({ showLink = true }: { showLink?: boolean }) {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: space.lg, gap: space.sm },
+  card: { ...plate, padding: space.lg, gap: space.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  title: { flex: 1, color: colors.text, fontSize: 16, fontWeight: '700' },
-  balance: { color: colors.text, fontSize: 20, fontWeight: '800' },
+  title: { flex: 1, color: colors.text, fontSize: 18, fontFamily: fonts.display },
+  balance: { color: colors.text, fontSize: 20, fontFamily: fonts.display },
   split: { color: colors.faint, fontSize: 12, textAlign: 'right' },
   note: { color: colors.muted, fontSize: 12, lineHeight: 18, backgroundColor: colors.bg, borderRadius: radius.md, padding: space.sm },
   link: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 2, paddingTop: 2 },

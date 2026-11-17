@@ -4,14 +4,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radius, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
 
-/** "팅글" 글자: 분홍 + 작은 반짝임 */
-export function TingleWord({ size }: { size: number }) {
+/** "팅글" 글자: 분홍 (반짝이 장식은 쓰지 않음) */
+export function TingleWord(_props: { size?: number }) {
   const { t } = useTranslation();
-  return (
-    <Text style={{ color: colors.primaryText }}>
-      {t('tingle.word')}<Text style={{ fontSize: size * 0.42, color: colors.primary }}>✦</Text>
-    </Text>
-  );
+  return <Text style={{ color: colors.primaryText }}>{t('tingle.word')}</Text>;
 }
 
 /** "팅글이 뭐예요?" 누르면 한 줄 설명 (처음 온 사람용) */

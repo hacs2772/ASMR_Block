@@ -7,7 +7,7 @@ import { sellerApi } from '@/api/endpoints';
 import type { CreatorMyStats } from '@/api/types';
 import { barsOf, dayLabel, ticksOf, tipOf, type StatsMetric } from '@/lib/creatorStats';
 import { localeOf } from '@/locales';
-import { colors, radius, space } from '@/theme';
+import { colors, plate, radius, space } from '@/theme';
 
 /**
  * 블록 판매 탭 "내 블록 통계" (웹 components/sell/CreatorStats.jsx와 같은 내용).
@@ -108,7 +108,7 @@ function Chart({ days, metric }: { days: CreatorMyStats['days']; metric: StatsMe
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: space.md, gap: space.sm },
+  card: { ...plate, padding: space.md, gap: space.sm },
   head: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   title: { color: colors.text, fontSize: 15, fontWeight: '700' },
   listed: { color: colors.muted, fontSize: 12, marginTop: -4 },

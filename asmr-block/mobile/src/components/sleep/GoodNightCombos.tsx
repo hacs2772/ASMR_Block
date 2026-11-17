@@ -7,7 +7,7 @@ import type { GoodCombo } from '@/api/types';
 import { PlaylistCard } from '@/components/PlaylistCard';
 import { goodComboLine } from '@/lib/sleepLog';
 import { useAuth } from '@/store/auth';
-import { colors, space } from '@/theme';
+import { colors, space, fonts } from '@/theme';
 
 /**
  * 홈: 잘 잤던 날 들은 조합 (최근 30일 잘 잔 밤이 많은 순, 최대 3개) → 누르면 다시 듣기.
@@ -44,7 +44,7 @@ const keepParts = (text: string) => text.split(' · ').map((part) => part.replac
 
 const styles = StyleSheet.create({
   section: { marginTop: space.xl },
-  title: { color: colors.text, fontSize: 17, fontWeight: '800' },
+  title: { color: colors.text, fontSize: 19, fontFamily: fonts.display },
   lead: { color: colors.muted, fontSize: 13, marginTop: 2, marginBottom: space.md },
   line: { color: colors.muted, fontSize: 12 },
 });

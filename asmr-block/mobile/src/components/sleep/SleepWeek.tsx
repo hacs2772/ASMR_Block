@@ -10,7 +10,7 @@ import { categoryName } from '@/lib/labels';
 import type { SleepReport } from '@/api/types';
 import { GoodComboCard } from '@/components/sleep/GoodNightCombos';
 import { compareOf, listenedLabel, listenedShort, nightLabel, RATINGS, ratingOf, weekdayOf } from '@/lib/sleepLog';
-import { colors, radius, space } from '@/theme';
+import { colors, plate, radius, space } from '@/theme';
 
 /**
  * 내 정보: 최근 7일 잠 기록 — 위 = 이번 주 리포트(잘 잔 밤·틀어 본 밤·들은 시간 + 지난주와 비교),
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   statValue: { color: colors.text, fontSize: 15, fontWeight: '800' },
   compare: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   bestLabel: { color: colors.muted, fontSize: 12, fontWeight: '700', marginBottom: 6 },
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: space.lg, gap: space.md },
+  card: { ...plate, padding: space.lg, gap: space.md },
   head: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   title: { color: colors.text, fontSize: 15, fontWeight: '800' },
   days: { flexDirection: 'row', gap: 4 },

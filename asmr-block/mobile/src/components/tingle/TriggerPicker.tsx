@@ -9,7 +9,7 @@ import { Button, Chip } from '@/components/ui';
 import { notify } from '@/lib/dialog';
 import { formatDuration } from '@/lib/format';
 import { useAuth } from '@/store/auth';
-import { categoryFallbackColor, colors, radius, space } from '@/theme';
+import { categoryFallbackColor, colors, plate, space, fonts } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { categoryLabel } from '@/lib/labels';
 
@@ -156,8 +156,8 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   links: { flexDirection: 'row', gap: space.lg },
   link: { color: colors.muted, fontSize: 12, textDecorationLine: 'underline' },
-  result: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.lg, gap: 6 },
-  resultTitle: { color: colors.text, fontSize: 16, fontWeight: '800' },
+  result: { ...plate, padding: space.lg, gap: 6 },
+  resultTitle: { color: colors.text, fontSize: 18, fontFamily: fonts.display },
   meta: { color: colors.faint, fontSize: 12 },
   empty: { color: colors.faint, fontSize: 13, marginTop: 4 },
   chain: { flexDirection: 'row', gap: 4, height: 26, marginTop: space.sm, marginBottom: space.sm, marginRight: 4 },

@@ -8,7 +8,7 @@ import { Button, Chip } from '@/components/ui';
 import { notify } from '@/lib/dialog';
 import { tonightDoneMessage, tonightExamples } from '@/lib/tonight';
 import { useAuth } from '@/store/auth';
-import { colors, radius, space } from '@/theme';
+import { colors, plate, radius, space, fonts } from '@/theme';
 
 /**
  * 오늘 밤 조합 (홈): "어떤 밤을 보내고 싶어요?" 한 줄 → AI(켜져 있으면)나 낱말로 트리거를 골라 두 줄 조합을 쌓고 플레이어로.
@@ -74,9 +74,9 @@ export function TonightCard() {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.lg, gap: space.sm },
+  card: { ...plate, padding: space.lg, gap: space.sm },
   head: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
-  title: { color: colors.text, fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
+  title: { color: colors.text, fontSize: 19, fontFamily: fonts.display },
   lead: { color: colors.muted, fontSize: 13, lineHeight: 19 },
   input: {
     backgroundColor: colors.bg, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border,

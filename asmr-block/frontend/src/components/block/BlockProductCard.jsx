@@ -54,8 +54,7 @@ function BlockProductCard({ block, rank, onCollected, preview = false, hideCreat
             </span>
           )
         )}
-        <span className={`absolute right-3 top-3 rotate-3 rounded-md px-2 py-0.5 text-xs font-extrabold shadow ${
-          paid ? 'bg-warn text-night' : 'bg-success/90 text-night'}`}>
+        <span className="price-tag absolute right-3 top-3" data-testid={`price-${block.id}`}>
           {paid ? t('common.coins', { count: block.price }) : t('common.free')}
         </span>
         {canListen && (

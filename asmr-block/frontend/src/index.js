@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import '@fontsource/do-hyeon/400.css';
 import './styles/global.css';
 import './locales';
 

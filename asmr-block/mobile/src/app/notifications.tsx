@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/ui';
 import { notify } from '@/lib/dialog';
 import { ago } from '@/lib/time';
 import { useAuth } from '@/store/auth';
-import { colors, radius, space } from '@/theme';
+import { colors, plate, radius, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { notificationText } from '@/lib/notifications';
 
@@ -116,7 +116,7 @@ function SettingRow({ title, hint, value, onChange, testID }: {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space.lg, paddingBottom: 40 },
-  settings: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.md, gap: space.sm, marginBottom: space.lg },
+  settings: { ...plate, padding: space.md, gap: space.sm, marginBottom: space.lg },
   settingsTitle: { color: colors.muted, fontSize: 12, fontWeight: '700' },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   rowTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },

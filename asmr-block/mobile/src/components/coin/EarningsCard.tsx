@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { coinApi } from '@/api/endpoints';
 import { ago } from '@/lib/time';
 import { currentLang, localeOf } from '@/locales';
-import { colors, radius, space } from '@/theme';
+import { colors, plate, radius, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -55,7 +55,7 @@ function Stat({ label, value, sub, strong, testID }: { label: string; value: str
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: space.md, gap: space.sm },
+  card: { ...plate, padding: space.md, gap: space.sm },
   head: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   title: { color: colors.text, fontSize: 15, fontWeight: '700' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },

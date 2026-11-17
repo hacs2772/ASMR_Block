@@ -12,7 +12,7 @@ import { Button, Chip } from '@/components/ui';
 import { formatDuration } from '@/lib/format';
 import { boxSnapPoints, snapBoxHeight, toggleBoxHeight } from '@/lib/motion';
 import { brickWidth, editorBlockOf, useEditor } from '@/store/editor';
-import { categoryFallbackColor, colors, radius, space } from '@/theme';
+import { categoryFallbackColor, colors, radius, space, fonts } from '@/theme';
 import { Brick } from './Brick';
 import { board, useDrag, useDragHandlers } from './drag';
 import { useCategoryIcon } from './useCategoryIcon';
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   sizeText: { color: colors.muted, fontSize: 11, fontWeight: '600' },
   headLink: { marginLeft: 'auto' },
   head: { flexDirection: 'row', alignItems: 'baseline', gap: space.sm, paddingHorizontal: space.lg },
-  title: { color: colors.text, fontSize: 17, fontWeight: '800', flexShrink: 0 },
+  title: { color: colors.text, fontSize: 19, flexShrink: 0, fontFamily: fonts.display },
   hint: { color: colors.faint, fontSize: 12, flex: 1, minWidth: 0 },
   linkText: { color: colors.primaryText, fontSize: 13, fontWeight: '700' },
   chipBar: { flexGrow: 0, flexShrink: 0 },

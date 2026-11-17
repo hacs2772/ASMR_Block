@@ -105,6 +105,16 @@ describe('화면 코드', () => {
     expect(left).toEqual([]);
   });
 
+  it('화면 코드에도 반짝이(✦✨🌟)·em dash(—)를 바로 쓰지 않음 (주석은 괜찮음)', () => {
+    const left: string[] = [];
+    for (const file of sourceFiles(SRC)) {
+      stripComments(readFileSync(file, 'utf8')).split('\n').forEach((line, i) => {
+        if (/[—✦✨🌟]/.test(line)) left.push(`${rel(file)}:${i + 1}  ${line.trim().slice(0, 80)}`);
+      });
+    }
+    expect(left).toEqual([]);
+  });
+
   it("코드에 쓴 t('키')가 사전에 모두 있음 (오타로 키 이름이 화면에 나오지 않게)", () => {
     const missing: string[] = [];
     const known = new Set(Object.keys(flatKo).map(base));

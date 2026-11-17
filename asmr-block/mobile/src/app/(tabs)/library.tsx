@@ -13,7 +13,7 @@ import { TriggerPicker } from '@/components/tingle/TriggerPicker';
 import { Button, EmptyState, SectionTitle } from '@/components/ui';
 import { formatMinutes } from '@/lib/format';
 import { useAuth } from '@/store/auth';
-import { colors, radius, space } from '@/theme';
+import { colors, plate, radius, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
 
 /** 블록 편집: 새로 만들기(+ 트리거로 빠르게 시작) + 내 조합 + 휴대폰에 저장한 완성본(오프라인) */
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.card, borderRadius: radius.md,
   },
   savedTitle: { flex: 1, color: colors.text, fontSize: 15 },
-  quick: { marginTop: space.md, backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.md, gap: space.md },
+  quick: { marginTop: space.md, ...plate, padding: space.md, gap: space.md },
   quickHead: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   quickTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },
   quickHint: { flex: 1, color: colors.faint, fontSize: 12 },

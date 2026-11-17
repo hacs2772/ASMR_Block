@@ -22,7 +22,7 @@ export function Logo() {
   return (
     <Link to="/" className="flex items-center gap-2.5" aria-label={t('nav.home')}>
       <LogoMark size={34} />
-      <span className="text-[19px] font-extrabold tracking-tight">ASMR <span className="text-pink-text">Block</span></span>
+      <span className="font-display text-[22px] leading-none">ASMR <span className="text-pink-text">Block</span></span>
     </Link>
   );
 }

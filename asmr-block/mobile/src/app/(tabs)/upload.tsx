@@ -20,7 +20,7 @@ import { Trimmer } from '@/components/upload/Trimmer';
 import { canTrim, initialRange, trimParams, type TrimRange } from '@/lib/trim';
 import { useStickers } from '@/store/stickers';
 import { useAuth } from '@/store/auth';
-import { categoryFallbackColor, colors, radius, space } from '@/theme';
+import { categoryFallbackColor, colors, plate, radius, space, fonts } from '@/theme';
 import { RecordingGuideLink } from '@/components/upload/RecordingGuideLink';
 import { useTranslation } from 'react-i18next';
 import { EarningsCard } from '@/components/coin/EarningsCard';
@@ -466,8 +466,8 @@ const styles = StyleSheet.create({
   stickerLabel: { color: colors.muted, fontSize: 10 },
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space.lg, paddingBottom: space.xl, gap: space.md },
-  card: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.lg, gap: space.sm },
-  cardTitle: { color: colors.text, fontSize: 18, fontWeight: '800' },
+  card: { ...plate, padding: space.lg, gap: space.sm },
+  cardTitle: { color: colors.text, fontSize: 20, fontFamily: fonts.display },
   label: { color: colors.text, fontSize: 14, fontWeight: '700', marginTop: space.sm },
   labelHint: { color: colors.faint, fontWeight: '400', fontSize: 12 },
   kinds: { flexDirection: 'row', gap: space.sm },
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
   hint: { color: colors.faint, fontSize: 12, lineHeight: 17 },
   check: { flexDirection: 'row', alignItems: 'center', gap: space.sm, marginVertical: space.sm },
   checkText: { color: colors.text, fontSize: 13, flex: 1 },
-  sectionTitle: { color: colors.text, fontSize: 17, fontWeight: '700', marginTop: space.sm },
+  sectionTitle: { color: colors.text, fontSize: 19, marginTop: space.sm, fontFamily: fonts.display },
   sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: space.sm },
   sectionLink: { color: colors.primaryText, fontSize: 13, fontWeight: '700' },
   empty: { color: colors.faint, fontSize: 13 },

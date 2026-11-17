@@ -3,8 +3,18 @@
 @tailwind utilities;
 
 /* =====================================================
-   ASMR Block 웹 — 앱과 같은 어두운 밤 바탕 + 분홍 하나
+   ASMR Block 웹: B안 "진짜 장난감 블록" (앱과 같은 값)
+   푸른 밤 바탕에 레고 판 무늬, 카드는 레고 판, 버튼·칩은 옆으로 누운 블록(오른쪽 돌기),
+   제목은 도현체. 블록 색은 Brick.jsx 계산(트리거 색)과 같고 버튼 색만 여기서 정함
    ===================================================== */
+
+:root {
+  --pink-top: #ff9cc1; --pink-base: #f7609a; --pink-bottom: #c93c74; --pink-edge: #8a1e48;
+  --slate-top: #566074; --slate-base: #3a4357; --slate-bottom: #2b3242; --slate-edge: #1f2430;
+  --chip-top: #2c3443; --chip-base: #1d2330; --chip-bottom: #141923; --chip-edge: #2b3242;
+  --plate-bottom: #0f131b;
+  --stud: rgba(255, 255, 255, 0.035);
+}
 
 html { color-scheme: dark; }
 body {
@@ -12,7 +22,12 @@ body {
   min-height: 100vh;
   word-break: keep-all;
   overflow-wrap: break-word; /* 긴 영문·주소는 넘치지 않게 줄바꿈 */
+  /* 레고 바닥판 무늬 */
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.026) 0 3px, transparent 3.6px);
+  background-size: 20px 20px;
 }
+/* 제목은 도현체. 굵기가 하나뿐이라 font-bold 등이 붙어도 가짜로 굵게 그리지 않음 */
+h1, h2, .font-display { font-family: theme('fontFamily.display'); font-synthesis: none; }
 /* 핸드폰: 격자 칸이 안의 긴 제목·블록 줄 때문에 화면보다 넓어지지 않게 */
 .grid > * { min-width: 0; }
 ::selection { background: rgba(247, 96, 154, 0.35); }
@@ -21,21 +36,29 @@ body {
 [role="dialog"][tabindex="-1"]:focus-visible { outline: none; }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #0e0e14; }
-::-webkit-scrollbar-thumb { background: #31313d; border-radius: 4px; }
+::-webkit-scrollbar-track { background: #0e1218; }
+::-webkit-scrollbar-thumb { background: #343c4f; border-radius: 4px; }
 
 @layer components {
   .page { @apply mx-auto w-full max-w-page px-4 sm:px-6; }
 
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50; }
-  .btn-pink { @apply btn bg-pink text-white hover:bg-[#ff74a8]; }
-  .btn-line { @apply btn border border-line-strong text-ink hover:bg-card-active; }
+  .btn { @apply relative inline-flex items-center justify-center gap-2 rounded-[6px] px-4 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50; }
+  /* 블록 버튼: 위 밝은 띠 + 아래 두께 + 오른쪽 돌기 두 개 (::before·::after). 분홍 = 주요 행동, 회색 = 그 밖 */
+  .btn-pink { @apply btn text-white; --bb-top: var(--pink-top); --bb-base: var(--pink-base); --bb-bottom: var(--pink-bottom); --bb-edge: var(--pink-edge); }
+  .btn-line { @apply btn text-ink; --bb-top: var(--slate-top); --bb-base: var(--slate-base); --bb-bottom: var(--slate-bottom); --bb-edge: var(--slate-edge); }
   .btn-ghost { @apply btn text-muted hover:text-ink; }
-  .btn-sm { @apply px-3 py-1.5 text-xs rounded-lg; }
+  .btn-sm { @apply px-3 py-1.5 text-xs; }
 
-  .input { @apply w-full rounded-xl border border-line bg-card px-4 py-3 text-sm text-ink placeholder-faint outline-none transition-colors focus:border-pink; }
+  .input { @apply w-full rounded-lg bg-plate px-4 py-3 text-sm text-ink placeholder-faint outline-none transition-colors focus:border-pink; border: 1.5px solid theme('colors.line'); box-shadow: inset 0 3px 0 rgba(0, 0, 0, 0.28); }
   .label { @apply mb-1.5 block text-sm font-bold text-ink; }
-  .card { @apply rounded-2xl border border-line bg-card; }
+  /* 카드 = 레고 판: 무늬 + 아래 두께 */
+  .card {
+    @apply rounded-[10px] bg-card;
+    border: 1.5px solid theme('colors.line');
+    background-image: radial-gradient(circle, var(--stud) 0 2.5px, transparent 3px);
+    background-size: 14px 14px; background-position: 3px 3px;
+    box-shadow: inset 0 -4px 0 var(--plate-bottom), 0 3px 0 rgba(0, 0, 0, 0.35);
+  }
 
   /* 휴대폰: 한 줄로 옆으로 넘기기 (화면 끝까지), 태블릿·PC: 여러 줄로 감싸기 */
   .chip-row { @apply -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0; scrollbar-width: none; }
@@ -45,12 +68,47 @@ body {
   .shelf-row { @apply -mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:scroll-px-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4; scrollbar-width: none; }
   .shelf-row::-webkit-scrollbar { display: none; }
   .shelf-row > * { @apply w-[80%] max-w-[300px] shrink-0 snap-start sm:w-auto sm:max-w-none; }
-  .chip { @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-line px-3.5 py-1.5 text-sm font-semibold text-muted transition-colors hover:text-ink; }
-  .chip-on { @apply border-pink bg-pink-soft text-pink-text; }
+  /* 칩 = 작은 블록 (고르면 분홍 블록, 트리거 칩은 brickVars(트리거 색)으로 그 색 블록) */
+  .chip { @apply relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-[5px] px-3 pb-[7px] pt-[5px] font-display text-[15px] leading-5 text-muted transition hover:text-ink; }
+  .chip-on { @apply text-white; --bb-top: var(--pink-top); --bb-base: var(--pink-base); --bb-bottom: var(--pink-bottom); --bb-edge: var(--pink-edge); }
 
+  /* 머리말은 그 사람의 정보(예: 잠꾸러기님의 조합)일 때만 */
   .eyebrow { @apply mb-1 text-xs font-bold text-pink-text; }
-  .h-section { @apply text-2xl font-extrabold tracking-tight text-ink sm:text-3xl; }
+  .h-section { @apply font-display text-[28px] text-ink sm:text-[34px]; }
 }
+
+/* ---------- 블록 버튼·칩 모양 ---------- */
+.btn-pink, .btn-line, .chip {
+  border: 1.5px solid var(--bb-edge, var(--chip-edge));
+  background: linear-gradient(180deg, var(--bb-top, var(--chip-top)) 0 3px, var(--bb-base, var(--chip-base)) 3px);
+  box-shadow: inset 0 -4px 0 var(--bb-bottom, var(--chip-bottom)), 0 3px 0 rgba(0, 0, 0, 0.45);
+}
+.btn-pink, .btn-line { font-family: theme('fontFamily.display'); font-synthesis: none; font-size: 16px; line-height: 20px; padding-bottom: calc(0.625rem + 2px); letter-spacing: 0; text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25); }
+.btn-sm.btn-pink, .btn-sm.btn-line { font-size: 14px; line-height: 18px; padding-bottom: calc(0.375rem + 2px); box-shadow: inset 0 -3px 0 var(--bb-bottom), 0 2px 0 rgba(0, 0, 0, 0.45); }
+.chip { box-shadow: inset 0 -3px 0 var(--bb-bottom, var(--chip-bottom)); }
+/* 작은 칩 (text-xs·py-1): 도현체는 12px이면 너무 작아서 조금 키움, 아래 두께만큼 아래 여백 */
+.chip.text-xs { font-size: 13.5px; line-height: 18px; }
+.chip.py-1 { padding-top: 3px; padding-bottom: 6px; }
+/* 오른쪽 돌기 (버튼 밖으로 6px) */
+.btn-pink::before, .btn-pink::after, .btn-line::before, .btn-line::after {
+  content: ''; position: absolute; right: -6px; width: 6px; height: 24%; min-height: 6px;
+  border: 1.5px solid var(--bb-edge); border-left: 0; border-radius: 0 2px 2px 0; background: var(--bb-base);
+}
+.btn-pink::before, .btn-line::before { top: 17%; }
+.btn-pink::after, .btn-line::after { top: 55%; }
+.chip::after {
+  content: ''; position: absolute; right: -5px; top: 33%; width: 5px; height: 32%;
+  border: 1.5px solid var(--bb-edge, var(--chip-edge)); border-left: 0; border-radius: 0 2px 2px 0; background: var(--bb-base, var(--chip-base));
+}
+/* 꽉 찬 버튼은 돌기만큼 줄여서 카드 안에 맞춤 */
+.btn-pink.w-full, .btn-line.w-full { width: calc(100% - 6px); }
+.btn-pink:hover:not(:disabled), .btn-line:hover:not(:disabled) { transform: translateY(-1px); }
+.btn-pink:active:not(:disabled), .btn-line:active:not(:disabled) { transform: translateY(2px); box-shadow: inset 0 -2px 0 var(--bb-bottom), 0 1px 0 rgba(0, 0, 0, 0.45); }
+.btn-pink:hover:not(:disabled) { --bb-base: #ff6fa5; }
+.btn-line:hover:not(:disabled) { --bb-base: #444e65; }
+/* 종이 가격표 (상점 블록 카드) */
+.price-tag { @apply inline-flex items-center gap-1.5 rounded-l-[3px] rounded-r-[9px] bg-paper py-0.5 pl-1.5 pr-2.5 font-display text-[15px] leading-5 text-night; transform: rotate(-3deg); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); }
+.price-tag::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: theme('colors.plate'); }
 
 /* ---------- 레고 블록 (앱 Brick C안) ---------- */
 .brick { position: relative; flex-shrink: 0; }
@@ -119,7 +177,7 @@ a:hover .logo-bar, .logo-live .logo-bar { animation: bar-beat 260ms ease-in-out 
 .assemble-row > *:nth-child(2) { --fx: 0; --fy: 48vh; --fr: 26deg; animation-delay: 0.14s; }
 .assemble-row > *:nth-child(3) { --fx: 46vw; --fy: -26vh; --fr: 42deg; animation-delay: 0.26s; }
 .assemble-click { animation: click-pop 0.3s ease 0.86s both; }
-.assemble-text { color: #ECECF1; font-weight: 800; font-size: 18px; animation: fade-up 0.35s ease 0.7s both; }
+.assemble-text { color: #F2F3F7; font-weight: 800; font-size: 18px; animation: fade-up 0.35s ease 0.7s both; }
 @keyframes fly-in {
   0% { transform: translate(var(--fx), var(--fy)) rotate(var(--fr)) scale(0.7); opacity: 0; }
   60% { opacity: 1; }
@@ -137,7 +195,7 @@ a:hover .logo-bar, .logo-live .logo-bar { animation: bar-beat 260ms ease-in-out 
 @keyframes snap { 0%, 12% { transform: translateX(var(--sx, 0)); } 34%, 78% { transform: none; } 100% { transform: translateX(var(--sx, 0)); } }
 
 /* 바닥판 점 무늬 (상점 카드) */
-.studs { background-image: radial-gradient(circle at center, #1d1d28 2.2px, transparent 2.6px); background-size: 14px 14px; }
+.studs { background-image: radial-gradient(circle at center, #1b2130 2.4px, transparent 2.9px); background-size: 14px 14px; }
 
 /* 끄는 블록 */
 .drag-ghost { position: fixed; z-index: 80; pointer-events: none; transform-origin: 30% 50%; transition: transform 0.05s ease-out; filter: drop-shadow(0 12px 14px rgba(0, 0, 0, 0.55)); }

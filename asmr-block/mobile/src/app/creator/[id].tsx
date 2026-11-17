@@ -16,7 +16,7 @@ import { notify } from '@/lib/dialog';
 import { shareLink, shareLinks } from '@/lib/share';
 import { useAuth } from '@/store/auth';
 import { useHidden } from '@/store/hidden';
-import { categoryFallbackColor, colors, space } from '@/theme';
+import { categoryFallbackColor, colors, space, fonts } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { categoryName } from '@/lib/labels';
 
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   content: { padding: space.lg, paddingBottom: 40 },
   deco: { flexDirection: 'row', marginBottom: space.sm },
   eyebrow: { color: colors.primaryText, fontSize: 12, fontWeight: '700' },
-  name: { color: colors.text, fontSize: 26, fontWeight: '800', letterSpacing: -0.4 },
+  name: { color: colors.text, fontSize: 26, fontFamily: fonts.display },
   stats: { color: colors.muted, fontSize: 13 },
   triggers: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   trigger: { borderWidth: 1, borderColor: colors.border, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
@@ -179,5 +179,5 @@ const styles = StyleSheet.create({
   pinned: { flexDirection: 'row', borderWidth: 2, borderColor: colors.primary, borderRadius: 18, padding: 2, width: '50%' },
   hiddenBox: { gap: space.sm, marginTop: space.sm, padding: space.md, borderRadius: 14, borderWidth: 1, borderColor: colors.primary, backgroundColor: colors.card },
   sortRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: space.lg },
-  section: { color: colors.text, fontSize: 18, fontWeight: '800', marginRight: 'auto' },
+  section: { color: colors.text, fontSize: 20, marginRight: 'auto', fontFamily: fonts.display },
 });

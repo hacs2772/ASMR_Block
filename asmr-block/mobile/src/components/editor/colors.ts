@@ -10,3 +10,13 @@ export function shade(hex: string, amount: number): string {
   };
   return `#${channel(0)}${channel(2)}${channel(4)}`;
 }
+
+/** 밝은 색이면 true (그 위 글자는 어둡게): 바스락 초록·긁기 노랑처럼 흰 글자가 잘 안 보이는 색 (웹 lib/blocks.js isLightColor와 같음) */
+export function isLightColor(hex: string): boolean {
+  const n = hex.replace('#', '').padEnd(6, '0');
+  const lin = (i: number) => {
+    const c = parseInt(n.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * lin(0) + 0.7152 * lin(2) + 0.0722 * lin(4) > 0.33;
+}
