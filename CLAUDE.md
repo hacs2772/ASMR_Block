@@ -45,12 +45,13 @@
 - **플레이리스트 = 옆으로 누운 레고 블록 두 줄** (왼쪽→오른쪽, 블록 길이 = 소리 길이): **첫째 줄**(`MAIN`, 빈틈없이 순서대로) + **둘째 줄**(`MIX`, 선택, 따로 흐름, `startSeconds` 위치에만·사이는 빈칸·겹침 금지). 이어진 같은 블록은 `repeat`(1~200)로 묶어 저장, 줄별 볼륨, 한 바퀴 최대 10시간
 - **얼마나 들을까요?** `listenMinutes`: 완성본(한 바퀴)을 앱이 그 시간 동안 반복 재생 (긴 파일을 만들지 않음)
 - **편집 중 전체 듣기**: 완성본 없이 앱이 플레이어 2개로 두 줄을 바로 틀어 봄 (`src/audio/useMixPreview.ts`). 저장하면 완성본을 자동으로 만들고 다 되면 자동 재생
+- **나에게 맞는 추천**(`recommend` 패키지, `RecommendMapper.xml`): 담은 블록·내 조합·틀어 본/10분 들은 조합·상점에서 들어 본 블록으로 트리거 취향 점수(가입 직후 시작 블록은 약하게) → `GET /me/recommendations/blocks|combos`(아직 없는 블록·안 담은 공개 조합, 같은 소분류는 처음엔 2개까지, 모자라면 요즘 인기로 채움, `personalized`·`triggers`). 화면: 웹 상점 "나에게 맞는" 탭·홈 블록 칸(취향을 알면 "취향 저격 블록", 아니면 요즘 뜨는)·추천 조합 정렬, 앱 블록 구매 "내 취향" 탭·홈·추천 조합 정렬, 이유 한 줄 `lib/recommend`(웹·앱 같음, 사전 `forYou.*` — `rec.*`는 녹음 가이드)
 - **카테고리 = 메뉴 트리**: 대분류(`parent_id` NULL) › 소분류. 블록은 소분류에만, 대분류로 검색하면 하위 포함. **요즘 뜨는 소리·조합** = 최근 N일 `play_log` 수, 모자라면 많이 들은 순 → 새로 올라온 순으로 채움(막 연 사이트도 비지 않게)
 - **완성본(render)**: 서버가 ffmpeg로 두 트랙을 하나의 MP3로 합침 (크로스페이드 균형 트리·adelay·리미터, `progress` 0~100). 구성 해시가 같으면 재사용
 
 ## 구조
 - `asmr-block/backend` — Spring Boot 4.1 / Java 21 / MyBatis / PostgreSQL 16 / ffmpeg
-  - 기능별 패키지: `auth`, `user`, `category`, `block`, `library`(내 블록함), `playlist`, `render`, `play`, `audio`(ffmpeg), `storage`, `common`, `config`, `security`, `creator`, `share`, `report`, `activity`, `stats`, `notification`, `coin`
+  - 기능별 패키지: `auth`, `user`, `category`, `block`, `library`(내 블록함), `playlist`, `render`, `play`, `audio`(ffmpeg), `storage`, `common`, `config`, `security`, `creator`, `share`, `report`, `activity`, `stats`, `notification`, `coin`, `recommend`
   - MyBatis XML: `src/main/resources/mapper/*Mapper.xml` (타입은 전체 클래스 이름으로 씀)
 - `asmr-block/mobile` — **메인 클라이언트**. Expo SDK 58 / React Native 0.88 / TypeScript / Expo Router
   - 작업 전 `asmr-block/mobile/AGENTS.md`(Expo 규칙)를 따른다: 패키지는 `npx expo install`, 화면은 `src/app/`
@@ -151,4 +152,5 @@ cd asmr-block/e2e && npx playwright test     # 화면 검사 (서버·웹·앱 �
 - [x] 파일 저장소 Cloudflare R2(S3 호환) 준비: 키만 넣으면 바뀜(`docs/r2_guide.md`), 옛 파일 자동 옮기기·옮기는 동안 끊김 없음, 관리자 통계에 저장소 상태 → **사용자가 R2 버킷·키를 만들어 넣으면 끝**
 - [x] **코인 뼈대(V16)**: 받은/충전 코인 지갑·내역, 코인으로 유료 블록 사기·조합 한 번에 사기, 크리에이터 판매 수익·정산 대기, 관리자 코인 주기·정산 완료 표시
 - [ ] 베타 출시 → 수익화: 코인 충전(인앱결제 → 영수증 확인 → `CoinService.charge`) + 구독. **정식 출시 때 `app.beta.quick-login=false`로 "베타로 바로 시작"(손님 계정) 끄기** (웹·앱 버튼은 `GET /auth/beta`가 false면 저절로 숨음)
-- [ ] 추천: 취향 온보딩 → 재생 기록 기반 추천 → 수면 기록/패턴 → AI 조합 생성
+- [x] **나에게 맞는 추천**: 담은 블록·내 조합·들은 기록으로 트리거 취향 → 취향 저격 블록·조합 (웹·앱 홈·상점·추천 조합)
+- [ ] 추천 다음: 수면 기록/패턴 → AI 조합 생성

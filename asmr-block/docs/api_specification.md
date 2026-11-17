@@ -19,6 +19,7 @@
 8. [완성본 (Render)](#8-완성본-render)
 9. [관리자 (Admin)](#9-관리자-admin) — 블록 검수 · 트리거 종류 · 스티커 · 의견·통계 · 코인
 10. [코인 (Coin)](#10-코인-coin) — 내 코인 · 유료 블록 사기 · 크리에이터 판매 수익 (V16)
+11. [나에게 맞는 추천](#11-나에게-맞는-추천) — 취향 트리거로 고른 블록·조합
 
 ---
 
@@ -629,6 +630,26 @@ V16. 유료 블록(`price` > 0)은 **코인**으로 사요. 코인은 두 가지
 | POST | `/admin/coins/grant` | 코인 주기 `{ "userId": 12, "amount": 100, "note": "베타 감사" }` → 받은 코인으로. `amount` < 0이면 회수(받은 코인에서만, 모자라면 400). 0이나 `app.coins.grant-max`(10만) 넘으면 400 |
 | GET | `/admin/earnings` | 판매가 있는 크리에이터 (정산 대기가 많은 순) `[{ creatorId, nickname, email, salesCount, soldCoins, bonusSoldCoins, earnedCoins, pendingCoins, pendingKrw, settledCoins }]` |
 | POST | `/admin/earnings/{creatorId}/settle` | **정산 완료로 표시** `{ "note": "11월 송금" }` → 정산 대기 몫 전부를 정산 기록(`creator_settlement`)으로. 송금은 직접 하고 누름. 대기가 0이면 400. 응답 = 바뀐 목록, 메시지 `"7코인(700원)을 정산 완료로 표시했어요."` |
+
+---
+
+## 11. 나에게 맞는 추천
+
+| Method | URL | 인증 | 설명 |
+|------|------|------|------|
+| GET | `/me/recommendations/blocks?size=12` | 필요 | 아직 없는 블록 중 내 취향에 맞는 순 (최대 30) |
+| GET | `/me/recommendations/combos?size=12` | 필요 | 남의 공개 조합(아직 안 담은 것) 중 내 취향에 맞는 순 (최대 30) |
+
+```json
+{ "personalized": true,
+  "triggers": [ { "code": "rain", "name": "빗소리·물" }, { "code": "tap", "name": "탭핑·타건" } ],
+  "blocks": [ BlockResponse, ... ] }      // 조합이면 "combos": [ PlaylistSummaryResponse, ... ]
+```
+- **취향 점수**(트리거 소분류·묶음마다): 내 블록함(가입 직후 받은 시작 블록 0.3, 나머지 1, 직접 올린 블록 제외) + 내 조합에 쌓은 블록(조합마다 2) + 최근 60일 틀어 본 조합(최대 5번 × 0.5) · 10분 넘게 들은 조합(최대 3번 × 1.5) + 상점에서 들어 본 블록(최대 3번 × 0.3)
+- 블록 점수 = 소분류 점수 × 1.5 + 묶음 점수 + 인기 조금(최근 14일 재생·전체 재생). 같은 소분류는 처음엔 2개까지만(섞어서). 상점에 보이는 승인 블록, 내가 가진 것·올린 것 빼고
+- 조합 점수 = 들어 있는 블록 점수 합 ÷ √(블록 수) + 인기 조금. 숨긴·비공개·내 것·이미 담은 것 빼고
+- `personalized: false` = 아직 취향 기록이 없어서 **요즘 인기**로 채움 (`triggers` 빈 목록). 취향으로 고른 게 모자라도 요즘 인기로 채워서 목록이 비지 않음
+- `triggers`: 내가 좋아하는 트리거 묶음 (점수 높은 순, 최대 3개, 영어 요청이면 영어 이름) → 화면 "탭핑·빗소리 취향으로 골랐어요"
 
 ---
 

@@ -3,20 +3,22 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { FlatList, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { playlistApi } from '@/api/endpoints';
+import { playlistApi, recommendApi } from '@/api/endpoints';
 import type { PlaylistSummary } from '@/api/types';
 import { BlockLoader } from '@/components/BlockLoader';
 import { CollectButton } from '@/components/CollectButton';
 import { PlaylistCard } from '@/components/PlaylistCard';
 import { Chip, EmptyState } from '@/components/ui';
+import { recommendLine } from '@/lib/recommend';
 import { useAuth } from '@/store/auth';
 import { colors, space } from '@/theme';
 import { Trans, useTranslation } from 'react-i18next';
 
-type Sort = 'trending' | 'latest' | 'popular';
-/** 이름 = 사전 combos.sort.{key} */
+type Sort = 'trending' | 'forYou' | 'latest' | 'popular';
+/** 이름 = 사전 combos.sort.{key}. forYou(내 취향)는 로그인했을 때만 */
 const SORTS: { key: Sort }[] = [
   { key: 'trending' },
+  { key: 'forYou' },
   { key: 'latest' },
   { key: 'popular' },
 ];
@@ -26,27 +28,33 @@ export default function CombosScreen() {
   const { t } = useTranslation();
   const [sort, setSort] = useState<Sort>('trending');
   const userId = useAuth((s) => s.user?.id ?? null);
+  const forYou = sort === 'forYou' && userId !== null;
+  const picks = useQuery({ queryKey: ['playlists', 'combos', 'forYou', userId], queryFn: () => recommendApi.combos(20), enabled: forYou });
   const query = useQuery({
     // 보는 사람마다 "이미 담았는지"가 달라서 사용자 id도 키에 넣음
     queryKey: ['playlists', 'combos', sort, userId],
     queryFn: async (): Promise<PlaylistSummary[]> =>
-      sort === 'trending' ? playlistApi.trending(20) : (await playlistApi.public(sort)).content,
+      sort === 'trending' || sort === 'forYou' ? playlistApi.trending(20) : (await playlistApi.public(sort)).content,
+    enabled: !forYou,
   });
+  const list = forYou ? picks : query;
+  const sorts = userId !== null ? SORTS : SORTS.filter((s) => s.key !== 'forYou');
   const openPlayer = (id: number) => router.push({ pathname: '/player/[id]', params: { id: String(id) } });
 
   return (
     <FlatList
       style={styles.screen}
       contentContainerStyle={styles.content}
-      data={query.data ?? []}
+      data={(forYou ? picks.data?.combos : query.data) ?? []}
       keyExtractor={(p) => String(p.id)}
-      refreshControl={<RefreshControl refreshing={query.isRefetching} onRefresh={() => void query.refetch()} tintColor={colors.muted} />}
+      refreshControl={<RefreshControl refreshing={list.isRefetching} onRefresh={() => void list.refetch()} tintColor={colors.muted} />}
       ListHeaderComponent={
         <View style={styles.head}>
           <Text style={styles.lead}><Trans i18nKey="combos.lead" components={{ em: <Text style={styles.em} /> }} /></Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-            {SORTS.map((s) => <Chip key={s.key} label={t(`combos.sort.${s.key}`)} active={sort === s.key} onPress={() => setSort(s.key)} testID={`sort-${s.key}`} />)}
+            {sorts.map((s) => <Chip key={s.key} label={t(`combos.sort.${s.key}`)} active={sort === s.key} onPress={() => setSort(s.key)} testID={`sort-${s.key}`} />)}
           </ScrollView>
+          {forYou && picks.data ? <Text style={styles.recLine} testID="rec-line">{recommendLine(picks.data, 'combos')}</Text> : null}
         </View>
       }
       renderItem={({ item, index }) => (
@@ -76,8 +84,8 @@ export default function CombosScreen() {
         </View>
       )}
       ListEmptyComponent={
-        query.isLoading ? <BlockLoader style={{ marginTop: 40 }} />
-          : query.isError ? <EmptyState icon="cloud-offline-outline" title={t('errors.offline')} message={(query.error as Error).message} />
+        list.isLoading ? <BlockLoader style={{ marginTop: 40 }} />
+          : list.isError ? <EmptyState icon="cloud-offline-outline" title={t('errors.offline')} message={(list.error as Error).message} />
             : <EmptyState icon="star-outline" title={t('combos.emptyTitle')} message={t('combos.emptyBody')} />
       }
     />
@@ -89,6 +97,7 @@ const styles = StyleSheet.create({
   content: { padding: space.lg, paddingBottom: space.xl },
   head: { gap: space.md, marginBottom: space.md },
   lead: { color: colors.muted, fontSize: 13, lineHeight: 19 },
+  recLine: { color: colors.faint, fontSize: 12, lineHeight: 17 },
   em: { color: colors.primaryText, fontWeight: '700' },
   chips: { gap: 6 },
   rankRow: { flexDirection: 'row', alignItems: 'flex-start', gap: space.sm },

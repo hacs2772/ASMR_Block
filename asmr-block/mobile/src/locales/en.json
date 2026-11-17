@@ -527,7 +527,8 @@
     "sort": {
       "trending": "Trending",
       "latest": "Newest",
-      "popular": "Most played"
+      "popular": "Most played",
+      "forYou": "For you"
     },
     "lead": "Listen to combos others stacked, and if you like one, <em>Save all</em>. The blocks go into your block box and the combo into My combos.",
     "collectors_one": "Saved by {{count}}",
@@ -573,7 +574,8 @@
       "hot": "Trending",
       "all": "All",
       "free": "Free",
-      "mine": "My box"
+      "mine": "My box",
+      "forYou": "For you"
     },
     "talk": {
       "ALL": "Any talking",
@@ -796,5 +798,12 @@
     "share_one": "Your share {{count}} coin",
     "share_other": "Your share {{count}} coins",
     "bonusOnly": "Bonus coins"
+  },
+  "forYou": {
+    "because": "Picked for your taste: {{triggers}}. Only blocks you don't have yet.",
+    "cold": "We don't know your taste yet. Add blocks and listen to combos, and we'll tailor this. For now, here are trending blocks.",
+    "coldCombos": "We don't know your taste yet. Add blocks and listen to combos, and we'll tailor this. For now, here are trending combos.",
+    "homeEyebrow": "Because you like {{triggers}}",
+    "homeTitle": "Picked for you"
   }
 }

@@ -155,6 +155,11 @@ public class BlockService {
         return toResponses(List.of(block), viewerId, false).getFirst();
     }
 
+    /** 여러 블록 응답 (보는 사람의 블록함 여부·태그를 한 번에) */
+    public List<BlockResponse> responses(List<Block> blocks, Long viewerId) {
+        return blocks.isEmpty() ? List.of() : toResponses(blocks, viewerId, false);
+    }
+
     /** 내 블록함 목록용: 모두 내 것 */
     public List<BlockResponse> toLibraryResponses(List<Block> blocks) {
         Map<Long, List<TagResponse>> tags = categoryService.tagsByBlockIds(blocks.stream().map(Block::getId).toList());

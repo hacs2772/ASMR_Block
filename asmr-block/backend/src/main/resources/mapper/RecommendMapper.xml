@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  나에게 맞는 추천: 내 취향(트리거) 점수 → 아직 없는 블록·남의 공개 조합에 점수.
+  취향 점수 = 내 블록함(가입 직후 받은 시작 블록은 0.3, 나머지 1) + 내 조합에 쌓은 블록(조합마다 2)
+            + 최근 60일 틀어 본 조합(최대 5번 × 0.5) · 10분 넘게 들은 조합(최대 3번 × 1.5) + 상점에서 들어 본 블록(최대 3번 × 0.3)
+  소분류(category) 점수 × 1.5 + 묶음(group) 점수 + 인기 조금
+-->
+<mapper namespace="com.asmrblock.recommend.RecommendMapper">
+
+    <sql id="taste">
+        WITH signals AS (
+            SELECT ub.block_id,
+                   CASE WHEN ub.source = 'FREE' AND ub.acquired_at &lt; u.created_at + INTERVAL '2 minutes' THEN 0.3 ELSE 1.0 END AS w
+            FROM user_block ub
+            JOIN users u ON u.id = ub.user_id
+            WHERE ub.user_id = #{userId} AND ub.source &lt;&gt; 'CREATOR'
+            UNION ALL
+            SELECT pb.block_id, 2.0
+            FROM playlist p
+            JOIN playlist_layer l ON l.playlist_id = p.id
+            JOIN playlist_block pb ON pb.layer_id = l.id
+            WHERE p.user_id = #{userId}
+            GROUP BY p.id, pb.block_id
+            UNION ALL
+            SELECT pb.block_id, LEAST(x.plays, 5) * 0.5 + LEAST(x.listens, 3) * 1.5
+            FROM (
+                SELECT playlist_id, SUM(plays) AS plays, SUM(listens) AS listens FROM (
+                    SELECT target_id AS playlist_id, COUNT(*) AS plays, 0 AS listens FROM play_log
+                    WHERE user_id = #{userId} AND target_type = 'PLAYLIST' AND played_at &gt;= NOW() - INTERVAL '60 days'
+                    GROUP BY target_id
+                    UNION ALL
+                    SELECT playlist_id, 0, COUNT(*) FROM listen_log
+                    WHERE user_id = #{userId} AND listened_at &gt;= NOW() - INTERVAL '60 days'
+                    GROUP BY playlist_id
+                ) t
+                GROUP BY playlist_id
+            ) x
+            JOIN playlist_layer l ON l.playlist_id = x.playlist_id
+            JOIN playlist_block pb ON pb.layer_id = l.id
+            GROUP BY x.playlist_id, pb.block_id, x.plays, x.listens
+            UNION ALL
+            SELECT target_id, LEAST(COUNT(*), 3) * 0.3 FROM play_log
+            WHERE user_id = #{userId} AND target_type = 'BLOCK' AND played_at &gt;= NOW() - INTERVAL '60 days'
+            GROUP BY target_id
+        ),
+        taste AS (
+            SELECT b.category_id, COALESCE(c.parent_id, c.id) AS group_id, SUM(s.w) AS w
+            FROM signals s
+            JOIN block b ON b.id = s.block_id
+            JOIN sound_category c ON c.id = b.category_id
+            GROUP BY b.category_id, COALESCE(c.parent_id, c.id)
+        ),
+        cat_w AS (SELECT category_id, SUM(w) AS w FROM taste GROUP BY category_id),
+        grp_w AS (SELECT group_id, SUM(w) AS w FROM taste GROUP BY group_id)
+    </sql>
+
+    <!-- 내가 좋아하는 트리거 묶음 (점수 높은 순) -->
+    <select id="tasteGroups" resultType="com.asmrblock.recommend.TasteGroup">
+        <include refid="taste"/>
+        SELECT g.code, g.name, g.name_en, gw.w AS weight
+        FROM grp_w gw
+        JOIN sound_category g ON g.id = gw.group_id
+        ORDER BY gw.w DESC, g.sort_order
+        LIMIT #{limit}
+    </select>
+
+    <!-- 아직 없는 블록 (상점에 보이는 것, 내가 올린 것 빼고) 중 취향에 맞는 순 -->
+    <select id="blockScores" resultType="com.asmrblock.recommend.Scored">
+        <include refid="taste"/>,
+        recent AS (
+            SELECT target_id, COUNT(*) AS n FROM play_log
+            WHERE target_type = 'BLOCK' AND played_at &gt;= NOW() - INTERVAL '14 days'
+            GROUP BY target_id
+        )
+        SELECT b.id, b.category_id AS group_key,
+               COALESCE(cw.w, 0) * 1.5 + COALESCE(gw.w, 0) + LN(1 + COALESCE(r.n, 0) + COALESCE(b.play_count, 0) * 0.1) * 0.5 AS score
+        FROM block b
+        JOIN sound_category c ON c.id = b.category_id
+        LEFT JOIN cat_w cw ON cw.category_id = b.category_id
+        LEFT JOIN grp_w gw ON gw.group_id = COALESCE(c.parent_id, c.id)
+        LEFT JOIN recent r ON r.target_id = b.id
+        WHERE b.is_active = true AND b.status = 'APPROVED' AND b.is_listed = true
+          AND b.uploader_id &lt;&gt; #{userId}
+          AND NOT EXISTS (SELECT 1 FROM user_block ub WHERE ub.user_id = #{userId} AND ub.block_id = b.id)
+          AND (cw.w IS NOT NULL OR gw.w IS NOT NULL)
+        ORDER BY score DESC, b.created_at DESC, b.id DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 남의 공개 조합 (아직 안 담은 것) 중 취향에 맞는 순 — 블록이 많은 조합이 유리하지 않게 √(블록 수)로 나눔 -->
+    <select id="comboScores" resultType="com.asmrblock.recommend.Scored">
+        <include refid="taste"/>,
+        combo AS (
+            SELECT p.id AS playlist_id, b.category_id, COALESCE(c.parent_id, c.id) AS group_id
+            FROM playlist p
+            JOIN playlist_layer l ON l.playlist_id = p.id
+            JOIN playlist_block pb ON pb.layer_id = l.id
+            JOIN block b ON b.id = pb.block_id
+            JOIN sound_category c ON c.id = b.category_id
+            WHERE p.is_public = true AND p.is_hidden = false AND p.user_id &lt;&gt; #{userId}
+              AND NOT EXISTS (SELECT 1 FROM playlist mine WHERE mine.user_id = #{userId} AND mine.source_playlist_id = p.id)
+            GROUP BY p.id, b.id, b.category_id, COALESCE(c.parent_id, c.id)
+        )
+        SELECT x.playlist_id AS id, 0 AS group_key,
+               SUM(COALESCE(cw.w, 0) * 1.5 + COALESCE(gw.w, 0)) / SQRT(COUNT(*)) + LN(1 + MAX(p.play_count)) * 0.3 AS score
+        FROM combo x
+        JOIN playlist p ON p.id = x.playlist_id
+        LEFT JOIN cat_w cw ON cw.category_id = x.category_id
+        LEFT JOIN grp_w gw ON gw.group_id = x.group_id
+        GROUP BY x.playlist_id
+        HAVING SUM(COALESCE(cw.w, 0) + COALESCE(gw.w, 0)) &gt; 0
+        ORDER BY score DESC, x.playlist_id DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

@@ -2,11 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { IoSearch, IoWallet } from 'react-icons/io5';
 import { useTranslation } from 'react-i18next';
-import { catalogApi } from '../api/api';
+import { catalogApi, recommendApi } from '../api/api';
 import BlockLoader from '../components/brand/BlockLoader';
 import BlockProductCard from '../components/block/BlockProductCard';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
 import { categoryLabel, talkLabel } from '../lib/blocks';
+import { recommendLine } from '../lib/recommend';
 import useAuthStore from '../store/authStore';
 import useWalletStore from '../store/walletStore';
 
@@ -26,6 +27,10 @@ function ShopPage() {
   const [groups, setGroups] = useState([]);
   const [blocks, setBlocks] = useState(null);
   const [error, setError] = useState(null);
+  const [rec, setRec] = useState(null);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  // 로그인했으면 "나에게 맞는" 탭 (내 취향 트리거로 고른 블록)
+  const tabs = isAuthenticated ? ['trending', 'forYou', 'latest', 'free'] : TABS;
 
   const set = (patch) => {
     const next = new URLSearchParams(params);
@@ -48,15 +53,19 @@ function ShopPage() {
     let alive = true;
     setBlocks(null);
     setError(null);
-    const load = tab === 'trending' && !filtered
-      ? catalogApi.trending(24)
-      : catalogApi.blocks({
-        categoryId, talkType: talk || undefined, keyword: query || undefined,
-        free: tab === 'free' ? true : undefined, sort: tab === 'trending' ? 'popular' : 'latest',
-      }).then((p) => p.content);
+    setRec(null);
+    const forYou = tab === 'forYou' && isAuthenticated;
+    const load = forYou && !filtered
+      ? recommendApi.blocks(24).then((r) => { if (alive) setRec(r); return r.blocks; })
+      : tab === 'trending' && !filtered
+        ? catalogApi.trending(24)
+        : catalogApi.blocks({
+          categoryId, talkType: talk || undefined, keyword: query || undefined,
+          free: tab === 'free' ? true : undefined, sort: tab === 'trending' || forYou ? 'popular' : 'latest',
+        }).then((p) => p.content);
     load.then((b) => alive && setBlocks(b)).catch((e) => alive && setError(e));
     return () => { alive = false; };
-  }, [tab, categoryId, talk, query, filtered]);
+  }, [tab, categoryId, talk, query, filtered, isAuthenticated]);
 
   const group = useMemo(() => groups.find((g) => g.id === groupId), [groups, groupId]);
 
@@ -77,8 +86,8 @@ function ShopPage() {
       </div>
 
       <div className="mt-6 flex gap-2 border-b border-line">
-        {TABS.map((key) => (
-          <button key={key} type="button" onClick={() => set({ tab: key === 'trending' ? null : key })}
+        {tabs.map((key) => (
+          <button key={key} type="button" onClick={() => set({ tab: key === 'trending' ? null : key })} data-testid={`shop-tab-${key}`}
             className={`-mb-px border-b-2 px-3 pb-3 text-sm font-bold ${tab === key ? 'border-pink text-ink' : 'border-transparent text-muted hover:text-ink'}`}>
             {t(`shop.tabs.${key}`)}
           </button>
@@ -110,7 +119,8 @@ function ShopPage() {
         ))}
       </div>
 
-      <div className="mt-8">
+      {rec && <p className="mt-6 text-sm text-muted" data-testid="rec-line">{recommendLine(rec)}</p>}
+      <div className={rec ? 'mt-4' : 'mt-8'}>
         {error ? (
           <p className="card p-8 text-center text-muted">{t('shop.offline')}</p>
         ) : blocks === null ? (

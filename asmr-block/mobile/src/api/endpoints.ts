@@ -1,6 +1,8 @@
 import { api } from './client';
 import type {
+  BlockRecommendations,
   CoinTransaction,
+  ComboRecommendations,
   Creator,
   Earnings,
   Purchase,
@@ -113,6 +115,12 @@ export const sellerApi = {
   /** 구간 고르기: 소리 파일이나 영상(kind=video, form의 file)을 먼저 올려 길이·파형을 받음 → 올리기 때 draftId + trimStart/trimEnd */
   draft: (form: FormData, kind: 'audio' | 'video' = 'audio') =>
     api<UploadDraft>(`/blocks/upload-drafts?kind=${kind}`, { method: 'POST', body: form }),
+};
+
+/** 나에게 맞는 추천 (로그인 필요): 내 취향 트리거로 고른 블록·조합, 기록이 적으면 요즘 인기로 채움 */
+export const recommendApi = {
+  blocks: (size = 12) => api<BlockRecommendations>('/me/recommendations/blocks' + query({ size })),
+  combos: (size = 12) => api<ComboRecommendations>('/me/recommendations/combos' + query({ size })),
 };
 
 /** 코인 (V16): 내 코인·내역, 유료 블록 사기, 내 판매 수익 */

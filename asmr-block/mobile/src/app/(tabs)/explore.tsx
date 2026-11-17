@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { BlockLoader } from '@/components/BlockLoader';
-import { catalogApi, libraryApi } from '@/api/endpoints';
+import { catalogApi, libraryApi, recommendApi } from '@/api/endpoints';
 import type { Block, TalkType } from '@/api/types';
 import { usePreview } from '@/audio/usePreview';
 import { BlockCard } from '@/components/BlockCard';
@@ -14,10 +14,12 @@ import { useAuth } from '@/store/auth';
 import { colors, radius, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { categoryLabel, groupDescription } from '@/lib/labels';
+import { recommendLine } from '@/lib/recommend';
 
-type Tab = 'hot' | 'all' | 'free' | 'mine';
-/** 이름 = 사전 shop.tabs.{key} · shop.talk.{key ?? ALL} */
+type Tab = 'hot' | 'forYou' | 'all' | 'free' | 'mine';
+/** 이름 = 사전 shop.tabs.{key} · shop.talk.{key ?? ALL}. forYou(내 취향)는 로그인했을 때만 */
 const TABS: Tab[] = ['hot', 'all', 'free', 'mine'];
+const SIGNED_IN_TABS: Tab[] = ['hot', 'forYou', 'all', 'free', 'mine'];
 const TALKS: (TalkType | null)[] = [null, 'NONE', 'WHISPER'];
 
 /** 요즘 뜨는 / 내 블록함은 서버 필터가 없어서 화면에서 거름 */
@@ -57,6 +59,8 @@ export default function ShopScreen() {
 
   const trending = useQuery({ queryKey: ['blocks', 'trending', 30], queryFn: () => catalogApi.trending(30), enabled: tab === 'hot' });
   const mine = useQuery({ queryKey: ['library'], queryFn: libraryApi.mine, enabled: signedIn });
+  const forYou = useQuery({ queryKey: ['blocks', 'forYou'], queryFn: () => recommendApi.blocks(30), enabled: signedIn && tab === 'forYou' });
+  const tabs = signedIn ? SIGNED_IN_TABS : TABS;
   const blocks = useQuery({
     queryKey: ['blocks', tab, filterId, talk, keyword],
     queryFn: () => catalogApi.blocks({ categoryId: filterId, talkType: talk, keyword: keyword || undefined, free: tab === 'free' ? true : undefined }),
@@ -65,8 +69,9 @@ export default function ShopScreen() {
 
   const preview = usePreview();
   const group = categories.data?.find((g) => g.id === groupId);
-  const query = tab === 'hot' ? trending : tab === 'mine' ? mine : blocks;
-  const raw: Block[] = tab === 'hot' ? trending.data ?? [] : tab === 'mine' ? mine.data ?? [] : blocks.data?.content ?? [];
+  const query = tab === 'hot' ? trending : tab === 'forYou' ? forYou : tab === 'mine' ? mine : blocks;
+  const raw: Block[] = tab === 'hot' ? trending.data ?? [] : tab === 'forYou' ? forYou.data?.blocks ?? []
+    : tab === 'mine' ? mine.data ?? [] : blocks.data?.content ?? [];
   const data = serverFiltered ? raw : raw.filter((b) => matches(b, groupId, subId, talk, keyword));
   // 두 칸 격자에서 마지막 한 개가 가로로 늘어나지 않도록 빈칸을 채움
   const gridData: (Block | null)[] = data.length % 2 ? [...data, null] : data;
@@ -83,7 +88,7 @@ export default function ShopScreen() {
       </View>
 
       <View style={styles.tabs}>
-        {TABS.map((key) => (
+        {tabs.map((key) => (
           <Pressable key={key} accessibilityRole="tab" accessibilityState={{ selected: tab === key }} onPress={() => setTab(key)}
             style={[styles.tab, tab === key && styles.tabOn]} testID={`tab-${key}`}>
             <Text style={[styles.tabText, tab === key && styles.tabTextOn]} numberOfLines={1}>
@@ -126,6 +131,7 @@ export default function ShopScreen() {
         ListHeaderComponent={
           <Text style={styles.caption}>
             {tab === 'hot' ? t('shop.hintHot')
+              : tab === 'forYou' ? recommendLine(forYou.data)
               : tab === 'mine' ? t('shop.hintMine')
                 : tab === 'free' ? t('shop.hintFree')
                   : (group && groupDescription(group)) || t('shop.hintCoins')}
@@ -159,7 +165,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
   },
   searchInput: { flex: 1, color: colors.text, fontSize: 14, paddingVertical: 0 },
-  tabs: { flexDirection: 'row', gap: 20, marginHorizontal: space.lg, marginTop: space.md, borderBottomWidth: 1, borderBottomColor: colors.border },
+  tabs: { flexDirection: 'row', gap: 16, marginHorizontal: space.lg, marginTop: space.md, borderBottomWidth: 1, borderBottomColor: colors.border },
   tab: { paddingVertical: 9 },
   tabOn: { borderBottomWidth: 2, borderBottomColor: colors.primary, marginBottom: -1 },
   tabText: { color: colors.faint, fontSize: 14, fontWeight: '600' },

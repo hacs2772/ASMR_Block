@@ -27,6 +27,15 @@ export const libraryApi = {
   remove: (blockId) => data(axiosInstance.delete(`/me/blocks/${blockId}`)),
 };
 
+/**
+ * 나에게 맞는 추천 (로그인 필요): { personalized, triggers: [{ code, name }], blocks | combos }
+ * personalized=false면 아직 취향을 몰라서 요즘 인기로 채운 것
+ */
+export const recommendApi = {
+  blocks: (size = 12) => data(axiosInstance.get('/me/recommendations/blocks', { params: { size } })),
+  combos: (size = 12) => data(axiosInstance.get('/me/recommendations/combos', { params: { size } })),
+};
+
 /** 코인 (V16): 내 코인·내역, 유료 블록 사기, 내 판매 수익 */
 export const coinApi = {
   /** { balance, paid(충전 코인), bonus(받은 코인) } */

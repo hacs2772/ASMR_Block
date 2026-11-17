@@ -3,7 +3,7 @@ import { InstallBanner } from '../components/common/Install';
 import { Link } from 'react-router-dom';
 import { IoArrowForward, IoCash, IoCheckmarkCircle, IoCube, IoMoon, IoPhonePortrait } from 'react-icons/io5';
 import { Trans, useTranslation } from 'react-i18next';
-import { catalogApi, playlistApi } from '../api/api';
+import { catalogApi, playlistApi, recommendApi } from '../api/api';
 import Brick from '../components/brand/Brick';
 import BlockLoader from '../components/brand/BlockLoader';
 import BlockProductCard from '../components/block/BlockProductCard';
@@ -14,6 +14,8 @@ import QuickStart from '../components/home/QuickStart';
 import ComboCard from '../components/playlist/ComboCard';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
 import { TRIGGER_COLOR } from '../lib/blocks';
+import { tasteNames } from '../lib/recommend';
+import useAuthStore from '../store/authStore';
 
 /** 웹 첫 화면: 나만의 팅글 → 조합 만들기(가장 중요한 버튼) → 요즘 뜨는 블록 · 추천 조합 → 만드는 법 → 블록 판매 → 앱 받기 */
 function HomePage() {
@@ -24,12 +26,28 @@ function HomePage() {
   const [groups, setGroups] = useState([]);
   const [blocks, setBlocks] = useState(null);
   const [combos, setCombos] = useState(null);
+  const [rec, setRec] = useState(null);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   useEffect(() => {
     catalogApi.categories().then(setGroups).catch(() => setGroups([]));
-    catalogApi.trending(8).then((b) => setBlocks(b.slice(0, 4))).catch(() => setBlocks([]));
     playlistApi.trending(6).then((c) => setCombos(c.slice(0, 4))).catch(() => setCombos([]));
   }, []);
+  // 블록 칸: 로그인했고 취향을 알면 "취향 저격 블록", 아니면 요즘 뜨는 블록
+  useEffect(() => {
+    setBlocks(null);
+    setRec(null);
+    const trending = () => catalogApi.trending(8).then((b) => setBlocks(b.slice(0, 4)));
+    const load = isAuthenticated
+      ? recommendApi.blocks(4).then((r) => {
+        if (!r.personalized) return trending();
+        setRec(r);
+        setBlocks(r.blocks.slice(0, 4));
+        return undefined;
+      })
+      : trending();
+    load.catch(() => setBlocks([]));
+  }, [isAuthenticated]);
 
   return (
     <div>
@@ -64,10 +82,12 @@ function HomePage() {
       )}
 
       {/* ---------- 요즘 뜨는 블록 ---------- */}
-      <Section eyebrow={t('home.trendEyebrow')} title={t('home.trendTitle')} more={{ to: '/shop', label: t('home.trendMore') }}>
+      <Section eyebrow={rec ? t('forYou.homeEyebrow', { triggers: tasteNames(rec) }) : t('home.trendEyebrow')}
+        title={rec ? t('forYou.homeTitle') : t('home.trendTitle')}
+        more={rec ? { to: '/shop?tab=forYou', label: t('forYou.homeMore') } : { to: '/shop', label: t('home.trendMore') }}>
         {blocks === null ? <BlockLoader small /> : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {blocks.map((b, i) => <BlockProductCard key={b.id} block={b} rank={i + 1} />)}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid={rec ? 'home-for-you' : 'home-trending'}>
+            {blocks.map((b, i) => <BlockProductCard key={b.id} block={b} rank={rec ? null : i + 1} />)}
           </div>
         )}
       </Section>

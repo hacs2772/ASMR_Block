@@ -145,6 +145,12 @@
         LIMIT #{limit}
     </select>
 
+    <select id="findPublicByIds" resultType="com.asmrblock.playlist.Playlist">
+        <include refid="selectPlaylist"/>
+        WHERE p.is_public = true AND p.is_hidden = false AND p.id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
+
     <select id="countPublic" resultType="long">
         SELECT COUNT(*) FROM playlist WHERE is_public = true AND is_hidden = false
     </select>

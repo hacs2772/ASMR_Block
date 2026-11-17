@@ -55,4 +55,7 @@ public interface PlaylistMapper {
     List<PlaylistLayer> findLayers(@Param("playlistIds") Collection<Long> playlistIds);
 
     void incrementPlayCount(Long id);
+
+    /** 공개(숨기지 않은) 조합 여러 개 (추천 목록용) */
+    List<Playlist> findPublicByIds(@Param("ids") Collection<Long> ids);
 }

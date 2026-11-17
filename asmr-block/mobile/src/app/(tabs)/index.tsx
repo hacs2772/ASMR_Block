@@ -3,7 +3,7 @@ import { BetaLoginButton } from '@/components/BetaLoginButton';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { catalogApi, playlistApi } from '@/api/endpoints';
+import { catalogApi, playlistApi, recommendApi } from '@/api/endpoints';
 import type { PlaylistSummary } from '@/api/types';
 import { usePlayer } from '@/audio/PlayerProvider';
 import { usePreview } from '@/audio/usePreview';
@@ -14,6 +14,7 @@ import { BlockLoader } from '@/components/BlockLoader';
 import { PlaylistCard } from '@/components/PlaylistCard';
 import { Button } from '@/components/ui';
 import { formatMinutes } from '@/lib/format';
+import { tasteNames } from '@/lib/recommend';
 import { useAuth } from '@/store/auth';
 import { colors, radius, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
@@ -36,6 +37,10 @@ export default function HomeScreen() {
   const user = useAuth((s) => s.user);
   const mine = useQuery({ queryKey: ['playlists', 'mine'], queryFn: playlistApi.mine, enabled: status === 'signedIn' });
   const trending = useQuery({ queryKey: ['blocks', 'trending'], queryFn: () => catalogApi.trending(10) });
+  // 로그인했고 취향을 알면 "취향 저격 블록"(아직 없는 블록), 아니면 요즘 뜨는 블록
+  const forYou = useQuery({ queryKey: ['blocks', 'forYou', 'home'], queryFn: () => recommendApi.blocks(10), enabled: status === 'signedIn' });
+  const picks = status === 'signedIn' && forYou.data?.personalized ? forYou.data : null;
+  const shelf = picks ? picks.blocks : trending.data ?? [];
   const preview = usePreview();
   const combos = mine.data?.content ?? [];
   const [first, ...rest] = combos;
@@ -46,7 +51,7 @@ export default function HomeScreen() {
       contentContainerStyle={styles.content}
       refreshControl={
         <RefreshControl refreshing={mine.isRefetching}
-          onRefresh={() => { void mine.refetch(); void trending.refetch(); }} tintColor={colors.muted} />
+          onRefresh={() => { void mine.refetch(); void trending.refetch(); void forYou.refetch(); }} tintColor={colors.muted} />
       }
     >
       <Text style={styles.eyebrow}>{user ? t('home.mineOf', { nickname: user.nickname }) : t('home.mine')}</Text>
@@ -85,13 +90,13 @@ export default function HomeScreen() {
         </>
       )}
 
-      {(trending.data?.length ?? 0) > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.eyebrow}>{t('home.trendEyebrow')}</Text>
-          <Text style={[styles.sectionTitle, { marginBottom: space.md }]}>{t('home.trendTitle')}</Text>
+      {shelf.length > 0 && (
+        <View style={styles.section} testID={picks ? 'home-for-you' : 'home-trending'}>
+          <Text style={styles.eyebrow} numberOfLines={1}>{picks ? t('forYou.homeEyebrow', { triggers: tasteNames(picks) }) : t('home.trendEyebrow')}</Text>
+          <Text style={[styles.sectionTitle, { marginBottom: space.md }]}>{picks ? t('forYou.homeTitle') : t('home.trendTitle')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-            {trending.data!.map((b, i) => (
-              <BlockCard key={b.id} block={b} rank={i + 1} style={styles.trendCard}
+            {shelf.map((b, i) => (
+              <BlockCard key={b.id} block={b} rank={picks ? undefined : i + 1} style={styles.trendCard}
                 previewing={preview.previewId === b.id} onPreview={() => preview.toggle(b)} />
             ))}
           </ScrollView>

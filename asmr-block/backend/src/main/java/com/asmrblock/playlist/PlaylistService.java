@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Set;
@@ -303,6 +304,17 @@ public class PlaylistService {
                 .build();
         playlistMapper.insertLayer(layer);
         playlistMapper.insertLayerBlocks(layer.getId(), items);
+    }
+
+    /** 공개 조합 여러 개를 ids 순서대로 요약 (추천 목록용, 숨긴·비공개는 빠짐) */
+    @Transactional(readOnly = true)
+    public List<PlaylistSummaryResponse> publicSummaries(List<Long> ids, Long viewerId) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, Playlist> byId = playlistMapper.findPublicByIds(ids).stream()
+                .collect(Collectors.toMap(Playlist::getId, p -> p));
+        return summaries(ids.stream().map(byId::get).filter(Objects::nonNull).toList(), viewerId);
     }
 
     /** 목록 요약: 동 정보 + 보는 사람이 이미 담았는지 + 잠긴 유료 블록 수 (모두 쿼리 몇 번으로) */

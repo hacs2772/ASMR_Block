@@ -175,6 +175,11 @@ export type CollectInfo = {
   lockedPrice: number;
 };
 
+/** 나에게 맞는 추천: personalized=false면 아직 취향을 몰라서 요즘 인기로 채운 것 */
+export type TasteTrigger = { code: string; name: string };
+export type BlockRecommendations = { personalized: boolean; triggers: TasteTrigger[]; blocks: Block[] };
+export type ComboRecommendations = { personalized: boolean; triggers: TasteTrigger[]; combos: PlaylistSummary[] };
+
 /** 내 코인 (V16): balance = 쓸 수 있는 전부, paid = 충전한 코인, bonus = 받은 코인(먼저 씀) */
 export type Wallet = { balance: number; paid: number; bonus: number };
 
