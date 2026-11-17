@@ -153,7 +153,7 @@
 | Method | URL | 인증 | 응답 data |
 |------|------|------|------|
 | GET | `/categories` | - | 메뉴 트리 (아래) |
-| GET | `/tags` | - | `[{ "id": 1, "name": "부드러운" }]` |
+| GET | `/tags` | - | **소리 느낌 태그**(V22, 18개: 부드러운·촉촉한·바삭한·날카로운·둔탁한·묵직한·끈적한·몽글몽글·느린·빠른·리드미컬한·강한·울림·먹먹한·귀 가까이·양쪽 귀·잠 오는·집중용) `[{ "id": 1, "code": "soft", "name": "부드러운" }]` — 숨긴 태그는 빠짐, `name`은 화면 언어(영어면 `Soft`). 블록 응답의 `tags`도 같은 모양 |
 | GET | `/stickers` | - | 블록 겉면 스티커 그림 (아래, V8) |
 
 **메뉴 트리** - 대분류(**트리거 묶음**) > 소분류. 소분류는 대분류 색을 씀. 블록은 **소분류에만** 달림 (V5)
@@ -284,7 +284,7 @@
 | `title` | ✅ | 100자 이내 |
 | `description` | | 1000자 이내 |
 | `categoryId` | ✅ | **소분류** id (대분류면 400) |
-| `tagIds` | | 최대 5개 (`tagIds=1&tagIds=5`) |
+| `tagIds` | | 소리 느낌 태그, 최대 5개 (`tagIds=1&tagIds=5`, 웹·앱 화면은 3개까지 고름). 숨긴·없는 태그면 400 |
 | `license` | ✅ | `CC0` / `CC_BY`(출처 표기 필요) / `OWN`(직접 녹음) / `CREATOR` |
 | `sourceUrl` | | 원본 출처 |
 | `attribution` | `CC_BY`면 ✅ | 출처 표기 문구 |
@@ -313,9 +313,11 @@
 **고치기** `PATCH /me/uploads/{id}` (올린 사람만, 남의 블록 403, 업로드가 막힌 사람 403)
 ```json
 { "title": "고친 이름", "description": "", "recordedPlace": "서울 작업실", "titleEn": "Fixed name",
-  "descriptionEn": "...", "recordedPlaceEn": "...", "talkType": "WHISPER", "price": 20, "listed": false }
+  "descriptionEn": "...", "recordedPlaceEn": "...", "talkType": "WHISPER", "price": 20, "listed": false,
+  "tagIds": [3, 9] }
 ```
 - **보낸 것만 바뀜**(없거나 `null`이면 그대로), 선택 칸은 빈 글자면 지움. 제목은 빈 글자 400, 가격은 `maxPrice`까지
+- `tagIds` = 소리 느낌 태그를 **통째로 바꿈**(빈 목록 = 모두 뺌, 숨긴·없는 태그 400, 최대 5개). 응답·`GET /me/uploads`에 `tags`
 - `listed: false` = **상점에서 내리기**(상점·크리에이터 페이지·추천에서 빠짐, 이미 담거나 산 사람은 그대로 들음), `true` = 다시 올리기
 - 승인된 블록은 고쳐도 그대로 판매(다시 검수하지 않음, 이상한 글은 신고로). 판매 중인 블록을 유료로 바꾸면 맛보기(앞 30초)를 만듦
 - **돌려보낸(REJECTED) 블록**의 내용을 고치면 다시 검수 대기(`PENDING`, `reviewNote` 지움) → 메시지 `"고쳐서 다시 검수를 요청했어요."`, 아니면 `"고쳤어요."`. 응답 = 고친 `MyUploadResponse`
@@ -525,6 +527,16 @@
 - 소분류 아래에 또 만들면 400. 묶음 색을 바꾸면 소분류 색도 같이 바뀜
 - 숨긴 분류, 숨긴 묶음 아래 소분류로는 **업로드할 수 없음**(400). 이미 달린 블록은 그대로 보임
 - 영어 이름 `nameEn` 30자·영어 설명 `descriptionEn` 120자까지 (영어 화면에 보임, 비우면 기본 영어 이름이나 한국어 이름)
+
+### 9.2.1 소리 느낌 태그 - V22
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | `/admin/tags` | 숨긴 것까지 `[{ "id", "code", "name", "nameEn", "sortOrder", "active", "blockCount" }]` |
+| POST | `/admin/tags` | 추가 (201) `{ "name": "사각사각", "nameEn": "Scritchy" }` (이름 12자·영어 24자), 코드는 자동 `t` + id |
+| PATCH | `/admin/tags/{id}` | 보낸 것만 고침 `{ "name", "nameEn", "active" }` — `nameEn` 빈 글자면 지움, `active: false` = 숨기기 |
+| PUT | `/admin/tags/order` | 순서 `{ "ids": [5, 1, 3] }` |
+
+- 지우지 않고 숨김 (이미 달린 블록이 있어서). 숨긴 태그는 `GET /tags`·블록 카드에서 빠지고 새로 달 수 없음. 응답은 늘 바뀐 뒤의 전체 목록
 
 ### 9.3 스티커 - V8
 

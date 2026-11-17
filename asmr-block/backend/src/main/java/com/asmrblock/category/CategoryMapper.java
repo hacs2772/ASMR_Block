@@ -45,6 +45,23 @@ public interface CategoryMapper {
 
     void updateSortOrder(@Param("id") Long id, @Param("sortOrder") int sortOrder);
 
+    // ===== 관리자: 소리 느낌 태그 =====
+
+    /** 숨긴 것까지 모든 태그 + 달린 블록 수 */
+    List<SoundTag> findAllTagsForAdmin();
+
+    SoundTag findTagById(Long id);
+
+    int nextTagSortOrder();
+
+    void insertTag(SoundTag tag);
+
+    void updateTagCode(@Param("id") Long id, @Param("code") String code);
+
+    void updateTag(@Param("id") Long id, @Param("name") String name, @Param("nameEn") String nameEn, @Param("active") Boolean active);
+
+    void updateTagSortOrder(@Param("id") Long id, @Param("sortOrder") int sortOrder);
+
     /** 여러 블록의 태그를 쿼리 한 번으로 조회 */
     List<BlockTag> findTagsByBlockIds(@Param("blockIds") Collection<Long> blockIds);
 }

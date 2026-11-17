@@ -11,9 +11,11 @@ export const errorMessage = (e, fallback = i18n.t('errors.generic')) =>
 export const catalogApi = {
   /** 메뉴 트리: 트리거 묶음(대분류) > 소분류 */
   categories: () => data(axiosInstance.get('/categories')),
+  /** 소리 느낌 태그 [{ id, code, name }] (부드러운·바삭한·느린…, 이름은 화면 언어) */
+  tags: () => data(axiosInstance.get('/tags')),
   /** 요즘 팅글 많이 오는 블록 (최근 7일 재생 수) */
   trending: (size = 8) => data(axiosInstance.get('/blocks/trending', { params: { size } })),
-  /** params: categoryId, free, talkType, keyword, uploaderId(크리에이터), sort(latest|popular), page, size */
+  /** params: categoryId, tagIds(태그 하나), free, talkType, keyword, uploaderId(크리에이터), sort(latest|popular), page, size */
   blocks: (params = {}) => data(axiosInstance.get('/blocks', { params: { size: 48, ...params } })),
   block: (id) => data(axiosInstance.get(`/blocks/${id}`)),
   /** 크리에이터 머리: 닉네임 · 블록 수 · 담은 사람 · 들은 횟수 · 많이 올린 트리거 */
@@ -79,7 +81,7 @@ export const coinApi = {
 /** 블록 판매 (크리에이터 업로드) */
 export const sellerApi = {
   policy: () => data(axiosInstance.get('/blocks/upload-policy')),
-  /** form: file, title, categoryId, license(OWN), price, talkType, recordedPlace, description */
+  /** form: file, title, categoryId, license(OWN), price, talkType, recordedPlace, description, tagIds(여러 번) */
   upload: (form, onProgress) => data(axiosInstance.post('/blocks', form, {
     // 기본값이 JSON이라 그대로 두면 axios가 FormData를 JSON으로 바꿔 버림. multipart로 두면 브라우저가 경계(boundary)를 붙여 보냄
     headers: { 'Content-Type': 'multipart/form-data' },
@@ -139,6 +141,11 @@ export const adminApi = {
   addCategory: (body) => data(axiosInstance.post('/admin/categories', body)),
   updateCategory: (id, body) => data(axiosInstance.patch(`/admin/categories/${id}`, body)),
   orderCategories: (ids) => data(axiosInstance.put('/admin/categories/order', { ids })),
+  /** 소리 느낌 태그 (숨긴 것까지): 추가 { name, nameEn } · 고치기 { name, nameEn, active } · 순서 */
+  tags: () => data(axiosInstance.get('/admin/tags')),
+  addTag: (body) => data(axiosInstance.post('/admin/tags', body)),
+  updateTag: (id, body) => data(axiosInstance.patch(`/admin/tags/${id}`, body)),
+  orderTags: (ids) => data(axiosInstance.put('/admin/tags/order', { ids })),
   /** 스티커 (목록은 공개 GET /stickers, 숨긴 것 포함) */
   stickers: () => data(axiosInstance.get('/stickers', { params: { lang: 'ko' } })),
   addSticker: (form) => data(axiosInstance.post('/admin/stickers', form, multipart)),

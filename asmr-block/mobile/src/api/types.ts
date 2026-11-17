@@ -46,7 +46,8 @@ export type CategoryGroup = {
 };
 /** 말소리: NONE 노토킹 / WHISPER 속삭임 / TALK 말하기 */
 export type TalkType = 'NONE' | 'WHISPER' | 'TALK';
-export type Tag = { id: number; name: string };
+/** 소리 느낌 태그 (부드러운·바삭한·느린…, 이름은 화면 언어) */
+export type Tag = { id: number; code: string; name: string };
 
 export type User = {
   id: number;
@@ -303,6 +304,8 @@ export type MyUpload = {
   /** 최근 7일에 새로 담은 사람 · 이 블록이 들어간 남의 조합 (나 제외) */
   newCollects: number;
   usedInCombos: number;
+  /** 소리 느낌 태그 (고치기 화면) */
+  tags: Tag[];
 };
 
 /** 블록 판매 탭 "내 블록 통계" (GET /me/uploads/stats, 나 제외). plays = 블록을 들은 것 + 내 블록이 든 조합을 튼 것 */
@@ -328,6 +331,8 @@ export type UploadEditRequest = {
   talkType?: TalkType;
   price?: number;
   listed?: boolean;
+  /** 소리 느낌 태그 id (보내면 통째로 바꿈, 빈 목록 = 모두 뺌) */
+  tagIds?: number[];
 };
 
 export type ItemRequest = { blockId: number; repeat: number; startSeconds?: number };

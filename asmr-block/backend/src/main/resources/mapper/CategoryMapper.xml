@@ -90,8 +90,49 @@
         <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </select>
 
+    <!-- ===== 관리자: 소리 느낌 태그 ===== -->
+    <select id="findAllTagsForAdmin" resultType="com.asmrblock.category.SoundTag">
+        SELECT t.*,
+               (SELECT COUNT(*) FROM block_tag bt JOIN block b ON b.id = bt.block_id AND b.is_active = true
+                WHERE bt.tag_id = t.id) AS block_count
+        FROM sound_tag t
+        ORDER BY t.sort_order, t.id
+    </select>
+
+    <select id="findTagById" resultType="com.asmrblock.category.SoundTag">
+        SELECT * FROM sound_tag WHERE id = #{id}
+    </select>
+
+    <select id="nextTagSortOrder" resultType="int">
+        SELECT COALESCE(MAX(sort_order), 0) + 1 FROM sound_tag
+    </select>
+
+    <!-- 코드는 넣은 뒤 t + id로 바꿈 (NOT NULL·겹치면 안 돼서 잠깐 임시 값, 30자 안) -->
+    <insert id="insertTag" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO sound_tag (code, name, name_en, sort_order)
+        VALUES ('new-' || substr(md5(random()::text || clock_timestamp()::text), 1, 20), #{name}, #{nameEn}, #{sortOrder})
+    </insert>
+
+    <update id="updateTagCode">
+        UPDATE sound_tag SET code = #{code} WHERE id = #{id}
+    </update>
+
+    <update id="updateTag">
+        UPDATE sound_tag
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="nameEn != null">name_en = NULLIF(#{nameEn}, ''),</if>
+            <if test="active != null">is_active = #{active},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateTagSortOrder">
+        UPDATE sound_tag SET sort_order = #{sortOrder} WHERE id = #{id}
+    </update>
+
     <select id="findTagsByBlockIds" resultType="com.asmrblock.category.BlockTag">
-        SELECT bt.block_id, t.id, t.name
+        SELECT bt.block_id, t.id, t.code, t.name, t.name_en
         FROM block_tag bt
         JOIN sound_tag t ON t.id = bt.tag_id AND t.is_active = true
         WHERE bt.block_id IN

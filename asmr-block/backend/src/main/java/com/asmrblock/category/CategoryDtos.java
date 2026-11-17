@@ -37,7 +37,43 @@ public final class CategoryDtos {
             List<CategoryResponse> children) {
     }
 
-    public record TagResponse(Long id, String name) {
+    /** 소리 느낌 태그 (부드러운·바삭한·느린…). name은 화면 언어 (영어면 name_en, V22) */
+    public record TagResponse(Long id, String code, String name) {
+        public static TagResponse of(Long id, String code, String name, String nameEn) {
+            return new TagResponse(id, code, Lang.pick(name, nameEn));
+        }
+    }
+
+    /** 관리자: 소리 느낌 태그 (숨긴 것까지). blockCount = 이 태그가 달린 블록 수 */
+    public record AdminTagResponse(Long id, String code, String name, String nameEn, int sortOrder, boolean active, int blockCount) {
+        public static AdminTagResponse of(SoundTag t) {
+            return new AdminTagResponse(t.getId(), t.getCode(), t.getName(), t.getNameEn(),
+                    t.getSortOrder() == null ? 0 : t.getSortOrder(), Boolean.TRUE.equals(t.getIsActive()),
+                    t.getBlockCount() == null ? 0 : t.getBlockCount());
+        }
+    }
+
+    /** 관리자: 소리 느낌 태그 추가 (코드는 자동 t + id) */
+    public record TagCreateRequest(
+            @NotBlank(message = "이름을 적어 주세요.")
+            @Size(max = 12, message = "태그 이름은 12자 이내로 적어 주세요.")
+            String name,
+            @Size(max = 24, message = "영어 이름은 24자 이내로 적어 주세요.")
+            String nameEn) {
+    }
+
+    /** 관리자: 태그 고치기·숨기기 (보낸 것만 바뀜, nameEn을 빈 글자로 보내면 지움) */
+    public record TagUpdateRequest(
+            @Size(max = 12, message = "태그 이름은 12자 이내로 적어 주세요.")
+            String name,
+            @Size(max = 24, message = "영어 이름은 24자 이내로 적어 주세요.")
+            String nameEn,
+            Boolean active) {
+    }
+
+    public record TagOrderRequest(
+            @NotEmpty(message = "순서를 정할 태그를 보내 주세요.")
+            List<Long> ids) {
     }
 
     /**

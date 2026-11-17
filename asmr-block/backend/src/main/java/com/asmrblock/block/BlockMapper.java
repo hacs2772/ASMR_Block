@@ -18,6 +18,9 @@ public interface BlockMapper {
 
     void insertTags(@Param("blockId") Long blockId, @Param("tagIds") Collection<Long> tagIds);
 
+    /** 고치기에서 태그를 통째로 바꿀 때 먼저 지움 */
+    void deleteTags(@Param("blockId") Long blockId);
+
     /** 활성화된 블록 (상태 무관) */
     Optional<Block> findById(Long id);
 

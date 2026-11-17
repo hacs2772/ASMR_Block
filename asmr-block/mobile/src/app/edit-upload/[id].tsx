@@ -11,6 +11,7 @@ import { notify } from '@/lib/dialog';
 import { talkLabel } from '@/lib/labels';
 import { colors, radius, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
+import { FeelTagPicker } from '@/components/upload/FeelTags';
 
 const TALKS: TalkType[] = ['NONE', 'WHISPER', 'TALK'];
 const PRICE_STEPS = [0, 10, 20, 30, 50, 100];
@@ -40,6 +41,7 @@ function EditForm({ upload }: { upload: MyUpload }) {
   const [talkType, setTalkType] = useState<TalkType>(upload.talkType);
   const [price, setPrice] = useState(upload.price);
   const [listed, setListed] = useState(upload.listed);
+  const [tagIds, setTagIds] = useState<number[]>((upload.tags ?? []).map((tg) => tg.id));
   const [english, setEnglish] = useState<EnglishText>({
     titleEn: upload.titleEn ?? '', recordedPlaceEn: upload.recordedPlaceEn ?? '', descriptionEn: upload.descriptionEn ?? '',
   });
@@ -49,7 +51,7 @@ function EditForm({ upload }: { upload: MyUpload }) {
   const save = useMutation({
     mutationFn: () => {
       const body: UploadEditRequest = {
-        title: title.trim(), description: note, recordedPlace: place, talkType, price, ...english,
+        title: title.trim(), description: note, recordedPlace: place, talkType, price, tagIds, ...english,
         ...(upload.status === 'APPROVED' ? { listed } : {}),
       };
       return sellerApi.update(upload.id, body);
@@ -79,6 +81,9 @@ function EditForm({ upload }: { upload: MyUpload }) {
       <View style={styles.chips}>
         {TALKS.map((k) => <Chip key={k} label={talkLabel(k)} small active={talkType === k} onPress={() => setTalkType(k)} />)}
       </View>
+      <Text style={styles.label}>{t('feel.label')}</Text>
+      <FeelTagPicker value={tagIds} onChange={setTagIds} />
+
       <Text style={styles.label}>{t('upload.price')}</Text>
       <View style={styles.chips}>
         {prices.map((p) => (

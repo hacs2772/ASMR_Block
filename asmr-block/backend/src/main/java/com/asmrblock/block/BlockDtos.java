@@ -203,10 +203,11 @@ public final class BlockDtos {
             Integer playCount,
             LocalDateTime createdAt,
             long newCollects,
-            long usedInCombos) {
+            long usedInCombos,
+            List<TagResponse> tags) {
 
-        /** numbers = 담은 사람·최근 7일 새로 담음·쓰인 남의 조합 (올린 사람 본인은 빼고) */
-        public static MyUploadResponse from(Block block, UploadNumbers numbers, StorageService storage) {
+        /** numbers = 담은 사람·최근 7일 새로 담음·쓰인 남의 조합 (올린 사람 본인은 빼고), tags = 소리 느낌 태그 (고치기 화면) */
+        public static MyUploadResponse from(Block block, UploadNumbers numbers, List<TagResponse> tags, StorageService storage) {
             // 고치기 화면용: 제목·소개는 적은 그대로(화면 언어로 바꾸지 않음) + 영어 칸 + 상점에 보이는지
             return new MyUploadResponse(block.getId(), block.getTitle(), block.getDescription(), block.getTitleEn(),
                     block.getDescriptionEn(), block.getRecordedPlaceEn(), !Boolean.FALSE.equals(block.getIsListed()),
@@ -216,7 +217,7 @@ public final class BlockDtos {
                     // 돌려보낸 이유: "신고로 내려졌어요: …"처럼 서버가 적은 문장은 영어 화면이면 영어로 (관리자가 쓴 글은 그대로)
                     block.getStatus(), Messages.tr(block.getReviewNote()), CategoryResponse.from(block.getCategory()), DesignResponse.of(block, storage, true),
                     numbers.getCollected(), block.getPlayCount(), block.getCreatedAt(),
-                    numbers.getNewCollects(), numbers.getUsedInCombos());
+                    numbers.getNewCollects(), numbers.getUsedInCombos(), tags == null ? List.of() : tags);
         }
     }
 
@@ -240,7 +241,10 @@ public final class BlockDtos {
             TalkType talkType,
             @Min(value = 0, message = "가격은 0 이상이어야 합니다.")
             Integer price,
-            Boolean listed) {
+            Boolean listed,
+            /** 소리 느낌 태그 id (보내면 통째로 바꿈, 빈 목록 = 모두 뺌) */
+            @Size(max = 5, message = "태그는 최대 5개까지 달 수 있습니다.")
+            List<Long> tagIds) {
     }
 
     public record BlockStatusRequest(

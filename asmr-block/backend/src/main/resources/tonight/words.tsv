@@ -3,11 +3,11 @@
 # 영어 낱말은 앞이 영어 글자가 아닐 때만 ("train"이 rain으로 잡히지 않게). 대소문자 구별 안 함
 tap	탭핑,탭,톡톡,두드,똑똑,손톱,키보드,타자,타건,시계,째깍,딸깍,tapping,tap,knock,keyboard,typing,clock,tick,click
 scratch	긁,스크래칭,스크래치,브러싱,브러시,솔질,빗질,머리 빗,빗어,scratch,brush,comb
-crinkle	바스락,비닐,포장지,포장,종이,책장,책,신문,crinkle,plastic,paper,page,book,wrapping
-whisper	귓속말,속삭,위스퍼,목소리,입소리,숨소리,심장,whisper,voice,mouth,breath,heartbeat
-slime	슬라임,말랑,왁스,찐득,slime,squish,wax
-cut	커팅,자르,잘라,가위,칼질,도마,썰,바삭,씹,먹방,요리,cutting,cut,scissors,knife,chop,crunch,chew,eating,cooking
-rain	빗소리,빗방울,빗,비 오,비오,비가,비 내,비내,장마,소나기,우산,천둥,계곡,시냇물,냇물,물소리,파도,바다,해변,호수,rain,drizzle,storm,thunder,water,stream,river,wave,ocean,sea,beach
-nature	자연,숲,바람,새소리,새 소리,새들,풀벌레,귀뚜라미,매미,모닥불,장작,불멍,캠핑,나뭇잎,forest,wind,bird,cricket,campfire,fire,camping,leaves,nature
-place	카페,커피,도서관,기차,지하철,버스,거리,도시,시장,식당,교실,사무실,여행,공항,cafe,café,coffee,library,train,subway,bus,street,city,market,office,travel,airport
-noise	백색소음,화이트 노이즈,화이트노이즈,핑크 노이즈,브라운 노이즈,노이즈,소음,선풍기,에어컨,명상,싱잉볼,white noise,pink noise,brown noise,noise,fan,hum,meditation,singing bowl
+crinkle	바스락,비닐,포장지,포장,종이,책장,책,신문,crinkle,plastic,paper,page,book,wrapping,뽁뽁이,낙엽,호일,과자봉지,bubble wrap,foil
+whisper	귓속말,속삭,위스퍼,목소리,입소리,숨소리,심장,whisper,voice,mouth,breath,heartbeat,귀청소,귀 청소,마사지,ear cleaning,massage
+slime	슬라임,말랑,왁스,찐득,slime,squish,wax,키네틱,모래,말랑이,kinetic sand,sand
+cut	커팅,자르,잘라,가위,칼질,도마,썰,바삭,씹,먹방,요리,cutting,cut,scissors,knife,chop,crunch,chew,eating,cooking,비누,얼음,soap,ice
+rain	빗소리,빗방울,빗,비 오,비오,비가,비 내,비내,장마,소나기,우산,천둥,계곡,시냇물,냇물,물소리,파도,바다,해변,호수,rain,drizzle,storm,thunder,water,stream,river,wave,ocean,sea,beach,텐트,tent
+nature	자연,숲,바람,새소리,새 소리,새들,풀벌레,귀뚜라미,매미,모닥불,장작,불멍,캠핑,나뭇잎,forest,wind,bird,cricket,campfire,fire,camping,leaves,nature,눈 밟,눈길
+place	카페,커피,도서관,기차,지하철,버스,거리,도시,시장,식당,교실,사무실,여행,공항,cafe,café,coffee,library,train,subway,bus,street,city,market,office,travel,airport,비행기,차 안,드라이브,airplane,plane,car ride
+noise	백색소음,화이트 노이즈,화이트노이즈,핑크 노이즈,브라운 노이즈,노이즈,소음,선풍기,에어컨,명상,싱잉볼,white noise,pink noise,brown noise,noise,fan,hum,meditation,singing bowl,라디오,radio,static

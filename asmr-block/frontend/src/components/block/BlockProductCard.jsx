@@ -13,6 +13,7 @@ import { useVideoModal } from './VideoModal';
 import { ReportButton } from '../common/Report';
 import useHiddenStore from '../../store/hiddenStore';
 import { useBuy } from '../coin/BuyModal';
+import { FeelTagLine } from '../common/FeelTags';
 
 /** 상점 블록 폭: 소리 길이에 비례 (너무 짧거나 길어도 카드 안에 들어가게) */
 export const productBrickWidth = (seconds) => Math.round(Math.min(178, Math.max(76, (seconds / 60) * 30)));
@@ -72,6 +73,7 @@ function BlockProductCard({ block, rank, onCollected, preview = false, hideCreat
         </h3>
         {/* 영어는 트리거 이름이 길어서: 이름 중간("No / talking")이 아니라 " · " 앞뒤에서만 줄바꿈 */}
         <p className="text-xs text-muted"><span className="whitespace-nowrap">{group}</span> · <span className="whitespace-nowrap">{talkLabel(block.talkType)}</span></p>
+        <FeelTagLine tags={block.tags} />
         <div className="flex items-center gap-2">
           <p className="flex min-w-0 flex-1 items-center gap-1 truncate text-xs text-faint">
             {!hideCreator && (block.uploader?.id && !preview

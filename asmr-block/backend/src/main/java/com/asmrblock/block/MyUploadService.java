@@ -2,6 +2,7 @@ package com.asmrblock.block;
 
 import com.asmrblock.block.BlockDtos.BlockEditRequest;
 import com.asmrblock.block.BlockDtos.MyUploadResponse;
+import com.asmrblock.category.CategoryService;
 import com.asmrblock.common.ApiException;
 import com.asmrblock.config.AppProperties;
 import com.asmrblock.storage.StorageService;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.Objects;
 
 /**
@@ -26,6 +28,7 @@ public class MyUploadService {
     private final AppProperties properties;
     private final BlockPreviewService previewService;
     private final StorageService storageService;
+    private final CategoryService categoryService;
 
     /** 고친 결과. resubmitted = 돌려보낸 블록을 고쳐서 다시 검수 대기로 */
     public record EditResult(MyUploadResponse upload, boolean resubmitted) {
@@ -72,10 +75,20 @@ public class MyUploadService {
         if (r.listed() != null) {
             block.setIsListed(r.listed());
         }
+        // 소리 느낌 태그: 보내면 통째로 바꿈 (숨긴 태그·없는 태그는 거절)
+        if (r.tagIds() != null) {
+            if (!categoryService.allTagsExist(r.tagIds())) {
+                throw ApiException.badRequest("없는 태그가 포함되어 있습니다.");
+            }
+            blockMapper.deleteTags(blockId);
+            if (!r.tagIds().isEmpty()) {
+                blockMapper.insertTags(blockId, Set.copyOf(r.tagIds()));
+            }
+        }
         // 돌려보낸 블록의 내용을 고치면 → 다시 검수 대기 (이유 메모는 지움)
         boolean contentChanged = r.title() != null || r.description() != null || r.recordedPlace() != null
                 || r.titleEn() != null || r.descriptionEn() != null || r.recordedPlaceEn() != null
-                || r.talkType() != null || r.price() != null;
+                || r.talkType() != null || r.price() != null || r.tagIds() != null;
         boolean resubmitted = block.getStatus() == BlockStatus.REJECTED && contentChanged;
         if (resubmitted) {
             block.setStatus(BlockStatus.PENDING);
@@ -91,7 +104,8 @@ public class MyUploadService {
         }
         UploadNumbers numbers = blockMapper.uploadNumbers(List.of(blockId)).stream()
                 .findFirst().orElseGet(() -> UploadNumbers.none(blockId));
-        return new EditResult(MyUploadResponse.from(block, numbers, storageService), resubmitted);
+        return new EditResult(MyUploadResponse.from(block, numbers,
+                categoryService.tagsByBlockIds(List.of(blockId)).get(blockId), storageService), resubmitted);
     }
 
     private static String blankToNull(String value) {

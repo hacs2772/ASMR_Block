@@ -28,6 +28,7 @@ import { CreatorStats } from '@/components/upload/CreatorStats';
 import { EMPTY_ENGLISH, EnglishFields } from '@/components/upload/EnglishFields';
 import { categoryLabel, patternLabel, stickerName, talkLabel } from '@/lib/labels';
 import i18n from '@/locales';
+import { FeelTagPicker, MAX_FEEL_TAGS, useFeelTags } from '@/components/upload/FeelTags';
 
 const PRICE_STEPS = [10, 20, 30, 50, 100];
 const TALKS: TalkType[] = ['NONE', 'WHISPER', 'TALK'];
@@ -76,6 +77,8 @@ export default function UploadScreen() {
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [price, setPrice] = useState(0);
   const [talkType, setTalkType] = useState<TalkType>('NONE');
+  const [tagIds, setTagIds] = useState<number[]>([]);
+  const feelTags = useFeelTags();
   const [place, setPlace] = useState('');
   const [note, setNote] = useState('');
   // 영어로도 적기 (선택)
@@ -172,6 +175,7 @@ export default function UploadScreen() {
     setCategoryId(null);
     setPrice(0);
     setTalkType('NONE');
+    setTagIds([]);
     setPlace('');
     setNote('');
     setEnglish(EMPTY_ENGLISH);
@@ -200,6 +204,7 @@ export default function UploadScreen() {
       form.append('license', 'OWN');
       form.append('price', String(price));
       form.append('talkType', talkType);
+      tagIds.forEach((id) => form.append('tagIds', String(id)));
       if (place.trim()) form.append('recordedPlace', place.trim());
       if (note.trim()) form.append('description', note.trim());
       Object.entries(english).forEach(([k, v]) => { if (v.trim()) form.append(k, v.trim()); });
@@ -340,6 +345,9 @@ export default function UploadScreen() {
           ))}
         </View>
 
+        <Text style={styles.label}>{t('feel.label')} <Text style={styles.labelHint}>· {t('feel.hint', { count: MAX_FEEL_TAGS })}</Text></Text>
+        <FeelTagPicker value={tagIds} onChange={setTagIds} />
+
         <Text style={styles.label}>{t('upload.place')} <Text style={styles.labelHint}>· {t('upload.optional')}</Text></Text>
         <TextInput style={styles.input} value={place} onChangeText={setPlace} maxLength={60}
           placeholder={t('upload.placePh')} placeholderTextColor={colors.faint} accessibilityLabel={t('upload.place')} testID="upload-place" />
@@ -365,6 +373,7 @@ export default function UploadScreen() {
         <BlockCard reportable={false} block={previewBlock({ title, note, price, talkType, place, nickname: user?.nickname ?? t('upload.me'),
           duration: range ? range.end - range.start : draft?.duration ?? 200,
           category: group?.children.find((c) => c.id === categoryId) ?? null, groupName: group?.name ?? null,
+          tags: feelTags.filter((tg) => tagIds.includes(tg.id)),
           design: { coverUrl: cover?.uri ?? null, stickers, pattern, hasVideo: !!file && kind === 'video', videoUrl: null } })}
           previewing={false} onPreview={() => {}} showNote style={styles.preview} />
 
@@ -400,14 +409,14 @@ export default function UploadScreen() {
 /** 올리기 전 미리보기용 블록 (아직 서버에 없음) */
 function previewBlock(f: {
   title: string; note: string; price: number; talkType: TalkType; place: string; nickname: string; duration: number;
-  category: Block['category']; groupName: string | null; design: BlockDesign;
+  category: Block['category']; groupName: string | null; design: BlockDesign; tags: Block['tags'];
 }): Block {
   return {
     id: 7, title: f.title.trim() || i18n.t('upload.untitled'), description: f.note.trim() || null, fileUrl: null, previewUrl: null,
     price: f.price, owned: false, duration: Math.round(f.duration), talkType: f.talkType, recordedPlace: f.place.trim() || null, design: f.design,
     license: 'OWN', attribution: null, status: 'PENDING',
     category: f.category ? { ...f.category, parentName: f.groupName } : null,
-    tags: [], uploader: { id: 0, nickname: f.nickname }, playCount: 0, recentPlays: null,
+    tags: f.tags, uploader: { id: 0, nickname: f.nickname }, playCount: 0, recentPlays: null,
   };
 }
 

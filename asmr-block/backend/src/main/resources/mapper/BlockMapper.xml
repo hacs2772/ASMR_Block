@@ -77,6 +77,10 @@
         <foreach collection="tagIds" item="tagId" separator=",">(#{blockId}, #{tagId})</foreach>
     </insert>
 
+    <delete id="deleteTags">
+        DELETE FROM block_tag WHERE block_id = #{blockId}
+    </delete>
+
     <select id="findById" resultMap="BlockMap">
         <include refid="selectBlock"/>
         WHERE b.id = #{id} AND b.is_active = true

@@ -3,9 +3,10 @@ import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { errorMessage, sellerApi } from '../../api/api';
 import { TALK_TYPES, talkLabel } from '../../lib/blocks';
+import { FeelTagPicker } from '../common/FeelTags';
 
 /**
- * 내가 올린 블록 고치기: 이름·한 줄 소개·녹음한 곳·말소리·가격 + 영어 칸 + 상점에 보이기(판매 중일 때).
+ * 내가 올린 블록 고치기: 이름·한 줄 소개·녹음한 곳·말소리·소리 느낌 태그·가격 + 영어 칸 + 상점에 보이기(판매 중일 때).
  * 돌려보낸 블록은 저장하면 다시 검수를 받아요
  */
 function EditUpload({ upload, priceSteps, maxPrice, onSaved, onCancel }) {
@@ -14,6 +15,7 @@ function EditUpload({ upload, priceSteps, maxPrice, onSaved, onCancel }) {
     title: upload.title || '', description: upload.description || '', recordedPlace: upload.recordedPlace || '',
     titleEn: upload.titleEn || '', descriptionEn: upload.descriptionEn || '', recordedPlaceEn: upload.recordedPlaceEn || '',
     talkType: upload.talkType || 'NONE', price: upload.price || 0, listed: upload.listed !== false,
+    tagIds: (upload.tags || []).map((tg) => tg.id),
   });
   const [saving, setSaving] = useState(false);
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
@@ -51,6 +53,10 @@ function EditUpload({ upload, priceSteps, maxPrice, onSaved, onCancel }) {
           <button key={k} type="button" className={`chip px-3 py-1 text-xs ${f.talkType === k ? 'chip-on' : ''}`}
             onClick={() => setF((x) => ({ ...x, talkType: k }))}>{talkLabel(k)}</button>
         ))}
+      </div>
+      <div>
+        <p className="mb-1.5 text-xs font-bold text-muted">{t('feel.label')}</p>
+        <FeelTagPicker small value={f.tagIds} onChange={(ids) => setF((x) => ({ ...x, tagIds: ids }))} />
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-bold text-muted">{t('sell.price')}</span>

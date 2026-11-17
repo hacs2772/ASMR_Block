@@ -23,9 +23,9 @@ public class CategoryController {
         return ApiResponse.ok(categoryService.getCategoryTree());
     }
 
+    // 소리 느낌 태그 (부드러운·바삭한·느린…, 올릴 때 고르고 상점에서 찾기)
     @GetMapping("/tags")
     public ApiResponse<List<TagResponse>> getTags() {
-        return ApiResponse.ok(categoryService.getTags().stream()
-                .map(tag -> new TagResponse(tag.getId(), tag.getName())).toList());
+        return ApiResponse.ok(categoryService.getTags());
     }
 }

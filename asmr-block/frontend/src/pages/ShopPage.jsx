@@ -11,6 +11,7 @@ import { recommendLine } from '../lib/recommend';
 import useAuthStore from '../store/authStore';
 import useWalletStore from '../store/walletStore';
 import TriggerChip from '../components/common/TriggerChip';
+import { useFeelTags } from '../components/common/FeelTags';
 
 const TABS = ['trending', 'latest', 'free'];
 
@@ -23,6 +24,8 @@ function ShopPage() {
   const groupId = params.get('group') ? Number(params.get('group')) : null;
   const subId = params.get('sub') ? Number(params.get('sub')) : null;
   const talk = params.get('talk') || '';
+  const tagId = params.get('feel') ? Number(params.get('feel')) : null;
+  const feelTags = useFeelTags();
   const [keyword, setKeyword] = useState(params.get('q') || '');
   const [query, setQuery] = useState(keyword);
   const [groups, setGroups] = useState([]);
@@ -48,7 +51,7 @@ function ShopPage() {
 
   // 고른 트리거 묶음이나 소분류 → 서버 categoryId (대분류로 찾으면 하위 포함)
   const categoryId = subId || groupId || undefined;
-  const filtered = !!(categoryId || talk || query);
+  const filtered = !!(categoryId || talk || query || tagId);
 
   useEffect(() => {
     let alive = true;
@@ -61,12 +64,12 @@ function ShopPage() {
       : tab === 'trending' && !filtered
         ? catalogApi.trending(24)
         : catalogApi.blocks({
-          categoryId, talkType: talk || undefined, keyword: query || undefined,
+          categoryId, talkType: talk || undefined, keyword: query || undefined, tagIds: tagId || undefined,
           free: tab === 'free' ? true : undefined, sort: tab === 'trending' || forYou ? 'popular' : 'latest',
         }).then((p) => p.content);
     load.then((b) => alive && setBlocks(b)).catch((e) => alive && setError(e));
     return () => { alive = false; };
-  }, [tab, categoryId, talk, query, filtered, isAuthenticated]);
+  }, [tab, categoryId, talk, tagId, query, filtered, isAuthenticated]);
 
   const group = useMemo(() => groups.find((g) => g.id === groupId), [groups, groupId]);
 
@@ -117,6 +120,16 @@ function ShopPage() {
           </button>
         ))}
       </div>
+      {/* 소리 느낌 태그로 찾기 (하나만): 휴대폰은 한 줄로 옆으로 넘기기 */}
+      {feelTags.length > 0 && (
+        <div className="chip-row mt-3" data-testid="shop-feel">
+          <button type="button" className={`chip px-3 py-1 text-xs ${!tagId ? 'chip-on' : ''}`} onClick={() => set({ feel: null })}>{t('feel.all')}</button>
+          {feelTags.map((tag) => (
+            <button key={tag.id} type="button" className={`chip px-3 py-1 text-xs ${tagId === tag.id ? 'chip-on' : ''}`}
+              onClick={() => set({ feel: tagId === tag.id ? null : tag.id })} data-testid={`shop-feel-${tag.code}`}>#{tag.name}</button>
+          ))}
+        </div>
+      )}
 
       {rec && <p className="mt-6 text-sm text-muted" data-testid="rec-line">{recommendLine(rec)}</p>}
       <div className={rec ? 'mt-4' : 'mt-8'}>

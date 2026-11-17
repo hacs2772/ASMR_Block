@@ -1,13 +1,13 @@
 import i18n from '../locales';
 import {
-  IoAirplane, IoAlarm, IoBagHandle, IoBasketball, IoBeaker, IoBed, IoBicycle, IoBoat, IoBonfire, IoBook, IoBrush,
+  IoAirplane, IoAlarm, IoApps, IoBagHandle, IoBasketball, IoBeaker, IoBed, IoBicycle, IoBoat, IoBody, IoBonfire, IoBook, IoBrush,
   IoBulb, IoBus, IoBusiness, IoCafe, IoCar, IoChatbubbleEllipses, IoChatbubbles, IoCloud, IoColorFill,
-  IoColorPalette, IoConstruct, IoCut, IoDocumentText, IoEar, IoEgg, IoFastFood, IoFingerPrint, IoFish, IoFitness,
+  IoColorPalette, IoConstruct, IoCube, IoCut, IoDocumentText, IoEar, IoEgg, IoFastFood, IoFingerPrint, IoFish, IoFitness,
   IoFlame, IoFlower, IoFootball, IoFootsteps, IoGameController, IoGift, IoGlasses, IoGlobe, IoHammer, IoHandLeft,
-  IoHandRight, IoHappy, IoHeadset, IoHeart, IoHome, IoIceCream, IoKey, IoKeypad, IoLaptop, IoLeaf, IoLibrary,
+  IoHandRight, IoHappy, IoHeadset, IoHeart, IoHome, IoHourglass, IoIceCream, IoKey, IoKeypad, IoLaptop, IoLeaf, IoLibrary,
   IoLocation, IoMap, IoMedical, IoMic, IoMoon, IoMusicalNote, IoMusicalNotes, IoNotifications, IoNutrition,
   IoPaperPlane, IoPaw, IoPencil, IoPhonePortrait, IoPizza, IoPlanet, IoPulse, IoRadio, IoRainy, IoRestaurant,
-  IoSchool, IoShirt, IoSnow, IoSparkles, IoStar, IoStorefront, IoSunny, IoThunderstorm, IoTime, IoTimer, IoTrailSign,
+  IoSchool, IoShirt, IoSnow, IoSparkles, IoStar, IoStorefront, IoSunny, IoSync, IoThunderstorm, IoTime, IoTimer, IoTrailSign,
   IoTrain, IoTv, IoUmbrella, IoWatch, IoWater, IoWine,
 } from 'react-icons/io5';
 
@@ -67,6 +67,8 @@ const ICONS = {
   laptop: IoLaptop, watch: IoWatch, umbrella: IoUmbrella, 'trail-sign': IoTrailSign, storefront: IoStorefront,
   school: IoSchool, library: IoLibrary, business: IoBusiness, medical: IoMedical, fitness: IoFitness,
   basketball: IoBasketball, football: IoFootball, 'paper-plane': IoPaperPlane, pencil: IoPencil,
+  // V22 소분류 (뽁뽁이·마사지·키네틱 샌드·비누 깎기·선풍기)
+  apps: IoApps, body: IoBody, hourglass: IoHourglass, cube: IoCube, sync: IoSync,
 };
 
 /** 관리자 페이지 아이콘 고르기 목록 */

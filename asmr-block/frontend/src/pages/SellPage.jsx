@@ -20,6 +20,7 @@ import EditUpload, { EnglishFields } from '../components/sell/EditUpload';
 import useAuthStore from '../store/authStore';
 import { RecordingGuideLink } from './RecordingGuidePage';
 import TriggerChip from '../components/common/TriggerChip';
+import { FeelTagPicker, MAX_FEEL_TAGS, useFeelTags } from '../components/common/FeelTags';
 
 const PRICE_STEPS = [0, 10, 20, 30, 50, 100];
 const STATUS = {
@@ -64,6 +65,8 @@ function SellPage() {
   const [groupId, setGroupId] = useState(null);
   const [categoryId, setCategoryId] = useState(null);
   const [talkType, setTalkType] = useState('NONE');
+  const [tagIds, setTagIds] = useState([]);
+  const feelTags = useFeelTags();
   const [place, setPlace] = useState('');
   const [note, setNote] = useState('');
   // 영어로도 적기 (선택): 영어 화면에 보이는 제목·녹음한 곳·한 줄 소개
@@ -182,10 +185,11 @@ function SellPage() {
   const previewBlock = useMemo(() => ({
     id: -1, title: title.trim() || t('sell.previewTitle'), description: note, duration: soundLength || 200, price,
     talkType, recordedPlace: place.trim() || null, owned: true, fileUrl,
+    tags: feelTags.filter((tg) => tagIds.includes(tg.id)),
     category: category ? { ...category, parentName: group?.name, color: group?.color } : group ? { ...group, parentName: group.name } : null,
     uploader: { nickname: user?.nickname || t('sell.me') },
     design: { coverUrl, stickers, pattern, hasVideo: !!file && kind === 'video', videoUrl: null },
-  }), [title, note, soundLength, price, talkType, place, category, group, user, fileUrl, coverUrl, stickers, pattern, file, kind, t]);
+  }), [title, note, soundLength, price, talkType, tagIds, feelTags, place, category, group, user, fileUrl, coverUrl, stickers, pattern, file, kind, t]);
 
   const submit = async () => {
     if (missing) return;
@@ -209,6 +213,7 @@ function SellPage() {
     form.append('license', 'OWN');
     form.append('price', String(price));
     form.append('talkType', talkType);
+    tagIds.forEach((id) => form.append('tagIds', String(id)));
     if (place.trim()) form.append('recordedPlace', place.trim());
     if (note.trim()) form.append('description', note.trim());
     Object.entries(en).forEach(([k, v]) => { if (v.trim()) form.append(k, v.trim()); });
@@ -373,6 +378,10 @@ function SellPage() {
                   <button key={k} type="button" className={`chip ${talkType === k ? 'chip-on' : ''}`} onClick={() => setTalkType(k)}>{talkLabel(k)}</button>
                 ))}
               </div>
+            </Field>
+
+            <Field label={t('feel.label')} hint={t('feel.hint', { count: MAX_FEEL_TAGS })}>
+              <FeelTagPicker value={tagIds} onChange={setTagIds} />
             </Field>
 
             <div className="grid gap-5 sm:grid-cols-2">

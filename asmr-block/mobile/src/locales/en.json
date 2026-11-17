@@ -80,19 +80,41 @@
     "place__travel": "Travel spots",
     "noise__color": "Color noise",
     "noise__life": "Everyday sounds",
-    "noise__bowl": "Singing bowls & meditation"
+    "noise__bowl": "Singing bowls & meditation",
+    "tap__nail": "Nail tapping",
+    "tap__glass": "Glass tapping",
+    "scratch__mic": "Mic scratching",
+    "scratch__fabric": "Fabric scratching",
+    "crinkle__bubble": "Bubble wrap",
+    "crinkle__leaf": "Dry leaves",
+    "crinkle__foil": "Foil & snack bags",
+    "whisper__ear": "Ear cleaning",
+    "whisper__massage": "Massage",
+    "slime__sand": "Kinetic sand",
+    "slime__squishy": "Squishy toys",
+    "cut__soap": "Soap carving",
+    "cut__ice": "Ice",
+    "rain__tent": "Rain on a tent",
+    "rain__thunder": "Thunder",
+    "nature__night": "Night crickets",
+    "nature__snow": "Snow steps",
+    "place__library": "Library",
+    "place__car": "In the car",
+    "place__plane": "Airplane cabin",
+    "noise__fan": "Fan & AC",
+    "noise__radio": "Radio static"
   },
   "catDesc": {
-    "tap": "Tapping, keyboards, clock clicks",
-    "scratch": "Scratching, brushing, hair combing",
-    "crinkle": "Plastic, wrapping paper, page turning",
-    "whisper": "Whispers, mouth sounds, breathing",
-    "slime": "Squishy slime, crunchy wax",
-    "cut": "Cutting, crunching, cooking sounds",
-    "rain": "Rain, streams, waves",
-    "nature": "Wind, forest, birds, campfire",
-    "place": "Cafés, streets, travel spots",
-    "noise": "White, pink & brown noise, everyday sounds, singing bowls"
+    "tap": "Tapping, nails & glass, keyboards, clock clicks",
+    "scratch": "Scratching, brushing, hair combing, mic scratching",
+    "crinkle": "Plastic, wrapping, pages, bubble wrap, leaves",
+    "whisper": "Whispers, mouth sounds, breathing, ear cleaning, massage",
+    "slime": "Squishy slime, crunchy wax, kinetic sand",
+    "cut": "Cutting, crunching, cooking, soap & ice",
+    "rain": "Rain, streams, waves, thunder",
+    "nature": "Wind, forest, birds, campfire, crickets",
+    "place": "Cafés, streets, libraries, car & plane rides",
+    "noise": "White & brown noise, everyday sounds, singing bowls, fans"
   },
   "common": {
     "close": "Close",
@@ -932,5 +954,13 @@
     "vsLess_other": "{{count}} fewer good nights than last week",
     "vsSame": "Same number of good nights as last week",
     "best": "Best combo this week"
+  },
+  "feel": {
+    "label": "Sound feel",
+    "hint_one": "Pick up to {{count}} (optional)",
+    "hint_other": "Pick up to {{count}} (optional)",
+    "max_one": "Up to {{count}}",
+    "max_other": "Up to {{count}}",
+    "all": "Any feel"
   }
 }

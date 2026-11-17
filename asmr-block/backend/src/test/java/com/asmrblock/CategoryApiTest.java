@@ -21,7 +21,8 @@ class CategoryApiTest extends IntegrationTest {
     void categoryTree() throws Exception {
         mvc.perform(get("/api/v1/categories"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.length()").value(10))
+                // 기본 트리거 묶음 10개 (관리자 검사가 먼저 돌면 묶음이 더 있을 수 있어서 개수 대신 코드로)
+                .andExpect(jsonPath("$.data[*].code", hasItems("tap", "scratch", "crinkle", "whisper", "slime", "cut", "rain", "nature", "place", "noise")))
                 .andExpect(jsonPath("$.data[*].name", hasItems("탭핑·타건", "바스락", "귓속말·입소리", "노이즈·명상")))
                 .andExpect(jsonPath("$.data[0].code").value("tap"))
                 .andExpect(jsonPath("$.data[0].name").value("탭핑·타건"))

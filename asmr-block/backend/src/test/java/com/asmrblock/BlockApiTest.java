@@ -37,7 +37,7 @@ class BlockApiTest extends IntegrationTest {
 
         mvc.perform(get("/api/v1/blocks/1"))
                 .andExpect(jsonPath("$.data.title").value("잔잔한 빗소리"))
-                .andExpect(jsonPath("$.data.tags[*].name", hasItem("습한")))
+                .andExpect(jsonPath("$.data.tags[*].name", hasItem("촉촉한")))
                 .andExpect(jsonPath("$.data.category.color").value("#58A6F2"))
                 .andExpect(jsonPath("$.data.category.groupCode").value("rain"))
                 .andExpect(jsonPath("$.data.talkType").value("NONE"));

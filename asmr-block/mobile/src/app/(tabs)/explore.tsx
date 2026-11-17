@@ -15,6 +15,7 @@ import { colors, radius, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { categoryLabel, groupDescription } from '@/lib/labels';
 import { recommendLine } from '@/lib/recommend';
+import { useFeelTags } from '@/components/upload/FeelTags';
 
 type Tab = 'hot' | 'forYou' | 'all' | 'free' | 'mine';
 /** 이름 = 사전 shop.tabs.{key} · shop.talk.{key ?? ALL}. forYou(내 취향)는 로그인했을 때만 */
@@ -23,10 +24,11 @@ const SIGNED_IN_TABS: Tab[] = ['hot', 'forYou', 'all', 'free', 'mine'];
 const TALKS: (TalkType | null)[] = [null, 'NONE', 'WHISPER'];
 
 /** 요즘 뜨는 / 내 블록함은 서버 필터가 없어서 화면에서 거름 */
-function matches(b: Block, groupId: number | null, subId: number | null, talk: TalkType | null, keyword: string) {
+function matches(b: Block, groupId: number | null, subId: number | null, talk: TalkType | null, tagId: number | null, keyword: string) {
   if (subId !== null && b.category?.id !== subId) return false;
   if (subId === null && groupId !== null && b.category?.parentId !== groupId && b.category?.id !== groupId) return false;
   if (talk && b.talkType !== talk) return false;
+  if (tagId !== null && !b.tags?.some((tg) => tg.id === tagId)) return false;
   if (keyword) {
     const text = `${b.title} ${b.uploader.nickname} ${b.recordedPlace ?? ''}`.toLowerCase();
     if (!text.includes(keyword.toLowerCase())) return false;
@@ -45,6 +47,8 @@ export default function ShopScreen() {
   const [groupId, setGroupId] = useState<number | null>(null);
   const [subId, setSubId] = useState<number | null>(null);
   const [talk, setTalk] = useState<TalkType | null>(null);
+  const [tagId, setTagId] = useState<number | null>(null);
+  const feelTags = useFeelTags();
   const [typed, setTyped] = useState('');
   const [keyword, setKeyword] = useState('');
   useEffect(() => {
@@ -62,8 +66,8 @@ export default function ShopScreen() {
   const forYou = useQuery({ queryKey: ['blocks', 'forYou'], queryFn: () => recommendApi.blocks(30), enabled: signedIn && tab === 'forYou' });
   const tabs = signedIn ? SIGNED_IN_TABS : TABS;
   const blocks = useQuery({
-    queryKey: ['blocks', tab, filterId, talk, keyword],
-    queryFn: () => catalogApi.blocks({ categoryId: filterId, talkType: talk, keyword: keyword || undefined, free: tab === 'free' ? true : undefined }),
+    queryKey: ['blocks', tab, filterId, talk, tagId, keyword],
+    queryFn: () => catalogApi.blocks({ categoryId: filterId, talkType: talk, tagIds: tagId, keyword: keyword || undefined, free: tab === 'free' ? true : undefined }),
     enabled: serverFiltered,
   });
 
@@ -72,7 +76,7 @@ export default function ShopScreen() {
   const query = tab === 'hot' ? trending : tab === 'forYou' ? forYou : tab === 'mine' ? mine : blocks;
   const raw: Block[] = tab === 'hot' ? trending.data ?? [] : tab === 'forYou' ? forYou.data?.blocks ?? []
     : tab === 'mine' ? mine.data ?? [] : blocks.data?.content ?? [];
-  const data = serverFiltered ? raw : raw.filter((b) => matches(b, groupId, subId, talk, keyword));
+  const data = serverFiltered ? raw : raw.filter((b) => matches(b, groupId, subId, talk, tagId, keyword));
   // 두 칸 격자에서 마지막 한 개가 가로로 늘어나지 않도록 빈칸을 채움
   const gridData: (Block | null)[] = data.length % 2 ? [...data, null] : data;
   const pickGroup = (id: number | null) => { setGroupId(id); setSubId(null); };
@@ -120,6 +124,20 @@ export default function ShopScreen() {
           </Pressable>
         ))}
       </View>
+      {/* 소리 느낌 태그로 찾기 (하나만, 옆으로 넘기기) */}
+      {feelTags.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipBar} contentContainerStyle={styles.feelRow} testID="shop-feel">
+          <Pressable accessibilityRole="button" accessibilityState={{ selected: tagId === null }} onPress={() => setTagId(null)} hitSlop={6}>
+            <Text style={[styles.talkText, tagId === null && styles.talkOn]}>{t('feel.all')}</Text>
+          </Pressable>
+          {feelTags.map((tag) => (
+            <Pressable key={tag.id} accessibilityRole="button" accessibilityState={{ selected: tagId === tag.id }} hitSlop={6}
+              onPress={() => setTagId(tagId === tag.id ? null : tag.id)} testID={`shop-feel-${tag.code}`}>
+              <Text style={[styles.talkText, tagId === tag.id && styles.talkOn]}>#{tag.name}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
 
       <FlatList
         key="grid"
@@ -175,6 +193,7 @@ const styles = StyleSheet.create({
   talkRow: { flexDirection: 'row', gap: space.lg, paddingHorizontal: space.lg, paddingTop: space.md, paddingBottom: space.sm },
   talkText: { color: colors.faint, fontSize: 12, fontWeight: '600' },
   talkOn: { color: colors.primaryText, textDecorationLine: 'underline' },
+  feelRow: { gap: space.lg, paddingHorizontal: space.lg, paddingBottom: space.sm },
   list: { paddingHorizontal: space.lg, paddingBottom: space.xl },
   column: { gap: 10 },
   card: { flex: 1, marginBottom: 10 },

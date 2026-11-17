@@ -35,8 +35,10 @@ public class CategoryService {
                 .toList();
     }
 
-    public List<SoundTag> getTags() {
-        return categoryMapper.findAllTags();
+    /** 소리 느낌 태그 (보이는 것만, 화면 언어 이름) */
+    public List<TagResponse> getTags() {
+        return categoryMapper.findAllTags().stream()
+                .map(t -> TagResponse.of(t.getId(), t.getCode(), t.getName(), t.getNameEn())).toList();
     }
 
     public boolean existsCategory(Long id) {
@@ -60,6 +62,6 @@ public class CategoryService {
         }
         return categoryMapper.findTagsByBlockIds(blockIds).stream()
                 .collect(Collectors.groupingBy(BlockTag::getBlockId,
-                        Collectors.mapping(t -> new TagResponse(t.getId(), t.getName()), Collectors.toList())));
+                        Collectors.mapping(t -> TagResponse.of(t.getId(), t.getCode(), t.getName(), t.getNameEn()), Collectors.toList())));
     }
 }

@@ -14,6 +14,7 @@ import { categoryFallbackColor, colors, fonts, plate, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { groupLabel, talkLabel } from '@/lib/labels';
 import { useHidden } from '@/store/hidden';
+import { FeelTagLine } from '@/components/upload/FeelTags';
 
 type Props = {
   block: Block;
@@ -107,6 +108,7 @@ export function BlockCard({ block, previewing, onPreview, rank, showNote, right,
         <Text style={styles.tags} numberOfLines={2}>
           <Text style={{ color }}>■ </Text>{keepTogether(group)}<Text style={styles.talk}> · {keepTogether(talkLabel(block.talkType))}</Text>
         </Text>
+        <FeelTagLine tags={block.tags} />
         <View style={styles.byRow}>
           {hideCreator ? <View style={{ flex: 1 }} /> : reportable ? (
             <Pressable accessibilityRole="link" accessibilityLabel={t('block.creatorA11y', { nickname: block.uploader.nickname })} hitSlop={6} style={{ flexShrink: 1, marginRight: 'auto' }}

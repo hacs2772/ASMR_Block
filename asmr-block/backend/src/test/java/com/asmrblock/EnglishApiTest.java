@@ -66,7 +66,7 @@ class EnglishApiTest extends IntegrationTest {
     void contentNames() throws Exception {
         mvc.perform(get("/api/v1/categories").header("Accept-Language", EN))
                 .andExpect(jsonPath("$.data[?(@.code == 'tap')].name").value(hasItem("Tapping & Typing")))
-                .andExpect(jsonPath("$.data[?(@.code == 'tap')].description").value(hasItem("Tapping, keyboards, clock clicks")));
+                .andExpect(jsonPath("$.data[?(@.code == 'tap')].description").value(hasItem("Tapping, nails & glass, keyboards, clock clicks")));
         mvc.perform(get("/api/v1/categories"))
                 .andExpect(jsonPath("$.data[?(@.code == 'tap')].name").value(hasItem("탭핑·타건")));
 

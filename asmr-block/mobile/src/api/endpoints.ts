@@ -1,5 +1,6 @@
 import { api } from './client';
 import type {
+  Tag,
   BlockRecommendations,
   CoinTransaction,
   ComboRecommendations,
@@ -65,12 +66,16 @@ export const userApi = {
 export const catalogApi = {
   /** 메뉴 트리 (대분류 > 소분류) */
   categories: () => api<CategoryGroup[]>('/categories'),
+  /** 소리 느낌 태그 (부드러운·바삭한·느린…) */
+  tags: () => api<Tag[]>('/tags'),
   /** 요즘 뜨는 소리 (최근 7일 재생 많은 순) */
   trending: (size = 10) => api<Block[]>('/blocks/trending' + query({ size })),
   blocks: (params: {
     categoryId?: number | null;
     free?: boolean;
     talkType?: TalkType | null;
+    /** 소리 느낌 태그 하나로 찾기 */
+    tagIds?: number | null;
     keyword?: string;
     /** 이 크리에이터가 올린 블록만 */
     uploaderId?: number;
@@ -118,7 +123,7 @@ export const reportApi = {
 /** 판매자: ASMR 업로드 */
 export const sellerApi = {
   policy: () => api<UploadPolicy>('/blocks/upload-policy'),
-  /** form: file, title, categoryId, license(OWN), price, talkType, recordedPlace, description */
+  /** form: file, title, categoryId, license(OWN), price, talkType, recordedPlace, description, tagIds(여러 번) */
   upload: (form: FormData) => api<Block>('/blocks', { method: 'POST', body: form }),
   mine: () => api<Page<MyUpload>>('/me/uploads?size=100'),
   /** 내 블록 통계: 합계 + 최근 14일 하루하루 (나 제외) */
