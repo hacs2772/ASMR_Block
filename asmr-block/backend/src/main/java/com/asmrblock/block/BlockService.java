@@ -136,11 +136,11 @@ public class BlockService {
     @Transactional(readOnly = true)
     public PageResponse<MyUploadResponse> myUploads(Long uploaderId, PageQuery page) {
         List<Block> blocks = blockMapper.findByUploader(uploaderId, page.offset(), page.size());
-        Map<Long, Long> collected = blocks.isEmpty() ? Map.of()
-                : blockMapper.countCollectors(blocks.stream().map(Block::getId).toList()).stream()
-                        .collect(Collectors.toMap(BlockCount::getBlockId, BlockCount::getCount));
+        Map<Long, UploadNumbers> numbers = blocks.isEmpty() ? Map.of()
+                : blockMapper.uploadNumbers(blocks.stream().map(Block::getId).toList()).stream()
+                        .collect(Collectors.toMap(UploadNumbers::getBlockId, n -> n));
         return PageResponse.of(blocks.stream()
-                        .map(b -> MyUploadResponse.from(b, collected.getOrDefault(b.getId(), 0L), storageService))
+                        .map(b -> MyUploadResponse.from(b, numbers.getOrDefault(b.getId(), UploadNumbers.none(b.getId())), storageService))
                         .toList(),
                 page, blockMapper.countByUploader(uploaderId));
     }

@@ -1,5 +1,6 @@
 package com.asmrblock.creator;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,5 +16,21 @@ public final class CreatorDtos {
      */
     public record CreatorResponse(Long id, String nickname, long blockCount, long collectorCount, long playCount,
                                   List<String> triggers, LocalDateTime since, List<String> triggerCodes) {
+    }
+
+    /** 매퍼 결과: 상점에 보이는 블록 · 검수 대기 · 담은 사람 · 내 블록이 든 남의 조합 */
+    public record Totals(long listedBlocks, long pendingBlocks, long collectors, long usedInCombos) {
+    }
+
+    /** 하루 (한국 날짜): 새로 담은 사람 · 들은 횟수 */
+    public record Day(LocalDate date, long collects, long plays) {
+    }
+
+    /**
+     * 판매 화면 "내 블록 통계" (GET /me/uploads/stats). 올린 사람 본인이 담거나 들은 것은 빼고 셈.
+     * plays = 블록을 들은 것 + 내 블록이 든 조합을 튼 것. days = 최근 14일(오늘 포함, 오래된 날부터)
+     */
+    public record MyStatsResponse(long listedBlocks, long pendingBlocks, long collectors, long usedInCombos,
+                                  long collects14d, long plays14d, List<Day> days) {
     }
 }

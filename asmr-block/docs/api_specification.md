@@ -214,6 +214,7 @@
 | POST | `/blocks` | 필요 | **음원 업로드 (판매자)** (multipart) → 검수 대기 |
 | GET | `/me/uploads` | 필요 | **내가 올린 블록** (검수 상태 무관, 최신순, 페이지) |
 | PATCH | `/me/uploads/{id}` | 필요 | **내가 올린 블록 고치기** (아래 5.1) |
+| GET | `/me/uploads/stats` | 필요 | **내 블록 통계** (담은 사람·쓰인 조합·최근 14일 새로 담김/들음, 아래 5.1) |
 | POST | `/blocks/{id}/play` | 필요 | 재생 기록 |
 
 **목록 쿼리**: `categoryId` (대분류면 그 아래 소분류까지), `free=true|false` (무료만 / 유료만), `talkType=NONE|WHISPER|TALK` (**노토킹만** / 속삭임만 / 말하기만), `tagIds=1,2` (하나라도 달린 블록), `keyword` (이름 · 녹음한 곳 · 크리에이터 닉네임), `uploaderId` (그 크리에이터가 올린 블록만, 크리에이터 페이지), `sort=latest|popular`, `page`, `size`
@@ -301,11 +302,12 @@
 { "id": 31, "title": "희귀한 교토 왁스 부수기", "description": "…", "titleEn": "Rare Kyoto wax cracking", "descriptionEn": null,
   "recordedPlaceEn": null, "listed": true, "fileUrl": "http://.../blocks/....mp3", "duration": 15, "price": 30,
   "talkType": "NONE", "recordedPlace": "교토 공방",
-  "status": "REJECTED", "reviewNote": "소리가 너무 작아요", "category": { "id": 23, "name": "왁스·슬라임", ... }, "collectedCount": 0, "playCount": 0, "createdAt": "..." }
+  "status": "REJECTED", "reviewNote": "소리가 너무 작아요", "category": { "id": 23, "name": "왁스·슬라임", ... }, "collectedCount": 0, "playCount": 0, "createdAt": "...",
+  "newCollects": 0, "usedInCombos": 0 }
 ```
 - `status`: `PENDING`(검수 중) / `APPROVED`(판매 중) / `REJECTED`(거절)
 - `reviewNote`: 관리자가 돌려보낸 이유 (`REJECTED`일 때만, V8)
-- `collectedCount`: 이 블록을 담은 사람 수 (올린 사람 본인 제외)
+- `collectedCount`: 이 블록을 담은 사람 수 (올린 사람 본인 제외) · `newCollects`: 그중 최근 7일에 담은 사람 · `usedInCombos`: 이 블록이 들어간 **남의** 조합 수
 - `title`·`description`은 적은 그대로(화면 언어로 바꾸지 않음), `titleEn` 등 = 영어 칸, `listed` = 상점에 보이는지
 
 **고치기** `PATCH /me/uploads/{id}` (올린 사람만, 남의 블록 403, 업로드가 막힌 사람 403)
@@ -317,6 +319,15 @@
 - `listed: false` = **상점에서 내리기**(상점·크리에이터 페이지·추천에서 빠짐, 이미 담거나 산 사람은 그대로 들음), `true` = 다시 올리기
 - 승인된 블록은 고쳐도 그대로 판매(다시 검수하지 않음, 이상한 글은 신고로). 판매 중인 블록을 유료로 바꾸면 맛보기(앞 30초)를 만듦
 - **돌려보낸(REJECTED) 블록**의 내용을 고치면 다시 검수 대기(`PENDING`, `reviewNote` 지움) → 메시지 `"고쳐서 다시 검수를 요청했어요."`, 아니면 `"고쳤어요."`. 응답 = 고친 `MyUploadResponse`
+
+**내 블록 통계** `GET /me/uploads/stats` (판매 화면 "내 블록 통계", 올린 블록이 없어도 0으로)
+```json
+{ "listedBlocks": 2, "pendingBlocks": 1, "collectors": 6, "usedInCombos": 3, "collects14d": 9, "plays14d": 33,
+  "days": [ { "date": "2026-11-04", "collects": 0, "plays": 0 }, …, { "date": "2026-11-17", "collects": 2, "plays": 9 } ] }
+```
+- **올린 사람 본인이 담거나 들은 것은 세지 않음**. `listedBlocks` = 상점에 보이는 블록(승인·활성·`listed`), `pendingBlocks` = 검수 중
+- `collectors` = 내 블록을 하나라도 담은 사람 수, `usedInCombos` = 내 블록이 들어간 남의 조합 수 (전체 기간)
+- `days` = 최근 14일(한국 날짜, 오래된 날부터, 마지막 = 오늘): `collects` = 그날 새로 담은 횟수, `plays` = 그날 내 블록을 들은 것(`POST /blocks/{id}/play`) + 내 블록이 든 조합을 튼 것(`POST /playlists/{id}/play`). `collects14d`·`plays14d` = 14일 합계
 
 ### 5.2 재생 기록 `POST /blocks/{id}/play`
 같은 사용자가 30분 안에 다시 재생하면 세지 않습니다.

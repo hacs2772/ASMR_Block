@@ -201,9 +201,12 @@ public final class BlockDtos {
             DesignResponse design,
             long collectedCount,
             Integer playCount,
-            LocalDateTime createdAt) {
+            LocalDateTime createdAt,
+            long newCollects,
+            long usedInCombos) {
 
-        public static MyUploadResponse from(Block block, long collectedCount, StorageService storage) {
+        /** numbers = 담은 사람·최근 7일 새로 담음·쓰인 남의 조합 (올린 사람 본인은 빼고) */
+        public static MyUploadResponse from(Block block, UploadNumbers numbers, StorageService storage) {
             // 고치기 화면용: 제목·소개는 적은 그대로(화면 언어로 바꾸지 않음) + 영어 칸 + 상점에 보이는지
             return new MyUploadResponse(block.getId(), block.getTitle(), block.getDescription(), block.getTitleEn(),
                     block.getDescriptionEn(), block.getRecordedPlaceEn(), !Boolean.FALSE.equals(block.getIsListed()),
@@ -212,7 +215,8 @@ public final class BlockDtos {
                     block.getTalkType() == null ? TalkType.NONE : block.getTalkType(), block.getRecordedPlace(),
                     // 돌려보낸 이유: "신고로 내려졌어요: …"처럼 서버가 적은 문장은 영어 화면이면 영어로 (관리자가 쓴 글은 그대로)
                     block.getStatus(), Messages.tr(block.getReviewNote()), CategoryResponse.from(block.getCategory()), DesignResponse.of(block, storage, true),
-                    collectedCount, block.getPlayCount(), block.getCreatedAt());
+                    numbers.getCollected(), block.getPlayCount(), block.getCreatedAt(),
+                    numbers.getNewCollects(), numbers.getUsedInCombos());
         }
     }
 

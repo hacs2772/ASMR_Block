@@ -78,6 +78,8 @@ export const sellerApi = {
     onUploadProgress: (e) => onProgress?.(e.total ? Math.round((e.loaded / e.total) * 100) : 0),
   })),
   mine: () => data(axiosInstance.get('/me/uploads', { params: { size: 100 } })),
+  /** 내 블록 통계: 합계 + 최근 14일 하루하루 { date, collects, plays } (본인 빼고) */
+  stats: () => data(axiosInstance.get('/me/uploads/stats')),
   /** 올린 블록 고치기 (보낸 것만 바뀜, 빈 글자면 지움, listed=false 상점에서 내리기) → { message, data } */
   update: (id, body) => axiosInstance.patch(`/me/uploads/${id}`, body).then((r) => r.data),
   /** 구간 고르기: 소리 파일이나 영상(kind=video)을 먼저 올려 길이·파형(peaks)을 받음 → 올리기 때 draftId + trimStart/trimEnd */

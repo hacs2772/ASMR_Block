@@ -68,7 +68,8 @@ function BlockProductCard({ block, rank, onCollected, preview = false, hideCreat
         <h3 className="truncate text-[15px] font-bold">
           {rank ? <span className="mr-1.5 text-pink-text">{rank}</span> : null}{block.title}
         </h3>
-        <p className="text-xs text-muted">{group} · {talkLabel(block.talkType)}</p>
+        {/* 영어는 트리거 이름이 길어서: 이름 중간("No / talking")이 아니라 " · " 앞뒤에서만 줄바꿈 */}
+        <p className="text-xs text-muted"><span className="whitespace-nowrap">{group}</span> · <span className="whitespace-nowrap">{talkLabel(block.talkType)}</span></p>
         <div className="flex items-center gap-2">
           <p className="flex min-w-0 flex-1 items-center gap-1 truncate text-xs text-faint">
             {!hideCreator && (block.uploader?.id && !preview

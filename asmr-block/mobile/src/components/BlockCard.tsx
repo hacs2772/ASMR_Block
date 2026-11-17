@@ -100,9 +100,9 @@ export function BlockCard({ block, previewing, onPreview, rank, showNote, right,
         <Text style={styles.title} numberOfLines={1}>
           {rank ? <Text style={styles.rank}>{t('block.rank', { rank })}</Text> : null}{block.title}
         </Text>
-        {/* 영어는 트리거 이름이 길어서 두 줄까지 (한국어는 한 줄에 들어감) */}
+        {/* 영어는 트리거 이름이 길어서 두 줄까지 (한국어는 한 줄에 들어감). 이름 중간("No / talking")이 아니라 " · " 앞뒤에서만 줄바꿈 */}
         <Text style={styles.tags} numberOfLines={2}>
-          <Text style={{ color }}>■ </Text>{group}<Text style={styles.talk}> · {talkLabel(block.talkType)}</Text>
+          <Text style={{ color }}>■ </Text>{keepTogether(group)}<Text style={styles.talk}> · {keepTogether(talkLabel(block.talkType))}</Text>
         </Text>
         <View style={styles.byRow}>
           {hideCreator ? <View style={{ flex: 1 }} /> : reportable ? (
@@ -136,6 +136,9 @@ export function BlockCard({ block, previewing, onPreview, rank, showNote, right,
     </View>
   );
 }
+
+/** 띄어쓰기를 줄바꿈 안 되는 띄어쓰기로 (한 이름이 두 줄로 갈라지지 않게) */
+const keepTogether = (text: string | null | undefined) => (text ?? '').replace(/ /g, '\u00A0');
 
 const styles = StyleSheet.create({
   video: {

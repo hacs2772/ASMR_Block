@@ -2,6 +2,7 @@ package com.asmrblock.creator;
 
 import com.asmrblock.common.ApiException;
 import com.asmrblock.creator.CreatorDtos.CreatorResponse;
+import com.asmrblock.creator.CreatorDtos.MyStatsResponse;
 import com.asmrblock.i18n.Lang;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,5 +24,15 @@ public class CreatorService {
         return new CreatorResponse(s.getId(), s.getNickname(), s.getBlockCount(), s.getCollectorCount(), s.getPlayCount(),
                 top.stream().map(t -> Lang.pick(t.getName(), t.getNameEn())).toList(), s.getCreatedAt(),
                 top.stream().map(CreatorTrigger::getCode).toList());
+    }
+
+    /** 판매 화면 "내 블록 통계": 합계 + 최근 14일 (올린 블록이 없어도 0으로) */
+    @Transactional(readOnly = true)
+    public MyStatsResponse myStats(Long userId) {
+        CreatorDtos.Totals t = creatorMapper.myTotals(userId);
+        List<CreatorDtos.Day> days = creatorMapper.myDays(userId);
+        return new MyStatsResponse(t.listedBlocks(), t.pendingBlocks(), t.collectors(), t.usedInCombos(),
+                days.stream().mapToLong(CreatorDtos.Day::collects).sum(),
+                days.stream().mapToLong(CreatorDtos.Day::plays).sum(), days);
     }
 }

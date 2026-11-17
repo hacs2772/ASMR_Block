@@ -89,9 +89,9 @@ public class MyUploadService {
         if (block.getStatus() == BlockStatus.APPROVED) {
             previewService.ensurePreview(block);
         }
-        long collected = blockMapper.countCollectors(List.of(blockId)).stream()
-                .mapToLong(BlockCount::getCount).sum();
-        return new EditResult(MyUploadResponse.from(block, collected, storageService), resubmitted);
+        UploadNumbers numbers = blockMapper.uploadNumbers(List.of(blockId)).stream()
+                .findFirst().orElseGet(() -> UploadNumbers.none(blockId));
+        return new EditResult(MyUploadResponse.from(block, numbers, storageService), resubmitted);
     }
 
     private static String blankToNull(String value) {

@@ -12,8 +12,10 @@ import { useStopPreviewOnLeave } from '../hooks/usePreview';
 import { categoryLabel, colorOf, formatDuration, talkLabel, TALK_TYPES } from '../lib/blocks';
 import { MAX_STICKERS, PATTERNS, patternLabel, StickerImage, stickerName, useStickers } from '../lib/stickers';
 import { canTrim, initialRange, trimParams } from '../lib/trim';
+import { uploadLine } from '../lib/creatorStats';
 import useLangChange from '../locales/useLangChange';
 import EarningsCard from '../components/coin/EarningsCard';
+import CreatorStats from '../components/sell/CreatorStats';
 import EditUpload, { EnglishFields } from '../components/sell/EditUpload';
 import useAuthStore from '../store/authStore';
 import { RecordingGuideLink } from './RecordingGuidePage';
@@ -429,6 +431,7 @@ function SellPage() {
               <Link to={`/creator/${user.id}`} className="btn-line btn-sm" data-testid="my-creator-page">{t('sell.myPage')}</Link>
             )}
           </div>
+          {mine?.length > 0 && <CreatorStats refreshKey={mine.length} />}
           <EarningsCard />
           <div className="mt-5">
             {mine === null ? <BlockLoader small /> : mine.length === 0 ? (
@@ -444,12 +447,18 @@ function SellPage() {
                         {categoryLabel(u.category) || t('common.other')} · {talkLabel(u.talkType)} · {formatDuration(u.duration)} · {u.price > 0 ? t('common.coins', { count: u.price }) : t('common.free')}
                         {u.recordedPlace ? ` · ${u.recordedPlace}` : ''}
                       </p>
+                      {u.status === 'APPROVED' && uploadLine(u) && (
+                        <p className="mt-1 text-xs font-bold text-ink/80" data-testid={`upload-numbers-${u.id}`}>
+                          {uploadLine(u).split(' · ').map((part, i) => (
+                            <React.Fragment key={part}>{i > 0 && ' · '}<span className="whitespace-nowrap">{part}</span></React.Fragment>
+                          ))}
+                        </p>
+                      )}
                       {u.status === 'REJECTED' && u.reviewNote && (
                         <p className="mt-1.5 rounded-lg bg-danger/10 px-2.5 py-1.5 text-xs text-danger" data-testid={`review-note-${u.id}`}>{t('sell.reviewNote', { note: u.reviewNote })}</p>
                       )}
                     </div>
                     {u.design?.hasVideo && <span className="flex items-center gap-1 text-xs text-muted"><IoVideocam /> {t('sell.kindVideo')}</span>}
-                    <span className="hidden text-xs text-muted sm:block">{t('sell.collected', { count: u.collectedCount })}</span>
                     {u.status === 'APPROVED' && u.listed === false && (
                       <span className="rounded-full bg-card-active px-2.5 py-1 text-xs font-bold text-muted" data-testid={`unlisted-${u.id}`}>{t('sell.unlisted')}</span>
                     )}

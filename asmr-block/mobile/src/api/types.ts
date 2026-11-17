@@ -295,6 +295,21 @@ export type MyUpload = {
   collectedCount: number;
   playCount: number;
   createdAt: string;
+  /** 최근 7일에 새로 담은 사람 · 이 블록이 들어간 남의 조합 (나 제외) */
+  newCollects: number;
+  usedInCombos: number;
+};
+
+/** 블록 판매 탭 "내 블록 통계" (GET /me/uploads/stats, 나 제외). plays = 블록을 들은 것 + 내 블록이 든 조합을 튼 것 */
+export type CreatorMyStats = {
+  listedBlocks: number;
+  pendingBlocks: number;
+  collectors: number;
+  usedInCombos: number;
+  collects14d: number;
+  plays14d: number;
+  /** 최근 14일 (오래된 날부터, 마지막 = 오늘) */
+  days: { date: string; collects: number; plays: number }[];
 };
 
 /** 내가 올린 블록 고치기: 보낸 것만 바뀜, 빈 글자면 지움. 돌려보낸 블록이면 다시 검수 대기 */

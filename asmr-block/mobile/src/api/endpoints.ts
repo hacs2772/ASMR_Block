@@ -4,6 +4,7 @@ import type {
   CoinTransaction,
   ComboRecommendations,
   Creator,
+  CreatorMyStats,
   Earnings,
   Purchase,
   Wallet,
@@ -118,6 +119,8 @@ export const sellerApi = {
   /** form: file, title, categoryId, license(OWN), price, talkType, recordedPlace, description */
   upload: (form: FormData) => api<Block>('/blocks', { method: 'POST', body: form }),
   mine: () => api<Page<MyUpload>>('/me/uploads?size=100'),
+  /** 내 블록 통계: 합계 + 최근 14일 하루하루 (나 제외) */
+  stats: () => api<CreatorMyStats>('/me/uploads/stats'),
   /** 올린 블록 고치기 (보낸 것만 바뀜, listed=false 상점에서 내리기) */
   update: (id: number, body: UploadEditRequest) => api<MyUpload>(`/me/uploads/${id}`, { method: 'PATCH', body }),
   /** 구간 고르기: 소리 파일이나 영상(kind=video, form의 file)을 먼저 올려 길이·파형을 받음 → 올리기 때 draftId + trimStart/trimEnd */

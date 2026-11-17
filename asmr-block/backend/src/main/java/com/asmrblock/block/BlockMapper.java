@@ -44,8 +44,8 @@ public interface BlockMapper {
 
     long countByUploader(@Param("uploaderId") Long uploaderId);
 
-    /** 블록마다 담은 사람 수 (올린 사람 본인은 빼고) */
-    List<BlockCount> countCollectors(@Param("blockIds") Collection<Long> blockIds);
+    /** 내가 올린 블록마다 숫자 (담은 사람·최근 7일 새로 담음·쓰인 남의 조합, 올린 사람 본인은 빼고) */
+    List<UploadNumbers> uploadNumbers(@Param("blockIds") Collection<Long> blockIds);
 
     /** 맛보기 파일이 아직 없는 유료 블록 (승인·활성) */
     List<Block> findPaidWithoutPreview();

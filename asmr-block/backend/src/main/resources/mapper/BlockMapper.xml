@@ -157,13 +157,21 @@
         SELECT COUNT(*) FROM block WHERE is_active = true AND uploader_id = #{uploaderId}
     </select>
 
-    <select id="countCollectors" resultType="com.asmrblock.block.BlockCount">
-        SELECT ub.block_id AS block_id, COUNT(*) AS count
-        FROM user_block ub
-        JOIN block b ON b.id = ub.block_id
-        WHERE ub.user_id &lt;&gt; b.uploader_id AND ub.block_id IN
+    <!-- 내가 올린 블록의 숫자 (올린 사람 본인은 빼고): 담은 사람 · 최근 7일에 새로 담은 사람 · 이 블록이 들어간 남의 조합 -->
+    <select id="uploadNumbers" resultType="com.asmrblock.block.UploadNumbers">
+        SELECT b.id AS block_id,
+               (SELECT COUNT(*) FROM user_block ub
+                 WHERE ub.block_id = b.id AND ub.user_id &lt;&gt; b.uploader_id) AS collected,
+               (SELECT COUNT(*) FROM user_block ub
+                 WHERE ub.block_id = b.id AND ub.user_id &lt;&gt; b.uploader_id
+                   AND ub.acquired_at &gt;= (NOW() AT TIME ZONE 'UTC') - INTERVAL '7 days') AS new_collects,
+               (SELECT COUNT(DISTINCT l.playlist_id) FROM playlist_block pb
+                  JOIN playlist_layer l ON l.id = pb.layer_id
+                  JOIN playlist p ON p.id = l.playlist_id
+                 WHERE pb.block_id = b.id AND p.user_id &lt;&gt; b.uploader_id) AS used_in_combos
+        FROM block b
+        WHERE b.id IN
         <foreach collection="blockIds" item="id" open="(" separator="," close=")">#{id}</foreach>
-        GROUP BY ub.block_id
     </select>
 
     <select id="findPaidWithoutPreview" resultMap="BlockMap">

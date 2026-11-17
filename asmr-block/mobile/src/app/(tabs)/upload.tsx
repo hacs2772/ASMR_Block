@@ -13,6 +13,7 @@ import { BlockCard } from '@/components/BlockCard';
 import { Button, Chip, EmptyState } from '@/components/ui';
 import { notify } from '@/lib/dialog';
 import { formatDuration } from '@/lib/format';
+import { uploadLine } from '@/lib/creatorStats';
 import { MAX_STICKERS, PATTERNS } from '@/lib/stickers';
 import { StickerArt } from '@/components/StickerArt';
 import { Trimmer } from '@/components/upload/Trimmer';
@@ -23,6 +24,7 @@ import { categoryFallbackColor, colors, radius, space } from '@/theme';
 import { RecordingGuideLink } from '@/components/upload/RecordingGuideLink';
 import { useTranslation } from 'react-i18next';
 import { EarningsCard } from '@/components/coin/EarningsCard';
+import { CreatorStats } from '@/components/upload/CreatorStats';
 import { EMPTY_ENGLISH, EnglishFields } from '@/components/upload/EnglishFields';
 import { categoryLabel, patternLabel, stickerName, talkLabel } from '@/lib/labels';
 import i18n from '@/locales';
@@ -386,6 +388,7 @@ export default function UploadScreen() {
           </Pressable>
         ) : null}
       </View>
+      {status === 'signedIn' && (mine.data?.content ?? []).length > 0 ? <CreatorStats /> : null}
       {status === 'signedIn' ? <EarningsCard /> : null}
       {mine.isLoading ? <BlockLoader size="small" />
         : (mine.data?.content ?? []).length === 0 ? <Text style={styles.empty}>{t('upload.mineEmpty')}</Text>
@@ -430,6 +433,11 @@ function UploadRow({ upload }: { upload: MyUpload }) {
           {categoryLabel(upload.category) || t('common.other')} · {talkLabel(upload.talkType)} · {formatDuration(upload.duration)} · {upload.price > 0 ? t('common.coins', { count: upload.price }) : t('common.free')}
           {upload.recordedPlace ? ` · ${upload.recordedPlace}` : ''}
         </Text>
+        {upload.status === 'APPROVED' && uploadLine(upload) ? (
+          <Text style={styles.rowNumbers} numberOfLines={2} testID={`upload-numbers-${upload.id}`}>
+            {uploadLine(upload).split(' · ').map((part) => part.replace(/ /g, '\u00A0')).join(' · ')}
+          </Text>
+        ) : null}
         {upload.status === 'REJECTED' && upload.reviewNote ? (
           <Text style={styles.reviewNote} testID={`review-note-${upload.id}`}>{t('upload.reviewNote', { note: upload.reviewNote })}</Text>
         ) : null}
@@ -437,7 +445,6 @@ function UploadRow({ upload }: { upload: MyUpload }) {
       <View style={{ alignItems: 'flex-end', gap: 2 }}>
         <Text style={[styles.badge, { color: s.color, borderColor: s.color }]}>{t(`upload.status.${upload.status}`)}</Text>
         {upload.status === 'APPROVED' && !upload.listed ? <Text style={styles.rowMeta} testID={`unlisted-${upload.id}`}>{t('upload.unlisted')}</Text> : null}
-        <Text style={styles.rowMeta}>{t('upload.collected', { count: upload.collectedCount })}</Text>
         <Text style={styles.editLink}>{t('upload.edit')}</Text>
       </View>
     </Pressable>
@@ -446,6 +453,7 @@ function UploadRow({ upload }: { upload: MyUpload }) {
 
 const styles = StyleSheet.create({
   reviewNote: { marginTop: 4, fontSize: 12, color: colors.danger, lineHeight: 17 },
+  rowNumbers: { marginTop: 3, fontSize: 12, fontWeight: '700', color: colors.text, opacity: 0.8 },
   editLink: { color: colors.primaryText, fontSize: 12, fontWeight: '700' },
   coverThumb: { width: 48, height: 28, borderRadius: 4 },
   stickerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },

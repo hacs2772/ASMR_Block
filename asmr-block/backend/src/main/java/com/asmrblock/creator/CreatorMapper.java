@@ -13,4 +13,10 @@ public interface CreatorMapper {
 
     /** 많이 올린 트리거 묶음 이름 (많은 순, 최대 3개) */
     List<CreatorTrigger> topTriggers(Long userId);
+
+    /** 판매 화면 통계: 합계 */
+    CreatorDtos.Totals myTotals(Long userId);
+
+    /** 판매 화면 통계: 최근 14일 하루하루 */
+    List<CreatorDtos.Day> myDays(Long userId);
 }

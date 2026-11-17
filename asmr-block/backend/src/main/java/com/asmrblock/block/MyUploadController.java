@@ -5,6 +5,8 @@ import com.asmrblock.block.BlockDtos.MyUploadResponse;
 import com.asmrblock.common.ApiResponse;
 import com.asmrblock.common.PageQuery;
 import com.asmrblock.common.PageResponse;
+import com.asmrblock.creator.CreatorDtos.MyStatsResponse;
+import com.asmrblock.creator.CreatorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,12 +26,19 @@ public class MyUploadController {
 
     private final BlockService blockService;
     private final MyUploadService myUploadService;
+    private final CreatorService creatorService;
 
     @GetMapping
     public ApiResponse<PageResponse<MyUploadResponse>> list(@AuthenticationPrincipal Long userId,
                                                             @RequestParam(defaultValue = "0") int page,
                                                             @RequestParam(defaultValue = "50") int size) {
         return ApiResponse.ok(blockService.myUploads(userId, PageQuery.of(page, size)));
+    }
+
+    /** 내 블록 통계: 담은 사람·쓰인 조합·최근 14일 새로 담김/들은 횟수 (본인 빼고) */
+    @GetMapping("/stats")
+    public ApiResponse<MyStatsResponse> stats(@AuthenticationPrincipal Long userId) {
+        return ApiResponse.ok(creatorService.myStats(userId));
     }
 
     /** 고치기: 보낸 것만 바뀜. 돌려보낸 블록이면 다시 검수 대기로 */
