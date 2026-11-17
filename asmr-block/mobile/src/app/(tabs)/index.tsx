@@ -10,6 +10,7 @@ import { usePreview } from '@/audio/usePreview';
 import { AdSlot } from '@/components/AdSlot';
 import { BlockCard } from '@/components/BlockCard';
 import { TriggerPicker } from '@/components/tingle/TriggerPicker';
+import { TonightCard } from '@/components/tonight/TonightCard';
 import { BlockLoader } from '@/components/BlockLoader';
 import { PlaylistCard } from '@/components/PlaylistCard';
 import { Button } from '@/components/ui';
@@ -28,7 +29,7 @@ function play(id: number) {
 }
 
 /**
- * 홈: 맨 위는 "내 조합 바로 듣기"(가장 많이 쓰는 것), 그 아래 요즘 팅글 많이 오는 블록 + 광고 자리.
+ * 홈: 맨 위는 "내 조합 바로 듣기"(가장 많이 쓰는 것), 그 아래 오늘 밤 조합(한 줄·내 취향) → 요즘 팅글 많이 오는 블록 + 광고 자리.
  * 설명·단어장은 오른쪽 위 ? 도움말로, 다른 사람 조합은 ★추천 조합 탭으로.
  */
 export default function HomeScreen() {
@@ -90,6 +91,13 @@ export default function HomeScreen() {
         </>
       )}
 
+      {/* 오늘 밤 조합: 한 줄(AI) 또는 내 취향으로 두 줄을 쌓아 바로 듣기 */}
+      {status === 'signedIn' && (
+        <View style={styles.tonight}>
+          <TonightCard />
+        </View>
+      )}
+
       {shelf.length > 0 && (
         <View style={styles.section} testID={picks ? 'home-for-you' : 'home-trending'}>
           <Text style={styles.eyebrow} numberOfLines={1}>{picks ? t('forYou.homeEyebrow', { triggers: tasteNames(picks) }) : t('home.trendEyebrow')}</Text>
@@ -149,6 +157,7 @@ const styles = StyleSheet.create({
   eyebrow: { color: colors.primaryText, fontSize: 12, fontWeight: '700', marginBottom: 4 },
   title: { color: colors.text, fontSize: 24, fontWeight: '800', letterSpacing: -0.4, marginBottom: space.md },
   section: { marginTop: 36 },
+  tonight: { marginTop: space.xl },
   sectionTitle: { color: colors.text, fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
   trendCard: { width: 172 },
   emptyCard: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.lg, gap: space.sm },

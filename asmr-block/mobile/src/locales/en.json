@@ -826,5 +826,32 @@
     "coldCombos": "We don't know your taste yet. Add blocks and listen to combos, and we'll tailor this. For now, here are trending combos.",
     "homeEyebrow": "Because you like {{triggers}}",
     "homeTitle": "Picked for you"
+  },
+  "tonight": {
+    "title": "Tonight's mix",
+    "aiBadge": "AI",
+    "lead": "What kind of night do you want? Describe it in one line and we'll stack matching blocks in two rows.",
+    "leadAi": "What kind of night do you want? Describe it in one line and AI will read it and stack matching blocks in two rows.",
+    "inputLabel": "The feeling you want tonight",
+    "placeholder": "e.g. Reading in a café on a rainy day",
+    "go": "Stack this feeling",
+    "taste": "Stack my taste",
+    "building": "Stacking…",
+    "examplesLabel": "Examples",
+    "ex1": "Reading in a café on a rainy day",
+    "ex2": "Whispers by a campfire",
+    "ex3": "Leaning on a night-train window",
+    "ex4": "Paper crinkles and soft tapping",
+    "aiNote": "AI (Claude) reads your line and picks the triggers. Your words are only kept as the mix description.",
+    "aiNoteLeft_one": "AI (Claude) reads your line and picks the triggers · {{count}} try left today",
+    "aiNoteLeft_other": "AI (Claude) reads your line and picks the triggers · {{count}} tries left today",
+    "wordsNote": "We find the sounds in your words. Your words are only kept as the mix description.",
+    "failed": "Couldn't stack tonight's mix.",
+    "doneAi": "AI stacked it · {{mix}}",
+    "doneWords": "Stacked from your words · {{mix}}",
+    "doneTaste": "Stacked from your taste · {{mix}}",
+    "doneAiLimit": "You've used today's AI tries, so we matched your words · {{mix}}",
+    "doneAiFailed": "AI couldn't answer just now, so we matched your words · {{mix}}",
+    "doneNoMatch": "We couldn't find those sounds, so we used your taste · {{mix}}"
   }
 }

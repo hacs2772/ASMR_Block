@@ -34,7 +34,8 @@ public record AppProperties(
         @Valid @NotNull Upload upload,
         @Valid @NotNull Site site,
         @Valid @NotNull Limits limits,
-        @Valid @NotNull Cleanup cleanup) {
+        @Valid @NotNull Cleanup cleanup,
+        @Valid @NotNull Ai ai) {
 
     public record Jwt(
             @NotBlank(message = "JWT 비밀키가 없습니다. JWT_SECRET 환경변수를 설정하세요.") // i18n-ok (켤 때 설정 검사)
@@ -144,6 +145,22 @@ public record AppProperties(
 
     /** 업로드 제한. 공개용은 Cloudflare 무료 요금제가 한 번에 100MB까지만 받아서 영상은 그보다 작게 */
     public record Upload(@Min(1) int maxVideoMb) {
+    }
+
+    /**
+     * AI 조합 ("오늘 밤 조합"의 "한 줄로 말하면 쌓아 줘요", Claude API). apiKey가 비면 AI를 부르지 않고 규칙으로만 쌓음.
+     * model = 부를 모델(기본 claude-haiku-5-5, 가장 싸고 빠름), effort = 생각 정도(low, 비우면 안 보냄), baseUrl = 테스트용(비우면 Anthropic),
+     * dailyPerUser·dailyTotal = 한 사람·사이트 전체가 하루(한국 시간)에 AI를 부르는 횟수 (넘으면 AI 없이 낱말로 찾음),
+     * tonightPerHour = 한 사람이 1시간에 오늘 밤 조합을 만드는 횟수 (넘으면 429),
+     * priceInputPerMtok·priceOutputPerMtok = 100만 토큰당 달러 (관리자 통계의 "대략 얼마"), krwPerUsd = 1달러가 몇 원인지 (대략)
+     */
+    public record Ai(String apiKey, @NotBlank String model, String effort, String baseUrl, @NotNull Duration timeout,
+                     @Min(0) int dailyPerUser, @Min(0) int dailyTotal, @Min(1) int tonightPerHour,
+                     @DecimalMin("0.0") double priceInputPerMtok, @DecimalMin("0.0") double priceOutputPerMtok,
+                     @Min(1) int krwPerUsd) {
+        public boolean enabled() {
+            return apiKey != null && !apiKey.isBlank() && dailyPerUser > 0 && dailyTotal > 0;
+        }
     }
 
     /** 완성본(합친 파일) 만들기 설정 */

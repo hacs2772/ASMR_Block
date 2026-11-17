@@ -543,6 +543,7 @@
 | PUT | `/admin/samples` | 관리자 | **샘플 한꺼번에 숨기기·다시 보이기** `{ "visible": false }` → 샘플 블록 `is_listed`(V11)와 샘플 조합 `is_public`을 바꿈. 숨기면 상점·요즘 뜨는 소리·추천 조합·베타 손님 첫 블록에서 빠지고, **이미 담은 사람은 블록함·조합에서 그대로 들음**. 샘플 SQL이 다시 돌아도 숨긴 그대로 |
 
 - 통계의 **`disk`**: `{ "freeMb", "totalMb", "rendersMb", "low" }` 서버 디스크 남은 공간·완성본 크기, `low` = 5GB 아래 또는 10%·20GB 아래
+- 통계의 **`ai`**: AI 조합(오늘 밤 조합의 한 줄 → Claude API) 켜졌는지·오늘/이번 달 횟수·토큰·대략 요금 (12장, `docs/ai_guide.md`)
 - 통계의 **`storage`**: `{ "type": "local"|"s3", "bucket", "total", "done", "failed", "pending", "running" }` 파일 저장소. 클라우드(`s3`, Cloudflare R2)로 바꾸면 옛 파일 옮기기 상태 (`docs/r2_guide.md`)
 
 **어디서 그만두나요 (`funnel`, V10)**: 최근 `funnelDays`일(1~90, 기본 14) 안에 들어온 사람 중 각 단계까지 간 사람 수 (단계마다 따로 셈)
@@ -664,6 +665,31 @@ V16. 유료 블록(`price` > 0)은 **코인**으로 사요. 코인은 두 가지
 - 조합 점수 = 들어 있는 블록 점수 합 ÷ √(블록 수) + 인기 조금. 숨긴·비공개·내 것·이미 담은 것 빼고
 - `personalized: false` = 아직 취향 기록이 없어서 **요즘 인기**로 채움 (`triggers` 빈 목록). 취향으로 고른 게 모자라도 요즘 인기로 채워서 목록이 비지 않음
 - `triggers`: 내가 좋아하는 트리거 묶음 (점수 높은 순, 최대 3개, 영어 요청이면 영어 이름) → 화면 "탭핑·빗소리 취향으로 골랐어요"
+
+---
+
+## 12. 오늘 밤 조합 (한 줄 → AI 또는 규칙으로 두 줄 쌓기) — V17
+
+| Method | URL | 인증 | 설명 |
+|------|------|------|------|
+| GET | `/playlists/tonight` | 없음 | 화면 안내 `{ "ai": true, "maxPromptLength": 80, "aiLeftToday": 7 }` — `ai` = AI 키가 있어서 한 줄을 AI가 읽는지(꺼져 있어도 한 줄은 낱말로 찾아 줌), `aiLeftToday` = 오늘 남은 AI 횟수(로그인 + AI 켜짐일 때만, 아니면 null) |
+| POST | `/playlists/tonight` | 필요 | **만들기** `{ "prompt": "비 오는 날 카페에서 책 읽는 느낌", "listenMinutes": 60 }` (둘 다 선택, 한 줄 80자까지, 시간 생략 시 60분) → 201 |
+
+```json
+{ "playlist": PlaylistDetailResponse,        // 비공개 새 조합 (완성본 만들기까지 시작됨)
+  "source": "AI",                            // AI | WORDS(한 줄의 낱말) | TASTE(내 취향) | STARTER(기록이 없어 기본)
+  "note": null,                              // AI_LIMIT(오늘 AI 횟수를 다 씀) | AI_FAILED(AI가 대답 못 함) | NO_MATCH(한 줄에서 소리를 못 찾아 취향으로) | null
+  "main":  [ { "code": "crinkle", "name": "바스락", "percent": 75 }, { "code": "tap", "name": "탭핑·타건", "percent": 25 } ],
+  "layer": [ { "code": "rain", "name": "빗소리·물", "percent": 100 } ] }
+```
+- **비율 정하는 순서**: ① 한 줄이 있고 AI가 켜져 있고 오늘 횟수가 남았으면 **AI(Claude, 기본 `claude-haiku-5-5`)**가 한 줄을 읽고 첫째 줄 묶음 1~3개 + 둘째 줄 배경 묶음 0~2개(빗소리·자연·장소·노이즈만) + 조합 이름을 JSON으로 대답 → 서버가 모르는 코드·배경이 아닌 둘째 줄을 빼고 비율을 1~5로 맞춤 ② AI가 꺼졌거나 실패하면 한 줄의 **낱말**(`resources/tonight/words.tsv`, 긴 낱말부터 — "비닐"은 바스락) ③ 한 줄이 없거나 못 찾으면 **내 취향**(추천과 같은 취향 점수, 배경 취향이 없으면 빗소리 같은 기본 배경) ④ 기록이 없으면 **기본 조합**
+- **쌓기는 늘 규칙**: 묶음마다 내 블록함 블록 먼저 + 상점의 무료 블록(많이 들은 순 5개 중 섞어서 3개, 밤마다 조금씩 다르게). **아직 없는 유료 블록은 안 씀**, 쓴 무료 블록은 내 블록함에 저절로 담음
+  - 첫째 줄: 20분 안팎(10칸까지)이 될 때까지 비율이 가장 모자란 묶음의 블록을 차례로, 같은 블록이 이어지면 `repeat`
+  - 둘째 줄(볼륨 0.4): 30초 뒤부터 블록 길이의 60%(40초~150초) 빈칸을 두고 겹치지 않게, 첫째 줄이 끝나기 전에 끝나게
+- 이름: AI면 AI가 지은 이름(30자까지), 아니면 "오늘 밤 · 바스락, 탭핑 + 빗소리"(영어 요청이면 "Tonight · Crinkles, Tapping + Rain"). 설명 = 적은 한 줄(AI·낱말일 때)
+- **AI 제한**: 한 사람 하루 `app.ai.daily-per-user`(10)번, 사이트 전체 하루 `daily-total`(1000)번(한국 시간) → 넘으면 AI 없이 낱말로(`note: AI_LIMIT`). AI 실패(오류·거절·20초 넘음·엉뚱한 대답)도 낱말로(`AI_FAILED`). 부를 때마다 `ai_usage`에 횟수·토큰만 기록(적은 문장은 저장 안 함)
+- 한 사람이 1시간에 `app.ai.tonight-per-hour`(30)번 넘게 만들면 429. 쌓을 블록이 하나도 없으면 400
+- 관리자 통계 `ai`: `{ "enabled", "model", "todayCalls", "monthCalls", "monthFailed", "monthInputTokens", "monthOutputTokens", "monthUsd", "monthKrw", "dailyPerUser", "dailyTotal" }` (요금은 `app.ai.price-*`로 대략 계산). 켜는 법 `docs/ai_guide.md`
 
 ---
 

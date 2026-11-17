@@ -66,7 +66,7 @@ class PublicModeTest extends IntegrationTest {
         AppProperties p = properties;
         AppProperties changed = new AppProperties(p.jwt(), p.auth(), p.storage(), p.cors(), p.playCount(), p.audio(),
                 p.render(), p.shop(), p.coins(), p.beta(), new AppProperties.Admin(email, password), p.upload(), p.site(),
-                p.limits(), p.cleanup());
+                p.limits(), p.cleanup(), p.ai());
         return new AdminAccountInitializer(changed, userMapper, passwordEncoder);
     }
 }

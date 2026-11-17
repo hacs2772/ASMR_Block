@@ -54,6 +54,11 @@ services:
       APP_STORAGE_S3_SECRET_KEY: ${R2_SECRET_KEY:-}
       APP_STORAGE_S3_PUBLIC_URL: ${R2_PUBLIC_URL:-}
       APP_STORAGE_S3_CACHE_DIR: /data/cache
+      # AI 조합 (오늘 밤 조합의 한 줄 → Claude API): 비워 두면 AI 없이 낱말로 찾아 쌓음. 켜려면 .env.public 에 ANTHROPIC_API_KEY (docs/ai_guide.md)
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      APP_AI_MODEL: ${AI_MODEL:-claude-haiku-5-5}
+      APP_AI_DAILY_PER_USER: ${AI_DAILY_PER_USER:-10}
+      APP_AI_DAILY_TOTAL: ${AI_DAILY_TOTAL:-1000}
       # 조합 공유 링크(카톡 미리보기)의 사이트 주소
       APP_SITE_URL: ${PUBLIC_URL}
       # 웹은 같은 주소에서 부르지만, 브라우저가 Origin을 붙여 보내서 허용 목록에 넣어 둠

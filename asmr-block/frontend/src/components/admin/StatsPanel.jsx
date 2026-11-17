@@ -46,6 +46,7 @@ function StatsPanel({ onOpenFeedback, onOpenReports }) {
       <SampleBar />
       {stats.disk && <DiskBar disk={stats.disk} onCleaned={() => adminApi.stats(funnelDays).then(setStats).catch(() => {})} />}
       {stats.storage && <StorageLine storage={stats.storage} />}
+      {stats.ai && <AiLine ai={stats.ai} />}
 
       {stats.openReports > 0 && (
         <button type="button" onClick={onOpenReports} data-testid="stats-reports"
@@ -157,6 +158,25 @@ function StorageLine({ storage }) {
           )}
         </>
       ) : '이 PC 디스크 (클라우드로 옮기려면 docs/r2_guide.md)'}
+    </p>
+  );
+}
+
+/** AI 조합 (오늘 밤 조합의 한 줄 → Claude API): 켜졌는지 · 오늘/이번 달 횟수 · 대략 요금 (키는 .env.public, docs/ai_guide.md) */
+function AiLine({ ai }) {
+  return (
+    <p className="mt-1 px-1 text-xs leading-relaxed text-muted" data-testid="ai-line">
+      <b className="text-ink">AI 조합</b>{' '}
+      {ai.enabled ? (
+        <>
+          켜짐 ({ai.model}) · 오늘 {ai.todayCalls}번 · 이번 달 {ai.monthCalls}번
+          {ai.monthFailed > 0 && <span className="text-warn"> (실패 {ai.monthFailed})</span>}
+          {' '}· 대략 ${ai.monthUsd.toFixed(2)} (약 {ai.monthKrw.toLocaleString()}원)
+          {' '}· 하루 한도 한 사람 {ai.dailyPerUser}번 / 전체 {ai.dailyTotal}번
+        </>
+      ) : (
+        <>꺼짐 — 한 줄은 낱말로 찾아 쌓아요 (켜려면 docs/ai_guide.md{ai.monthCalls > 0 ? ` · 이번 달 ${ai.monthCalls}번 썼음` : ''})</>
+      )}
     </p>
   );
 }

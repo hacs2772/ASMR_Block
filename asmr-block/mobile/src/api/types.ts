@@ -180,6 +180,18 @@ export type TasteTrigger = { code: string; name: string };
 export type BlockRecommendations = { personalized: boolean; triggers: TasteTrigger[]; blocks: Block[] };
 export type ComboRecommendations = { personalized: boolean; triggers: TasteTrigger[]; combos: PlaylistSummary[] };
 
+/** 오늘 밤 조합 안내: AI가 켜졌는지(꺼져도 한 줄은 낱말로), 한 줄 최대 글자, 오늘 남은 AI 횟수(로그인 + AI 켜짐) */
+export type TonightInfo = { ai: boolean; maxPromptLength: number; aiLeftToday?: number | null };
+export type TriggerShare = { code: string; name: string; percent: number };
+/** source = AI · WORDS(한 줄의 낱말) · TASTE(내 취향) · STARTER(기본), note = AI_LIMIT · AI_FAILED · NO_MATCH · null */
+export type TonightResult = {
+  playlist: PlaylistDetail;
+  source: 'AI' | 'WORDS' | 'TASTE' | 'STARTER';
+  note: 'AI_LIMIT' | 'AI_FAILED' | 'NO_MATCH' | null;
+  main: TriggerShare[];
+  layer: TriggerShare[];
+};
+
 /** 내 코인 (V16): balance = 쓸 수 있는 전부, paid = 충전한 코인, bonus = 받은 코인(먼저 씀) */
 export type Wallet = { balance: number; paid: number; bonus: number };
 

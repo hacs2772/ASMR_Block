@@ -30,7 +30,7 @@
 - **영어판(1단계 웹 · 2단계 앱 · 3단계 서버, `docs/i18n_guide.md`)**: 웹 화면 글자는 전부 사전 `frontend/src/locales/ko.json`·`en.json`(키가 같아야 함)에서 `t('키')`로. **화면 코드에 한국어를 바로 쓰면 `locales.test.js`가 실패**(사전·`content/*.ko.js`·`lib/guide.js`·`lib/recording.js` 원문·관리자 화면만 예외). 언어 = `?lang=` → 직접 고른 것(`asmr.lang`) → 브라우저 언어(한국어 아니면 영어) → 로그인 때 계정 언어, 고르는 곳 = 머리글 KO/EN·휴대폰 메뉴·바닥글·내 정보(`locales/LanguageSwitch.jsx`, 로그인 중이면 `users.language`에도 저장, 가입 `language`·베타 손님 `?lang=en` → "Guest1234"). 트리거·스티커 이름은 영어일 때 서버 영어 이름 → 없으면 코드로 사전(`cat.tap`, `categoryLabel`·`groupLabel`·`stickerName`), 약관·방침은 `content/legal.ko.js`(원문)·`legal.en.js`(번역, 원문 우선 안내), 사용법·녹음 가이드 영어는 `lib/guide.en.js`·`lib/recording.en.js`. 크리에이터가 쓴 글(블록 이름·닉네임 등)과 관리자 화면은 그대로. 영어는 30~50% 길어서 좁은 칸은 짧게, 컴포넌트 안에서 `t`라는 다른 변수 금지.
   - **앱**: 사전 `mobile/src/locales/ko.json`·`en.json`(i18next + `expo-localization` 휴대폰 언어 + `intl-pluralrules`), 웹과 같은 묶음(cat·catDesc·stickers·talk·time·lang·guideArt·notif.msg)은 글자까지 같아야 함 — `__tests__/locales.test.ts`(사전 짝·한국어 직접 쓰기 금지·키 존재·웹과 같은지). 처음 언어 = 고른 것(SecureStore `asmr.lang`, 시작 화면 동안 `loadLang`) → 휴대폰 언어 → 로그인 때 계정 언어. 고르는 곳 = 내 정보·도움말(`locales/LanguageSwitch.tsx` → `useAuth().changeLanguage`). 이름 함수는 `lib/labels.ts`(categoryLabel·groupLabel·talkLabel·stickerName·minutesLabel), 영어 안내 `lib/guide.en.ts`(`guideSteps()`)·`lib/recording.en.ts`(웹 영어판과 글자까지 같음), 약관 링크는 `?lang=`(`lib/links.ts`). 아이폰 권한 문구도 영어(`app.json` `locales` → `mobile/locales/*.json`, `expo-localization` 플러그인 ko·en). 영어 탭 이름 = Home · Shop · Combos · Build · Sell
   - **서버(3단계)**: 웹·앱이 모든 요청에 `Accept-Language: ko|en`(주소 `?lang=`도) → `i18n/LangFilter`가 요청 언어를 정함(**관리자 API는 늘 한국어**). 안내·오류 문장은 코드에 한국어로 쓰고 `ApiResponse`가 `i18n/messages_en.tsv`로 영어(숫자 자리 `{0}`) — **새 문장을 쓰고 영어를 빠뜨리면 `ServerMessagesTest`가 실패**(화면에 안 나가는 줄은 `// i18n-ok`). 영어 이름 V15 `*_en`(트리거·스티커·블록·조합, 샘플만 영어 제목) → 응답을 만들 때 `Lang.pick`(DB 원래 글은 그대로). 관리자 트리거 종류·스티커에 영어 이름 칸. 공유 `/s/…?lang=en` = 영어 미리보기(웹·앱 영어 화면이면 링크에 붙임), 알림 문장도 영어. 언어를 바꾸면 웹은 화면을 새로 그리고(편집기·듣기·판매는 `useLangChange`로 이름만), 앱은 `invalidateQueries`. 검사 `EnglishApiTest`
-- **자동 화면 검사**(`asmr-block/e2e`, Playwright, CI "화면 검사"): CI가 개발용 docker compose + 앱 웹 미리보기(:8081)를 띄우고 웹·앱 큰 흐름을 직접 눌러 봄 (처음 시작·담기·쌓기·업로드·승인·알림·신고·크리에이터·화면 넘침·영어판). 검사마다 새 계정을 API로 만듦. 화면을 바꾸면 `data-testid`를 지키거나 검사도 같이 고치기. 실행법은 `e2e/README.md`
+- **자동 화면 검사**(`asmr-block/e2e`, Playwright, CI "화면 검사"): CI가 개발용 docker compose + 앱 웹 미리보기(:8081)를 띄우고 웹·앱 큰 흐름을 직접 눌러 봄 (처음 시작·담기·쌓기·업로드·승인·알림·신고·크리에이터·오늘 밤 조합·화면 넘침·영어판). 검사마다 새 계정을 API로 만듦. 화면을 바꾸면 `data-testid`를 지키거나 검사도 같이 고치기. 실행법은 `e2e/README.md`
 - **사이트 감시**(`.github/workflows/uptime.yml`): GitHub Actions가 15분마다 asmrblock.com 웹·API(`/auth/beta`)를 확인(3번 다시 해 봄) → 안 열리면 저장소에 "사이트-꺼짐" 이슈(메일 알림), 다시 열리면 댓글 달고 닫음. **예약 실행은 기본 브랜치(main)의 파일로만 돌아서 main에도 같은 파일이 있음** — 바꾸면 main에도 넣기
 - **녹음 가이드**(크리에이터용): 웹 `/sell/guide`(`pages/RecordingGuidePage.jsx`, 판매 화면·바닥글에서 링크) · 앱 `/recording-guide`(블록 판매 탭 맨 위 바로가기). 녹음 전 체크 5개(눌러서 체크, 저장 안 함) → 트리거 하나만·조용한 곳·휴대폰 놓는 법(한 뼘 그림)·녹음할 때·올리기 전에 → 올릴 수 없는 소리(남의 소리·배경 음악·허락 없는 목소리). 내용은 웹 `lib/recording.js` · 앱 `lib/recording.ts`(글자까지 같은지 앱 jest)
 - **관리자 페이지(V8, 웹 `/admin`)**: 관리자 계정으로 로그인하면 위 메뉴에 "관리자" (`user.role === 'ADMIN'`, 서버도 `/api/v1/admin/**` ADMIN 확인). 블록 승인·돌려보내기(이유 `review_note` → 판매자 "내가 올린 블록"), **트리거 종류**(묶음 색·소분류 아이콘 추가·고치기·숨기기·순서), **스티커**(SVG 검사·PNG 256px 추가·숨기기·순서). 바꾸면 앱·웹에 바로(앱 업데이트 없이). 분류·스티커는 지우지 않고 숨김. 아이콘 고르기 목록 = 웹 `lib/blocks.js` `ICONS`(앱 Ionicons에도 있는 이름만)
@@ -47,12 +47,13 @@
 - **얼마나 들을까요?** `listenMinutes`: 완성본(한 바퀴)을 앱이 그 시간 동안 반복 재생 (긴 파일을 만들지 않음)
 - **편집 중 전체 듣기**: 완성본 없이 앱이 플레이어 2개로 두 줄을 바로 틀어 봄 (`src/audio/useMixPreview.ts`). 저장하면 완성본을 자동으로 만들고 다 되면 자동 재생
 - **나에게 맞는 추천**(`recommend` 패키지, `RecommendMapper.xml`): 담은 블록·내 조합·틀어 본/10분 들은 조합·상점에서 들어 본 블록으로 트리거 취향 점수(가입 직후 시작 블록은 약하게) → `GET /me/recommendations/blocks|combos`(아직 없는 블록·안 담은 공개 조합, 같은 소분류는 처음엔 2개까지, 모자라면 요즘 인기로 채움, `personalized`·`triggers`). 화면: 웹 상점 "나에게 맞는" 탭·홈 블록 칸(취향을 알면 "취향 저격 블록", 아니면 요즘 뜨는)·추천 조합 정렬, 앱 블록 구매 "내 취향" 탭·홈·추천 조합 정렬, 이유 한 줄 `lib/recommend`(웹·앱 같음, 사전 `forYou.*` — `rec.*`는 녹음 가이드)
+- **오늘 밤 조합(V17, `tonight` 패키지, 진짜 AI)**: 홈 카드(웹 `components/home/Tonight.jsx` · 앱 `components/tonight/TonightCard.tsx`, 앱 홈은 내 조합 아래)에 "비 오는 날 카페에서 책 읽는 느낌" 한 줄 → `POST /playlists/tonight` → 플레이어(앱은 위에 어떻게 쌓았는지 `notice` 한 줄). 비율 정하기 = ① **AI**(Claude API, `ClaudePlanner`, Anthropic Java SDK, 기본 `claude-haiku-5-5`·effort low, 구조화된 JSON으로 묶음 코드만) → ② 한 줄의 **낱말**(`WordPlanner`, `resources/tonight/words.tsv`, 긴 낱말부터) → ③ **내 취향**(추천 취향 점수) → ④ 기본. **쌓기는 늘 규칙**(`TonightBuilder`, `TonightBuilderTest`): 첫째 줄 20분 안팎 비율대로 + 둘째 줄 배경(빗소리·자연·장소·노이즈) 빈칸 두고, 내 블록 + 무료 블록만(무료는 저절로 담음). **키(`.env.public` `ANTHROPIC_API_KEY`)가 없으면 AI 없이도 다 됨**. 하루 한 사람 10번·전체 1000번(`ai_usage`, 넘으면 낱말로 `note=AI_LIMIT`), 실패해도 낱말로(`AI_FAILED`). 적은 말만 보내고 문장은 저장 안 함(조합 설명으로만), 처리방침에 Anthropic. 관리자 통계 "AI 조합" 줄(이번 달 횟수·대략 요금). 테스트는 가짜 Claude(`support/FakeClaudeServer`, `TonightAiApiTest`) → 0원. 사용자 안내 `docs/ai_guide.md`, 안내 글 `lib/tonight`(웹·앱 같음, 사전 `tonight.*` 글자까지 같음 — 앱 jest)
 - **카테고리 = 메뉴 트리**: 대분류(`parent_id` NULL) › 소분류. 블록은 소분류에만, 대분류로 검색하면 하위 포함. **요즘 뜨는 소리·조합** = 최근 N일 `play_log` 수, 모자라면 많이 들은 순 → 새로 올라온 순으로 채움(막 연 사이트도 비지 않게)
 - **완성본(render)**: 서버가 ffmpeg로 두 트랙을 하나의 MP3로 합침 (크로스페이드 균형 트리·adelay·리미터, `progress` 0~100). 구성 해시가 같으면 재사용
 
 ## 구조
 - `asmr-block/backend` — Spring Boot 4.1 / Java 21 / MyBatis / PostgreSQL 16 / ffmpeg
-  - 기능별 패키지: `auth`, `user`, `category`, `block`, `library`(내 블록함), `playlist`, `render`, `play`, `audio`(ffmpeg), `storage`, `common`, `config`, `security`, `creator`, `share`, `report`, `activity`, `stats`, `notification`, `coin`, `recommend`
+  - 기능별 패키지: `auth`, `user`, `category`, `block`, `library`(내 블록함), `playlist`, `render`, `play`, `audio`(ffmpeg), `storage`, `common`, `config`, `security`, `creator`, `share`, `report`, `activity`, `stats`, `notification`, `coin`, `recommend`, `tonight`(오늘 밤 조합 · AI)
   - MyBatis XML: `src/main/resources/mapper/*Mapper.xml` (타입은 전체 클래스 이름으로 씀)
 - `asmr-block/mobile` — **메인 클라이언트**. Expo SDK 58 / React Native 0.88 / TypeScript / Expo Router
   - 작업 전 `asmr-block/mobile/AGENTS.md`(Expo 규칙)를 따른다: 패키지는 `npx expo install`, 화면은 `src/app/`
@@ -84,7 +85,7 @@ cd asmr-block/e2e && npx playwright test     # 화면 검사 (서버·웹·앱 �
 테스트 계정: `test@asmrblock.com` / `password123` (관리자: `admin@asmrblock.com`)
 
 ## 백엔드 규칙
-- **DB 변경은 새 Flyway 파일로만**: `src/main/resources/db/migration/V{n}__설명.sql`. 이미 있는 V 파일은 절대 수정하지 않는다. (지금 V16까지 있음 → 다음은 V17)
+- **DB 변경은 새 Flyway 파일로만**: `src/main/resources/db/migration/V{n}__설명.sql`. 이미 있는 V 파일은 절대 수정하지 않는다. (지금 V17까지 있음 → 다음은 V18)
 - 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 프로필에서만 실행). 여러 번 실행돼도 안전하게 `ON CONFLICT` 사용.
 - 응답은 항상 `ApiResponse` 형식(`success`, `message`, `data`, `error{code,message}`). 오류는 `ApiException.notFound/badRequest/...` 로 던진다.
 - 요청/응답 DTO는 record로, 기능 패키지의 `*Dtos.java` 안에 모은다. 컨트롤러에서 `Map`으로 응답을 만들지 않는다.
@@ -155,4 +156,5 @@ cd asmr-block/e2e && npx playwright test     # 화면 검사 (서버·웹·앱 �
 - [ ] 베타 출시 → 수익화: 코인 충전(인앱결제 → 영수증 확인 → `CoinService.charge`) + 구독. **정식 출시 때 `app.beta.quick-login=false`로 "베타로 바로 시작"(손님 계정) 끄기** (웹·앱 버튼은 `GET /auth/beta`가 false면 저절로 숨음)
 - [x] **나에게 맞는 추천**: 담은 블록·내 조합·들은 기록으로 트리거 취향 → 취향 저격 블록·조합 (웹·앱 홈·상점·추천 조합)
 - [x] **크리에이터 편의**: 올린 블록 고치기(이름·소개·녹음한 곳·말소리·가격)·영어 제목/소개/녹음한 곳·상점에서 내리기·돌려보낸 블록 고쳐서 다시 검수
-- [ ] 추천 다음: 수면 기록/패턴 → AI 조합 생성
+- [x] **오늘 밤 조합(진짜 AI)**: 한 줄 → Claude(Haiku)가 트리거 비율·이름 → 규칙이 두 줄로 쌓아 바로 듣기, 키 없으면 낱말·취향으로 (V17 AI 사용 기록·하루 제한·관리자 요금 줄). **사용자가 Claude 콘솔에서 키를 만들어 넣으면 AI가 켜짐**(`docs/ai_guide.md`)
+- [ ] 추천 다음: 수면 기록/패턴 → 오늘 밤 조합에 반영

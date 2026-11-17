@@ -55,7 +55,8 @@ class S3StorageServiceTest {
                 new AppProperties.Upload(200),
                 new AppProperties.Site(null),
                 new AppProperties.Limits(100, 100, 100, 100, 100, 100, 100),
-                new AppProperties.Cleanup(30, "0 40 4 * * *"));
+                new AppProperties.Cleanup(30, "0 40 4 * * *"),
+                new AppProperties.Ai("", "claude-haiku-5-5", "low", "", java.time.Duration.ofSeconds(20), 10, 1000, 30, 0.1, 0.5, 1400));
     }
 
     private Path temp(String name, String text) throws IOException {

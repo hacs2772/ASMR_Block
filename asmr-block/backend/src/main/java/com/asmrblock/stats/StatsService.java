@@ -3,6 +3,7 @@ package com.asmrblock.stats;
 import com.asmrblock.stats.StatsDtos.Activity;
 import com.asmrblock.config.AppProperties;
 import com.asmrblock.storage.StorageService;
+import com.asmrblock.tonight.AiUsageService;
 import com.asmrblock.stats.StatsDtos.Content;
 import com.asmrblock.stats.StatsDtos.Disk;
 import com.asmrblock.stats.StatsDtos.Funnel;
@@ -26,6 +27,7 @@ public class StatsService {
     private final StatsMapper statsMapper;
     private final AppProperties properties;
     private final StorageService storageService;
+    private final AiUsageService aiUsageService;
 
     /** 어디서 그만두는지 보는 기간 (최근 며칠 안에 들어온 사람) */
     public static final int DEFAULT_FUNNEL_DAYS = 14;
@@ -49,7 +51,7 @@ public class StatsService {
         Funnel funnel = new Funnel(days, n(f, "joined"), n(f, "collected"), n(f, "has_combo"), n(f, "made_combo"),
                 n(f, "collected_combo"), n(f, "listened"), n(f, "listened_10m"), n(f, "came_back"), n(f, "can_come_back"));
         return new StatsResponse(people, activity, content, n(s, "new_feedback"), statsMapper.daily(), funnel, disk(),
-                n(s, "open_reports"), storageService.info());
+                n(s, "open_reports"), storageService.info(), aiUsageService.stats());
     }
 
     /** 저장소가 있는 디스크의 남은 공간과 완성본 크기 (못 읽으면 0) */

@@ -11,6 +11,7 @@ import { AppBadges } from '../components/common/ComingSoon';
 import { useFirstRunGuide } from '../components/guide/GuideModal';
 import AssembleButton from '../components/home/AssembleButton';
 import QuickStart from '../components/home/QuickStart';
+import Tonight from '../components/home/Tonight';
 import ComboCard from '../components/playlist/ComboCard';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
 import { TRIGGER_COLOR } from '../lib/blocks';
@@ -72,6 +73,11 @@ function HomePage() {
           </div>
         </div>
         <HeroBoard />
+      </section>
+
+      {/* ---------- 오늘 밤 조합: 한 줄(AI) 또는 내 취향으로 두 줄을 쌓아서 바로 듣기 ---------- */}
+      <section className="page pb-6">
+        <Tonight />
       </section>
 
       {/* ---------- 첫 조합 바로 만들기: 트리거를 고르면 바로 쌓아서 듣기 ---------- */}

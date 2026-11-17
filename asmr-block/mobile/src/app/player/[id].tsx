@@ -31,7 +31,8 @@ const colorsOf = (track: Track | null) =>
 /** 전체 화면 플레이어: 완성본 만들기 → 재생, 수면 타이머, 오프라인 저장 */
 export default function PlayerScreen() {
   const { t } = useTranslation();
-  const { id, offline, autoplay } = useLocalSearchParams<{ id: string; offline?: string; autoplay?: string }>();
+  // notice = 만들고 바로 온 경우 어떻게 쌓았는지 한 줄 (오늘 밤 조합)
+  const { id, offline, autoplay, notice } = useLocalSearchParams<{ id: string; offline?: string; autoplay?: string; notice?: string }>();
   const playlistId = Number(id);
   const queryClient = useQueryClient();
   const { status: authStatus, user } = useAuth();
@@ -224,6 +225,7 @@ export default function PlayerScreen() {
       <TimelineArt main={p?.main ?? null} mix={p?.mix ?? null} total={p?.totalDuration ?? 0} fallbackColors={saved?.colors ?? []}
         progress={canPlay && duration > 0 ? position / duration : null} onSeek={canPlay ? seekRatio : undefined} />
 
+      {!!notice && <Text style={styles.notice} testID="player-notice">{notice}</Text>}
       <Text style={styles.title} testID="player-title">{title}</Text>
       <Text style={styles.subtitle}>
         {p
@@ -407,6 +409,7 @@ const styles = StyleSheet.create({
   artHead: { position: 'absolute', top: -4, bottom: -4, width: 3, borderRadius: 2, backgroundColor: '#fff' },
   artHint: { color: colors.faint, fontSize: 11, textAlign: 'center', marginTop: 6 },
   artGround: { height: 2, backgroundColor: colors.primary, opacity: 0.5, marginTop: 4 },
+  notice: { color: colors.primaryText, fontSize: 12, lineHeight: 17, marginBottom: 6 },
   title: { color: colors.text, fontSize: 24, fontWeight: '800' },
   subtitle: { color: colors.muted, fontSize: 14, marginTop: 4, marginBottom: space.lg },
   renderBox: { backgroundColor: colors.card, borderRadius: radius.lg, padding: space.lg, gap: space.md, alignItems: 'center' },

@@ -5,7 +5,7 @@ import { CONTACT_EMAIL } from './contact';
  * Privacy Policy · Terms of Service, English translation of legal.ko.js (same sections in the same order).
  * The Korean original prevails — when legal.ko.js changes, update this file too.
  */
-export const EFFECTIVE = 'November 15, 2026';
+export const EFFECTIVE = 'November 17, 2026';
 
 /** Shown at the top of the English pages only */
 export const NOTICE = {
@@ -24,6 +24,7 @@ export const PRIVACY = {
           <li><b>Sign-up</b>: email, password (stored in a form no one can read), nickname</li>
           <li><b>Try the beta now</b>: a guest account the Service creates for you (a random email, password and nickname). These account details are saved in your browser (or on your device in the app)</li>
           <li><b>Information created as you use the Service</b>: combos you make, blocks you collect, listening history (when you played which block or combo), the sounds, videos and photos you upload with their titles, descriptions and recording locations, feedback and reports you send with any contact details you include, and the language you choose</li>
+          <li><b>The line you write for Tonight&rsquo;s mix</b>: words such as &lsquo;reading in a café on a rainy day&rsquo;. We use them to stack the mix, and they are kept only as that mix&rsquo;s description (deleted when you delete the mix)</li>
           <li><b>Information created automatically when you connect</b>: access logs such as your IP address and browser type</li>
         </ul>
       ),
@@ -61,6 +62,7 @@ export const PRIVACY = {
         <ul>
           <li><b>Cloudflare, Inc. (USA)</b>: domain, secure connections (https) and server connection. When you visit the site, access logs (such as your IP address) pass through Cloudflare&rsquo;s network.</li>
           <li><b>jsDelivr (font delivery)</b>: access logs may be sent when the site&rsquo;s fonts load.</li>
+          <li><b>Anthropic, PBC (USA)</b>: when AI is on, AI (Claude) reads the line you write for Tonight&rsquo;s mix and picks matching triggers. Only your words are sent, never account details such as your email or nickname.</li>
           <li>Account information and uploaded files are stored on servers managed by the operator (Republic of Korea).</li>
         </ul>
       ),

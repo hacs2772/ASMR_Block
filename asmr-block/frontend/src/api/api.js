@@ -36,6 +36,15 @@ export const recommendApi = {
   combos: (size = 12) => data(axiosInstance.get('/me/recommendations/combos', { params: { size } })),
 };
 
+/**
+ * 오늘 밤 조합: 한 줄(선택) → AI(켜져 있으면) 또는 낱말·내 취향으로 두 줄 조합을 쌓고 완성본까지 시작.
+ * info → { ai, maxPromptLength, aiLeftToday }, make → { playlist, source(AI|WORDS|TASTE|STARTER), note, main, layer }
+ */
+export const tonightApi = {
+  info: () => data(axiosInstance.get('/playlists/tonight')),
+  make: (prompt, listenMinutes = 60) => data(axiosInstance.post('/playlists/tonight', { prompt: prompt || undefined, listenMinutes })),
+};
+
 /** 코인 (V16): 내 코인·내역, 유료 블록 사기, 내 판매 수익 */
 export const coinApi = {
   /** { balance, paid(충전 코인), bonus(받은 코인) } */

@@ -117,6 +117,26 @@ app:
   upload:
     # 영상 블록 최대 크기(MB). 공개용은 Cloudflare 무료 한도(100MB) 때문에 90
     max-video-mb: ${APP_UPLOAD_MAX_VIDEO_MB:200}
+  ai:
+    # AI 조합 (오늘 밤 조합의 "한 줄로 말하면 쌓아 줘요" = Claude API). 키가 없으면 AI 없이 규칙으로만 (그래도 다 됨)
+    # 키는 .env.public의 ANTHROPIC_API_KEY (docs/ai_guide.md). ⚠ 키는 저장소에 올리지 마세요
+    api-key: ${ANTHROPIC_API_KEY:}
+    # 가장 싸고 빠른 모델 (한 번에 1원도 안 듦). 더 똑똑하게: claude-sonnet-5-5 (약 20배 비쌈)
+    model: ${APP_AI_MODEL:claude-haiku-5-5}
+    # 생각 정도 (low = 싸고 빠름). 비우면 보내지 않음 (effort를 모르는 옛 모델로 바꿀 때)
+    effort: ${APP_AI_EFFORT:low}
+    # 테스트용 (비우면 Anthropic 주소)
+    base-url: ${APP_AI_BASE_URL:}
+    timeout: 20s
+    # 하루(한국 시간)에 AI를 부르는 횟수: 한 사람 · 사이트 전체 (넘으면 AI 없이 낱말로 찾아서 쌓음 → 요금이 갑자기 늘지 않음)
+    daily-per-user: ${APP_AI_DAILY_PER_USER:10}
+    daily-total: ${APP_AI_DAILY_TOTAL:1000}
+    # 한 사람이 1시간에 오늘 밤 조합을 만드는 횟수 (AI든 아니든, 넘으면 429)
+    tonight-per-hour: ${APP_AI_TONIGHT_PER_HOUR:30}
+    # 관리자 통계의 "이번 달 대략 얼마" 계산용 (Claude Haiku 5.5 요금, 100만 토큰당 달러) · 1달러 ≈ 몇 원
+    price-input-per-mtok: 0.10
+    price-output-per-mtok: 0.50
+    krw-per-usd: 1400
 
 management:
   endpoints:

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  오늘 밤 조합: 후보 블록 + AI 사용 기록 (V17). created_at은 UTC로 저장 → "오늘"·"이번 달"은 한국 시간 기준 경계를 UTC로 바꿔서 비교
+-->
+<mapper namespace="com.asmrblock.tonight.TonightMapper">
+
+    <!-- 한국 시간 오늘 0시 (UTC) -->
+    <sql id="kstTodayStart">((((NOW() AT TIME ZONE 'Asia/Seoul')::date)::timestamp AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'UTC')</sql>
+    <!-- 한국 시간 이번 달 1일 0시 (UTC) -->
+    <sql id="kstMonthStart">((date_trunc('month', NOW() AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'Asia/Seoul') AT TIME ZONE 'UTC')</sql>
+
+    <insert id="insert">
+        INSERT INTO ai_usage (user_id, feature, model, input_tokens, output_tokens, ok, error)
+        VALUES (#{userId}, #{feature}, #{model}, #{inputTokens}, #{outputTokens}, #{ok}, #{error})
+    </insert>
+
+    <!-- 오늘(한국 시간) 이 사람이 AI를 부른 횟수 -->
+    <select id="countTodayByUser" resultType="int">
+        SELECT COUNT(*) FROM ai_usage
+        WHERE user_id = #{userId} AND created_at &gt;= <include refid="kstTodayStart"/>
+    </select>
+
+    <!-- 오늘(한국 시간) 사이트 전체 -->
+    <select id="countToday" resultType="int">
+        SELECT COUNT(*) FROM ai_usage WHERE created_at &gt;= <include refid="kstTodayStart"/>
+    </select>
+
+    <!-- 관리자 통계: 오늘·이번 달 -->
+    <select id="summary" resultType="com.asmrblock.tonight.AiUsageSummary">
+        SELECT COUNT(*) FILTER (WHERE created_at &gt;= <include refid="kstTodayStart"/>) AS today_calls,
+               COUNT(*) AS month_calls,
+               COUNT(*) FILTER (WHERE NOT ok) AS month_failed,
+               COALESCE(SUM(input_tokens), 0) AS month_input_tokens,
+               COALESCE(SUM(output_tokens), 0) AS month_output_tokens
+        FROM ai_usage
+        WHERE created_at &gt;= <include refid="kstMonthStart"/>
+    </select>
+
+    <!--
+      오늘 밤 조합 후보 블록: 트리거 묶음(대분류)마다 내 블록함에 있는 것 먼저, 그다음 상점에 보이는 무료 블록 (많이 들은 순)
+      묶음마다 perGroup개까지. 아직 없는 유료 블록은 넣지 않음 (편집기처럼 담은 블록만 조합에 쓰니까 — 무료는 자동으로 담음)
+    -->
+    <select id="candidates" resultMap="com.asmrblock.block.BlockMapper.BlockMap">
+        SELECT * FROM (
+            SELECT x.*, ROW_NUMBER() OVER (PARTITION BY x.group_code ORDER BY x.owned DESC, x.play_count DESC, x.id DESC) AS rn
+            FROM (
+                SELECT b.*,
+                       c.id AS cat_id, c.name AS cat_name, c.name_en AS cat_name_en, c.code AS cat_code, c.color AS cat_color, c.icon AS cat_icon,
+                       c.parent_id AS cat_parent_id, pc.name AS cat_parent_name, pc.name_en AS cat_parent_name_en, pc.code AS cat_parent_code,
+                       u.nickname AS uploader_nickname,
+                       COALESCE(pc.code, c.code) AS group_code,
+                       (ub.block_id IS NOT NULL) AS owned
+                FROM block b
+                JOIN sound_category c ON c.id = b.category_id
+                LEFT JOIN sound_category pc ON pc.id = c.parent_id
+                LEFT JOIN users u ON u.id = b.uploader_id
+                LEFT JOIN user_block ub ON ub.block_id = b.id AND ub.user_id = #{userId}
+                WHERE b.is_active = true AND b.status = 'APPROVED'
+                  AND (ub.block_id IS NOT NULL OR (b.price = 0 AND b.is_listed = true))
+                  AND COALESCE(pc.code, c.code) IN
+                  <foreach collection="codes" item="code" open="(" separator="," close=")">#{code}</foreach>
+            ) x
+        ) y
+        WHERE y.rn &lt;= #{perGroup}
+        ORDER BY y.group_code, y.rn
+    </select>
+
+</mapper>

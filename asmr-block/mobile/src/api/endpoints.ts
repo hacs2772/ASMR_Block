@@ -23,6 +23,8 @@ import type {
   Render,
   Sticker,
   TalkType,
+  TonightInfo,
+  TonightResult,
   UploadEditRequest,
   UploadPolicy,
   User,
@@ -124,6 +126,15 @@ export const sellerApi = {
 export const recommendApi = {
   blocks: (size = 12) => api<BlockRecommendations>('/me/recommendations/blocks' + query({ size })),
   combos: (size = 12) => api<ComboRecommendations>('/me/recommendations/combos' + query({ size })),
+};
+
+/**
+ * 오늘 밤 조합: 한 줄(선택) → AI(켜져 있으면) 또는 낱말·내 취향으로 두 줄 조합을 쌓고 완성본까지 시작 (웹 tonightApi와 같음)
+ */
+export const tonightApi = {
+  info: () => api<TonightInfo>('/playlists/tonight'),
+  make: (prompt: string, listenMinutes = 60) =>
+    api<TonightResult>('/playlists/tonight', { method: 'POST', body: { ...(prompt.trim() ? { prompt: prompt.trim() } : {}), listenMinutes } }),
 };
 
 /** 코인 (V16): 내 코인·내역, 유료 블록 사기, 내 판매 수익 */

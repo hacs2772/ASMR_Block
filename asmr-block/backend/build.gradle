@@ -49,6 +49,9 @@ dependencies {
     }
     implementation 'software.amazon.awssdk:url-connection-client'
 
+    // AI 조합 만들기 (Claude API, app.ai.api-key가 있을 때만 부름. 없으면 규칙으로만 만듦)
+    implementation 'com.anthropic:anthropic-java:3.3.0'
+
     // API 문서 (Swagger UI: http://localhost:8080/swagger-ui.html)
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0'
 
