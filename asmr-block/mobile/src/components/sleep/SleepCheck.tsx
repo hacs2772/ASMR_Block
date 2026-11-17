@@ -29,7 +29,9 @@ export function SleepCheck() {
       await sleepApi.rate(p.night, rating);
       if (rating === 0) queryClient.setQueryData(['sleep', 'pending'], null);
       else setAnswered(rating);
+      // 최근 7일·이번 주 리포트·홈 "잘 잤던 날 들은 조합"을 새로 받음 (물어보는 카드는 아래에서 직접 바꿈)
       void queryClient.invalidateQueries({ queryKey: ['sleep', 'week'] });
+      void queryClient.invalidateQueries({ queryKey: ['sleep', 'good-combos'] });
       void queryClient.invalidateQueries({ queryKey: ['blocks', 'forYou'] });
     } catch (e) {
       notify(t('sleepLog.failed'), (e as Error).message);

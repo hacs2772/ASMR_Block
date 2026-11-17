@@ -887,7 +887,21 @@
     "over": "{{time}} 넘게 들었어요",
     "night": "{{date}} 밤",
     "rateThis": "이 밤 기록하기",
-    "date": "{{month}}월 {{day}}일"
+    "date": "{{month}}월 {{day}}일",
+    "goodTitle": "잘 잤던 날 들은 조합",
+    "goodLead": "오늘 밤도 이 소리로 잠들어 볼까요?",
+    "goodNights": "잘 잔 밤 {{count}}번",
+    "lastGood": "마지막 {{night}}",
+    "replayA11y": "{{title}} 다시 듣기",
+    "statGood": "잘 잔 밤",
+    "statPlayed": "틀어 본 밤",
+    "statListened": "들은 시간",
+    "nights": "{{n}}번",
+    "overShort": "{{time}}+",
+    "vsMore": "잘 잔 밤이 지난주보다 {{count}}번 늘었어요",
+    "vsLess": "잘 잔 밤이 지난주보다 {{count}}번 줄었어요",
+    "vsSame": "잘 잔 밤이 지난주와 같아요",
+    "best": "이번 주 가장 잘 잔 조합"
   },
   "deleteAccount": {
     "eyebrow": "계정",

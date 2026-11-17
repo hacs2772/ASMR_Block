@@ -58,4 +58,7 @@ public interface PlaylistMapper {
 
     /** 공개(숨기지 않은) 조합 여러 개 (추천 목록용) */
     List<Playlist> findPublicByIds(@Param("ids") Collection<Long> ids);
+
+    /** 이 사람이 볼 수 있는 조합 여러 개 (내 조합 + 남의 공개·숨기지 않은 조합) */
+    List<Playlist> findViewableByIds(@Param("ids") Collection<Long> ids, @Param("userId") Long userId);
 }

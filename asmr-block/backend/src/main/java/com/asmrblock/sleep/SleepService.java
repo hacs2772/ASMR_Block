@@ -2,11 +2,15 @@ package com.asmrblock.sleep;
 
 import com.asmrblock.common.ApiException;
 import com.asmrblock.i18n.Lang;
+import com.asmrblock.playlist.PlaylistDtos.PlaylistSummaryResponse;
+import com.asmrblock.playlist.PlaylistService;
 import com.asmrblock.recommend.RecommendDtos.TasteTrigger;
 import com.asmrblock.recommend.TasteGroup;
+import com.asmrblock.sleep.SleepDtos.GoodCombo;
 import com.asmrblock.sleep.SleepDtos.SleepCombo;
 import com.asmrblock.sleep.SleepDtos.SleepNightResponse;
 import com.asmrblock.sleep.SleepDtos.SleepPending;
+import com.asmrblock.sleep.SleepDtos.SleepReport;
 import com.asmrblock.sleep.SleepDtos.SleepWeek;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +26,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -40,9 +46,12 @@ public class SleepService {
     static final int ASK_FROM_HOUR = 4;
     static final int WEEK = 7;
     static final int GOOD_DAYS = 30;
+    /** 홈 "잘 잤던 날 들은 조합"에 보여 줄 수 */
+    static final int GOOD_COMBOS = 3;
 
     private final SleepMapper sleepMapper;
     private final SleepClock clock;
+    private final PlaylistService playlistService;
 
     /** 물어볼 어젯밤 (없으면 null): 새벽 4시 이후 · 어젯밤에 조합을 틀었고 · 아직 답하지 않았을 때 */
     @Transactional(readOnly = true)
@@ -71,21 +80,59 @@ public class SleepService {
         return new SleepNightResponse(night, rating, totalMinutes(combos), combos);
     }
 
-    /** 최근 7일 (오래된 밤 → 어젯밤) */
+    /** 최근 7일 (오래된 밤 → 어젯밤) + 이번 주 리포트 (지난주 7밤과 비교) */
     @Transactional(readOnly = true)
     public SleepWeek week(Long userId) {
         LocalDate last = nowKst().toLocalDate().minusDays(1);
         LocalDate first = last.minusDays(WEEK - 1);
-        Map<LocalDate, List<SleepCombo>> combos = combosByNight(userId, first, last);
-        Map<LocalDate, Integer> ratings = sleepMapper.nights(userId, first, last).stream()
+        LocalDate prevFirst = first.minusDays(WEEK);
+        Map<LocalDate, List<SleepCombo>> combos = combosByNight(userId, prevFirst, last);
+        Map<LocalDate, Integer> ratings = sleepMapper.nights(userId, prevFirst, last).stream()
                 .collect(Collectors.toMap(SleepNightRow::getNight, SleepNightRow::getRating));
-        List<SleepNightResponse> nights = new ArrayList<>();
-        for (LocalDate n = first; !n.isAfter(last); n = n.plusDays(1)) {
+        List<SleepNightResponse> all = new ArrayList<>();
+        for (LocalDate n = prevFirst; !n.isAfter(last); n = n.plusDays(1)) {
             List<SleepCombo> c = combos.getOrDefault(n, List.of());
-            nights.add(new SleepNightResponse(n, ratings.get(n), totalMinutes(c), c));
+            all.add(new SleepNightResponse(n, ratings.get(n), totalMinutes(c), c));
         }
+        List<SleepNightResponse> prev = all.subList(0, WEEK);
+        List<SleepNightResponse> nights = List.copyOf(all.subList(WEEK, all.size()));
+        List<GoodCombo> best = goodCombos(userId, first, last, 1);
+        SleepReport report = new SleepReport(
+                count(nights, n -> n.rating() != null && n.rating() > 0), count(nights, n -> rated(n, 3)),
+                count(nights, n -> !n.combos().isEmpty()), nights.stream().mapToInt(SleepNightResponse::minutes).sum(),
+                count(prev, n -> n.rating() != null && n.rating() > 0), count(prev, n -> rated(n, 3)),
+                count(prev, n -> !n.combos().isEmpty()), best.isEmpty() ? null : best.getFirst());
         List<TasteTrigger> good = goodGroups(userId, 3).stream().map(TasteTrigger::from).toList();
-        return new SleepWeek(nights, good);
+        return new SleepWeek(nights, good, report);
+    }
+
+    /** 잘 잤던 조합 다시 듣기: 최근 30일 잘 잔 밤에 틀었던 조합 (잘 잔 밤이 많은 순, 지금도 볼 수 있는 것만, 최대 3개) */
+    @Transactional(readOnly = true)
+    public List<GoodCombo> goodCombos(Long userId) {
+        LocalDate last = nowKst().toLocalDate().minusDays(1);
+        return goodCombos(userId, last.minusDays(GOOD_DAYS - 1), last, GOOD_COMBOS);
+    }
+
+    private List<GoodCombo> goodCombos(Long userId, LocalDate from, LocalDate to, int limit) {
+        // 지웠거나 남이 비공개로 바꾼 조합이 빠질 수 있어 넉넉히 받아서 거름
+        List<GoodComboRow> rows = sleepMapper.goodCombos(userId, from, to, limit + 5);
+        if (rows.isEmpty()) return List.of();
+        Map<Long, PlaylistSummaryResponse> summaries = playlistService
+                .viewableSummaries(rows.stream().map(GoodComboRow::getPlaylistId).toList(), userId).stream()
+                .collect(Collectors.toMap(PlaylistSummaryResponse::id, Function.identity()));
+        return rows.stream()
+                .filter(r -> summaries.containsKey(r.getPlaylistId()))
+                .limit(limit)
+                .map(r -> new GoodCombo(summaries.get(r.getPlaylistId()), r.getGoodNights(), r.getLastNight()))
+                .toList();
+    }
+
+    private static boolean rated(SleepNightResponse night, int rating) {
+        return night.rating() != null && night.rating() == rating;
+    }
+
+    private static int count(List<SleepNightResponse> nights, Predicate<SleepNightResponse> test) {
+        return (int) nights.stream().filter(test).count();
     }
 
     /** 잘 잔 밤에 많이 들은 트리거 묶음 코드 (최근 30일) → 오늘 밤 조합 AI에게 */

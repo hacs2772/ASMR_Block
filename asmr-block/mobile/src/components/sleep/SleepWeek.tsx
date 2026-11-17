@@ -7,11 +7,14 @@ import { sleepApi } from '@/api/endpoints';
 import { Chip } from '@/components/ui';
 import { notify } from '@/lib/dialog';
 import { categoryName } from '@/lib/labels';
-import { listenedLabel, nightLabel, RATINGS, ratingOf, weekdayOf } from '@/lib/sleepLog';
+import type { SleepReport } from '@/api/types';
+import { GoodComboCard } from '@/components/sleep/GoodNightCombos';
+import { compareOf, listenedLabel, listenedShort, nightLabel, RATINGS, ratingOf, weekdayOf } from '@/lib/sleepLog';
 import { colors, radius, space } from '@/theme';
 
 /**
- * 내 정보: 최근 7일 잠 기록 — 밤마다 답(😴😐😣)·틀었는지, 누르면 그 밤을 기록하거나 바꿈.
+ * 내 정보: 최근 7일 잠 기록 — 위 = 이번 주 리포트(잘 잔 밤·틀어 본 밤·들은 시간 + 지난주와 비교),
+ * 밤마다 답(😴😐😣)·틀었는지(누르면 그 밤을 기록하거나 바꿈), 이번 주 가장 잘 잔 조합(다시 듣기),
  * 아래 한 줄 = 잘 잔 밤에 많이 들은 소리 (웹 components/sleep/SleepWeek.jsx와 같음)
  */
 export function SleepWeek() {
@@ -40,6 +43,7 @@ export function SleepWeek() {
         <Ionicons name="moon" size={16} color={colors.primaryText} />
         <Text style={styles.title}>{t('sleepLog.weekTitle')}</Text>
       </View>
+      {anything && data.report ? <Report report={data.report} /> : null}
       <View style={styles.days}>
         {data.nights.map((n) => {
           const r = ratingOf(n.rating);
@@ -72,6 +76,12 @@ export function SleepWeek() {
           </View>
         </View>
       )}
+      {data.report?.best ? (
+        <View testID="sleep-best">
+          <Text style={styles.bestLabel}>{t('sleepLog.best')}</Text>
+          <GoodComboCard good={data.report.best} />
+        </View>
+      ) : null}
       <Text style={styles.note}>
         {data.goodTriggers.length > 0
           ? t('sleepLog.goodWith', { triggers: data.goodTriggers.map((g) => categoryName(g.code, g.name)).join(', ') })
@@ -81,7 +91,44 @@ export function SleepWeek() {
   );
 }
 
+/** 이번 주 리포트: 숫자 세 칸 + 지난주와 비교한 한 줄 (지난주 기록이 없으면 비교 줄은 안 보임) */
+function Report({ report }: { report: SleepReport }) {
+  const { t } = useTranslation();
+  const compare = compareOf(report);
+  const icon = compare?.trend === 'up' ? 'trending-up' : compare?.trend === 'down' ? 'trending-down' : 'remove';
+  return (
+    <View style={{ gap: space.sm }} testID="sleep-report">
+      <View style={styles.stats}>
+        <Stat label={t('sleepLog.statGood')} value={t('sleepLog.nights', { n: report.good })} testID="report-good" />
+        <Stat label={t('sleepLog.statPlayed')} value={t('sleepLog.nights', { n: report.playedNights })} testID="report-played" />
+        <Stat label={t('sleepLog.statListened')} value={listenedShort(report.minutes)} testID="report-listened" />
+      </View>
+      {compare ? (
+        <View style={styles.compare} testID="report-compare">
+          <Ionicons name={icon} size={14} color={compare.trend === 'up' ? colors.primaryText : colors.muted} />
+          <Text style={[styles.muted, { flex: 1 }]}>{compare.text}</Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function Stat({ label, value, testID }: { label: string; value: string; testID: string }) {
+  return (
+    <View style={styles.stat}>
+      <Text style={styles.statLabel} numberOfLines={1}>{label}</Text>
+      <Text style={styles.statValue} numberOfLines={1} testID={testID}>{value}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  stats: { flexDirection: 'row', gap: space.sm },
+  stat: { flex: 1, backgroundColor: colors.bg, borderRadius: radius.md, paddingHorizontal: space.sm, paddingVertical: 8 },
+  statLabel: { color: colors.muted, fontSize: 11 },
+  statValue: { color: colors.text, fontSize: 15, fontWeight: '800' },
+  compare: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  bestLabel: { color: colors.muted, fontSize: 12, fontWeight: '700', marginBottom: 6 },
   card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: space.lg, gap: space.md },
   head: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   title: { color: colors.text, fontSize: 15, fontWeight: '800' },

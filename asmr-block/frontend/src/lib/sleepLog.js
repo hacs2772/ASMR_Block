@@ -36,3 +36,22 @@ export function listenedLabel(minutes) {
 
 /** 답한 뒤 한 줄 */
 export const thanksOf = (value) => i18n.t(value === 3 ? 'sleepLog.thanksGood' : value === 1 ? 'sleepLog.thanksBad' : 'sleepLog.thanksOkay');
+
+/** 들은 시간 칸(좁아서 짧게, 넘은 단계의 합이라 "+"): 0 → "–", 30 → "30분+", 130 → "2시간+" / "2 hr+" */
+export function listenedShort(minutes) {
+  if (!minutes) return '–';
+  const time = minutes >= 60 ? i18n.t('time.hours', { count: Math.floor(minutes / 60) }) : i18n.t('time.minutes', { count: minutes });
+  return i18n.t('sleepLog.overShort', { time });
+}
+
+/** 이번 주 리포트: 잘 잔 밤을 지난주와 비교한 한 줄 (지난주 기록이 하나도 없으면 빈 글자). trend = up · down · same */
+export function compareOf(report) {
+  if (!report || (report.prevRated === 0 && report.prevPlayedNights === 0)) return null;
+  const diff = report.good - report.prevGood;
+  if (diff > 0) return { trend: 'up', text: i18n.t('sleepLog.vsMore', { count: diff }) };
+  if (diff < 0) return { trend: 'down', text: i18n.t('sleepLog.vsLess', { count: -diff }) };
+  return { trend: 'same', text: i18n.t('sleepLog.vsSame') };
+}
+
+/** 잘 잤던 조합 한 줄: "잘 잔 밤 2번 · 마지막 11월 15일 밤" */
+export const goodComboLine = (g) => `${i18n.t('sleepLog.goodNights', { count: g.goodNights })} · ${i18n.t('sleepLog.lastGood', { night: nightLabel(g.lastNight) })}`;

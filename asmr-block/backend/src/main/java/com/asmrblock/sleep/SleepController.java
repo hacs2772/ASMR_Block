@@ -1,6 +1,7 @@
 package com.asmrblock.sleep;
 
 import com.asmrblock.common.ApiResponse;
+import com.asmrblock.sleep.SleepDtos.GoodCombo;
 import com.asmrblock.sleep.SleepDtos.RateRequest;
 import com.asmrblock.sleep.SleepDtos.SleepNightResponse;
 import com.asmrblock.sleep.SleepDtos.SleepPending;
@@ -17,8 +18,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.util.List;
 
-/** 잠 기록 (로그인 필요): 어젯밤 물어보기 · 답 남기기 · 최근 7일 */
+/** 잠 기록 (로그인 필요): 어젯밤 물어보기 · 답 남기기 · 최근 7일(+ 이번 주 리포트) · 잘 잤던 조합 다시 듣기 */
 @RestController
 @RequestMapping("/api/v1/me/sleep")
 @RequiredArgsConstructor
@@ -44,5 +46,11 @@ public class SleepController {
     @GetMapping("/week")
     public ApiResponse<SleepWeek> week(@AuthenticationPrincipal Long userId) {
         return ApiResponse.ok(sleepService.week(userId));
+    }
+
+    // 잘 잤던 날 들은 조합 (최근 30일, 최대 3개) → 홈 "다시 듣기"
+    @GetMapping("/good-combos")
+    public ApiResponse<List<GoodCombo>> goodCombos(@AuthenticationPrincipal Long userId) {
+        return ApiResponse.ok(sleepService.goodCombos(userId));
     }
 }

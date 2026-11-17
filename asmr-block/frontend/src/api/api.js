@@ -44,6 +44,8 @@ export const sleepApi = {
   pending: () => data(axiosInstance.get('/me/sleep/pending')),
   rate: (night, rating) => data(axiosInstance.put(`/me/sleep/nights/${night}`, { rating })),
   week: () => data(axiosInstance.get('/me/sleep/week')),
+  /** 잘 잤던 날 들은 조합 (최근 30일, 최대 3개) → [{ combo, goodNights, lastNight }] */
+  goodCombos: () => data(axiosInstance.get('/me/sleep/good-combos')),
 };
 
 /**

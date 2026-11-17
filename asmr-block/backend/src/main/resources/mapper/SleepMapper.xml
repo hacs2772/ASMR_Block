@@ -59,6 +59,17 @@
         LIMIT #{limit}
     </select>
 
+    <!-- 잘 잔 밤(3)에 틀었던 조합: 잘 잔 밤이 많은 순 → 최근 순 (지운 조합은 sleep_night_playlist에서 같이 지워짐) -->
+    <select id="goodCombos" resultType="com.asmrblock.sleep.GoodComboRow">
+        SELECT sp.playlist_id, COUNT(*) AS good_nights, MAX(sn.night) AS last_night
+        FROM sleep_night sn
+        JOIN sleep_night_playlist sp ON sp.user_id = sn.user_id AND sp.night = sn.night
+        WHERE sn.user_id = #{userId} AND sn.rating = 3 AND sn.night BETWEEN #{from} AND #{to}
+        GROUP BY sp.playlist_id
+        ORDER BY COUNT(*) DESC, MAX(sn.night) DESC, sp.playlist_id DESC
+        LIMIT #{limit}
+    </select>
+
     <delete id="deleteAllOf">
         DELETE FROM sleep_night WHERE user_id = #{userId}
     </delete>

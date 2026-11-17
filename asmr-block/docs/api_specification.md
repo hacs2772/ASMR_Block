@@ -711,9 +711,16 @@ V16. 유료 블록(`price` > 0)은 **코인**으로 사요. 코인은 두 가지
 |------|------|------|
 | GET | `/me/sleep/pending` | 물어볼 어젯밤 `{ "night": "2026-11-16", "combos": [ { "id": 1, "title": "비 오는 밤", "minutes": 60 } ] }` 또는 `data: null` — 한국 시간 **새벽 4시 이후**, 어젯밤에 조합을 틀었고(재생·오래 들음 기록), 아직 답하지 않았을 때만. `minutes` = 그 조합에서 넘은 듣기 단계(틀기만 했으면 0) |
 | PUT | `/me/sleep/nights/{night}` | 답 남기기 `{ "rating": 3 }` — 0 건너뛰기(다시 안 물어봄) · 1 못 잤어요 · 2 그저 그래요 · 3 잘 잤어요. **지난 7일 안의 밤만**(오늘·미래 400), 다시 보내면 바꿈, 그 밤에 틀었던 조합도 같이 저장 → `{ night, rating, minutes, combos }` |
-| GET | `/me/sleep/week` | 최근 7일 (오래된 밤 → 어젯밤) `{ "nights": [ { "night", "rating"(없으면 null), "minutes", "combos" } ], "goodTriggers": [ { "code": "rain", "name": "빗소리·물" } ] }` — goodTriggers = 최근 30일 잘 잔 밤에 많이 들은 트리거(최대 3) |
+| GET | `/me/sleep/week` | 최근 7일 (오래된 밤 → 어젯밤) `{ "nights": [ { "night", "rating"(없으면 null), "minutes", "combos" } ], "goodTriggers": [ { "code": "rain", "name": "빗소리·물" } ], "report": { … } }` — goodTriggers = 최근 30일 잘 잔 밤에 많이 들은 트리거(최대 3), report = **이번 주 리포트**(아래) |
+| GET | `/me/sleep/good-combos` | **잘 잤던 날 들은 조합** (홈 "다시 듣기") `[ { "combo": { 조합 요약 PlaylistSummaryResponse }, "goodNights": 3, "lastNight": "2026-11-16" } ]` — 최근 30일 잘 잔 밤(3)에 틀었던 조합, 잘 잔 밤이 많은 순 → 최근 순, **최대 3개**. 지금도 들을 수 있는 것만(내 조합 + 남의 공개·숨기지 않은 조합 — 지웠거나 남이 비공개로 바꾸면 빠짐), 없으면 `[]` |
 
 - **밤** = 한국 시간 그날 17시 ~ 다음 날 17시 (예: 16일 밤 = 16일 17시 ~ 17일 17시)
+- **이번 주 리포트** `report` = 최근 7밤 + 그 앞 7밤(지난주)
+  ```json
+  { "rated": 5, "good": 3, "playedNights": 5, "minutes": 210, "prevRated": 2, "prevGood": 1, "prevPlayedNights": 2,
+    "best": { "combo": { … }, "goodNights": 2, "lastNight": "2026-11-16" } }
+  ```
+  rated = 답한 밤(건너뜀 빼고) · good = 잘 잔 밤 · playedNights = 조합을 튼 밤 · minutes = 밤마다 넘은 듣기 단계의 합(대략, "3시간+") · prev* = 지난주 같은 숫자(둘 다 0이면 화면에 비교 줄 없음) · best = 이번 주 가장 잘 잔 조합(없으면 null)
 - **취향에 반영**: 잘 잔 밤(3)에 틀었던 조합의 블록은 취향 점수 +2, 못 잔 밤(1)은 -1 (최근 60일) → 나에게 맞는 추천·오늘 밤 조합(내 취향)에. **오늘 밤 조합 AI**에게도 잘 잔 밤의 트리거를 `<slept_well_with>`로 알려 줌(한 줄이 먼저)
 - 관리자 통계 `sleep`: `{ "rated", "good", "okay", "bad" }` (최근 14일, 건너뜀 빼고). 탈퇴하면 잠 기록도 지움
 

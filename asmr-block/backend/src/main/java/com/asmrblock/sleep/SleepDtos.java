@@ -1,5 +1,6 @@
 package com.asmrblock.sleep;
 
+import com.asmrblock.playlist.PlaylistDtos.PlaylistSummaryResponse;
 import com.asmrblock.recommend.RecommendDtos.TasteTrigger;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -33,7 +34,20 @@ public final class SleepDtos {
     public record SleepNightResponse(LocalDate night, Integer rating, int minutes, List<SleepCombo> combos) {
     }
 
-    /** 최근 7일 (오래된 밤 → 어젯밤) + 잘 잔 밤에 많이 들은 트리거 (최근 30일, 최대 3개) */
-    public record SleepWeek(List<SleepNightResponse> nights, List<TasteTrigger> goodTriggers) {
+    /** 최근 7일 (오래된 밤 → 어젯밤) + 잘 잔 밤에 많이 들은 트리거 (최근 30일, 최대 3개) + 이번 주 리포트 */
+    public record SleepWeek(List<SleepNightResponse> nights, List<TasteTrigger> goodTriggers, SleepReport report) {
+    }
+
+    /** 잘 잤던 조합 다시 듣기: 조합 요약 + 잘 잔 밤 수 + 마지막으로 잘 잔 밤 */
+    public record GoodCombo(PlaylistSummaryResponse combo, int goodNights, LocalDate lastNight) {
+    }
+
+    /**
+     * 이번 주(최근 7밤) 잠 리포트 + 지난주(그 앞 7밤)와 비교.
+     * rated = 답한 밤(건너뜀 빼고) · good = 잘 잔 밤 · playedNights = 조합을 튼 밤 · minutes = 들은 시간(넘은 단계의 합, 대략)
+     * best = 이번 주 가장 잘 잔 조합 (없으면 null)
+     */
+    public record SleepReport(int rated, int good, int playedNights, int minutes,
+                              int prevRated, int prevGood, int prevPlayedNights, GoodCombo best) {
     }
 }

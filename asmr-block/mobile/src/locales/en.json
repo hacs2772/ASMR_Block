@@ -903,6 +903,23 @@
     "over": "Listened over {{time}}",
     "night": "Night of {{date}}",
     "rateThis": "Log this night",
-    "date": "{{month}}/{{day}}"
+    "date": "{{month}}/{{day}}",
+    "goodTitle": "Combos you slept well with",
+    "goodLead": "Fall asleep to them again tonight?",
+    "goodNights_one": "Slept well {{count}} night",
+    "goodNights_other": "Slept well {{count}} nights",
+    "lastGood": "last: {{night}}",
+    "replayA11y": "Play {{title}} again",
+    "statGood": "Slept well",
+    "statPlayed": "Nights played",
+    "statListened": "Listened",
+    "nights": "{{n}}",
+    "overShort": "{{time}}+",
+    "vsMore_one": "{{count}} more good night than last week",
+    "vsMore_other": "{{count}} more good nights than last week",
+    "vsLess_one": "{{count}} fewer good night than last week",
+    "vsLess_other": "{{count}} fewer good nights than last week",
+    "vsSame": "Same number of good nights as last week",
+    "best": "Best combo this week"
   }
 }

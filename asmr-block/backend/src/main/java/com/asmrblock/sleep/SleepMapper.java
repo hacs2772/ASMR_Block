@@ -26,6 +26,9 @@ public interface SleepMapper {
 
     List<TasteGroup> goodNightGroups(@Param("userId") Long userId, @Param("since") LocalDate since, @Param("limit") int limit);
 
+    List<GoodComboRow> goodCombos(@Param("userId") Long userId, @Param("from") LocalDate from, @Param("to") LocalDate to,
+                                  @Param("limit") int limit);
+
     void deleteAllOf(@Param("userId") Long userId);
 
     SleepStats stats(@Param("since") LocalDate since);

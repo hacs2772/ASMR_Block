@@ -12,6 +12,7 @@ import { BlockCard } from '@/components/BlockCard';
 import { TriggerPicker } from '@/components/tingle/TriggerPicker';
 import { TonightCard } from '@/components/tonight/TonightCard';
 import { SleepCheck } from '@/components/sleep/SleepCheck';
+import { GoodNightCombos } from '@/components/sleep/GoodNightCombos';
 import { BlockLoader } from '@/components/BlockLoader';
 import { PlaylistCard } from '@/components/PlaylistCard';
 import { Button } from '@/components/ui';
@@ -94,6 +95,9 @@ export default function HomeScreen() {
           )}
         </>
       )}
+
+      {/* 잘 잤던 날 들은 조합 다시 듣기 (잠 기록에서 잘 잤어요라고 답한 밤의 조합, 없으면 안 보임) */}
+      <GoodNightCombos />
 
       {/* 오늘 밤 조합: 한 줄(AI) 또는 내 취향으로 두 줄을 쌓아 바로 듣기 */}
       {status === 'signedIn' && (

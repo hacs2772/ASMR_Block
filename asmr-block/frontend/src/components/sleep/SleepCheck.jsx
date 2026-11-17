@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { errorMessage, sleepApi } from '../../api/api';
 import { listenedLabel, nightLabel, RATINGS, thanksOf } from '../../lib/sleepLog';
+import { SLEEP_RATED } from './GoodNightCombos';
 import useAuthStore from '../../store/authStore';
 
 /**
@@ -28,6 +29,8 @@ function SleepCheck({ className = '' }) {
     setBusy(true);
     try {
       await sleepApi.rate(pending.night, rating);
+      // 홈 "잘 잤던 날 들은 조합"이 바로 새로 받게 (components/sleep/GoodNightCombos.jsx)
+      window.dispatchEvent(new Event(SLEEP_RATED));
       if (rating === 0) setPending(null);
       else setAnswered(rating);
     } catch (e) {

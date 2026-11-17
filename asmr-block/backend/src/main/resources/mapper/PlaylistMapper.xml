@@ -151,6 +151,13 @@
         <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
     </select>
 
+    <!-- 이 사람이 볼 수 있는 조합 여러 개: 내 조합(공개 여부 상관없이) + 남의 공개·숨기지 않은 조합 (Playlist.canView와 같음) -->
+    <select id="findViewableByIds" resultType="com.asmrblock.playlist.Playlist">
+        <include refid="selectPlaylist"/>
+        WHERE (p.user_id = #{userId} OR (p.is_public = true AND p.is_hidden = false)) AND p.id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
+
     <select id="countPublic" resultType="long">
         SELECT COUNT(*) FROM playlist WHERE is_public = true AND is_hidden = false
     </select>

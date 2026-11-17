@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { IoMoon } from 'react-icons/io5';
+import { IoMoon, IoRemove, IoTrendingDown, IoTrendingUp } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { errorMessage, sleepApi } from '../../api/api';
 import { categoryName } from '../../lib/blocks';
-import { listenedLabel, nightLabel, RATINGS, ratingOf, weekdayOf } from '../../lib/sleepLog';
+import { compareOf, listenedLabel, listenedShort, nightLabel, RATINGS, ratingOf, weekdayOf } from '../../lib/sleepLog';
+import { GoodComboRow } from './GoodNightCombos';
 
 /**
- * 내 정보: 최근 7일 잠 기록 — 밤마다 답(😴😐😣)·틀었는지, 누르면 그 밤을 기록하거나 바꿈.
+ * 내 정보: 최근 7일 잠 기록 — 위 = 이번 주 리포트(잘 잔 밤·틀어 본 밤·들은 시간 + 지난주와 비교),
+ * 밤마다 답(😴😐😣)·틀었는지(누르면 그 밤을 기록하거나 바꿈), 이번 주 가장 잘 잔 조합(다시 듣기),
  * 아래 한 줄 = 잘 잔 밤에 많이 들은 소리 (앱 components/sleep/SleepWeek.tsx와 같음)
  */
 function SleepWeek({ className = '' }) {
@@ -30,9 +32,11 @@ function SleepWeek({ className = '' }) {
   if (!week) return null;
   const selected = week.nights.find((n) => n.night === open);
   const anything = week.nights.some((n) => n.rating != null || n.combos.length > 0);
+  const report = week.report;
   return (
     <div className={`card p-5 ${className}`} data-testid="sleep-week">
       <p className="flex items-center gap-2 font-extrabold"><IoMoon className="text-pink-text" aria-hidden="true" />{t('sleepLog.weekTitle')}</p>
+      {anything && report && <Report report={report} />}
       <div className="mt-4 grid grid-cols-7 gap-1.5">
         {week.nights.map((n) => {
           const r = ratingOf(n.rating);
@@ -68,11 +72,47 @@ function SleepWeek({ className = '' }) {
           </div>
         </div>
       )}
+      {report?.best && (
+        <div className="mt-4" data-testid="sleep-best">
+          <p className="mb-1.5 text-xs font-bold text-muted">{t('sleepLog.best')}</p>
+          <GoodComboRow good={report.best} />
+        </div>
+      )}
       <p className="mt-3 text-xs text-muted">
         {week.goodTriggers.length > 0
           ? t('sleepLog.goodWith', { triggers: week.goodTriggers.map((g) => categoryName(g.code, g.name)).join(', ') })
           : !anything ? t('sleepLog.weekEmpty') : t('sleepLog.rateThis')}
       </p>
+    </div>
+  );
+}
+
+/** 이번 주 리포트: 숫자 세 칸 + 지난주와 비교한 한 줄 (지난주 기록이 없으면 비교 줄은 안 보임) */
+function Report({ report }) {
+  const { t } = useTranslation();
+  const compare = compareOf(report);
+  const Trend = compare?.trend === 'up' ? IoTrendingUp : compare?.trend === 'down' ? IoTrendingDown : IoRemove;
+  return (
+    <div className="mt-4" data-testid="sleep-report">
+      <div className="grid grid-cols-3 gap-2">
+        <Stat label={t('sleepLog.statGood')} value={t('sleepLog.nights', { n: report.good })} testId="report-good" />
+        <Stat label={t('sleepLog.statPlayed')} value={t('sleepLog.nights', { n: report.playedNights })} testId="report-played" />
+        <Stat label={t('sleepLog.statListened')} value={listenedShort(report.minutes)} testId="report-listened" />
+      </div>
+      {compare && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs text-muted" data-testid="report-compare">
+          <Trend aria-hidden="true" className={compare.trend === 'up' ? 'text-pink-text' : ''} />{compare.text}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Stat({ label, value, testId }) {
+  return (
+    <div className="rounded-xl bg-night px-3 py-2.5">
+      <p className="truncate text-[11px] text-muted">{label}</p>
+      <p className="truncate text-base font-extrabold" data-testid={testId}>{value}</p>
     </div>
   );
 }

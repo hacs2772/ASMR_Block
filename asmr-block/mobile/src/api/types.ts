@@ -341,4 +341,14 @@ export type SleepCombo = { id: number; title: string; minutes: number };
 export type SleepPending = { night: string; combos: SleepCombo[] };
 /** rating: 3 잘 잤어요 · 2 그저 그래요 · 1 못 잤어요 · 0 건너뜀 · null 아직 */
 export type SleepNight = { night: string; rating: number | null; minutes: number; combos: SleepCombo[] };
-export type SleepWeek = { nights: SleepNight[]; goodTriggers: TasteTrigger[] };
+/** 잘 잤던 조합 다시 듣기: 조합 요약 + 잘 잔 밤 수 + 마지막으로 잘 잔 밤 */
+export type GoodCombo = { combo: PlaylistSummary; goodNights: number; lastNight: string };
+/**
+ * 이번 주(최근 7밤) 잠 리포트 + 지난주(그 앞 7밤): rated = 답한 밤(건너뜀 빼고) · good = 잘 잔 밤 ·
+ * playedNights = 조합을 튼 밤 · minutes = 들은 시간(넘은 단계의 합, 대략) · best = 이번 주 가장 잘 잔 조합
+ */
+export type SleepReport = {
+  rated: number; good: number; playedNights: number; minutes: number;
+  prevRated: number; prevGood: number; prevPlayedNights: number; best: GoodCombo | null;
+};
+export type SleepWeek = { nights: SleepNight[]; goodTriggers: TasteTrigger[]; report: SleepReport };

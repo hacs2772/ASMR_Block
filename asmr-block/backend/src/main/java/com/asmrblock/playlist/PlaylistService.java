@@ -317,6 +317,17 @@ public class PlaylistService {
         return summaries(ids.stream().map(byId::get).filter(Objects::nonNull).toList(), viewerId);
     }
 
+    /** 이 사람이 볼 수 있는 조합 여러 개를 ids 순서대로 요약 (지웠거나 비공개·숨김이 된 남의 조합은 빠짐) — 잘 잤던 조합 다시 듣기 */
+    @Transactional(readOnly = true)
+    public List<PlaylistSummaryResponse> viewableSummaries(List<Long> ids, Long viewerId) {
+        if (ids.isEmpty() || viewerId == null) {
+            return List.of();
+        }
+        Map<Long, Playlist> byId = playlistMapper.findViewableByIds(ids, viewerId).stream()
+                .collect(Collectors.toMap(Playlist::getId, p -> p));
+        return summaries(ids.stream().map(byId::get).filter(Objects::nonNull).toList(), viewerId);
+    }
+
     /** 목록 요약: 동 정보 + 보는 사람이 이미 담았는지 + 잠긴 유료 블록 수 (모두 쿼리 몇 번으로) */
     private List<PlaylistSummaryResponse> summaries(List<Playlist> playlists, Long viewerId) {
         loadLayers(playlists);

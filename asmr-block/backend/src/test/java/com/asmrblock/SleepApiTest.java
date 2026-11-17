@@ -165,4 +165,77 @@ class SleepApiTest extends IntegrationTest {
                 .andExpect(status().isOk());
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM sleep_night WHERE user_id = ?", Integer.class, userId)).isZero();
     }
+
+    @Test
+    @DisplayName("이번 주 리포트(답한 밤·잘 잔 밤·틀어 본 밤·들은 시간·지난주) + 가장 잘 잔 조합, 잘 잤던 조합 다시 듣기(남이 비공개로 바꾸면 빠짐)")
+    void reportAndGoodCombos() throws Exception {
+        String token = newUser().accessToken();
+        long userId = userIdOf(token);
+        collect(token, 1, 4);
+        long rain = combo(token, "빗소리 조합", 1);
+        long tap = combo(token, "탭핑 조합", 4);
+        String owner = newUser().accessToken();
+        collect(owner, 1);
+        long pub = idOf(postJson("/api/v1/playlists", """
+                {"title":"남의 공개 조합","isPublic":true,"main":{"items":[{"blockId":1,"repeat":2}]}}
+                """, owner).andExpect(status().isCreated()));
+
+        LocalDate d1 = today().minusDays(1);
+        LocalDate d2 = today().minusDays(2);
+        LocalDate d3 = today().minusDays(3);
+        LocalDate d4 = today().minusDays(4);
+        played(userId, rain, utc(d1, 23, 0));
+        played(userId, tap, utc(d1, 23, 30));
+        listened(userId, rain, 60, utc(today(), 0, 30));
+        played(userId, rain, utc(d2, 23, 0));
+        played(userId, tap, utc(d3, 23, 0));
+        played(userId, pub, utc(d4, 23, 0));
+        at(9);
+        putJson("/api/v1/me/sleep/nights/" + d1, "{\"rating\":3}", token).andExpect(status().isOk());
+        putJson("/api/v1/me/sleep/nights/" + d2, "{\"rating\":3}", token).andExpect(status().isOk());
+        putJson("/api/v1/me/sleep/nights/" + d3, "{\"rating\":1}", token).andExpect(status().isOk());
+        putJson("/api/v1/me/sleep/nights/" + d4, "{\"rating\":3}", token).andExpect(status().isOk());
+        // 지난주: 9일 전 잘 잤어요(빗소리), 10일 전 그저 그래요 (7일보다 오래된 밤은 화면에서 못 남겨서 직접 넣음)
+        LocalDate d9 = today().minusDays(9);
+        played(userId, rain, utc(d9, 23, 0));
+        jdbc.update("INSERT INTO sleep_night (user_id, night, rating) VALUES (?, ?, 3), (?, ?, 2)", userId, d9, userId, today().minusDays(10));
+        jdbc.update("INSERT INTO sleep_night_playlist (user_id, night, playlist_id) VALUES (?, ?, ?)", userId, d9, rain);
+
+        getWithToken("/api/v1/me/sleep/week", token)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.nights.length()").value(7))
+                .andExpect(jsonPath("$.data.report.rated").value(4))
+                .andExpect(jsonPath("$.data.report.good").value(3))
+                .andExpect(jsonPath("$.data.report.playedNights").value(4))
+                .andExpect(jsonPath("$.data.report.minutes").value(60))
+                .andExpect(jsonPath("$.data.report.prevRated").value(2))
+                .andExpect(jsonPath("$.data.report.prevGood").value(1))
+                .andExpect(jsonPath("$.data.report.prevPlayedNights").value(1))
+                .andExpect(jsonPath("$.data.report.best.combo.id").value(rain))
+                .andExpect(jsonPath("$.data.report.best.goodNights").value(2))
+                .andExpect(jsonPath("$.data.report.best.lastNight").value(d1.toString()));
+
+        // 최근 30일: 빗소리(잘 잔 밤 3번) → 탭핑(1번, 어젯밤) → 남의 공개 조합(1번, 4일 전)
+        String good = json(getWithToken("/api/v1/me/sleep/good-combos", token).andExpect(status().isOk()));
+        assertThat((List<Integer>) JsonPath.read(good, "$.data[*].combo.id")).containsExactly((int) rain, (int) tap, (int) pub);
+        assertThat((Integer) JsonPath.read(good, "$.data[0].goodNights")).isEqualTo(3);
+        assertThat((String) JsonPath.read(good, "$.data[0].lastNight")).isEqualTo(d1.toString());
+        assertThat((String) JsonPath.read(good, "$.data[0].combo.title")).isEqualTo("빗소리 조합");
+        assertThat((List<String>) JsonPath.read(good, "$.data[0].combo.previewColors")).isNotEmpty();
+
+        // 남이 비공개로 바꾸면 더는 못 들으니 빠짐
+        mvc.perform(bearer(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch("/api/v1/playlists/" + pub + "/visibility")
+                        .contentType("application/json").content("{\"isPublic\":false}"), owner))
+                .andExpect(status().isOk());
+        String after = json(getWithToken("/api/v1/me/sleep/good-combos", token));
+        assertThat((List<Integer>) JsonPath.read(after, "$.data[*].combo.id")).containsExactly((int) rain, (int) tap);
+
+        // 기록이 없는 사람은 빈 목록 · 리포트는 0
+        String fresh = newUser().accessToken();
+        getWithToken("/api/v1/me/sleep/good-combos", fresh).andExpect(jsonPath("$.data.length()").value(0));
+        getWithToken("/api/v1/me/sleep/week", fresh)
+                .andExpect(jsonPath("$.data.report.rated").value(0))
+                .andExpect(jsonPath("$.data.report.best").doesNotExist());
+        mvc.perform(get("/api/v1/me/sleep/good-combos")).andExpect(status().isUnauthorized());
+    }
 }

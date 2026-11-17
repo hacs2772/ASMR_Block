@@ -6,6 +6,7 @@ import type {
   Creator,
   CreatorMyStats,
   Earnings,
+  GoodCombo,
   Purchase,
   Wallet,
   NotificationItem,
@@ -139,6 +140,8 @@ export const sleepApi = {
   pending: () => api<SleepPending | null>('/me/sleep/pending'),
   rate: (night: string, rating: number) => api<SleepNight>(`/me/sleep/nights/${night}`, { method: 'PUT', body: { rating } }),
   week: () => api<SleepWeek>('/me/sleep/week'),
+  /** 잘 잤던 날 들은 조합 (최근 30일, 최대 3개) */
+  goodCombos: () => api<GoodCombo[]>('/me/sleep/good-combos'),
 };
 
 /**

@@ -14,6 +14,7 @@ import QuickStart from '../components/home/QuickStart';
 import Tonight from '../components/home/Tonight';
 import MyCombosNow from '../components/home/MyCombosNow';
 import SleepCheck from '../components/sleep/SleepCheck';
+import GoodNightCombos from '../components/sleep/GoodNightCombos';
 import ComboCard from '../components/playlist/ComboCard';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
 import { TRIGGER_COLOR } from '../lib/blocks';
@@ -88,6 +89,9 @@ function HomePage() {
         <HeroBoard />
       </section>
       )}
+
+      {/* ---------- 잘 잤던 날 들은 조합 다시 듣기 (잠 기록에서 잘 잤어요라고 답한 밤의 조합, 없으면 안 보임) ---------- */}
+      {isAuthenticated && <GoodNightCombos />}
 
       {/* ---------- 오늘 밤 조합: 한 줄(AI) 또는 내 취향으로 두 줄을 쌓아서 바로 듣기 ---------- */}
       <section className="page pb-6">
