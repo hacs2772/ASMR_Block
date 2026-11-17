@@ -57,7 +57,7 @@ class TonightApiTest extends IntegrationTest {
         for (int i = 1; i < starts.size(); i++) {
             assertThat(starts.get(i)).isGreaterThan(starts.get(i - 1) + lengths.get(i - 1));
         }
-        assertThat((String) JsonPath.read(body, "$.data.playlist.render.status")).isIn("PENDING", "PROCESSING", "COMPLETED");
+        assertThat((String) JsonPath.read(body, "$.data.playlist.render.status")).isIn("PENDING", "PROCESSING", "DONE");
 
         // 쓴 무료 블록은 내 블록함에 저절로 담김
         long first = ((Number) JsonPath.read(body, "$.data.playlist.main.items[0].blockId")).longValue();

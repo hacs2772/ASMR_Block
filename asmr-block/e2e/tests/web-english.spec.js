@@ -11,6 +11,7 @@ const PAGES = [
   ['/guide', 'What are tingles?'],
   ['/privacy', 'Privacy Policy'],
   ['/terms', 'Terms of Service'],
+  ['/delete-account', 'Delete your account'],
   ['/login', 'Log in'],
   ['/signup', 'Sign up'],
 ];

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
 import { setLang } from '../locales';
 import { CONTACT_EMAIL } from '../content/contact';
+import useAuthStore from '../store/authStore';
 import * as LEGAL_KO from '../content/legal.ko';
 import * as LEGAL_EN from '../content/legal.en';
 
@@ -68,5 +69,37 @@ export function TermsPage() {
   const { TERMS } = useLegal();
   return (
     <LegalLayout doc={TERMS} other={<Link to="/privacy" className="underline hover:text-ink">{t('legal.viewPrivacy')}</Link>} />
+  );
+}
+
+/**
+ * 계정 삭제 안내 (로그인 없이도 열림) — 구글 플레이가 요구하는 "앱 밖에서 계정 삭제를 요청하는 웹 페이지".
+ * 앱·웹 "회원 탈퇴"로 바로 지우거나, 로그인이 안 되면 메일로. 지워지는 것·남는 것은 개인정보 처리방침과 같게
+ */
+export function DeleteAccountPage() {
+  const { t } = useTranslation();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const list = (keys) => <ul className="space-y-1.5">{keys.map((k) => <li key={k}>{t(`deleteAccount.${k}`)}</li>)}</ul>;
+  return (
+    <div className="page max-w-3xl pb-20 pt-10" data-testid="delete-account">
+      <p className="eyebrow">{t('deleteAccount.eyebrow')}</p>
+      <h1 className="text-3xl font-black tracking-tight">{t('deleteAccount.title')}</h1>
+      <p className="mt-3 text-muted">{t('deleteAccount.lead')}</p>
+      <div className="legal mt-8 space-y-8 text-[15px] leading-relaxed text-ink/90">
+        <Section n={1} title={t('deleteAccount.howTitle')}>
+          {list(['stepApp', 'stepWeb'])}
+          <p className="break-words">{t('deleteAccount.stepMail', { email: CONTACT_EMAIL })}</p>
+          <Link to={isAuthenticated ? '/profile' : '/login'} state={isAuthenticated ? undefined : { from: '/profile' }}
+            className="btn-line mt-2 inline-flex" data-testid="delete-account-go">
+            {isAuthenticated ? t('deleteAccount.goProfile') : t('deleteAccount.goLogin')}
+          </Link>
+        </Section>
+        <Section n={2} title={t('deleteAccount.deletedTitle')}>{list(['deleted1', 'deleted2', 'deleted3', 'deleted4'])}</Section>
+        <Section n={3} title={t('deleteAccount.keptTitle')}>{list(['kept1', 'kept2', 'kept3'])}</Section>
+      </div>
+      <p className="mt-12 border-t border-line pt-6 text-sm text-muted">
+        <Link to="/privacy" className="underline hover:text-ink">{t('deleteAccount.more')}</Link>
+      </p>
+    </div>
   );
 }

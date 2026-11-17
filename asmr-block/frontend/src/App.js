@@ -15,7 +15,7 @@ import { GuideModal } from './components/guide/GuideModal';
 import Header from './components/common/Header';
 import AdminPage from './pages/AdminPage';
 import { LoginPage, SignupPage } from './pages/AuthPages';
-import { PrivacyPage, TermsPage } from './pages/LegalPages';
+import { DeleteAccountPage, PrivacyPage, TermsPage } from './pages/LegalPages';
 import CombosPage from './pages/CombosPage';
 import CreatePage from './pages/CreatePage';
 import GuidePage from './pages/GuidePage';
@@ -84,6 +84,7 @@ function App() {
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
+            <Route path="/delete-account" element={<DeleteAccountPage />} />
             {/* 예전 주소 */}
             <Route path="/explore" element={<Navigate to="/shop" replace />} />
             <Route path="/playlists" element={<Navigate to="/me/combos" replace />} />

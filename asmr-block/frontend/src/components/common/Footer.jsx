@@ -36,6 +36,7 @@ function Footer() {
             <li><button type="button" onClick={() => useFeedback.getState().open()} className="hover:text-ink">{t('footer.feedback')}</button></li>
             <li><Link to="/terms" className="hover:text-ink">{t('footer.terms')}</Link></li>
             <li><Link to="/privacy" className="font-bold hover:text-ink">{t('footer.privacy')}</Link></li>
+            <li><Link to="/delete-account" className="hover:text-ink">{t('footer.deleteAccount')}</Link></li>
           </ul>
         </div>
       </div>

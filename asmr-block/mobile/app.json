@@ -9,8 +9,11 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0A0A0F",
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.asmrblock.app"
+      "supportsTablet": false,
+      "bundleIdentifier": "com.asmrblock.app",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.asmrblock.app",
@@ -23,7 +26,8 @@
       "predictiveBackGestureEnabled": false,
       "blockedPermissions": [
         "android.permission.SYSTEM_ALERT_WINDOW",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA"
       ]
     },
     "web": {

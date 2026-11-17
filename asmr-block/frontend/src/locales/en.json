@@ -90,7 +90,8 @@
     "feedback": "Send feedback",
     "terms": "Terms of Service",
     "privacy": "Privacy Policy",
-    "beta": "Beta"
+    "beta": "Beta",
+    "deleteAccount": "Delete account"
   },
   "common": {
     "close": "Close",
@@ -881,5 +882,26 @@
     "night": "Night of {{date}}",
     "rateThis": "Log this night",
     "date": "{{month}}/{{day}}"
+  },
+  "deleteAccount": {
+    "eyebrow": "Account",
+    "title": "Delete your account",
+    "lead": "How to delete your ASMR Block account and data. You can delete it yourself in the app or on the web, or ask us by email if you can't log in.",
+    "howTitle": "How to delete",
+    "stepApp": "App: My account (top right) → \"Delete account\" at the bottom",
+    "stepWeb": "Web: log in → My account → \"Delete account\" at the bottom",
+    "stepMail": "Can't log in? Email {{email}} from the address you signed up with, titled \"Account deletion request\". We'll delete it within 7 days and reply.",
+    "goProfile": "Delete from My account",
+    "goLogin": "Log in to delete",
+    "deletedTitle": "Deleted right away",
+    "deleted1": "The combos you made and your sleep log",
+    "deleted2": "Login sessions (you're logged out on every device)",
+    "deleted3": "Your email and nickname (changed so no one can tell who you were)",
+    "deleted4": "Any coins left (can't be restored)",
+    "keptTitle": "What remains",
+    "kept1": "Play history and collected blocks stay only as anonymous statistics.",
+    "kept2": "Blocks you uploaded may stay under \"Deleted user\" if someone already collected them. Email us if you want them removed.",
+    "kept3": "Server backups are deleted automatically after 14 days.",
+    "more": "See the Privacy Policy for details."
   }
 }

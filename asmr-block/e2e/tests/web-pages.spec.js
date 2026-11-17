@@ -10,6 +10,7 @@ const PAGES = [
   ['/guide', '팅글이 뭐예요?'],
   ['/privacy', '개인정보'],
   ['/terms', '이용약관'],
+  ['/delete-account', '계정 삭제'],
 ];
 
 for (const [path, text] of PAGES) {
