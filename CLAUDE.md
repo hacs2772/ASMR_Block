@@ -90,7 +90,7 @@ cd asmr-block/e2e && npx playwright test     # 화면 검사 (서버·웹·앱 �
 테스트 계정: `test@asmrblock.com` / `password123` (관리자: `admin@asmrblock.com`)
 
 ## 백엔드 규칙
-- **DB 변경은 새 Flyway 파일로만**: `src/main/resources/db/migration/V{n}__설명.sql`. 이미 있는 V 파일은 절대 수정하지 않는다. (지금 V18까지 있음 → 다음은 V19)
+- **DB 변경은 새 Flyway 파일로만**: `src/main/resources/db/migration/V{n}__설명.sql`. 이미 있는 V 파일은 절대 수정하지 않는다. (지금 V19까지 있음 → 다음은 V20)
 - 개발용 샘플 데이터는 `db/seed/R__dev_seed.sql` (dev/test 프로필에서만 실행). 여러 번 실행돼도 안전하게 `ON CONFLICT` 사용.
 - 응답은 항상 `ApiResponse` 형식(`success`, `message`, `data`, `error{code,message}`). 오류는 `ApiException.notFound/badRequest/...` 로 던진다.
 - 요청/응답 DTO는 record로, 기능 패키지의 `*Dtos.java` 안에 모은다. 컨트롤러에서 `Map`으로 응답을 만들지 않는다.
@@ -166,4 +166,5 @@ cd asmr-block/e2e && npx playwright test     # 화면 검사 (서버·웹·앱 �
 - [x] **오늘 밤 조합(진짜 AI)**: 한 줄 → Claude(Haiku)가 트리거 비율·이름 → 규칙이 두 줄로 쌓아 바로 듣기, 키 없으면 낱말·취향으로 (V17 AI 사용 기록·하루 제한·관리자 요금 줄). **사용자가 Claude 콘솔에서 키를 만들어 넣으면 AI가 켜짐**(`docs/ai_guide.md`)
 - [x] **잠 기록**: 아침 "어젯밤 잘 잤어요?"(한 번 누르기) + 최근 7일 기록 + 얼마나 들었는지(10분~8시간 단계) → 잘 잔 밤의 소리를 추천·오늘 밤 조합(AI 포함)에 반영 (V18)
 - [x] **크리에이터 통계**: 판매 화면 "내 블록 통계"(담은 사람·쓰인 조합·최근 14일 새로 담김/들음 막대) + 블록마다 담은 사람·조합·이번 주
+- [x] **찾아보기 색인(V19)**: 블록 기준(담은 사람·쓰인 조합·14일 들음)·조합 지울 때 → 사람이 많아져도 판매 화면 통계·크리에이터 페이지가 빠르게 (`docs/database_schema.md` 전·후 시간)
 - [ ] 잠 기록 다음: 잘 잔 밤의 조합을 "다시 듣기"로 추천, 주간 잠 리포트

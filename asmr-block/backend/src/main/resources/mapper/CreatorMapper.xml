@@ -64,12 +64,20 @@
                  WHERE ub.user_id &lt;&gt; #{userId} AND ub.acquired_at &gt;= (SELECT t FROM since)
                  GROUP BY 1
              ),
+             <!-- 블록 재생과 조합 재생을 따로, 내 것 id 목록(ANY ARRAY)으로 바로 찾아 합침 (V19 idx_play_log_target).
+                  OR 한 번이나 JOIN으로 쓰면 14일 동안의 모든 재생을 훑어서 사람이 많아지면 10배쯤 느려짐 -->
+             played AS (
+                 SELECT pl.played_at FROM play_log pl
+                 WHERE pl.target_type = 'BLOCK' AND pl.target_id = ANY (ARRAY(SELECT id FROM mine))
+                   AND pl.user_id &lt;&gt; #{userId} AND pl.played_at &gt;= (SELECT t FROM since)
+                 UNION ALL
+                 SELECT pl.played_at FROM play_log pl
+                 WHERE pl.target_type = 'PLAYLIST' AND pl.target_id = ANY (ARRAY(SELECT id FROM my_combos))
+                   AND pl.user_id &lt;&gt; #{userId} AND pl.played_at &gt;= (SELECT t FROM since)
+             ),
              plays AS (
-                 SELECT ((pl.played_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')::date) AS d, COUNT(*) AS n
-                 FROM play_log pl
-                 WHERE pl.user_id &lt;&gt; #{userId} AND pl.played_at &gt;= (SELECT t FROM since)
-                   AND ((pl.target_type = 'BLOCK' AND pl.target_id IN (SELECT id FROM mine))
-                     OR (pl.target_type = 'PLAYLIST' AND pl.target_id IN (SELECT id FROM my_combos)))
+                 SELECT ((played_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')::date) AS d, COUNT(*) AS n
+                 FROM played
                  GROUP BY 1
              )
         SELECT days.d AS date, COALESCE(c.n, 0) AS collects, COALESCE(p.n, 0) AS plays
