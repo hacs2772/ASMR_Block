@@ -47,6 +47,11 @@ function StatsPanel({ onOpenFeedback, onOpenReports }) {
       {stats.disk && <DiskBar disk={stats.disk} onCleaned={() => adminApi.stats(funnelDays).then(setStats).catch(() => {})} />}
       {stats.storage && <StorageLine storage={stats.storage} />}
       {stats.ai && <AiLine ai={stats.ai} />}
+      {stats.sleep && (
+        <p className="mt-1 px-1 text-xs text-muted" data-testid="sleep-line">
+          <b className="text-ink">잠 기록</b> 최근 14일 {stats.sleep.rated}번 · 😴 잘 잤어요 {stats.sleep.good} · 😐 그저 그래요 {stats.sleep.okay} · 😣 못 잤어요 {stats.sleep.bad}
+        </p>
+      )}
 
       {stats.openReports > 0 && (
         <button type="button" onClick={onOpenReports} data-testid="stats-reports"

@@ -11,7 +11,7 @@ import { CollectComboButton } from '../components/playlist/ComboCard';
 import ShareButton from '../components/playlist/ShareButton';
 import { ReportButton } from '../components/common/Report';
 import { colorOf, formatDuration, formatLength, listenLabel } from '../lib/blocks';
-import { createListenMeter, LISTEN_MINUTES } from '../lib/listen';
+import { createListenMeter } from '../lib/listen';
 import { positionState, sleepStep } from '../lib/sleep';
 import useAuthStore from '../store/authStore';
 
@@ -35,11 +35,12 @@ function ListenPage() {
   const [endsAt, setEndsAt] = useState(null);
   const [now, setNow] = useState(Date.now());
   const recorded = useRef(false);
-  // 오래 들음: 10분 넘게 재생하면 한 번 알림 (관리자 통계 "잠들 때까지 들었는지")
+  // 오래 들음: 10분·30분·1시간…을 넘을 때마다 알림 (관리자 통계 "잠들 때까지 들었는지" · 잠 기록 "얼마나 들었는지")
   const meter = useRef(createListenMeter());
   const checkListened = useCallback(() => {
-    if (meter.current.check(Date.now()) && useAuthStore.getState().isAuthenticated) {
-      playlistApi.listened(id, LISTEN_MINUTES).catch(() => {});
+    const passed = meter.current.check(Date.now());
+    if (passed && useAuthStore.getState().isAuthenticated) {
+      playlistApi.listened(id, passed).catch(() => {});
     }
   }, [id]);
   useEffect(() => { meter.current = createListenMeter(); }, [id]);

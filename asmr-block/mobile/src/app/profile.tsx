@@ -11,9 +11,10 @@ import { colors, radius, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitch } from '@/locales/LanguageSwitch';
 import { WalletCard } from '@/components/coin/WalletCard';
+import { SleepWeek } from '@/components/sleep/SleepWeek';
 
 /**
- * 내 정보: 이름(닉네임 바꾸기) → 내 코인 → 언어 → 로그아웃 → 맨 아래 작은 "회원 탈퇴".
+ * 내 정보: 이름(닉네임 바꾸기) → 내 코인 → 최근 7일 잠 기록 → 언어 → 로그아웃 → 맨 아래 작은 "회원 탈퇴".
  * 연결된 서버 주소는 개발할 때만 (설치용 앱을 쓰는 사람에게는 필요 없는 정보)
  */
 export default function ProfileScreen() {
@@ -55,6 +56,7 @@ export default function ProfileScreen() {
       )}
 
       {status === 'signedIn' && <WalletCard />}
+      {status === 'signedIn' && <SleepWeek />}
 
       <View style={styles.info} testID="language-card">
         <LanguageSwitch />

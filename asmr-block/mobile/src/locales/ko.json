@@ -833,5 +833,26 @@
     "doneAiLimit": "오늘 AI 횟수를 다 써서 낱말로 쌓았어요 · {{mix}}",
     "doneAiFailed": "AI가 잠깐 대답을 못 해서 낱말로 쌓았어요 · {{mix}}",
     "doneNoMatch": "말한 소리를 못 찾아서 내 취향대로 쌓았어요 · {{mix}}"
+  },
+  "sleepLog": {
+    "askTitle": "어젯밤 잘 잤어요?",
+    "listenedCombos": "들은 조합: {{combos}}",
+    "good": "잘 잤어요",
+    "okay": "그저 그래요",
+    "bad": "못 잤어요",
+    "skip": "건너뛰기",
+    "thanksGood": "좋아요! 잘 잔 밤의 소리를 오늘 밤 조합에 더 넣을게요.",
+    "thanksOkay": "고마워요. 기록해 둘게요.",
+    "thanksBad": "아쉬워요. 다음엔 다른 소리를 섞어 볼게요.",
+    "failed": "기록하지 못했어요.",
+    "weekTitle": "최근 7일 잠 기록",
+    "weekEmpty": "조합을 틀고 잔 다음 날 아침에 \"잘 잤어요?\"라고 물어볼게요.",
+    "goodWith": "잘 잔 밤에 많이 들은 소리: {{triggers}}",
+    "noRecord": "기록 없음",
+    "played": "틀었어요",
+    "over": "{{time}} 넘게 들었어요",
+    "night": "{{date}} 밤",
+    "rateThis": "이 밤 기록하기",
+    "date": "{{month}}월 {{day}}일"
   }
 }

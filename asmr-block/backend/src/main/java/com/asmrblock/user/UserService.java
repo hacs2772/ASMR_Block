@@ -3,6 +3,7 @@ package com.asmrblock.user;
 import com.asmrblock.auth.RefreshTokenService;
 import com.asmrblock.common.ApiException;
 import com.asmrblock.playlist.PlaylistService;
+import com.asmrblock.sleep.SleepService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,7 @@ public class UserService {
     private final UserMapper userMapper;
     private final RefreshTokenService refreshTokenService;
     private final PlaylistService playlistService;
+    private final SleepService sleepService;
 
     @Transactional(readOnly = true)
     public User getActiveUser(Long userId) {
@@ -39,12 +41,13 @@ public class UserService {
 
     /**
      * 회원 탈퇴 (앱스토어 심사 필수 기능).
-     * 내 플레이리스트 삭제 → 로그인 토큰 전부 폐기 → 개인정보 익명화.
+     * 내 플레이리스트·잠 기록 삭제 → 로그인 토큰 전부 폐기 → 개인정보 익명화.
      */
     @Transactional
     public void delete(Long userId) {
         getActiveUser(userId);
         playlistService.deleteAllOf(userId);
+        sleepService.deleteAllOf(userId);
         refreshTokenService.revokeAll(userId);
         userMapper.anonymize(userId);
     }

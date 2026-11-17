@@ -37,6 +37,16 @@ export const recommendApi = {
 };
 
 /**
+ * 잠 기록 (로그인 필요): pending → 어젯밤 { night, combos: [{ id, title, minutes }] } 또는 null,
+ * rate(night, 0~3) (0 = 건너뛰기), week → { nights: [{ night, rating, minutes, combos }], goodTriggers }
+ */
+export const sleepApi = {
+  pending: () => data(axiosInstance.get('/me/sleep/pending')),
+  rate: (night, rating) => data(axiosInstance.put(`/me/sleep/nights/${night}`, { rating })),
+  week: () => data(axiosInstance.get('/me/sleep/week')),
+};
+
+/**
  * 오늘 밤 조합: 한 줄(선택) → AI(켜져 있으면) 또는 낱말·내 취향으로 두 줄 조합을 쌓고 완성본까지 시작.
  * info → { ai, maxPromptLength, aiLeftToday }, make → { playlist, source(AI|WORDS|TASTE|STARTER), note, main, layer }
  */

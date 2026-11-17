@@ -75,12 +75,19 @@ public class ClaudePlanner {
      * @param english 조합 이름을 영어로
      */
     public Answer ask(String sentence, List<TriggerGroup> groups, boolean english) {
+        return ask(sentence, groups, english, List.of());
+    }
+
+    /**
+     * @param sleptWell 잘 잔 밤에 많이 들은 묶음 코드 (잠 기록 V18) — 한 줄과 어울리면 그쪽으로
+     */
+    public Answer ask(String sentence, List<TriggerGroup> groups, boolean english, List<String> sleptWell) {
         if (!enabled() || groups.isEmpty()) {
             return Answer.failed("disabled", 0, 0);
         }
         Message message;
         try {
-            message = client().messages().create(params(sentence, groups, english));
+            message = client().messages().create(params(sentence, groups, english, sleptWell));
         } catch (AnthropicServiceException e) {
             log.warn("AI 조합: Claude API 오류 {}", e.statusCode());
             return Answer.failed("api_" + e.statusCode(), 0, 0);
@@ -145,7 +152,7 @@ public class ClaudePlanner {
         return trim(t, MAX_TITLE);
     }
 
-    private MessageCreateParams params(String sentence, List<TriggerGroup> groups, boolean english) {
+    private MessageCreateParams params(String sentence, List<TriggerGroup> groups, boolean english, List<String> sleptWell) {
         OutputConfig.Builder output = OutputConfig.builder()
                 .format(JsonOutputFormat.builder().schema(schema(groups)).build());
         if (props.effort() != null && !props.effort().isBlank()) {
@@ -156,8 +163,16 @@ public class ClaudePlanner {
                 .maxTokens(1024L)
                 .system(systemPrompt(groups, english))
                 .outputConfig(output.build())
-                .addUserMessage("<sentence>" + sentence.replace("<", " ").replace(">", " ") + "</sentence>")
+                .addUserMessage(userMessage(sentence, groups, sleptWell))
                 .build();
+    }
+
+    /** 사용자 쪽 글: 한 줄 + (있으면) 잘 잔 밤의 묶음 코드 (고를 수 있는 것만) */
+    static String userMessage(String sentence, List<TriggerGroup> groups, List<String> sleptWell) {
+        String text = "<sentence>" + sentence.replace("<", " ").replace(">", " ") + "</sentence>";
+        Set<String> codes = groups.stream().map(TriggerGroup::code).collect(Collectors.toSet());
+        List<String> good = sleptWell == null ? List.of() : sleptWell.stream().filter(codes::contains).distinct().limit(3).toList();
+        return good.isEmpty() ? text : text + "\n<slept_well_with>" + String.join(", ", good) + "</slept_well_with>";
     }
 
     static String systemPrompt(List<TriggerGroup> groups, boolean english) {
@@ -179,6 +194,7 @@ public class ClaudePlanner {
                 Weights are relative, from 1 (a little) to 5 (a lot). Don't use the same group in both rows.
                 If the sentence only asks for background sounds (for example just rain), put them in main and leave layer empty.
                 If the sentence is unclear or not about sounds, pick gentle choices that help people fall asleep.
+                If <slept_well_with> lists trigger groups, the listener recently slept well with them: prefer them when they fit the sentence, but the sentence comes first.
 
                 Trigger groups (code: Korean name / English name (kinds)):
                 %s

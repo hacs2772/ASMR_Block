@@ -7,6 +7,7 @@ import authApi from '../api/authApi';
 import { errorMessage } from '../api/api';
 import useAuthStore from '../store/authStore';
 import WalletCard from '../components/coin/WalletCard';
+import SleepWeek from '../components/sleep/SleepWeek';
 
 /** 내 정보: 닉네임 바꾸기 · 바로 가기 · 로그아웃 · 회원 탈퇴 */
 function ProfilePage() {
@@ -57,6 +58,7 @@ function ProfilePage() {
       </div>
 
       <WalletCard />
+      <SleepWeek className="mt-4" />
 
       <form onSubmit={save} className="card mt-6 space-y-4 p-6">
         <label className="block"><span className="label">{t('profile.nickname')}</span>

@@ -4,7 +4,8 @@
 <!--
   나에게 맞는 추천: 내 취향(트리거) 점수 → 아직 없는 블록·남의 공개 조합에 점수.
   취향 점수 = 내 블록함(가입 직후 받은 시작 블록은 0.3, 나머지 1) + 내 조합에 쌓은 블록(조합마다 2)
-            + 최근 60일 틀어 본 조합(최대 5번 × 0.5) · 10분 넘게 들은 조합(최대 3번 × 1.5) + 상점에서 들어 본 블록(최대 3번 × 0.3)
+            + 최근 60일 틀어 본 조합(최대 5번 × 0.5) · 10분 넘게 들은 조합(최대 3일 × 1.5) + 상점에서 들어 본 블록(최대 3번 × 0.3)
+            + 잠 기록: 잘 잔 밤에 틀었던 조합의 블록 2 · 못 잔 밤 -1 (V18)
   소분류(category) 점수 × 1.5 + 묶음(group) 점수 + 인기 조금
 -->
 <mapper namespace="com.asmrblock.recommend.RecommendMapper">
@@ -31,7 +32,8 @@
                     WHERE user_id = #{userId} AND target_type = 'PLAYLIST' AND played_at &gt;= NOW() - INTERVAL '60 days'
                     GROUP BY target_id
                     UNION ALL
-                    SELECT playlist_id, 0, COUNT(*) FROM listen_log
+                    <!-- 오래 들은 날 수 (한 번 들으면서 10분·30분·1시간…을 넘을 때마다 줄이 생기니 날짜로 셈) -->
+                    SELECT playlist_id, 0, COUNT(DISTINCT listened_at::date) FROM listen_log
                     WHERE user_id = #{userId} AND listened_at &gt;= NOW() - INTERVAL '60 days'
                     GROUP BY playlist_id
                 ) t
@@ -44,6 +46,15 @@
             SELECT target_id, LEAST(COUNT(*), 3) * 0.3 FROM play_log
             WHERE user_id = #{userId} AND target_type = 'BLOCK' AND played_at &gt;= NOW() - INTERVAL '60 days'
             GROUP BY target_id
+            UNION ALL
+            <!-- 잠 기록(V18): 잘 잔 밤(3)에 틀었던 조합의 블록은 2, 못 잔 밤(1)은 -1 (최근 60일, 밤·조합마다 한 번) -->
+            SELECT pb.block_id, CASE sn.rating WHEN 3 THEN 2.0 ELSE -1.0 END
+            FROM sleep_night sn
+            JOIN sleep_night_playlist sp ON sp.user_id = sn.user_id AND sp.night = sn.night
+            JOIN playlist_layer l ON l.playlist_id = sp.playlist_id
+            JOIN playlist_block pb ON pb.layer_id = l.id
+            WHERE sn.user_id = #{userId} AND sn.rating IN (1, 3) AND sn.night &gt;= CURRENT_DATE - 60
+            GROUP BY sn.night, sp.playlist_id, pb.block_id, sn.rating
         ),
         taste AS (
             SELECT b.category_id, COALESCE(c.parent_id, c.id) AS group_id, SUM(s.w) AS w

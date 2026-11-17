@@ -25,6 +25,9 @@ import type {
   TalkType,
   TonightInfo,
   TonightResult,
+  SleepNight,
+  SleepPending,
+  SleepWeek,
   UploadEditRequest,
   UploadPolicy,
   User,
@@ -126,6 +129,13 @@ export const sellerApi = {
 export const recommendApi = {
   blocks: (size = 12) => api<BlockRecommendations>('/me/recommendations/blocks' + query({ size })),
   combos: (size = 12) => api<ComboRecommendations>('/me/recommendations/combos' + query({ size })),
+};
+
+/** 잠 기록 (로그인 필요, 웹 sleepApi와 같음): 어젯밤 물어보기 · 답 남기기(0 = 건너뛰기) · 최근 7일 */
+export const sleepApi = {
+  pending: () => api<SleepPending | null>('/me/sleep/pending'),
+  rate: (night: string, rating: number) => api<SleepNight>(`/me/sleep/nights/${night}`, { method: 'PUT', body: { rating } }),
+  week: () => api<SleepWeek>('/me/sleep/week'),
 };
 
 /**

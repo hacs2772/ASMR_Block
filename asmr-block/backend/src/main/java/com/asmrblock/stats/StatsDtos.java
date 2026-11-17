@@ -16,7 +16,7 @@ public final class StatsDtos {
      */
     public record StatsResponse(People people, Activity activity, Content content, long newFeedback, List<Day> days,
                                 Funnel funnel, Disk disk, long openReports, StorageInfo storage,
-                                com.asmrblock.tonight.AiUsageService.AiStats ai) {
+                                com.asmrblock.tonight.AiUsageService.AiStats ai, com.asmrblock.sleep.SleepStats sleep) {
     }
 
     /**

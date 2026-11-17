@@ -1,6 +1,7 @@
 package com.asmrblock.common;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.connector.ClientAbortException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -10,6 +11,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
@@ -68,6 +70,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ApiResponse<Void>> handleMethodNotAllowed(HttpRequestMethodNotSupportedException e) {
         return respond(HttpStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED", "지원하지 않는 요청 방식입니다.");
+    }
+
+    /**
+     * 듣는 사람이 멈추거나 다른 곳으로 넘기면 브라우저·앱이 소리 파일 받기를 중간에 끊음 (흔한 일, 오류 아님).
+     * 이미 연결이 끊겨 답을 보낼 수 없으니 아무것도 쓰지 않음 (예전엔 "Unexpected error"로 긴 기록이 쌓였음)
+     */
+    @ExceptionHandler({ClientAbortException.class, AsyncRequestNotUsableException.class})
+    public void handleClientGone(Exception e) {
+        log.debug("받는 쪽이 연결을 끊음: {}", e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

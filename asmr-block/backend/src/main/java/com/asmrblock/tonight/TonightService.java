@@ -16,6 +16,7 @@ import com.asmrblock.playlist.PlaylistService;
 import com.asmrblock.recommend.RecommendMapper;
 import com.asmrblock.recommend.TasteGroup;
 import com.asmrblock.render.RenderService;
+import com.asmrblock.sleep.SleepService;
 import com.asmrblock.tonight.TonightDtos.TonightInfo;
 import com.asmrblock.tonight.TonightDtos.TonightRequest;
 import com.asmrblock.tonight.TonightDtos.TriggerShare;
@@ -66,6 +67,7 @@ public class TonightService {
     private final ClaudePlanner claudePlanner;
     private final WordPlanner wordPlanner;
     private final AiUsageService aiUsageService;
+    private final SleepService sleepService;
     private final RateLimiter rateLimiter;
     private final AppProperties properties;
     private final Random random = new Random();
@@ -143,7 +145,8 @@ public class TonightService {
     // ---------------------------------------------------------------- 비율 정하기
 
     private TonightPlan askAi(Long userId, String sentence, List<TriggerGroup> available) {
-        ClaudePlanner.Answer answer = claudePlanner.ask(sentence, available, Lang.english());
+        // 잠 기록: 잘 잔 밤에 많이 들은 트리거도 알려 줌 (한 줄이 먼저)
+        ClaudePlanner.Answer answer = claudePlanner.ask(sentence, available, Lang.english(), sleepService.goodTriggerCodes(userId));
         aiUsageService.record(userId, FEATURE, claudePlanner.model(), answer.inputTokens(), answer.outputTokens(),
                 answer.ok(), answer.error());
         if (!answer.ok()) return null;

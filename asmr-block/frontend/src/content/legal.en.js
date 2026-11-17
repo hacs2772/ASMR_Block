@@ -24,6 +24,7 @@ export const PRIVACY = {
           <li><b>Sign-up</b>: email, password (stored in a form no one can read), nickname</li>
           <li><b>Try the beta now</b>: a guest account the Service creates for you (a random email, password and nickname). These account details are saved in your browser (or on your device in the app)</li>
           <li><b>Information created as you use the Service</b>: combos you make, blocks you collect, listening history (when you played which block or combo), the sounds, videos and photos you upload with their titles, descriptions and recording locations, feedback and reports you send with any contact details you include, and the language you choose</li>
+          <li><b>Sleep log</b>: your answer to &lsquo;Did you sleep well last night?&rsquo; the morning after a night with a combo on (answering is optional) and how long you listened that night. We use it only for picks for you and Tonight&rsquo;s mix, and delete it if you delete your account</li>
           <li><b>The line you write for Tonight&rsquo;s mix</b>: words such as &lsquo;reading in a café on a rainy day&rsquo;. We use them to stack the mix, and they are kept only as that mix&rsquo;s description (deleted when you delete the mix)</li>
           <li><b>Information created automatically when you connect</b>: access logs such as your IP address and browser type</li>
         </ul>

@@ -17,7 +17,7 @@ public final class RecommendDtos {
 
     /** code = 트리거 묶음 코드(tap…), name = 지금 화면 언어 이름 */
     public record TasteTrigger(String code, String name) {
-        static TasteTrigger from(TasteGroup g) {
+        public static TasteTrigger from(TasteGroup g) {
             return new TasteTrigger(g.getCode(), Lang.pick(g.getName(), g.getNameEn()));
         }
     }

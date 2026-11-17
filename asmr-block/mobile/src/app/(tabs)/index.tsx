@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BetaLoginButton } from '@/components/BetaLoginButton';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { catalogApi, playlistApi, recommendApi } from '@/api/endpoints';
@@ -11,6 +11,7 @@ import { AdSlot } from '@/components/AdSlot';
 import { BlockCard } from '@/components/BlockCard';
 import { TriggerPicker } from '@/components/tingle/TriggerPicker';
 import { TonightCard } from '@/components/tonight/TonightCard';
+import { SleepCheck } from '@/components/sleep/SleepCheck';
 import { BlockLoader } from '@/components/BlockLoader';
 import { PlaylistCard } from '@/components/PlaylistCard';
 import { Button } from '@/components/ui';
@@ -34,6 +35,7 @@ function play(id: number) {
  */
 export default function HomeScreen() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const status = useAuth((s) => s.status);
   const user = useAuth((s) => s.user);
   const mine = useQuery({ queryKey: ['playlists', 'mine'], queryFn: playlistApi.mine, enabled: status === 'signedIn' });
@@ -52,9 +54,11 @@ export default function HomeScreen() {
       contentContainerStyle={styles.content}
       refreshControl={
         <RefreshControl refreshing={mine.isRefetching}
-          onRefresh={() => { void mine.refetch(); void trending.refetch(); void forYou.refetch(); }} tintColor={colors.muted} />
+          onRefresh={() => { void mine.refetch(); void trending.refetch(); void forYou.refetch(); void queryClient.invalidateQueries({ queryKey: ['sleep'] }); }} tintColor={colors.muted} />
       }
     >
+      {/* 아침 한 번: 어젯밤 잘 잤어요? (어젯밤 조합을 틀었을 때만) */}
+      <SleepCheck />
       <Text style={styles.eyebrow}>{user ? t('home.mineOf', { nickname: user.nickname }) : t('home.mine')}</Text>
       <Text style={styles.title}>{t('home.listenNow')}</Text>
 

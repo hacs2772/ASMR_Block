@@ -129,6 +129,26 @@ class TonightAiApiTest extends IntegrationTest {
     }
 
     @Test
+    @DisplayName("잠 기록: 잘 잔 밤에 들은 트리거(빗소리)를 AI에게 같이 알려 줌")
+    void sleptWellHint() throws Exception {
+        String token = newUser().accessToken();
+        long userId = userIdOf(token);
+        collect(token, 1);
+        long combo = idOf(postJson("/api/v1/playlists", """
+                {"title":"잘 잔 밤","isPublic":false,"main":{"items":[{"blockId":1}]}}
+                """, token).andExpect(status().isCreated()));
+        java.time.ZoneId kst = java.time.ZoneId.of("Asia/Seoul");
+        java.time.LocalDate yesterday = java.time.LocalDate.now(kst).minusDays(1);
+        jdbc.update("INSERT INTO play_log (user_id, target_type, target_id, played_at) VALUES (?, 'PLAYLIST', ?, ?)", userId, combo,
+                yesterday.atTime(23, 0).atZone(kst).withZoneSameInstant(java.time.ZoneOffset.UTC).toLocalDateTime());
+        putJson("/api/v1/me/sleep/nights/" + yesterday, "{\"rating\":3}", token).andExpect(status().isOk());
+
+        postJson("/api/v1/playlists/tonight", "{\"prompt\":\"HINT 바스락 카페\"}", token).andExpect(status().isCreated());
+        FakeClaudeServer.Received req = CLAUDE.requests().stream().filter(r -> r.body().contains("HINT")).findFirst().orElseThrow();
+        assertThat(req.body()).contains("<slept_well_with>rain</slept_well_with>");
+    }
+
+    @Test
     @DisplayName("한 사람 하루 횟수(3번)를 넘으면 AI를 부르지 않고 낱말로 (note=AI_LIMIT) · 한 줄이 없으면 AI를 안 부름")
     void dailyLimit() throws Exception {
         String token = newUser().accessToken();

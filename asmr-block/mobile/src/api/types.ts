@@ -320,3 +320,10 @@ export type PlaylistSaveRequest = {
   mix: TrackRequest | null;
   listenMinutes: number;
 };
+
+/** 잠 기록 (V18): 그 밤에 틀었던 조합 (minutes = 넘은 듣기 단계, 틀기만 했으면 0) */
+export type SleepCombo = { id: number; title: string; minutes: number };
+export type SleepPending = { night: string; combos: SleepCombo[] };
+/** rating: 3 잘 잤어요 · 2 그저 그래요 · 1 못 잤어요 · 0 건너뜀 · null 아직 */
+export type SleepNight = { night: string; rating: number | null; minutes: number; combos: SleepCombo[] };
+export type SleepWeek = { nights: SleepNight[]; goodTriggers: TasteTrigger[] };

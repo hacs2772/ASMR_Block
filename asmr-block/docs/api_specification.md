@@ -365,7 +365,7 @@
 | POST | `/playlists/{id}/play` | 필요 | 재생 기록 (블록과 같은 규칙) |
 | POST | `/playlists/quick-start` | 필요 | **첫 조합 바로 만들기** `{ "triggers": ["tap", "rain"], "listenMinutes": 60, "title": "My first tingles · Tapping & Typing" }` (트리거 묶음 코드 1~5개, 시간 생략 시 60분, `title`은 선택·100자까지 — 영어 화면이 영어 이름을 보냄, 없으면 아래 한국어 이름) → 201 상세. 트리거마다 많이 들은 무료 블록(상점에 보이는 것) 2개까지 내 블록함에 담고, 트리거를 돌아가며 이어 붙여 15분 안팎 한 바퀴(블록이 하나면 반복)로 **비공개** 조합 "나의 첫 팅글 · 탭핑·타건·빗소리·물"을 만들고 완성본까지 시작. 모르는 코드·무료 블록이 없는 트리거만 고르면 400 |
 | PATCH | `/playlists/{id}/visibility` | 필요 | **공개·비공개만 바꾸기** `{ "isPublic": true }` → 상세. 내 조합만(남의 것 403). 담아 온 복사본은 공개 불가(400, 원래 조합을 공유) — 공유하기 전에 씀 |
-| POST | `/playlists/{id}/listened` | 필요 | **오래 들음** `{ "minutes": 10 }` (1~600) → `{ "counted": true }`. 듣기 화면이 10분 넘게 재생하면 한 번 보냄, 같은 조합·같은 분은 6시간에 한 번만 셈. 볼 수 없는 조합이면 403 (V10, 관리자 통계용) |
+| POST | `/playlists/{id}/listened` | 필요 | **오래 들음** `{ "minutes": 10 }` (1~600) → `{ "counted": true }`. 웹 듣기 화면·앱 플레이어가 재생 시간을 모아 **10분·30분·1시간·2시간·4시간·8시간**을 넘을 때마다 보냄(`lib/listen`, 한꺼번에 넘으면 가장 큰 단계 하나), 같은 조합·같은 분은 6시간에 한 번만 셈. 볼 수 없는 조합이면 403 (V10 관리자 통계 "10분 넘게 들음" · V18 잠 기록 "얼마나 들었는지") |
 | POST | `/playlists/{id}/collect` | 필요 | **조합 한 번에 담기** (7.4) |
 
 ### 7.1 저장 요청 (생성/수정 동일)
@@ -543,6 +543,7 @@
 | PUT | `/admin/samples` | 관리자 | **샘플 한꺼번에 숨기기·다시 보이기** `{ "visible": false }` → 샘플 블록 `is_listed`(V11)와 샘플 조합 `is_public`을 바꿈. 숨기면 상점·요즘 뜨는 소리·추천 조합·베타 손님 첫 블록에서 빠지고, **이미 담은 사람은 블록함·조합에서 그대로 들음**. 샘플 SQL이 다시 돌아도 숨긴 그대로 |
 
 - 통계의 **`disk`**: `{ "freeMb", "totalMb", "rendersMb", "low" }` 서버 디스크 남은 공간·완성본 크기, `low` = 5GB 아래 또는 10%·20GB 아래
+- 통계의 **`sleep`**: 잠 기록 최근 14일 남긴 답 수 (`rated`·`good`·`okay`·`bad`, 13장)
 - 통계의 **`ai`**: AI 조합(오늘 밤 조합의 한 줄 → Claude API) 켜졌는지·오늘/이번 달 횟수·토큰·대략 요금 (12장, `docs/ai_guide.md`)
 - 통계의 **`storage`**: `{ "type": "local"|"s3", "bucket", "total", "done", "failed", "pending", "running" }` 파일 저장소. 클라우드(`s3`, Cloudflare R2)로 바꾸면 옛 파일 옮기기 상태 (`docs/r2_guide.md`)
 
@@ -690,6 +691,20 @@ V16. 유료 블록(`price` > 0)은 **코인**으로 사요. 코인은 두 가지
 - **AI 제한**: 한 사람 하루 `app.ai.daily-per-user`(10)번, 사이트 전체 하루 `daily-total`(1000)번(한국 시간) → 넘으면 AI 없이 낱말로(`note: AI_LIMIT`). AI 실패(오류·거절·20초 넘음·엉뚱한 대답)도 낱말로(`AI_FAILED`). 부를 때마다 `ai_usage`에 횟수·토큰만 기록(적은 문장은 저장 안 함)
 - 한 사람이 1시간에 `app.ai.tonight-per-hour`(30)번 넘게 만들면 429. 쌓을 블록이 하나도 없으면 400
 - 관리자 통계 `ai`: `{ "enabled", "model", "todayCalls", "monthCalls", "monthFailed", "monthInputTokens", "monthOutputTokens", "monthUsd", "monthKrw", "dailyPerUser", "dailyTotal" }` (요금은 `app.ai.price-*`로 대략 계산). 켜는 법 `docs/ai_guide.md`
+
+---
+
+## 13. 잠 기록 ("어젯밤 잘 잤어요?") — V18, 로그인 필요
+
+| Method | URL | 설명 |
+|------|------|------|
+| GET | `/me/sleep/pending` | 물어볼 어젯밤 `{ "night": "2026-11-16", "combos": [ { "id": 1, "title": "비 오는 밤", "minutes": 60 } ] }` 또는 `data: null` — 한국 시간 **새벽 4시 이후**, 어젯밤에 조합을 틀었고(재생·오래 들음 기록), 아직 답하지 않았을 때만. `minutes` = 그 조합에서 넘은 듣기 단계(틀기만 했으면 0) |
+| PUT | `/me/sleep/nights/{night}` | 답 남기기 `{ "rating": 3 }` — 0 건너뛰기(다시 안 물어봄) · 1 못 잤어요 · 2 그저 그래요 · 3 잘 잤어요. **지난 7일 안의 밤만**(오늘·미래 400), 다시 보내면 바꿈, 그 밤에 틀었던 조합도 같이 저장 → `{ night, rating, minutes, combos }` |
+| GET | `/me/sleep/week` | 최근 7일 (오래된 밤 → 어젯밤) `{ "nights": [ { "night", "rating"(없으면 null), "minutes", "combos" } ], "goodTriggers": [ { "code": "rain", "name": "빗소리·물" } ] }` — goodTriggers = 최근 30일 잘 잔 밤에 많이 들은 트리거(최대 3) |
+
+- **밤** = 한국 시간 그날 17시 ~ 다음 날 17시 (예: 16일 밤 = 16일 17시 ~ 17일 17시)
+- **취향에 반영**: 잘 잔 밤(3)에 틀었던 조합의 블록은 취향 점수 +2, 못 잔 밤(1)은 -1 (최근 60일) → 나에게 맞는 추천·오늘 밤 조합(내 취향)에. **오늘 밤 조합 AI**에게도 잘 잔 밤의 트리거를 `<slept_well_with>`로 알려 줌(한 줄이 먼저)
+- 관리자 통계 `sleep`: `{ "rated", "good", "okay", "bad" }` (최근 14일, 건너뜀 빼고). 탈퇴하면 잠 기록도 지움
 
 ---
 

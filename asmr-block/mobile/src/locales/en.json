@@ -857,5 +857,26 @@
     "doneAiLimit": "You've used today's AI tries, so we matched your words · {{mix}}",
     "doneAiFailed": "AI couldn't answer just now, so we matched your words · {{mix}}",
     "doneNoMatch": "We couldn't find those sounds, so we used your taste · {{mix}}"
+  },
+  "sleepLog": {
+    "askTitle": "Did you sleep well last night?",
+    "listenedCombos": "Combos you played: {{combos}}",
+    "good": "Slept well",
+    "okay": "So-so",
+    "bad": "Slept badly",
+    "skip": "Skip",
+    "thanksGood": "Great! We'll add more of last night's sounds to tonight's mix.",
+    "thanksOkay": "Thanks, it's saved.",
+    "thanksBad": "Sorry to hear that. Next time we'll mix in different sounds.",
+    "failed": "Couldn't save it.",
+    "weekTitle": "Sleep log (last 7 days)",
+    "weekEmpty": "After a night with a combo on, we'll ask \"Did you sleep well?\" the next morning.",
+    "goodWith": "Sounds on your good nights: {{triggers}}",
+    "noRecord": "No record",
+    "played": "Played",
+    "over": "Listened over {{time}}",
+    "night": "Night of {{date}}",
+    "rateThis": "Log this night",
+    "date": "{{month}}/{{day}}"
   }
 }

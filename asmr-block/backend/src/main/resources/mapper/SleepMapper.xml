@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  잠 기록 (V18). 시간은 UTC로 저장 → "밤" = (한국 시간 - 17시간)의 날짜 (그날 17시 ~ 다음 날 17시)
+-->
+<mapper namespace="com.asmrblock.sleep.SleepMapper">
+
+    <!-- 그 기간의 밤마다 틀었던 조합: 재생(play_log) + 오래 들음(listen_log, minutes = 넘은 단계 중 가장 큰 것) -->
+    <select id="activity" resultType="com.asmrblock.sleep.NightActivity">
+        WITH acts AS (
+            SELECT target_id AS playlist_id, played_at AS at, 0 AS minutes FROM play_log
+            WHERE user_id = #{userId} AND target_type = 'PLAYLIST' AND played_at &gt;= #{fromUtc} AND played_at &lt; #{toUtc}
+            UNION ALL
+            SELECT playlist_id, listened_at, minutes FROM listen_log
+            WHERE user_id = #{userId} AND listened_at &gt;= #{fromUtc} AND listened_at &lt; #{toUtc}
+        )
+        SELECT ((a.at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul') - INTERVAL '17 hours')::date AS night,
+               a.playlist_id, p.title, p.title_en, MIN(a.at) AS first_at, MAX(a.minutes) AS minutes
+        FROM acts a
+        JOIN playlist p ON p.id = a.playlist_id
+        GROUP BY 1, a.playlist_id, p.title, p.title_en
+        ORDER BY 1, MIN(a.at)
+    </select>
+
+    <select id="nights" resultType="com.asmrblock.sleep.SleepNightRow">
+        SELECT night, rating FROM sleep_night
+        WHERE user_id = #{userId} AND night BETWEEN #{from} AND #{to}
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO sleep_night (user_id, night, rating) VALUES (#{userId}, #{night}, #{rating})
+        ON CONFLICT (user_id, night) DO UPDATE SET rating = EXCLUDED.rating, rated_at = NOW()
+    </insert>
+
+    <delete id="deletePlaylists">
+        DELETE FROM sleep_night_playlist WHERE user_id = #{userId} AND night = #{night}
+    </delete>
+
+    <insert id="insertPlaylists">
+        INSERT INTO sleep_night_playlist (user_id, night, playlist_id) VALUES
+        <foreach collection="playlistIds" item="id" separator=",">(#{userId}, #{night}, #{id})</foreach>
+        ON CONFLICT DO NOTHING
+    </insert>
+
+    <!-- 잘 잔 밤(3)에 틀었던 조합의 트리거 묶음 (많은 순) → 오늘 밤 조합 AI에게 알려 줌 -->
+    <select id="goodNightGroups" resultType="com.asmrblock.recommend.TasteGroup">
+        SELECT g.code, g.name, g.name_en, COUNT(*) AS weight
+        FROM sleep_night sn
+        JOIN sleep_night_playlist sp ON sp.user_id = sn.user_id AND sp.night = sn.night
+        JOIN playlist_layer l ON l.playlist_id = sp.playlist_id
+        JOIN playlist_block pb ON pb.layer_id = l.id
+        JOIN block b ON b.id = pb.block_id
+        JOIN sound_category c ON c.id = b.category_id
+        JOIN sound_category g ON g.id = COALESCE(c.parent_id, c.id)
+        WHERE sn.user_id = #{userId} AND sn.rating = 3 AND sn.night &gt;= #{since} AND g.is_active = true
+        GROUP BY g.id, g.code, g.name, g.name_en, g.sort_order
+        ORDER BY COUNT(*) DESC, g.sort_order
+        LIMIT #{limit}
+    </select>
+
+    <delete id="deleteAllOf">
+        DELETE FROM sleep_night WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 관리자 통계: 그날 이후 남긴 답 (건너뜀 빼고) -->
+    <select id="stats" resultType="com.asmrblock.sleep.SleepStats">
+        SELECT COUNT(*) FILTER (WHERE rating &gt; 0) AS rated,
+               COUNT(*) FILTER (WHERE rating = 3) AS good,
+               COUNT(*) FILTER (WHERE rating = 2) AS okay,
+               COUNT(*) FILTER (WHERE rating = 1) AS bad
+        FROM sleep_night WHERE night &gt;= #{since}
+    </select>
+
+</mapper>

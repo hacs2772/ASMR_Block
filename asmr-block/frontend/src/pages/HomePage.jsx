@@ -13,6 +13,7 @@ import AssembleButton from '../components/home/AssembleButton';
 import QuickStart from '../components/home/QuickStart';
 import Tonight from '../components/home/Tonight';
 import MyCombosNow from '../components/home/MyCombosNow';
+import SleepCheck from '../components/sleep/SleepCheck';
 import ComboCard from '../components/playlist/ComboCard';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
 import { TRIGGER_COLOR } from '../lib/blocks';
@@ -63,6 +64,8 @@ function HomePage() {
     <div>
       {/* ---------- 첫 화면: 조합이 있는 사람은 내 조합 바로 듣기, 처음 온 사람은 소개 ---------- */}
       <InstallBanner />
+      {/* 아침 한 번: 어젯밤 잘 잤어요? (어젯밤 조합을 틀었을 때만) */}
+      {isAuthenticated && <div className="page pt-6"><SleepCheck /></div>}
       {returning ? <MyCombosNow combos={mine} nickname={nickname} /> : (
       <section className="page grid items-center gap-12 pb-16 pt-12 lg:grid-cols-[1.05fr_1fr] lg:pt-20">
         <div>
