@@ -42,6 +42,7 @@ public class Block {
     private BlockStatus status;
     private String reviewNote;       // 관리자 검수 메모 (돌려보낸 이유)
     private Boolean isActive;
+    private Boolean isListed;         // 상점에 보이는지 (V11, 크리에이터가 내리면 false)
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

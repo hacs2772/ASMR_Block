@@ -62,10 +62,12 @@
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO block (title, description, file_key, master_file_key, thumbnail_key, duration, price,
                            talk_type, recorded_place, stickers, sticker_pattern, video_key,
-                           category_id, uploader_id, license, source_url, attribution, status)
+                           category_id, uploader_id, license, source_url, attribution, status,
+                           title_en, description_en, recorded_place_en)
         VALUES (#{title}, #{description}, #{fileKey}, #{masterFileKey}, #{thumbnailKey}, #{duration}, #{price},
                 #{talkType}, #{recordedPlace}, #{stickers}, COALESCE(#{stickerPattern}, 'dots'), #{videoKey},
-                #{categoryId}, #{uploaderId}, #{license}, #{sourceUrl}, #{attribution}, #{status})
+                #{categoryId}, #{uploaderId}, #{license}, #{sourceUrl}, #{attribution}, #{status},
+                #{titleEn}, #{descriptionEn}, #{recordedPlaceEn})
     </insert>
 
     <insert id="insertTags">
@@ -114,6 +116,15 @@
         ORDER BY recent.recent_plays DESC, x.play_count DESC, x.id DESC
         LIMIT #{limit}
     </select>
+
+    <!-- 크리에이터가 고치기: 글·말소리·가격·상점에 보이는지, 돌려보낸 블록이면 다시 검수 대기 -->
+    <update id="updateDetails">
+        UPDATE block SET title = #{title}, description = #{description}, recorded_place = #{recordedPlace},
+                         title_en = #{titleEn}, description_en = #{descriptionEn}, recorded_place_en = #{recordedPlaceEn},
+                         talk_type = #{talkType}, price = #{price}, is_listed = #{isListed},
+                         status = #{status}, review_note = #{reviewNote}
+        WHERE id = #{id}
+    </update>
 
     <update id="updateStatus">
         UPDATE block SET status = #{status}, review_note = #{note} WHERE id = #{id}

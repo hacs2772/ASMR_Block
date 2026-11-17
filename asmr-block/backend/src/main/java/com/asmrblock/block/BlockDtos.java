@@ -142,6 +142,14 @@ public final class BlockDtos {
             @Size(max = 60, message = "녹음한 곳은 60자 이내여야 합니다.")
             String recordedPlace,
 
+            /** 영어 제목·소개·녹음한 곳 (선택, 영어 화면에 보임) */
+            @Size(max = 100, message = "영어 제목은 100자 이내여야 합니다.")
+            String titleEn,
+            @Size(max = 1000, message = "영어 설명은 1000자 이내여야 합니다.")
+            String descriptionEn,
+            @Size(max = 60, message = "영어 녹음한 곳은 60자 이내여야 합니다.")
+            String recordedPlaceEn,
+
             /** 먼저 올려 둔 소리 파일이나 영상(POST /blocks/upload-drafts)을 쓸 때. file · video 대신 */
             @Size(max = 64)
             String draftId,
@@ -177,6 +185,11 @@ public final class BlockDtos {
     public record MyUploadResponse(
             Long id,
             String title,
+            String description,
+            String titleEn,
+            String descriptionEn,
+            String recordedPlaceEn,
+            boolean listed,
             String fileUrl,
             Integer duration,
             Integer price,
@@ -191,13 +204,39 @@ public final class BlockDtos {
             LocalDateTime createdAt) {
 
         public static MyUploadResponse from(Block block, long collectedCount, StorageService storage) {
-            return new MyUploadResponse(block.getId(), block.getTitle(), storage.publicUrl(block.getFileKey()),
+            // 고치기 화면용: 제목·소개는 적은 그대로(화면 언어로 바꾸지 않음) + 영어 칸 + 상점에 보이는지
+            return new MyUploadResponse(block.getId(), block.getTitle(), block.getDescription(), block.getTitleEn(),
+                    block.getDescriptionEn(), block.getRecordedPlaceEn(), !Boolean.FALSE.equals(block.getIsListed()),
+                    storage.publicUrl(block.getFileKey()),
                     block.getDuration(), block.getPrice(),
                     block.getTalkType() == null ? TalkType.NONE : block.getTalkType(), block.getRecordedPlace(),
                     // 돌려보낸 이유: "신고로 내려졌어요: …"처럼 서버가 적은 문장은 영어 화면이면 영어로 (관리자가 쓴 글은 그대로)
                     block.getStatus(), Messages.tr(block.getReviewNote()), CategoryResponse.from(block.getCategory()), DesignResponse.of(block, storage, true),
                     collectedCount, block.getPlayCount(), block.getCreatedAt());
         }
+    }
+
+    /**
+     * 내가 올린 블록 고치기 (PATCH /me/uploads/{id}). 보낸 것만 바뀜 (null = 그대로), 선택 칸은 빈 글자면 지움.
+     * listed = 상점에서 내리기(false)·다시 올리기(true). 돌려보낸 블록을 고치면 다시 검수 대기(PENDING)
+     */
+    public record BlockEditRequest(
+            @Size(max = 100, message = "제목은 100자 이내여야 합니다.")
+            String title,
+            @Size(max = 1000, message = "설명은 1000자 이내여야 합니다.")
+            String description,
+            @Size(max = 60, message = "녹음한 곳은 60자 이내여야 합니다.")
+            String recordedPlace,
+            @Size(max = 100, message = "영어 제목은 100자 이내여야 합니다.")
+            String titleEn,
+            @Size(max = 1000, message = "영어 설명은 1000자 이내여야 합니다.")
+            String descriptionEn,
+            @Size(max = 60, message = "영어 녹음한 곳은 60자 이내여야 합니다.")
+            String recordedPlaceEn,
+            TalkType talkType,
+            @Min(value = 0, message = "가격은 0 이상이어야 합니다.")
+            Integer price,
+            Boolean listed) {
     }
 
     public record BlockStatusRequest(

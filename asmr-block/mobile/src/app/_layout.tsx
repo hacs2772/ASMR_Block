@@ -72,6 +72,7 @@ export default function RootLayout() {
               <Stack.Screen name="notifications" options={{ title: t('nav.notifications') }} />
               <Stack.Screen name="profile" options={{ title: t('nav.profile') }} />
               <Stack.Screen name="coins" options={{ title: t('nav.coins') }} />
+              <Stack.Screen name="edit-upload/[id]" options={{ title: t('nav.editUpload') }} />
             </Stack>
           </PlayerProvider>
         </ThemeProvider>

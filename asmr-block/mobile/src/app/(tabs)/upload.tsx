@@ -23,6 +23,7 @@ import { categoryFallbackColor, colors, radius, space } from '@/theme';
 import { RecordingGuideLink } from '@/components/upload/RecordingGuideLink';
 import { useTranslation } from 'react-i18next';
 import { EarningsCard } from '@/components/coin/EarningsCard';
+import { EMPTY_ENGLISH, EnglishFields } from '@/components/upload/EnglishFields';
 import { categoryLabel, patternLabel, stickerName, talkLabel } from '@/lib/labels';
 import i18n from '@/locales';
 
@@ -75,6 +76,8 @@ export default function UploadScreen() {
   const [talkType, setTalkType] = useState<TalkType>('NONE');
   const [place, setPlace] = useState('');
   const [note, setNote] = useState('');
+  // 영어로도 적기 (선택)
+  const [english, setEnglish] = useState(EMPTY_ENGLISH);
   const [ownRecording, setOwnRecording] = useState(false);
   // 블록 꾸미기(C안): 사진이 있으면 사진, 없으면 스티커 + 무늬
   const [cover, setCover] = useState<PickedMedia | null>(null);
@@ -169,6 +172,7 @@ export default function UploadScreen() {
     setTalkType('NONE');
     setPlace('');
     setNote('');
+    setEnglish(EMPTY_ENGLISH);
     setOwnRecording(false);
   };
 
@@ -196,6 +200,7 @@ export default function UploadScreen() {
       form.append('talkType', talkType);
       if (place.trim()) form.append('recordedPlace', place.trim());
       if (note.trim()) form.append('description', note.trim());
+      Object.entries(english).forEach(([k, v]) => { if (v.trim()) form.append(k, v.trim()); });
       return sellerApi.upload(form);
     },
     onSuccess: () => {
@@ -343,6 +348,8 @@ export default function UploadScreen() {
           placeholder={t('upload.notePh')} placeholderTextColor={colors.faint}
           accessibilityLabel={t('upload.note')} testID="upload-note" />
 
+        <EnglishFields value={english} onChange={setEnglish} />
+
         <Text style={styles.label}>{t('upload.price')} <Text style={styles.labelHint}>· {t('upload.priceMax', { max: maxPrice })}</Text></Text>
         <View style={styles.chips}>
           <Chip label={t('common.free')} active={price === 0} onPress={() => setPrice(0)} />
@@ -408,11 +415,15 @@ const STATUS = {
   REJECTED: { color: colors.danger },
 } as const;
 
+/** 내가 올린 블록 한 줄: 누르면 고치기 화면 */
 function UploadRow({ upload }: { upload: MyUpload }) {
   const { t } = useTranslation();
   const s = STATUS[upload.status];
   return (
-    <View style={[styles.row, { borderLeftColor: upload.category?.color ?? categoryFallbackColor }]} testID={`upload-${upload.id}`}>
+    <Pressable accessibilityRole="button" accessibilityLabel={t('upload.editA11y', { title: upload.title })}
+      onPress={() => router.push({ pathname: '/edit-upload/[id]', params: { id: String(upload.id) } })}
+      style={({ pressed }) => [styles.row, { borderLeftColor: upload.category?.color ?? categoryFallbackColor }, pressed && { opacity: 0.85 }]}
+      testID={`upload-${upload.id}`}>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text style={styles.rowTitle} numberOfLines={1}>{upload.title}</Text>
         <Text style={styles.rowMeta} numberOfLines={1}>
@@ -425,14 +436,17 @@ function UploadRow({ upload }: { upload: MyUpload }) {
       </View>
       <View style={{ alignItems: 'flex-end', gap: 2 }}>
         <Text style={[styles.badge, { color: s.color, borderColor: s.color }]}>{t(`upload.status.${upload.status}`)}</Text>
+        {upload.status === 'APPROVED' && !upload.listed ? <Text style={styles.rowMeta} testID={`unlisted-${upload.id}`}>{t('upload.unlisted')}</Text> : null}
         <Text style={styles.rowMeta}>{t('upload.collected', { count: upload.collectedCount })}</Text>
+        <Text style={styles.editLink}>{t('upload.edit')}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   reviewNote: { marginTop: 4, fontSize: 12, color: colors.danger, lineHeight: 17 },
+  editLink: { color: colors.primaryText, fontSize: 12, fontWeight: '700' },
   coverThumb: { width: 48, height: 28, borderRadius: 4 },
   stickerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   sticker: {

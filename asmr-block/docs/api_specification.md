@@ -213,6 +213,7 @@
 | GET | `/blocks/{id}` | - | 상세 (승인 전이면 404) |
 | POST | `/blocks` | 필요 | **음원 업로드 (판매자)** (multipart) → 검수 대기 |
 | GET | `/me/uploads` | 필요 | **내가 올린 블록** (검수 상태 무관, 최신순, 페이지) |
+| PATCH | `/me/uploads/{id}` | 필요 | **내가 올린 블록 고치기** (아래 5.1) |
 | POST | `/blocks/{id}/play` | 필요 | 재생 기록 |
 
 **목록 쿼리**: `categoryId` (대분류면 그 아래 소분류까지), `free=true|false` (무료만 / 유료만), `talkType=NONE|WHISPER|TALK` (**노토킹만** / 속삭임만 / 말하기만), `tagIds=1,2` (하나라도 달린 블록), `keyword` (이름 · 녹음한 곳 · 크리에이터 닉네임), `uploaderId` (그 크리에이터가 올린 블록만, 크리에이터 페이지), `sort=latest|popular`, `page`, `size`
@@ -289,6 +290,7 @@
 | `price` | | 판매 가격(코인). 생략/0 = 무료, **최대 `maxPrice`**(설정 `app.shop.seller-max-price`, 기본 100) 넘으면 400 |
 | `talkType` | | 말소리 `NONE`(기본, 노토킹) / `WHISPER` / `TALK` |
 | `recordedPlace` | | 녹음한 곳 (60자 이내, 앞뒤 공백 정리, 비우면 없음) |
+| `titleEn` · `descriptionEn` · `recordedPlaceEn` | | **영어로도 적기**(선택, 100·1000·60자): 영어 화면에 보이는 제목·소개·녹음한 곳, 비우면 한국어 그대로 |
 
 서버 처리: 원본 보관(구간을 골랐으면 그 부분만, 다시 인코딩하지 않고) → (구간 자르기 →) **44.1kHz 스테레오 MP3, 음량 -24 LUFS로 변환** → `status: PENDING` 으로 등록 (관리자 승인 후 공개).
 영상은 "진짜 그 장소·그 장면이구나" 하고 보는 용도라 **480p · 24fps · 소리 없는 mp4**로 줄여서 저장 (원본 영상은 보관하지 않음). 사진·영상도 승인 때 같이 확인.
@@ -296,13 +298,25 @@
 
 **내가 올린 블록 (MyUploadResponse)** - `GET /me/uploads`
 ```json
-{ "id": 31, "title": "희귀한 교토 왁스 부수기", "fileUrl": "http://.../blocks/....mp3", "duration": 15, "price": 30,
+{ "id": 31, "title": "희귀한 교토 왁스 부수기", "description": "…", "titleEn": "Rare Kyoto wax cracking", "descriptionEn": null,
+  "recordedPlaceEn": null, "listed": true, "fileUrl": "http://.../blocks/....mp3", "duration": 15, "price": 30,
   "talkType": "NONE", "recordedPlace": "교토 공방",
   "status": "REJECTED", "reviewNote": "소리가 너무 작아요", "category": { "id": 23, "name": "왁스·슬라임", ... }, "collectedCount": 0, "playCount": 0, "createdAt": "..." }
 ```
 - `status`: `PENDING`(검수 중) / `APPROVED`(판매 중) / `REJECTED`(거절)
 - `reviewNote`: 관리자가 돌려보낸 이유 (`REJECTED`일 때만, V8)
 - `collectedCount`: 이 블록을 담은 사람 수 (올린 사람 본인 제외)
+- `title`·`description`은 적은 그대로(화면 언어로 바꾸지 않음), `titleEn` 등 = 영어 칸, `listed` = 상점에 보이는지
+
+**고치기** `PATCH /me/uploads/{id}` (올린 사람만, 남의 블록 403, 업로드가 막힌 사람 403)
+```json
+{ "title": "고친 이름", "description": "", "recordedPlace": "서울 작업실", "titleEn": "Fixed name",
+  "descriptionEn": "...", "recordedPlaceEn": "...", "talkType": "WHISPER", "price": 20, "listed": false }
+```
+- **보낸 것만 바뀜**(없거나 `null`이면 그대로), 선택 칸은 빈 글자면 지움. 제목은 빈 글자 400, 가격은 `maxPrice`까지
+- `listed: false` = **상점에서 내리기**(상점·크리에이터 페이지·추천에서 빠짐, 이미 담거나 산 사람은 그대로 들음), `true` = 다시 올리기
+- 승인된 블록은 고쳐도 그대로 판매(다시 검수하지 않음, 이상한 글은 신고로). 판매 중인 블록을 유료로 바꾸면 맛보기(앞 30초)를 만듦
+- **돌려보낸(REJECTED) 블록**의 내용을 고치면 다시 검수 대기(`PENDING`, `reviewNote` 지움) → 메시지 `"고쳐서 다시 검수를 요청했어요."`, 아니면 `"고쳤어요."`. 응답 = 고친 `MyUploadResponse`
 
 ### 5.2 재생 기록 `POST /blocks/{id}/play`
 같은 사용자가 30분 안에 다시 재생하면 세지 않습니다.

@@ -408,7 +408,8 @@
     "recGuide": "Recording guide",
     "notifications": "Notifications",
     "profile": "My account",
-    "coins": "My coins"
+    "coins": "My coins",
+    "editUpload": "Edit block"
   },
   "auth": {
     "email": "Email",
@@ -744,7 +745,27 @@
     },
     "reviewNote": "Reason sent back: {{note}}",
     "collected_one": "{{count}} collector",
-    "collected_other": "{{count}} collectors"
+    "collected_other": "{{count}} collectors",
+    "edit": "Edit ›",
+    "editA11y": "Edit ‘{{title}}’",
+    "editSave": "Save",
+    "editResubmit": "Save & send for review",
+    "editRejectedHint": "Fix what was flagged and save to send it for review again.",
+    "editMissing": "Block not found",
+    "listed": "Show in the shop",
+    "listedHint": "Turn off to remove it from the shop and your creator page. People who already have it can still listen.",
+    "unlisted": "Hidden from shop",
+    "saved": "Saved",
+    "resubmitted": "Saved and sent for review again",
+    "saveFailed": "Couldn't save",
+    "enTitle": "Add English text (optional)",
+    "enHint": "Shown on English screens. Leave empty to show the Korean text.",
+    "enName": "English name",
+    "enNamePh": "e.g. Fingernail tapping on a wooden desk",
+    "enPlace": "English recording place",
+    "enPlacePh": "e.g. Outside Shinjuku Station, Tokyo",
+    "enNote": "English one-line intro",
+    "enNotePh": "e.g. Slow taps with fingertips"
   },
   "coin": {
     "title": "My coins",

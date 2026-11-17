@@ -49,4 +49,7 @@ public interface BlockMapper {
 
     /** 맛보기 파일이 아직 없는 유료 블록 (승인·활성) */
     List<Block> findPaidWithoutPreview();
+
+    /** 크리에이터 고치기 (글·말소리·가격·상점에 보이는지·검수 상태) */
+    void updateDetails(Block block);
 }

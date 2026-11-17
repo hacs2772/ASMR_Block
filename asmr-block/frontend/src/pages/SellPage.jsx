@@ -14,6 +14,7 @@ import { MAX_STICKERS, PATTERNS, patternLabel, StickerImage, stickerName, useSti
 import { canTrim, initialRange, trimParams } from '../lib/trim';
 import useLangChange from '../locales/useLangChange';
 import EarningsCard from '../components/coin/EarningsCard';
+import EditUpload, { EnglishFields } from '../components/sell/EditUpload';
 import useAuthStore from '../store/authStore';
 import { RecordingGuideLink } from './RecordingGuidePage';
 
@@ -62,6 +63,9 @@ function SellPage() {
   const [talkType, setTalkType] = useState('NONE');
   const [place, setPlace] = useState('');
   const [note, setNote] = useState('');
+  // 영어로도 적기 (선택): 영어 화면에 보이는 제목·녹음한 곳·한 줄 소개
+  const [en, setEn] = useState({ titleEn: '', recordedPlaceEn: '', descriptionEn: '' });
+  const [editing, setEditing] = useState(null);
   const [price, setPrice] = useState(0);
   const [agree, setAgree] = useState(false);
   const [progress, setProgress] = useState(null);
@@ -204,11 +208,13 @@ function SellPage() {
     form.append('talkType', talkType);
     if (place.trim()) form.append('recordedPlace', place.trim());
     if (note.trim()) form.append('description', note.trim());
+    Object.entries(en).forEach(([k, v]) => { if (v.trim()) form.append(k, v.trim()); });
     setProgress(0);
     try {
       await sellerApi.upload(form, setProgress);
       toast.success(t('sell.uploaded'));
       clearFile(); setTitle(''); setPlace(''); setNote(''); setAgree(false);
+      setEn({ titleEn: '', recordedPlaceEn: '', descriptionEn: '' });
       setCover(null); setCoverUrl(null); setStickers([]);
       loadMine();
     } catch (e) {
@@ -382,6 +388,7 @@ function SellPage() {
                 <input className="input" value={note} maxLength={80} onChange={(e) => setNote(e.target.value)} placeholder={t('sell.notePh')} />
               </Field>
             </div>
+            <EnglishFields value={en} onChange={(k, v) => setEn((x) => ({ ...x, [k]: v }))} />
 
             <Field label={t('sell.price')} hint={t('sell.priceHint', { max: maxPrice })}>
               <div className="flex flex-wrap gap-2">
@@ -429,7 +436,8 @@ function SellPage() {
             ) : (
               <div className="card divide-y divide-line">
                 {mine.map((u) => (
-                  <div key={u.id} className="flex items-center gap-4 p-4" style={{ borderLeft: `4px solid ${colorOf(u.category)}` }} data-testid={`my-upload-${u.id}`}>
+                  <div key={u.id} style={{ borderLeft: `4px solid ${colorOf(u.category)}` }} data-testid={`my-upload-${u.id}`}>
+                  <div className="flex items-center gap-4 p-4">
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-bold">{u.title}</p>
                       <p className="mt-0.5 truncate text-xs text-muted">
@@ -442,7 +450,17 @@ function SellPage() {
                     </div>
                     {u.design?.hasVideo && <span className="flex items-center gap-1 text-xs text-muted"><IoVideocam /> {t('sell.kindVideo')}</span>}
                     <span className="hidden text-xs text-muted sm:block">{t('sell.collected', { count: u.collectedCount })}</span>
+                    {u.status === 'APPROVED' && u.listed === false && (
+                      <span className="rounded-full bg-card-active px-2.5 py-1 text-xs font-bold text-muted" data-testid={`unlisted-${u.id}`}>{t('sell.unlisted')}</span>
+                    )}
                     <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${STATUS[u.status] || ''}`}>{STATUS[u.status] ? t(`sell.status.${u.status}`) : u.status}</span>
+                    <button type="button" className="btn-line btn-sm" onClick={() => setEditing(editing === u.id ? null : u.id)}
+                      data-testid={`edit-${u.id}`}>{t('sell.edit')}</button>
+                  </div>
+                  {editing === u.id && (
+                    <EditUpload upload={u} priceSteps={PRICE_STEPS} maxPrice={maxPrice} onCancel={() => setEditing(null)}
+                      onSaved={(next) => { setMine((list) => list.map((x) => (x.id === next.id ? next : x))); setEditing(null); }} />
+                  )}
                   </div>
                 ))}
               </div>

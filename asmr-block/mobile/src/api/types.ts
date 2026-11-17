@@ -262,6 +262,13 @@ export type UploadPolicy = {
 export type MyUpload = {
   id: number;
   title: string;
+  description: string | null;
+  /** 영어 화면에 보이는 제목·소개·녹음한 곳 (선택) */
+  titleEn: string | null;
+  descriptionEn: string | null;
+  recordedPlaceEn: string | null;
+  /** 상점에 보이는지 (크리에이터가 내리면 false) */
+  listed: boolean;
   fileUrl: string | null;
   duration: number;
   price: number;
@@ -276,6 +283,19 @@ export type MyUpload = {
   collectedCount: number;
   playCount: number;
   createdAt: string;
+};
+
+/** 내가 올린 블록 고치기: 보낸 것만 바뀜, 빈 글자면 지움. 돌려보낸 블록이면 다시 검수 대기 */
+export type UploadEditRequest = {
+  title?: string;
+  description?: string;
+  recordedPlace?: string;
+  titleEn?: string;
+  descriptionEn?: string;
+  recordedPlaceEn?: string;
+  talkType?: TalkType;
+  price?: number;
+  listed?: boolean;
 };
 
 export type ItemRequest = { blockId: number; repeat: number; startSeconds?: number };

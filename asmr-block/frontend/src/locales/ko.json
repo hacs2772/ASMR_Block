@@ -740,7 +740,22 @@
     "myPage": "내 크리에이터 페이지 · 공유",
     "mineEmpty": "아직 올린 블록이 없어요. 위에서 첫 블록을 올려 보세요.",
     "reviewNote": "돌려보낸 이유: {{note}}",
-    "collected": "담은 사람 {{count}}명"
+    "collected": "담은 사람 {{count}}명",
+    "edit": "고치기",
+    "editSave": "저장",
+    "editResubmit": "고쳐서 다시 검수 요청",
+    "editRejectedHint": "돌려보낸 이유를 고친 뒤 저장하면 다시 검수를 받아요.",
+    "listed": "상점에 보이기",
+    "listedHint": "끄면 상점·크리에이터 페이지에서 빠져요. 이미 담거나 산 사람은 그대로 들어요.",
+    "unlisted": "상점에서 내림",
+    "enTitle": "영어로도 적기 (선택)",
+    "enHint": "영어 화면에 보여요. 비워 두면 한국어 그대로 보여요.",
+    "enName": "영어 이름",
+    "enNamePh": "e.g. Fingernail tapping on a wooden desk",
+    "enPlace": "영어 녹음한 곳",
+    "enPlacePh": "e.g. Outside Shinjuku Station, Tokyo",
+    "enNote": "영어 한 줄 소개",
+    "enNotePh": "e.g. Slow taps with fingertips"
   },
   "legal": {
     "eyebrow": "안내",
