@@ -57,16 +57,18 @@ export const useAuth = create<AuthState>((set, get) => ({
   login: async (email, password) => {
     const res = await authApi.login(email.trim(), password);
     await session.save({ accessToken: res.accessToken, refreshToken: res.refreshToken });
-    set({ status: 'signedIn', user: res.user });
+    // 화면 언어를 먼저 계정 언어에 맞춘 뒤 로그인 상태로 (반대면 로그인 뒤 처음 받는 목록이 휴대폰 언어로 와서 영어·한국어가 섞임)
     await syncLanguage(res.user, true, set);
+    set({ status: 'signedIn', user: res.user });
   },
 
   signup: async (email, password, nickname) => {
     await authApi.signup(email.trim(), password, nickname.trim(), currentLang());
     const res = await authApi.login(email.trim(), password);
     await session.save({ accessToken: res.accessToken, refreshToken: res.refreshToken });
-    set({ status: 'signedIn', user: res.user });
+    // 화면 언어를 먼저 계정 언어에 맞춘 뒤 로그인 상태로 (반대면 로그인 뒤 처음 받는 목록이 휴대폰 언어로 와서 영어·한국어가 섞임)
     await syncLanguage(res.user, true, set);
+    set({ status: 'signedIn', user: res.user });
   },
 
   betaLogin: async () => {
@@ -75,8 +77,8 @@ export const useAuth = create<AuthState>((set, get) => ({
       try {
         const res = await authApi.login(saved.email, saved.password);
         await session.save({ accessToken: res.accessToken, refreshToken: res.refreshToken });
-        set({ status: 'signedIn', user: res.user });
         await syncLanguage(res.user, true, set);
+        set({ status: 'signedIn', user: res.user });
         return;
       } catch {
         // 계정이 없어졌으면 새로 만듦
@@ -85,8 +87,8 @@ export const useAuth = create<AuthState>((set, get) => ({
     const res = await authApi.betaLogin(currentLang());
     await session.save({ accessToken: res.accessToken, refreshToken: res.refreshToken });
     await betaGuest.save(res.email, res.password);
-    set({ status: 'signedIn', user: res.user });
     await syncLanguage(res.user, false, set);
+    set({ status: 'signedIn', user: res.user });
   },
 
   logout: async () => {

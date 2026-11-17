@@ -362,7 +362,8 @@ function TimelineArt({ main, mix, total, fallbackColors, progress, onSeek }: {
     ? main.items.map((i) => { const left = cursor; cursor += i.totalDuration; return { left, length: i.totalDuration, color: i.category?.color ?? categoryFallbackColor }; })
     : fallbackColors.map((color, i) => ({ left: (i * total) / Math.max(1, fallbackColors.length), length: total / Math.max(1, fallbackColors.length), color }));
   return (
-    <LinearGradient colors={[colors.cardActive, colors.bg]} style={styles.art}>
+    // 둘째 줄이 없으면 그림 칸을 낮게 (한 줄만 있을 때 위가 크게 비어 보이지 않게)
+    <LinearGradient colors={[colors.cardActive, colors.bg]} style={[styles.art, !mix && styles.artSingle]}>
       <GestureDetector gesture={pan}>
       <View style={{ width, alignSelf: 'center', gap: 10 }} collapsable={false} testID="timeline-art"
         accessibilityRole={onSeek ? 'adjustable' : undefined} accessibilityLabel={t('player.artA11y')}>
@@ -401,7 +402,8 @@ const styles = StyleSheet.create({
   collectBtn: { minHeight: 38, paddingVertical: 6, paddingHorizontal: 16 },
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: space.lg, paddingBottom: 60 },
-  art: { height: 180, borderRadius: radius.lg, justifyContent: 'flex-end', overflow: 'hidden', marginBottom: space.lg, paddingTop: space.lg },
+  artSingle: { height: 128 },
+  art: { height: 170, borderRadius: radius.lg, justifyContent: 'flex-end', overflow: 'hidden', marginBottom: space.lg, paddingTop: space.lg },
   artLane: { height: 28, position: 'relative' },
   artBrick: { position: 'absolute', top: 0, height: 28, borderRadius: 2, borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.45)', borderBottomWidth: 4 },
   progressTrack: { width: '100%', height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden' },

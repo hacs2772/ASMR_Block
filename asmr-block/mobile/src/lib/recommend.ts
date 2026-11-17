@@ -9,7 +9,7 @@ import i18n from '@/locales';
 type Rec = { personalized: boolean; triggers: TasteTrigger[] } | null | undefined;
 
 export function tasteNames(rec: Rec): string {
-  return (rec?.triggers ?? []).map((g) => categoryName(g.code, g.name)).filter(Boolean).join('·');
+  return (rec?.triggers ?? []).map((g) => categoryName(g.code, g.name)).filter(Boolean).join(', ');
 }
 
 export function recommendLine(rec: Rec, kind: 'blocks' | 'combos' = 'blocks'): string {

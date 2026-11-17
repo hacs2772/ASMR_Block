@@ -449,8 +449,9 @@ const styles = StyleSheet.create({
   editLink: { color: colors.primaryText, fontSize: 12, fontWeight: '700' },
   coverThumb: { width: 48, height: 28, borderRadius: 4 },
   stickerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+  // 한 줄에 4칸, 화면 폭에 맞게 (고정 폭이면 오른쪽이 비어 보임)
   sticker: {
-    width: 64, alignItems: 'center', gap: 2, paddingTop: 6, paddingBottom: 4, borderRadius: radius.md,
+    width: '23%', alignItems: 'center', gap: 2, paddingTop: 6, paddingBottom: 4, borderRadius: radius.md,
     borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card,
   },
   stickerOn: { borderColor: colors.primary, backgroundColor: colors.primarySoft },

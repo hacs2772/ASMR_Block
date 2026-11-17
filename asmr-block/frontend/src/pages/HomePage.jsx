@@ -12,6 +12,7 @@ import { useFirstRunGuide } from '../components/guide/GuideModal';
 import AssembleButton from '../components/home/AssembleButton';
 import QuickStart from '../components/home/QuickStart';
 import Tonight from '../components/home/Tonight';
+import MyCombosNow from '../components/home/MyCombosNow';
 import ComboCard from '../components/playlist/ComboCard';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
 import { TRIGGER_COLOR } from '../lib/blocks';
@@ -29,6 +30,14 @@ function HomePage() {
   const [combos, setCombos] = useState(null);
   const [rec, setRec] = useState(null);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const nickname = useAuthStore((s) => s.user?.nickname);
+  // 로그인했고 조합이 있으면 맨 위 = 내 조합 바로 듣기 (앱 홈과 같음), 처음 온 사람 소개·트리거 고르기는 빼고
+  const [mine, setMine] = useState(null);
+  useEffect(() => {
+    if (!isAuthenticated) { setMine(null); return; }
+    playlistApi.mine().then((p) => setMine(p.content || [])).catch(() => setMine([]));
+  }, [isAuthenticated]);
+  const returning = isAuthenticated && mine?.length > 0;
 
   useEffect(() => {
     catalogApi.categories().then(setGroups).catch(() => setGroups([]));
@@ -52,8 +61,9 @@ function HomePage() {
 
   return (
     <div>
-      {/* ---------- 첫 화면 ---------- */}
+      {/* ---------- 첫 화면: 조합이 있는 사람은 내 조합 바로 듣기, 처음 온 사람은 소개 ---------- */}
       <InstallBanner />
+      {returning ? <MyCombosNow combos={mine} nickname={nickname} /> : (
       <section className="page grid items-center gap-12 pb-16 pt-12 lg:grid-cols-[1.05fr_1fr] lg:pt-20">
         <div>
           <p className="eyebrow">{t('home.eyebrow')}</p>
@@ -74,14 +84,15 @@ function HomePage() {
         </div>
         <HeroBoard />
       </section>
+      )}
 
       {/* ---------- 오늘 밤 조합: 한 줄(AI) 또는 내 취향으로 두 줄을 쌓아서 바로 듣기 ---------- */}
       <section className="page pb-6">
         <Tonight />
       </section>
 
-      {/* ---------- 첫 조합 바로 만들기: 트리거를 고르면 바로 쌓아서 듣기 ---------- */}
-      {groups.length > 0 && (
+      {/* ---------- 첫 조합 바로 만들기: 트리거를 고르면 바로 쌓아서 듣기 (조합이 이미 있는 사람은 오늘 밤 조합으로 충분) ---------- */}
+      {groups.length > 0 && !returning && (
         <section className="page pb-6">
           <QuickStart groups={groups} />
         </section>
@@ -92,7 +103,7 @@ function HomePage() {
         title={rec ? t('forYou.homeTitle') : t('home.trendTitle')}
         more={rec ? { to: '/shop?tab=forYou', label: t('forYou.homeMore') } : { to: '/shop', label: t('home.trendMore') }}>
         {blocks === null ? <BlockLoader small /> : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid={rec ? 'home-for-you' : 'home-trending'}>
+          <div className="shelf-row" data-testid={rec ? 'home-for-you' : 'home-trending'}>
             {blocks.map((b, i) => <BlockProductCard key={b.id} block={b} rank={rec ? null : i + 1} />)}
           </div>
         )}

@@ -435,7 +435,11 @@
     "logout": "Log out",
     "leave": "Delete account",
     "server": "Connected server",
-    "serverHint": "If it won't connect, check your internet connection and try again."
+    "serverHint": "If it won't connect, check your internet connection and try again.",
+    "nickname": "Nickname",
+    "nicknameSave": "Change",
+    "nicknameSaved": "Your nickname has been changed.",
+    "nicknameFailed": "Couldn't change your nickname"
   },
   "notif": {
     "msg": {

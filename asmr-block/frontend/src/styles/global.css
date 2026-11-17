@@ -37,6 +37,14 @@ body {
   .label { @apply mb-1.5 block text-sm font-bold text-ink; }
   .card { @apply rounded-2xl border border-line bg-card; }
 
+  /* 휴대폰: 한 줄로 옆으로 넘기기 (화면 끝까지), 태블릿·PC: 여러 줄로 감싸기 */
+  .chip-row { @apply -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0; scrollbar-width: none; }
+  .chip-row::-webkit-scrollbar { display: none; }
+  .chip-row > * { @apply shrink-0; }
+  /* 블록 카드 줄: 휴대폰은 옆으로 넘기기(다음 카드가 살짝 보이게), 태블릿 2칸 · PC 4칸 */
+  .shelf-row { @apply -mx-4 flex snap-x scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:scroll-px-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4; scrollbar-width: none; }
+  .shelf-row::-webkit-scrollbar { display: none; }
+  .shelf-row > * { @apply w-[80%] max-w-[300px] shrink-0 snap-start sm:w-auto sm:max-w-none; }
   .chip { @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-line px-3.5 py-1.5 text-sm font-semibold text-muted transition-colors hover:text-ink; }
   .chip-on { @apply border-pink bg-pink-soft text-pink-text; }
 

@@ -160,8 +160,7 @@
     "lead": "What you liked, what bugged you, sounds you'd like to see… We read every message.",
     "placeholder": "e.g. I'd love more rain blocks",
     "contact": "Email for a reply (optional)",
-    "pageNote": "The page you're on is sent too.",
-    "fab": "Feedback"
+    "pageNote": "The page you're on is sent too."
   },
   "report": {
     "reason": {
@@ -547,7 +546,10 @@
     "heroRepeat": "🌙 Repeats 8 hr",
     "heroLayer": "② Layered · rain underneath",
     "heroOrder": "Tap → Crinkle → Whisper → Brush",
-    "heroLoop": "13 min loop"
+    "heroLoop": "13 min loop",
+    "mineOf": "{{nickname}}'s combos",
+    "listenNow": "Listen now",
+    "seeAll": "See all my combos ({{count}})"
   },
   "listen": {
     "myTingle": "My tingles",

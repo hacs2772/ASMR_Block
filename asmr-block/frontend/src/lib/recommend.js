@@ -6,7 +6,7 @@ import { categoryName } from './blocks';
  * kind = 'blocks' | 'combos' (웹·앱 같은 규칙)
  */
 export function tasteNames(rec) {
-  return (rec?.triggers || []).map((g) => categoryName(g.code, g.name)).filter(Boolean).join('·');
+  return (rec?.triggers || []).map((g) => categoryName(g.code, g.name)).filter(Boolean).join(', ');
 }
 
 export function recommendLine(rec, kind = 'blocks') {

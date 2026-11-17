@@ -56,3 +56,26 @@ test.describe('앱', () => {
     await expect(page.getByText(/빗소리.*취향으로 골랐어요/)).toBeVisible();
   });
 });
+
+test.describe('앱 (휴대폰은 영어, 계정은 한국어)', () => {
+  test.use({ baseURL: APP, viewport: { width: 390, height: 844 }, locale: 'en-US' });
+
+  test.beforeEach(async ({ request }) => {
+    const up = await request.get(APP).then((r) => r.ok()).catch(() => false);
+    test.skip(!up, `앱 미리보기가 꺼져 있어요 (${APP})`);
+  });
+
+  test('로그인하면 화면도 목록도 한국어 (취향 저격 블록에 영어 트리거 이름이 섞이지 않음)', async ({ page, request }) => {
+    const user = await rainLover(request);
+    await page.goto('/');
+    await page.getByTestId('home-login').click();
+    await page.getByPlaceholder('email@example.com').fill(user.email);
+    await page.locator('input[type="password"]').fill(user.password);
+    await page.getByTestId('submit').click();
+    await page.waitForURL((u) => !u.pathname.startsWith('/login'));
+    const shelf = page.getByTestId('home-for-you');
+    await expect(shelf).toContainText('취향 저격 블록');
+    await expect(shelf).toContainText('빗소리');
+    await expect(shelf).not.toContainText('Rain & Water');
+  });
+});

@@ -42,7 +42,7 @@ function ComboCard({ combo, rank, showOwner = true }) {
           <ComboBricks colors={combo.previewColors} hasMix={combo.hasMix} />
         </Link>
         <div className="min-w-0 flex-1">
-          <Link to={`/listen/${combo.id}`} className="block truncate text-[15px] font-bold hover:text-pink-text">{combo.title}</Link>
+          <Link to={`/listen/${combo.id}`} className="line-clamp-2 text-[15px] font-bold leading-snug hover:text-pink-text">{combo.title}</Link>
           <p className="mt-1 truncate text-xs text-muted">{meta}</p>
           {showOwner && <p className="mt-0.5 truncate text-xs text-faint">@{combo.owner?.nickname}</p>}
         </div>

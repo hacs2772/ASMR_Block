@@ -429,7 +429,11 @@
     "logout": "로그아웃",
     "leave": "회원 탈퇴",
     "server": "연결된 서버",
-    "serverHint": "연결이 안 되면 PC에서 서버가 켜져 있는지, 휴대폰과 PC가 같은 와이파이인지 확인하세요."
+    "serverHint": "연결이 안 되면 PC에서 서버가 켜져 있는지, 휴대폰과 PC가 같은 와이파이인지 확인하세요.",
+    "nickname": "닉네임",
+    "nicknameSave": "바꾸기",
+    "nicknameSaved": "닉네임을 바꿨어요.",
+    "nicknameFailed": "닉네임을 바꾸지 못했어요"
   },
   "notif": {
     "msg": {

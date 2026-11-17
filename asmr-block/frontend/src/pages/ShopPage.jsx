@@ -94,7 +94,8 @@ function ShopPage() {
         ))}
       </div>
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      {/* 트리거 고르기: 휴대폰은 한 줄로 옆으로 넘기기 (여러 줄이면 첫 블록이 화면 아래로 밀림) */}
+      <div className="chip-row mt-5">
         <button type="button" className={`chip ${!groupId ? 'chip-on' : ''}`} onClick={() => set({ group: null, sub: null })}>{t('shop.allTriggers')}</button>
         {groups.map((g) => (
           <button key={g.id} type="button" className={`chip ${groupId === g.id ? 'chip-on' : ''}`} onClick={() => set({ group: g.id, sub: null })}

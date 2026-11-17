@@ -157,8 +157,7 @@
     "lead": "좋았던 점, 불편한 점, 있었으면 하는 소리… 편하게 적어 주세요. 꼭 읽어 볼게요.",
     "placeholder": "예: 빗소리 블록이 더 많았으면 좋겠어요",
     "contact": "답장 받을 이메일 (선택)",
-    "pageNote": "보낸 화면 주소도 같이 보내져요.",
-    "fab": "의견"
+    "pageNote": "보낸 화면 주소도 같이 보내져요."
   },
   "report": {
     "reason": {
@@ -538,7 +537,10 @@
     "heroRepeat": "🌙 8시간 반복",
     "heroLayer": "② 레이어드 · 빗소리를 아래에 겹쳐요",
     "heroOrder": "탭핑 → 바스락 → 귓속말 → 브러싱",
-    "heroLoop": "한 바퀴 13분"
+    "heroLoop": "한 바퀴 13분",
+    "mineOf": "{{nickname}}님의 조합",
+    "listenNow": "바로 듣기",
+    "seeAll": "내 조합 전체 보기 ({{count}})"
   },
   "listen": {
     "myTingle": "나만의 팅글",

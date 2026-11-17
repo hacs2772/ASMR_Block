@@ -78,10 +78,11 @@ export function FeedbackFab() {
   const { pathname } = useLocation();
   if (pathname.startsWith('/create') || pathname.startsWith('/admin')) return null;
   return (
-    <button type="button" onClick={open} data-testid="feedback-fab"
+    // 휴대폰: 작은 동그라미 아이콘만 (글자까지 있으면 카드 버튼을 가림), 태블릿·PC: 글자와 함께
+    <button type="button" onClick={open} data-testid="feedback-fab" aria-label={t('feedback.title')} title={t('feedback.title')}
       style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
-      className="fixed right-4 z-40 flex items-center gap-1.5 rounded-full border border-line-strong bg-card/95 px-3.5 py-2.5 text-sm font-bold text-ink shadow-xl backdrop-blur hover:border-pink">
-      <IoChatbubbleEllipses className="text-pink-text" size={17} /> <span className="sm:hidden">{t('feedback.fab')}</span><span className="hidden sm:inline">{t('feedback.title')}</span>
+      className="fixed right-3 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-line-strong bg-card/95 text-sm font-bold text-ink shadow-xl backdrop-blur hover:border-pink sm:right-4 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3.5 sm:py-2.5">
+      <IoChatbubbleEllipses className="text-pink-text" size={19} /><span className="hidden sm:inline">{t('feedback.title')}</span>
     </button>
   );
 }
