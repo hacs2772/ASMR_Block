@@ -27,7 +27,7 @@ function GoodNightCombos() {
   return (
     <section className="page pb-6">
       <div className="card p-4 sm:p-5" data-testid="good-combos">
-        <p className="flex items-center gap-2 font-extrabold"><span aria-hidden="true">😴</span>{t('sleepLog.goodTitle')}</p>
+        <p className="font-extrabold">{t('sleepLog.goodTitle')}</p>
         <p className="mt-0.5 text-xs text-muted">{t('sleepLog.goodLead')}</p>
         <ul className="mt-3 grid gap-2 md:grid-cols-3">
           {list.map((g) => <li key={g.combo.id}><GoodComboRow good={g} /></li>)}

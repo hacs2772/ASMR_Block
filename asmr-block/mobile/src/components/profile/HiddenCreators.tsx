@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -35,7 +34,6 @@ export function HiddenCreators() {
   return (
     <View style={styles.card} testID="hidden-creators">
       <View style={styles.head}>
-        <Ionicons name="eye-off-outline" size={16} color={colors.primaryText} />
         <Text style={styles.title}>{t('hide.listTitle')}</Text>
       </View>
       <Text style={styles.note}>{t('hide.listNote')}</Text>

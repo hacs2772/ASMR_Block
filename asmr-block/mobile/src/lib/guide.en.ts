@@ -8,7 +8,7 @@ export const WELCOME_STEPS_EN: GuideStep[] = [
   {
     art: 'collect',
     title: 'Collect sound blocks you love',
-    body: 'In Shop, pick sounds that give you tingles — tapping, crinkles, whispers — and tap “Add block”. Free blocks go straight into your block box.',
+    body: 'In Shop, pick sounds that give you tingles, like tapping, crinkles or whispers, and tap “Add block”. Free blocks go straight into your block box.',
   },
   {
     art: 'drag',
@@ -18,7 +18,7 @@ export const WELCOME_STEPS_EN: GuideStep[] = [
   {
     art: 'time',
     title: 'Pick how long, then save',
-    body: 'Choose 30 minutes to 8 hours and save — we stitch everything into one seamless track. Add a rain layer on the second row if you like.',
+    body: 'Choose 30 minutes to 8 hours and save. We stitch everything into one seamless track. Add a rain layer on the second row if you like.',
   },
   {
     art: 'sleep',

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { IoCash } from 'react-icons/io5';
 import { useTranslation } from 'react-i18next';
 import { coinApi } from '../../api/api';
 import { ago } from '../../lib/time';
@@ -19,7 +18,6 @@ function EarningsCard() {
   return (
     <section className="card mt-5 p-5" data-testid="earnings">
       <div className="flex items-center gap-2">
-        <IoCash size={20} className="text-pink-text" />
         <p className="font-extrabold">{t('earn.title')}</p>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">

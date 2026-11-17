@@ -132,7 +132,7 @@
   "install": {
     "title": "Add to home screen",
     "lead": "It opens full screen like an app, without the address bar. You can play and pause from the lock screen too.",
-    "already": "You're already using it from your home screen. 👍",
+    "already": "You're already using it from your home screen.",
     "inApp1": "You're in an <b>in-app browser</b> (like a chat app's). You can't add to home screen from here.",
     "inApp2": "Tap <more/> or the share menu at the top or bottom, then choose <b>{{openIn}}</b>.",
     "openInSafari": "Open in Safari",
@@ -182,7 +182,7 @@
       "USER": "user"
     },
     "pickReason": "Please choose a reason.",
-    "received": "Thanks — we got your report and will review it.",
+    "received": "Thanks, we got your report and will review it.",
     "title": "Report",
     "what": "What are you reporting?",
     "thisTarget": "This {{type}}",
@@ -302,7 +302,7 @@
     "sec30": "30s",
     "listen": "Listen",
     "shareThis": "Share {{title}}",
-    "shareText": "{{title}} — an ASMR block by @{{nickname}}",
+    "shareText": "{{title}} · an ASMR block by @{{nickname}}",
     "add": "Add block",
     "inBox": "In your box",
     "added": "Added ‘{{title}}’ to your block box",
@@ -324,7 +324,7 @@
     "collect": "Save all"
   },
   "shareCombo": {
-    "text": "{{title}} — my own tingle combo on ASMR Block",
+    "text": "{{title}} · my own tingle combo on ASMR Block",
     "askTitle": "Friends can't open a private combo",
     "askBody": "Making it public shows it in Combos too, and anyone with the link can listen right away.",
     "makePublic": "Make public",
@@ -350,14 +350,13 @@
     "building": "Stacking your first combo…",
     "go": "Listen now",
     "pickFirst": "Pick your triggers",
-    "guestNote": "Not logged in? You'll start right away as a beta guest — no sign-up.",
+    "guestNote": "Not logged in? You'll start right away as a beta guest, no sign-up needed.",
     "comboTitle": "My first tingles · {{names}}"
   },
   "tonight": {
     "title": "Tonight's mix",
-    "aiBadge": "AI",
-    "lead": "What kind of night do you want? Describe it in one line and we'll stack matching blocks in two rows.",
-    "leadAi": "What kind of night do you want? Describe it in one line and AI will read it and stack matching blocks in two rows.",
+    "lead": "What kind of night do you want? Describe it in one line and we'll pick matching blocks and stack them in two rows.",
+    "leadAi": "What kind of night do you want? Describe it in one line and we'll pick matching blocks and stack them in two rows.",
     "inputLabel": "The feeling you want tonight",
     "placeholder": "e.g. Reading in a café on a rainy day",
     "go": "Stack this feeling",
@@ -368,16 +367,16 @@
     "ex2": "Whispers by a campfire",
     "ex3": "Leaning on a night-train window",
     "ex4": "Paper crinkles and soft tapping",
-    "aiNote": "AI (Claude) reads your line and picks the triggers. Your words are only kept as the mix description.",
-    "aiNoteLeft_one": "AI (Claude) reads your line and picks the triggers · {{count}} try left today",
-    "aiNoteLeft_other": "AI (Claude) reads your line and picks the triggers · {{count}} tries left today",
-    "wordsNote": "We find the sounds in your words. Your words are only kept as the mix description.",
+    "aiNote": "Your words are only kept as the mix description.",
+    "aiNoteLeft_one": "Your words are only kept as the mix description · {{count}} left today",
+    "aiNoteLeft_other": "Your words are only kept as the mix description · {{count}} left today",
+    "wordsNote": "Your words are only kept as the mix description.",
     "failed": "Couldn't stack tonight's mix.",
-    "doneAi": "AI stacked it · {{mix}}",
+    "doneAi": "Stacked to match your line · {{mix}}",
     "doneWords": "Stacked from your words · {{mix}}",
     "doneTaste": "Stacked from your taste · {{mix}}",
-    "doneAiLimit": "You've used today's AI tries, so we matched your words · {{mix}}",
-    "doneAiFailed": "AI couldn't answer just now, so we matched your words · {{mix}}",
+    "doneAiLimit": "You've hit today's limit, so we matched your words · {{mix}}",
+    "doneAiFailed": "Something went wrong, so we matched your words · {{mix}}",
     "doneNoMatch": "We couldn't find those sounds, so we used your taste · {{mix}}"
   },
   "shelf": {
@@ -390,7 +389,7 @@
     "goShop": "Go to Block Shop",
     "all": "All",
     "tapHint": "Tap to snap onto the end · drag to place it anywhere",
-    "dropToRemove": "🗑 Drop here to remove",
+    "dropToRemove": "Drop here to remove",
     "insert": "Add {{title}}"
   },
   "board": {
@@ -460,9 +459,8 @@
       "popular": "Most played",
       "forYou": "For you"
     },
-    "eyebrow": "Combos",
     "title": "See how others stacked theirs",
-    "lead": "Listen, and if you like it, <b>Save all</b>. Its blocks go into your block box and the combo goes into My combos — listen right away or make it your own.",
+    "lead": "Listen, and if you like it, <b>Save all</b>. The blocks and the combo become yours.",
     "empty": "No combos to show yet. Build one and save it as public to see it here."
   },
   "shop": {
@@ -472,11 +470,10 @@
       "free": "Free",
       "forYou": "For you"
     },
-    "eyebrow": "Get blocks",
     "title": "Block Shop",
     "searchPh": "Name · @creator · where it was recorded",
     "search": "Search blocks",
-    "lead": "Free blocks go straight into your box; paid blocks let you preview the first 30 seconds. Once added, copy a block as many times as you like in Build a combo.",
+    "lead": "Free blocks go straight into your box. Paid blocks let you preview the first 30 seconds before you buy.",
     "allTriggers": "All triggers",
     "onlyTalk": "{{talk}} only",
     "allTalk": "Any talking",
@@ -486,7 +483,6 @@
   "myCombos": {
     "confirmDelete": "Delete the combo ‘{{title}}’?",
     "deleted": "Deleted",
-    "eyebrow": "Listen now",
     "title": "My combos",
     "newCombo": "New combo",
     "empty": "No combos yet. Just pick your triggers and we'll stack your first one.",
@@ -523,42 +519,33 @@
     "layerVolume": "Layer volume"
   },
   "home": {
-    "eyebrow": "ASMR · make your own tingles",
-    "headline": "Stack your own <pink>tingles<star>✦</star></pink><br/>block by block",
-    "lead": "One sound, one block. Pick the triggers you love — 3 minutes of tapping, 3 of crinkles, 3 of whispers — click them together, and you've got ASMR made just for you.",
+    "headline": "Stack your own <pink>tingles</pink><br/>block by block",
+    "lead": "One sound, one block. Pick the triggers you love, like 3 minutes of tapping, crinkles or whispers, click them together, and you've got ASMR made just for you.",
     "browse": "Browse blocks",
-    "appSoon": "The mobile app is coming soon",
-    "trendEyebrow": "Last 7 days",
     "trendTitle": "Blocks giving the most tingles",
     "trendMore": "More in the Block Shop",
-    "combosEyebrow": "★ Combos",
-    "combosTitle": "Combos others stacked — save them in one tap",
+    "combosTitle": "Featured combos",
     "combosMore": "More combos",
     "combosEmpty": "No combos yet. Build the first one and make it public.",
-    "howEyebrow": "How it works",
-    "howTitle": "Add, stack, pick a time — done",
+    "howTitle": "Add, stack, pick a time. Done.",
     "step1Title": "Add blocks",
     "step1Body": "Add trigger blocks you love from the Block Shop. Free ones instantly; paid ones with a 30-second preview.",
     "step2Title": "Click them together",
     "step2Body": "Snap your blocks together from left to right. Use the layer to put rain underneath.",
     "step3Title": "Pick how long",
     "step3Body": "Choose 30 minutes to 8 hours and the seamless track repeats for that long.",
-    "step3Chip": "🌙 8 hr",
+    "step3Chip": "8 hr",
     "buildNow": "Build a combo now",
-    "sellEyebrow": "Creators",
     "sellTitle": "Sell your triggers as blocks",
-    "sell1": "Phone recording or studio mic — 3 to 4 minutes makes one block",
-    "sell2": "You set the price (free is fine). The more it's added and used, the more people find you",
-    "sell3": "We even out the volume, and after a quick review it goes live in the shop",
+    "sell1": "A phone recording or a studio mic. 3 to 4 minutes makes one block.",
+    "sell2": "You set the price (free is fine), and we let you know whenever someone saves your block.",
     "sellGo": "Start selling blocks",
     "sellCoins": "20 coins",
     "sellSample": "Mic brushing",
     "sellNick": "@your_name",
-    "appTitle": "Tonight's tingles, on your phone",
-    "appBody": "Keeps playing with the screen off and fades out as you fall asleep. The app is coming soon.",
     "heroPlay": "▶ Play all",
     "heroScale": "1 cell = 1 min",
-    "heroRepeat": "🌙 Repeats 8 hr",
+    "heroRepeat": "Repeats 8 hr",
     "heroLayer": "② Layered · rain underneath",
     "heroOrder": "Tap → Crinkle → Whisper → Brush",
     "heroLoop": "13 min loop",
@@ -571,7 +558,7 @@
     "loading": "Loading combo",
     "seekLabel": "Tap a block to jump there",
     "seekHint": "Tap or drag the blocks to jump to that point",
-    "collectedFrom": "★ Saved from @{{nickname}}'s combo",
+    "collectedFrom": "Saved from @{{nickname}}'s combo",
     "videoToggle": "Show video too",
     "videoCount_one": "{{count}} video block",
     "videoCount_other": "{{count}} video blocks",
@@ -592,10 +579,9 @@
       "popular": "Most played"
     },
     "notFound": "Creator not found.",
-    "eyebrow": "Creator",
     "stats": "Blocks {{blocks}} · Saved by {{collectors}} · Plays {{plays}}",
     "shareTitle": "ASMR blocks by @{{nickname}}",
-    "shareText": "ASMR blocks recorded by @{{nickname}} — ASMR Block",
+    "shareText": "ASMR blocks recorded by @{{nickname}} · ASMR Block",
     "upload": "Upload a block",
     "pinned": "Shared with you",
     "others": "More from this creator",
@@ -612,7 +598,7 @@
       },
       "trigger": {
         "word": "Trigger",
-        "body": "A sound that brings on tingles — tapping, crinkles, whispers and so on"
+        "body": "A sound that brings on tingles, like tapping, crinkles or whispers"
       },
       "layered": {
         "word": "Layered",
@@ -642,38 +628,36 @@
       },
       "s3": {
         "title": "How long?",
-        "body": "Choose 30 minutes to 8 hours and save — we build a seamless track that repeats for that long."
+        "body": "Choose 30 minutes to 8 hours and save. We build a seamless track that repeats for that long."
       },
       "s4": {
         "title": "Listen",
         "body": "Your combos are at the top of the app's home screen. Save other people's combos you like from Combos in one tap."
       }
     },
-    "eyebrow": "Tingle guide",
     "title": "What are tingles?",
-    "lead": "It's the tingly, fizzy feeling on your scalp or neck when you listen to ASMR. Everyone's triggers are different, so picking and stacking only the sounds you love works best. ASMR Block turns each sound into a block — click them together and you get ASMR that fits you.",
+    "lead": "It's the tingly, fizzy feeling on your scalp or neck when you listen to ASMR. Everyone's triggers are different, so picking and stacking only the sounds you love works best. ASMR Block turns each sound into a block. Click them together and you get ASMR that fits you.",
     "howTitle": "How to use it",
     "replay": "Watch the animated guide",
     "glossary": "ASMR glossary",
     "build": "Stack your own tingles"
   },
   "rec": {
-    "eyebrow": "Creators",
     "title": "Recording guide",
     "lead": "All you need is a phone. A quiet spot, a hand's width away, one clear trigger. Get these right and you'll have a block people love to hear.",
     "dontsTitle": "Sounds you can't upload",
     "dontsNote": "Please upload only sounds you recorded yourself. These are sent back in review, and can be taken down later if reported.",
     "endTitle": "Recorded something? Turn it into a block",
-    "endBody": "Long recordings are fine — pick the best part from the waveform when you upload.",
+    "endBody": "Long recordings are fine. Pick the best part from the waveform when you upload.",
     "go": "Upload a block",
     "checkTitle": "Before you hit record",
     "ready": "All set!",
-    "readyMsg": "Great — start recording. Stay quiet for the first 5 seconds!",
+    "readyMsg": "Great, start recording. Stay quiet for the first 5 seconds!",
     "mic": "Mic",
     "distance": "Hand's width · 15–20 cm",
     "source": "Sound source",
     "linkTitle": "New to recording? Read the guide",
-    "linkBody": "Quiet spot · a hand's width away · 5 quiet seconds at each end — how to record a great block on your phone"
+    "linkBody": "A quiet spot, a hand's width away, 5 quiet seconds at each end. How to record a great block on your phone"
   },
   "auth": {
     "orEmail": "or with email",
@@ -702,7 +686,6 @@
     "saveFailed": "Couldn't save",
     "confirmLeave": "Delete your account? All your combos will be deleted and this can't be undone.",
     "left": "Your account has been deleted.",
-    "eyebrow": "My account",
     "myCombos": "My combos",
     "uploads": "My uploads",
     "shop": "Block Shop",
@@ -734,15 +717,8 @@
     "me": "me",
     "uploaded": "Uploaded! It'll appear in the Block Shop after review.",
     "uploadFailed": "Couldn't upload.",
-    "eyebrow": "Creators",
     "title": "Sell ASMR blocks",
     "lead": "Turn your trigger recordings into blocks and sell them. Phone recordings are fine. We even out the volume automatically, and after a quick review your block goes into the Block Shop.",
-    "info1Title": "1. Upload",
-    "info1Body": "One 3–4 minute sound file = one block",
-    "info2Title": "2. Review",
-    "info2Body": "We check for other people's sounds or music",
-    "info3Title": "3. Sell",
-    "info3Body": "You set the price (free to {{max}} coins). Payouts open after launch",
     "loginPrompt": "Log in to upload your triggers as blocks",
     "login": "Log in",
     "signup": "Sign up",
@@ -810,7 +786,6 @@
     "enNotePh": "e.g. Slow taps with fingertips"
   },
   "legal": {
-    "eyebrow": "Legal",
     "version": "Beta · Effective {{date}}",
     "contact": "Questions? Email us at <mail>{{email}}</mail>.",
     "viewTerms": "View the Terms of Service",
@@ -941,7 +916,6 @@
     "best": "Best combo this week"
   },
   "deleteAccount": {
-    "eyebrow": "Account",
     "title": "Delete your account",
     "lead": "How to delete your ASMR Block account and data. You can delete it yourself in the app or on the web, or ask us by email if you can't log in.",
     "howTitle": "How to delete",

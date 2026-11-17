@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { InstallBanner } from '../components/common/Install';
 import { Link } from 'react-router-dom';
-import { IoArrowForward, IoCash, IoCheckmarkCircle, IoCube, IoMoon, IoPhonePortrait } from 'react-icons/io5';
+import { IoArrowForward } from 'react-icons/io5';
 import { Trans, useTranslation } from 'react-i18next';
 import { catalogApi, playlistApi, recommendApi } from '../api/api';
 import Brick from '../components/brand/Brick';
 import BlockLoader from '../components/brand/BlockLoader';
 import BlockProductCard from '../components/block/BlockProductCard';
-import { AppBadges } from '../components/common/ComingSoon';
 import { useFirstRunGuide } from '../components/guide/GuideModal';
 import AssembleButton from '../components/home/AssembleButton';
 import QuickStart from '../components/home/QuickStart';
@@ -70,7 +69,6 @@ function HomePage() {
       {returning ? <MyCombosNow combos={mine} nickname={nickname} /> : (
       <section className="page grid items-center gap-12 pb-16 pt-12 lg:grid-cols-[1.05fr_1fr] lg:pt-20">
         <div>
-          <p className="eyebrow">{t('home.eyebrow')}</p>
           <h1 className="text-[40px] font-black leading-[1.15] tracking-tight sm:text-[54px]">
             <Trans i18nKey="home.headline" components={{ pink: <span className="text-pink-text" />, star: <span className="align-top text-[0.45em] text-pink" /> }} />
           </h1>
@@ -80,10 +78,6 @@ function HomePage() {
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <AssembleButton />
             <Link to="/shop" className="btn-line px-5 py-3.5 text-[15px]">{t('home.browse')}</Link>
-          </div>
-          <div className="mt-8">
-            <p className="mb-2.5 text-xs text-faint">{t('home.appSoon')}</p>
-            <AppBadges />
           </div>
         </div>
         <HeroBoard />
@@ -106,7 +100,7 @@ function HomePage() {
       )}
 
       {/* ---------- 요즘 뜨는 블록 ---------- */}
-      <Section eyebrow={rec ? t('forYou.homeEyebrow', { triggers: tasteNames(rec) }) : t('home.trendEyebrow')}
+      <Section sub={rec ? t('forYou.homeEyebrow', { triggers: tasteNames(rec) }) : null}
         title={rec ? t('forYou.homeTitle') : t('home.trendTitle')}
         more={rec ? { to: '/shop?tab=forYou', label: t('forYou.homeMore') } : { to: '/shop', label: t('home.trendMore') }}>
         {blocks === null ? <BlockLoader small /> : (
@@ -117,7 +111,7 @@ function HomePage() {
       </Section>
 
       {/* ---------- 추천 조합 ---------- */}
-      <Section eyebrow={t('home.combosEyebrow')} title={t('home.combosTitle')} more={{ to: '/combos', label: t('home.combosMore') }}>
+      <Section title={t('home.combosTitle')} more={{ to: '/combos', label: t('home.combosMore') }}>
         {combos === null ? <BlockLoader small /> : combos.length === 0 ? (
           <p className="text-sm text-muted">{t('home.combosEmpty')}</p>
         ) : (
@@ -127,37 +121,34 @@ function HomePage() {
         )}
       </Section>
 
-      {/* ---------- 만드는 법 ---------- */}
-      <Section eyebrow={t('home.howEyebrow')} title={t('home.howTitle')}>
+      {/* ---------- 만드는 법 (처음 온 사람에게만) ---------- */}
+      {!returning && (
+      <Section title={t('home.howTitle')}>
         <div className="grid gap-4 md:grid-cols-3">
-          <Step no={1} icon={IoCube} title={t('home.step1Title')} body={t('home.step1Body')}>
+          <Step title={t('home.step1Title')} body={t('home.step1Body')}>
             <Brick color={TRIGGER_COLOR.tap} width={70} height={36} bars="tap" />
           </Step>
-          <Step no={2} icon={IoCheckmarkCircle} title={t('home.step2Title')} body={t('home.step2Body')}>
+          <Step title={t('home.step2Title')} body={t('home.step2Body')}>
             <div className="flex pr-1.5">
               <Brick color={TRIGGER_COLOR.tap} width={46} height={36} bars="tap" />
               <Brick color={TRIGGER_COLOR.crinkle} width={46} height={36} bars="crinkle" />
               <Brick color={TRIGGER_COLOR.whisper} width={46} height={36} bars="whisper" />
             </div>
           </Step>
-          <Step no={3} icon={IoMoon} title={t('home.step3Title')} body={t('home.step3Body')}>
+          <Step title={t('home.step3Title')} body={t('home.step3Body')}>
             <span className="rounded-full bg-pink-soft px-3 py-1.5 text-sm font-bold text-pink-text">{t('home.step3Chip')}</span>
           </Step>
         </div>
         <div className="mt-8 flex justify-center"><AssembleButton label={t('home.buildNow')} /></div>
       </Section>
+      )}
 
       {/* ---------- 블록 판매 ---------- */}
       <section className="page mt-20">
         <div className="card grid gap-8 overflow-hidden p-8 md:grid-cols-[1.2fr_1fr] md:p-12">
           <div>
-            <p className="eyebrow">{t('home.sellEyebrow')}</p>
             <h2 className="h-section">{t('home.sellTitle')}</h2>
-            <ul className="mt-5 space-y-2.5 text-[15px] text-muted">
-              <li className="flex gap-2"><IoPhonePortrait className="mt-0.5 shrink-0 text-pink-text" />{t('home.sell1')}</li>
-              <li className="flex gap-2"><IoCash className="mt-0.5 shrink-0 text-pink-text" />{t('home.sell2')}</li>
-              <li className="flex gap-2"><IoCheckmarkCircle className="mt-0.5 shrink-0 text-pink-text" />{t('home.sell3')}</li>
-            </ul>
+            <p className="mt-4 max-w-md text-[15px] leading-relaxed text-muted">{t('home.sell1')} {t('home.sell2')}</p>
             <Link to="/sell" className="btn-pink mt-7 px-5 py-3" data-testid="home-sell">{t('home.sellGo')} <IoArrowForward /></Link>
           </div>
           <div className="studs flex items-center justify-center rounded-xl bg-plate p-6">
@@ -170,16 +161,6 @@ function HomePage() {
         </div>
       </section>
 
-      {/* ---------- 앱 받기 ---------- */}
-      <section className="page mt-20">
-        <div className="flex flex-col items-start justify-between gap-6 rounded-2xl border border-line bg-gradient-to-br from-[#1d1220] to-card p-8 md:flex-row md:items-center md:p-10">
-          <div>
-            <h2 className="text-2xl font-extrabold">{t('home.appTitle')}</h2>
-            <p className="mt-2 text-muted">{t('home.appBody')}</p>
-          </div>
-          <AppBadges />
-        </div>
-      </section>
     </div>
   );
 }
@@ -219,13 +200,13 @@ function HeroBoard() {
   );
 }
 
-function Section({ eyebrow, title, more, children }) {
+function Section({ sub, title, more, children }) {
   return (
-    <section className="page mt-20">
-      <div className="mb-6 flex items-end justify-between gap-4">
-        <div>
-          <p className="eyebrow">{eyebrow}</p>
+    <section className="page mt-16">
+      <div className="mb-5 flex items-end justify-between gap-4">
+        <div className="min-w-0">
           <h2 className="h-section">{title}</h2>
+          {sub && <p className="mt-1 truncate text-sm text-muted">{sub}</p>}
         </div>
         {more && <Link to={more.to} className="hidden shrink-0 items-center gap-1 text-sm font-bold text-pink-text hover:underline sm:flex">{more.label} <IoArrowForward /></Link>}
       </div>
@@ -235,16 +216,12 @@ function Section({ eyebrow, title, more, children }) {
   );
 }
 
-function Step({ no, icon: Icon, title, body, children }) {
+function Step({ title, body, children }) {
   return (
     <div className="card flex flex-col gap-4 p-6">
       <div className="studs flex h-24 items-center justify-center rounded-xl bg-plate">{children}</div>
       <div>
-        <p className="flex items-center gap-2 text-lg font-extrabold">
-          <span className="flex h-6 w-6 items-center justify-center rounded-md bg-pink text-xs text-white">{no}</span>
-          {title}
-          <Icon className="text-faint" size={16} />
-        </p>
+        <p className="text-lg font-extrabold">{title}</p>
         <p className="mt-2 text-sm leading-relaxed text-muted">{body}</p>
       </div>
     </div>

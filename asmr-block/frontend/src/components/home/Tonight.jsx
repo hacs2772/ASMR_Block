@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IoHeart, IoMoon, IoSparkles } from 'react-icons/io5';
+import { IoHeart } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { errorMessage, tonightApi } from '../../api/api';
@@ -66,14 +66,7 @@ function Tonight({ className = '' }) {
   return (
     <div className={`card p-5 sm:p-6 ${className}`} data-testid="tonight">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <IoMoon className="shrink-0 text-pink-text" aria-hidden="true" />
         <p className="text-lg font-extrabold">{t('tonight.title')}</p>
-        {info?.ai && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-pink-soft px-2 py-0.5 text-[11px] font-bold text-pink-text"
-            data-testid="tonight-ai-badge">
-            <IoSparkles aria-hidden="true" />{t('tonight.aiBadge')}
-          </span>
-        )}
       </div>
       <p className="mt-1 text-sm text-muted">{info?.ai ? t('tonight.leadAi') : t('tonight.lead')}</p>
 
@@ -84,7 +77,7 @@ function Tonight({ className = '' }) {
           className="input min-w-0 flex-1" data-testid="tonight-input" />
         <button type="submit" className="btn-pink justify-center whitespace-nowrap" disabled={!prompt.trim() || !!busy}
           data-testid="tonight-go">
-          {busy === 'prompt' ? t('tonight.building') : <><IoSparkles aria-hidden="true" /> {t('tonight.go')}</>}
+          {busy === 'prompt' ? t('tonight.building') : t('tonight.go')}
         </button>
       </form>
 

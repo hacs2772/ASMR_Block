@@ -40,7 +40,6 @@ export function SleepWeek() {
   return (
     <View style={styles.card} testID="sleep-week">
       <View style={styles.head}>
-        <Ionicons name="moon" size={16} color={colors.primaryText} />
         <Text style={styles.title}>{t('sleepLog.weekTitle')}</Text>
       </View>
       {anything && data.report ? <Report report={data.report} /> : null}

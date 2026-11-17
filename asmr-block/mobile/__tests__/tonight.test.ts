@@ -21,8 +21,8 @@ describe('오늘 밤 조합 안내 (웹 lib/tonight.js와 같은 규칙)', () =>
   });
 
   it('어떻게 정했는지 한 줄 (note가 먼저)', () => {
-    expect(tonightDoneMessage(result)).toBe('AI가 쌓았어요 · 바스락 75% · 탭핑·타건 25% + 빗소리·물');
-    expect(tonightDoneMessage({ ...result, source: 'WORDS', note: 'AI_LIMIT' })).toMatch(/^오늘 AI 횟수를 다 써서/);
+    expect(tonightDoneMessage(result)).toBe('한 줄에 맞춰 쌓았어요 · 바스락 75% · 탭핑·타건 25% + 빗소리·물');
+    expect(tonightDoneMessage({ ...result, source: 'WORDS', note: 'AI_LIMIT' })).toMatch(/^오늘 쓸 수 있는 횟수를 다 써서/);
     expect(tonightDoneMessage({ ...result, source: 'TASTE', note: 'NO_MATCH' })).toMatch(/^말한 소리를 못 찾아서/);
     expect(tonightDoneMessage({ ...result, source: 'STARTER', note: null })).toMatch(/^내 취향대로/);
     expect(tonightExamples()).toHaveLength(4);

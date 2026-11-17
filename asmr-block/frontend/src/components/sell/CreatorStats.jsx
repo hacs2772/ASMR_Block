@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { IoBarChart, IoStatsChart } from 'react-icons/io5';
+import { IoBarChart } from 'react-icons/io5';
 import { useTranslation } from 'react-i18next';
 import { sellerApi } from '../../api/api';
 import { barsOf, dayLabel, ticksOf, tipOf } from '../../lib/creatorStats';
@@ -24,7 +24,6 @@ function CreatorStats({ refreshKey }) {
     <section className="card mt-5 p-5" data-testid="creator-stats">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <div className="mr-auto flex items-center gap-2">
-          <IoStatsChart size={20} className="text-pink-text" />
           <p className="font-extrabold">{t('cstats.title')}</p>
         </div>
         <p className="text-xs text-muted" data-testid="cstats-listed">{t('cstats.listed', { listed: num(s.listedBlocks), pending: num(s.pendingBlocks) })}</p>

@@ -13,7 +13,7 @@ export const shareLinks = {
 };
 
 /** 휴대폰이면 공유 창, 아니면 링크 복사 (복사도 안 되면 직접 복사하게 보여 줌) */
-export async function shareLink(title, url, text = `${title} — ASMR Block`) {
+export async function shareLink(title, url, text = `${title} · ASMR Block`) {
   if (navigator.share) {
     try {
       await navigator.share({ title, text, url });

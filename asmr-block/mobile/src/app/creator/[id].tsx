@@ -116,7 +116,6 @@ export default function CreatorScreen() {
                   icon={b ? iconOf(b.category) : null} title="" />
               ))}
             </View>
-            <Text style={styles.eyebrow}>{t('creator.eyebrow')}</Text>
             <Text style={styles.name} numberOfLines={1} testID="creator-name">@{c.nickname}</Text>
             <Text style={styles.stats} testID="creator-stats">{t('creator.stats', { blocks: c.blockCount, collectors: c.collectorCount, plays: c.playCount })}</Text>
             {c.triggers.length > 0 ? (

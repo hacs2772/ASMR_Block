@@ -105,7 +105,6 @@ function CreatorPage() {
                 icon={b ? iconOf(b.category) : null} />
             ))}
           </div>
-          <p className="eyebrow">{t('creator.eyebrow')}</p>
           <h1 className="truncate text-3xl font-black tracking-tight sm:text-4xl" data-testid="creator-name">@{creator.nickname}</h1>
           <p className="mt-2 text-sm text-muted" data-testid="creator-stats">
             {t('creator.stats', { blocks: creator.blockCount, collectors: creator.collectorCount, plays: creator.playCount })}

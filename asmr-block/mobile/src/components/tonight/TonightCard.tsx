@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -52,14 +51,7 @@ export function TonightCard() {
   return (
     <View style={styles.card} testID="tonight">
       <View style={styles.head}>
-        <Ionicons name="moon" size={16} color={colors.primaryText} />
         <Text style={styles.title}>{t('tonight.title')}</Text>
-        {ai && (
-          <View style={styles.badge} testID="tonight-ai-badge">
-            <Ionicons name="sparkles" size={11} color={colors.primaryText} />
-            <Text style={styles.badgeText}>{t('tonight.aiBadge')}</Text>
-          </View>
-        )}
       </View>
       <Text style={styles.lead}>{ai ? t('tonight.leadAi') : t('tonight.lead')}</Text>
       <TextInput style={styles.input} value={prompt} onChangeText={setPrompt} maxLength={max}
@@ -70,7 +62,7 @@ export function TonightCard() {
           <Chip key={ex} label={ex} small onPress={() => setPrompt(ex.slice(0, max))} testID="tonight-example" />
         ))}
       </View>
-      <Button title={busy === 'prompt' ? t('tonight.building') : t('tonight.go')} icon="sparkles" onPress={() => void make(true)}
+      <Button title={busy === 'prompt' ? t('tonight.building') : t('tonight.go')} onPress={() => void make(true)}
         loading={busy === 'prompt'} disabled={!prompt.trim() || !!busy} testID="tonight-go" />
       <Button title={busy === 'taste' ? t('tonight.building') : t('tonight.taste')} icon="heart" variant="secondary"
         onPress={() => void make(false)} loading={busy === 'taste'} disabled={!!busy} testID="tonight-taste" />
@@ -85,8 +77,6 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.lg, gap: space.sm },
   head: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   title: { color: colors.text, fontSize: 17, fontWeight: '800', letterSpacing: -0.3 },
-  badge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: colors.primarySoft, borderRadius: radius.pill, paddingHorizontal: 7, paddingVertical: 2 },
-  badgeText: { color: colors.primaryText, fontSize: 11, fontWeight: '700' },
   lead: { color: colors.muted, fontSize: 13, lineHeight: 19 },
   input: {
     backgroundColor: colors.bg, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border,

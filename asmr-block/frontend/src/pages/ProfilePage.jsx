@@ -48,7 +48,6 @@ function ProfilePage() {
 
   return (
     <div className="page max-w-lg pt-10">
-      <p className="eyebrow">{t('profile.eyebrow')}</p>
       <h1 className="text-3xl font-black">{user?.nickname}</h1>
       <p className="mt-1 text-sm text-muted">{user?.email}</p>
 

@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { StyleSheet, Text, View } from 'react-native';
 import { coinApi } from '@/api/endpoints';
@@ -20,7 +19,6 @@ export function EarningsCard() {
   return (
     <View style={styles.card} testID="earnings">
       <View style={styles.head}>
-        <Ionicons name="cash" size={18} color={colors.primaryText} />
         <Text style={styles.title}>{t('earn.title')}</Text>
       </View>
       <View style={styles.grid}>

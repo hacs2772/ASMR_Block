@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { IoMoon, IoRemove, IoTrendingDown, IoTrendingUp } from 'react-icons/io5';
+import { IoRemove, IoTrendingDown, IoTrendingUp } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { errorMessage, sleepApi } from '../../api/api';
@@ -35,7 +35,7 @@ function SleepWeek({ className = '' }) {
   const report = week.report;
   return (
     <div className={`card p-5 ${className}`} data-testid="sleep-week">
-      <p className="flex items-center gap-2 font-extrabold"><IoMoon className="text-pink-text" aria-hidden="true" />{t('sleepLog.weekTitle')}</p>
+      <p className="font-extrabold">{t('sleepLog.weekTitle')}</p>
       {anything && report && <Report report={report} />}
       <div className="mt-4 grid grid-cols-7 gap-1.5">
         {week.nights.map((n) => {

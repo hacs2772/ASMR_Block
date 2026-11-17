@@ -50,6 +50,14 @@ describe('번역 사전', () => {
     expect(bad).toEqual([]);
   });
 
+  // 사람이 쓴 글처럼: em dash(—)·반짝이(✦✨)·제목 이모지·Claude 이름을 화면 글에 쓰지 않음 (Claude·Anthropic은 처리방침에만)
+  it('화면 글에 em dash(—)·반짝이·"Claude"가 없음', () => {
+    const bad = Object.entries({ ...flatKo, ...Object.fromEntries(Object.entries(flatEn).map(([k, v]) => [`en:${k}`, v])) })
+      .filter(([, v]) => /[—✦✨🌟]|Claude/.test(String(v)))
+      .map(([k]) => k);
+    expect(bad).toEqual([]);
+  });
+
   it('웹과 같은 부분(트리거·스티커·말소리·시간·언어)은 글자까지 같음', () => {
     const web = (lang: string) => JSON.parse(readFileSync(join(__dirname, `../../frontend/src/locales/${lang}.json`), 'utf8'));
     const webKo = web('ko');

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { IoEyeOffOutline } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { errorMessage, hiddenApi } from '../../api/api';
@@ -30,7 +29,7 @@ function HiddenCreators({ className = '' }) {
   if (!list || list.length === 0) return null;
   return (
     <div className={`card p-5 ${className}`} data-testid="hidden-creators">
-      <p className="flex items-center gap-2 font-extrabold"><IoEyeOffOutline className="text-pink-text" aria-hidden="true" />{t('hide.listTitle')}</p>
+      <p className="font-extrabold">{t('hide.listTitle')}</p>
       <p className="mt-1 text-xs leading-relaxed text-muted">{t('hide.listNote')}</p>
       <ul className="mt-3 divide-y divide-line">
         {list.map((c) => (

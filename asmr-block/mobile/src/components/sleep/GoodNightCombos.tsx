@@ -21,7 +21,7 @@ export function GoodNightCombos() {
   if (!signedIn || list.length === 0) return null;
   return (
     <View style={styles.section} testID="good-combos">
-      <Text style={styles.title}>😴 {t('sleepLog.goodTitle')}</Text>
+      <Text style={styles.title}>{t('sleepLog.goodTitle')}</Text>
       <Text style={styles.lead}>{t('sleepLog.goodLead')}</Text>
       {list.map((g) => <GoodComboCard key={g.combo.id} good={g} />)}
     </View>

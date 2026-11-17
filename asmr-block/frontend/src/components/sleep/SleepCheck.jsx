@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { IoClose, IoMoon } from 'react-icons/io5';
+import { IoClose } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { errorMessage, sleepApi } from '../../api/api';
@@ -53,7 +53,7 @@ function SleepCheck({ className = '' }) {
         <>
           <button type="button" className="btn-ghost absolute right-2 top-2 p-1.5 text-faint" onClick={() => answer(0)} disabled={busy}
             aria-label={t('sleepLog.skip')} title={t('sleepLog.skip')} data-testid="sleep-skip"><IoClose size={18} /></button>
-          <p className="flex items-center gap-2 pr-8 text-lg font-extrabold"><IoMoon className="text-pink-text" aria-hidden="true" />{t('sleepLog.askTitle')}</p>
+          <p className="pr-8 text-lg font-extrabold">{t('sleepLog.askTitle')}</p>
           <p className="mt-1 truncate text-xs text-muted">
             {nightLabel(pending.night)} · {listenedLabel(longest)} · {t('sleepLog.listenedCombos', { combos })}
           </p>

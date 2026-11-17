@@ -17,9 +17,9 @@ describe('오늘 밤 조합 안내', () => {
   });
 
   it('어떻게 정했는지에 따라 알림 한 줄 (note가 source보다 먼저)', () => {
-    expect(tonightDoneMessage(result)).toBe('AI가 쌓았어요 · 바스락 75% · 탭핑·타건 25% + 빗소리·물');
-    expect(tonightDoneMessage({ ...result, source: 'WORDS', note: 'AI_FAILED' })).toMatch(/^AI가 잠깐 대답을 못 해서/);
-    expect(tonightDoneMessage({ ...result, source: 'WORDS', note: 'AI_LIMIT' })).toMatch(/^오늘 AI 횟수를 다 써서/);
+    expect(tonightDoneMessage(result)).toBe('한 줄에 맞춰 쌓았어요 · 바스락 75% · 탭핑·타건 25% + 빗소리·물');
+    expect(tonightDoneMessage({ ...result, source: 'WORDS', note: 'AI_FAILED' })).toMatch(/^잠깐 문제가 있어서 낱말만/);
+    expect(tonightDoneMessage({ ...result, source: 'WORDS', note: 'AI_LIMIT' })).toMatch(/^오늘 쓸 수 있는 횟수를 다 써서/);
     expect(tonightDoneMessage({ ...result, source: 'TASTE', note: 'NO_MATCH' })).toMatch(/^말한 소리를 못 찾아서/);
     expect(tonightDoneMessage({ ...result, source: 'WORDS' })).toMatch(/^적은 말로 쌓았어요/);
     expect(tonightDoneMessage({ ...result, source: 'STARTER' })).toMatch(/^내 취향대로 쌓았어요/);

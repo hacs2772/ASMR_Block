@@ -26,7 +26,6 @@ export function CreatorStats() {
   return (
     <View style={styles.card} testID="creator-stats">
       <View style={styles.head}>
-        <Ionicons name="stats-chart" size={17} color={colors.primaryText} />
         <Text style={styles.title}>{t('cstats.title')}</Text>
       </View>
       <Text style={styles.listed} testID="cstats-listed">{t('cstats.listed', { listed: num(s.listedBlocks), pending: num(s.pendingBlocks) })}</Text>

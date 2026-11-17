@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { IoCash, IoCloudUpload, IoImage, IoMusicalNotes, IoShieldCheckmark, IoVideocam } from 'react-icons/io5';
+import { IoCloudUpload, IoImage, IoMusicalNotes, IoVideocam } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { catalogApi, errorMessage, sellerApi } from '../api/api';
@@ -228,17 +228,11 @@ function SellPage() {
 
   return (
     <div className="page pt-10">
-      <p className="eyebrow">{t('sell.eyebrow')}</p>
       <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{t('sell.title')}</h1>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
         {t('sell.lead')}
       </p>
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        <Info icon={IoCloudUpload} title={t('sell.info1Title')} body={t('sell.info1Body')} />
-        <Info icon={IoShieldCheckmark} title={t('sell.info2Title')} body={t('sell.info2Body')} />
-        <Info icon={IoCash} title={t('sell.info3Title')} body={t('sell.info3Body', { max: maxPrice })} />
-      </div>
-      <RecordingGuideLink className="mt-3" />
+      <RecordingGuideLink className="mt-5" />
 
       {!isAuthenticated ? (
         <div className="card mt-10 flex flex-col items-center gap-4 p-10 text-center">
@@ -486,15 +480,6 @@ function Field({ label, hint, children }) {
     <div>
       <p className="label">{label} {hint && <span className="ml-1 text-xs font-normal text-faint">· {hint}</span>}</p>
       {children}
-    </div>
-  );
-}
-
-function Info({ icon: Icon, title, body }) {
-  return (
-    <div className="card flex gap-3 p-4">
-      <Icon size={20} className="mt-0.5 shrink-0 text-pink-text" />
-      <div><p className="text-sm font-bold">{title}</p><p className="mt-0.5 text-xs text-muted">{body}</p></div>
     </div>
   );
 }

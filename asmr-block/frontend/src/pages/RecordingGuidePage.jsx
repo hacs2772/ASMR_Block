@@ -25,7 +25,6 @@ function RecordingGuidePage() {
   const { sections, donts } = useRecording();
   return (
     <div className="page max-w-3xl pb-20 pt-12">
-      <p className="eyebrow">{t('rec.eyebrow')}</p>
       <h1 className="text-4xl font-black leading-tight tracking-tight">{t('rec.title')}</h1>
       <p className="mt-4 text-lg leading-relaxed text-muted">{t('rec.lead')}</p>
 

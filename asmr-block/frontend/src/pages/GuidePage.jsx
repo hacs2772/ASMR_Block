@@ -24,7 +24,6 @@ function GuidePage() {
 
   return (
     <div className="page max-w-3xl pt-12">
-      <p className="eyebrow">{t('guide.eyebrow')}</p>
       <h1 className="text-4xl font-black leading-tight tracking-tight">{t('guide.title')}</h1>
       <div className="mt-6 flex pr-2">
         <Brick color={TRIGGER_COLOR.tap} width={110} height={52} bars="tap" minutes={3} />

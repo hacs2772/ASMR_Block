@@ -108,8 +108,9 @@ export default function HomeScreen() {
 
       {shelf.length > 0 && (
         <View style={styles.section} testID={picks ? 'home-for-you' : 'home-trending'}>
-          <Text style={styles.eyebrow} numberOfLines={1}>{picks ? t('forYou.homeEyebrow', { triggers: tasteNames(picks) }) : t('home.trendEyebrow')}</Text>
-          <Text style={[styles.sectionTitle, { marginBottom: space.md }]}>{picks ? t('forYou.homeTitle') : t('home.trendTitle')}</Text>
+          <Text style={styles.sectionTitle}>{picks ? t('forYou.homeTitle') : t('home.trendTitle')}</Text>
+          {picks ? <Text style={styles.sectionSub} numberOfLines={1}>{t('forYou.homeEyebrow', { triggers: tasteNames(picks) })}</Text> : null}
+          <View style={{ height: space.md }} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
             {shelf.map((b, i) => (
               <BlockCard key={b.id} block={b} rank={picks ? undefined : i + 1} style={styles.trendCard}
@@ -167,6 +168,7 @@ const styles = StyleSheet.create({
   section: { marginTop: 36 },
   tonight: { marginTop: space.xl },
   sectionTitle: { color: colors.text, fontSize: 20, fontWeight: '800', letterSpacing: -0.3 },
+  sectionSub: { color: colors.muted, fontSize: 13, marginTop: 2 },
   trendCard: { width: 172 },
   emptyCard: { backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: space.lg, gap: space.sm },
   emptyTitle: { color: colors.text, fontSize: 15, fontWeight: '700', lineHeight: 21 },

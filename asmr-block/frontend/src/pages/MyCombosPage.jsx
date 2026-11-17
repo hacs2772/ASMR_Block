@@ -28,7 +28,7 @@ function MyCombosPage() {
   return (
     <div className="page pt-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div><p className="eyebrow">{t('myCombos.eyebrow')}</p><h1 className="text-3xl font-black tracking-tight">{t('myCombos.title')}</h1></div>
+        <div><h1 className="text-3xl font-black tracking-tight">{t('myCombos.title')}</h1></div>
         <AssembleButton label={t('myCombos.newCombo')} />
       </div>
       <div className="mt-8">

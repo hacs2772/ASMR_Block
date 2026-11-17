@@ -52,7 +52,6 @@ export function SleepCheck() {
   return (
     <View style={styles.card} testID="sleep-check">
       <View style={styles.head}>
-        <Ionicons name="moon" size={16} color={colors.primaryText} />
         <Text style={styles.title}>{t('sleepLog.askTitle')}</Text>
         <Pressable accessibilityRole="button" accessibilityLabel={t('sleepLog.skip')} onPress={() => void answer(0)} hitSlop={10}
           style={styles.skip} testID="sleep-skip">

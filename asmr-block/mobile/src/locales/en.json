@@ -182,7 +182,7 @@
     "sec30": "30s",
     "rank": "#{{rank}} ",
     "creatorA11y": "@{{nickname}}'s creator page",
-    "shareText": "{{title}} — an ASMR block by @{{nickname}}",
+    "shareText": "{{title}} · an ASMR block by @{{nickname}}",
     "shareA11y": "Share {{title}}",
     "addFailed": "Couldn't add the block",
     "removeFailed": "Couldn't remove the block",
@@ -247,7 +247,7 @@
       "USER": "This user"
     },
     "pickReason": "Please choose a reason",
-    "received": "Report received",
+    "received": "Thanks, we got your report and will review it.",
     "receivedBody": "We'll review it. The person you reported won't know it was you.",
     "sendFailed": "Couldn't send it",
     "title": "Report",
@@ -290,7 +290,7 @@
       },
       "trigger": {
         "word": "Trigger",
-        "body": "A sound that brings on tingles — tapping, crinkles, whispers and so on"
+        "body": "A sound that brings on tingles, like tapping, crinkles or whispers"
       },
       "layered": {
         "word": "Layered",
@@ -346,7 +346,7 @@
     "emptyBody": "Add sounds you like from the Block Shop. Once added, you can copy a block as many times as you want for free.",
     "goShop": "Go to Block Shop",
     "all": "All",
-    "dropToRemove": "🗑 Drop here to remove",
+    "dropToRemove": "Drop here to remove",
     "insert": "Add {{title}}"
   },
   "action": {
@@ -366,7 +366,7 @@
     "volA11y": "Second row volume",
     "removeRowA11y": "Remove the second row",
     "removeRow": "Remove row",
-    "listenLabel": "🌙 How long",
+    "listenLabel": "How long",
     "listenA11y": "Listen for {{label}}"
   },
   "trim": {
@@ -493,7 +493,7 @@
       },
       "s3": {
         "title": "How long?",
-        "body": "Pick 30 minutes to 8 hours and save — we build one seamless track."
+        "body": "Pick 30 minutes to 8 hours and save. We build one seamless track."
       },
       "s4": {
         "title": "Listen from Home",
@@ -501,10 +501,10 @@
       }
     },
     "headline": "Stack your own <tingle/>\nblock by block",
-    "lead": "One sound, one block. Pick the triggers you love — 3 minutes of tapping, 3 of crinkles, 3 of whispers — click them together, and you've got ASMR made just for you.",
+    "lead": "One sound, one block. Pick the triggers you love, like 3 minutes of tapping, crinkles or whispers, click them together, and you've got ASMR made just for you.",
     "howTitle": "How it works",
     "replay": "Replay the guide (animated)",
-    "tip": "★ In Combos, listen to what others stacked and save the ones you like in one tap.",
+    "tip": "In Combos, listen to what others stacked and save the ones you like in one tap.",
     "glossary": "ASMR glossary",
     "feedback": "Feedback",
     "gotIt": "Got it"
@@ -514,11 +514,11 @@
     "lead": "A quiet spot, a hand's width away, one clear trigger. Get these right and you'll have a block people love to hear.",
     "dontsTitle": "Sounds you can't upload",
     "dontsNote": "Please upload only sounds you recorded yourself. These are sent back in review, and can be taken down later if reported.",
-    "endBody": "Long recordings are fine — pick the best part from the waveform when you upload.",
+    "endBody": "Long recordings are fine. Pick the best part from the waveform when you upload.",
     "go": "Upload a block",
     "checkTitle": "Before you hit record",
     "ready": "All set!",
-    "readyMsg": "Great — start recording. Stay quiet for the first 5 seconds!",
+    "readyMsg": "Great, start recording. Stay quiet for the first 5 seconds!",
     "diagramA11y": "Place the phone mic a hand's width, 15 to 20 centimeters, from the sound",
     "mic": "Mic",
     "distance": "Hand's width · 15–20 cm",
@@ -536,7 +536,6 @@
     "newCombo": "New combo",
     "combos": "Combos",
     "seeAll": "See all my combos ({{count}})",
-    "trendEyebrow": "Last 7 days",
     "trendTitle": "Blocks giving the most tingles",
     "moreShop": "More in Shop",
     "heroA11y": "Listen to {{title}} now",
@@ -549,7 +548,7 @@
       "popular": "Most played",
       "forYou": "For you"
     },
-    "lead": "Listen to combos others stacked, and if you like one, <em>Save all</em>. The blocks go into your block box and the combo into My combos.",
+    "lead": "Listen, and if you like it, <b>Save all</b>. The blocks and the combo become yours.",
     "collectors_one": "Saved by {{count}}",
     "collectors_other": "Saved by {{count}}",
     "new": "New",
@@ -577,9 +576,8 @@
     },
     "notFound": "Creator not found",
     "shareTitle": "ASMR blocks by @{{nickname}}",
-    "shareText": "ASMR blocks recorded by @{{nickname}} — ASMR Block",
+    "shareText": "ASMR blocks recorded by @{{nickname}} · ASMR Block",
     "shareA11y": "Share creator page",
-    "eyebrow": "Creator",
     "stats": "Blocks {{blocks}} · Collectors {{collectors}} · Plays {{plays}}",
     "upload": "Upload a block",
     "pinned": "Shared with you",
@@ -625,7 +623,7 @@
     "privateBody": "Make it public and share? It will also show up in Combos.",
     "makePublic": "Make public and share",
     "publicFailed": "Couldn't make it public",
-    "shareMessage": "{{title}} — my own tingle combo, stacked on ASMR Block",
+    "shareMessage": "{{title}} · my own tingle combo on ASMR Block",
     "share": "Share",
     "report": "Report",
     "edit": "Edit",
@@ -636,7 +634,7 @@
     "videoToo": "Watch video too",
     "videoBlocks_one": "{{count}} video block",
     "videoBlocks_other": "{{count}} video blocks",
-    "collectedFrom": "★ Saved from @{{nickname}}'s combo",
+    "collectedFrom": "Saved from @{{nickname}}'s combo",
     "collectors_one": "Saved by {{count}}",
     "collectors_other": "Saved by {{count}}",
     "rendering": "Stitching the blocks together… {{p}}%",
@@ -708,7 +706,7 @@
     "needTrigger": "Choose a trigger type",
     "needOwn": "Confirm you recorded it yourself",
     "loginTitle": "Log in to sell your triggers as blocks",
-    "loginBody": "Tapping, crinkles, whispers — anything you recorded yourself. It goes into the Block Shop after review.",
+    "loginBody": "Tapping, crinkles, whispers: anything you recorded yourself. It goes into the Block Shop after review.",
     "login": "Log in",
     "cardTitle": "Upload a new block",
     "what": "What to upload",
@@ -873,9 +871,8 @@
   },
   "tonight": {
     "title": "Tonight's mix",
-    "aiBadge": "AI",
-    "lead": "What kind of night do you want? Describe it in one line and we'll stack matching blocks in two rows.",
-    "leadAi": "What kind of night do you want? Describe it in one line and AI will read it and stack matching blocks in two rows.",
+    "lead": "What kind of night do you want? Describe it in one line and we'll pick matching blocks and stack them in two rows.",
+    "leadAi": "What kind of night do you want? Describe it in one line and we'll pick matching blocks and stack them in two rows.",
     "inputLabel": "The feeling you want tonight",
     "placeholder": "e.g. Reading in a café on a rainy day",
     "go": "Stack this feeling",
@@ -886,16 +883,16 @@
     "ex2": "Whispers by a campfire",
     "ex3": "Leaning on a night-train window",
     "ex4": "Paper crinkles and soft tapping",
-    "aiNote": "AI (Claude) reads your line and picks the triggers. Your words are only kept as the mix description.",
-    "aiNoteLeft_one": "AI (Claude) reads your line and picks the triggers · {{count}} try left today",
-    "aiNoteLeft_other": "AI (Claude) reads your line and picks the triggers · {{count}} tries left today",
-    "wordsNote": "We find the sounds in your words. Your words are only kept as the mix description.",
+    "aiNote": "Your words are only kept as the mix description.",
+    "aiNoteLeft_one": "Your words are only kept as the mix description · {{count}} left today",
+    "aiNoteLeft_other": "Your words are only kept as the mix description · {{count}} left today",
+    "wordsNote": "Your words are only kept as the mix description.",
     "failed": "Couldn't stack tonight's mix.",
-    "doneAi": "AI stacked it · {{mix}}",
+    "doneAi": "Stacked to match your line · {{mix}}",
     "doneWords": "Stacked from your words · {{mix}}",
     "doneTaste": "Stacked from your taste · {{mix}}",
-    "doneAiLimit": "You've used today's AI tries, so we matched your words · {{mix}}",
-    "doneAiFailed": "AI couldn't answer just now, so we matched your words · {{mix}}",
+    "doneAiLimit": "You've hit today's limit, so we matched your words · {{mix}}",
+    "doneAiFailed": "Something went wrong, so we matched your words · {{mix}}",
     "doneNoMatch": "We couldn't find those sounds, so we used your taste · {{mix}}"
   },
   "sleepLog": {

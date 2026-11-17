@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { IoStar } from 'react-icons/io5';
 import { Trans, useTranslation } from 'react-i18next';
 import { playlistApi, recommendApi } from '../api/api';
 import { recommendLine } from '../lib/recommend';
@@ -33,7 +32,6 @@ function CombosPage() {
 
   return (
     <div className="page pt-10">
-      <p className="eyebrow flex items-center gap-1"><IoStar /> {t('combos.eyebrow')}</p>
       <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{t('combos.title')}</h1>
       <p className="mt-2 max-w-2xl text-sm text-muted">
         <Trans i18nKey="combos.lead" components={{ b: <b className="text-pink-text" /> }} />

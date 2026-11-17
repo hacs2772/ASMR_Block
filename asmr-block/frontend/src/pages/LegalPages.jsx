@@ -23,7 +23,6 @@ function LegalLayout({ doc, other }) {
   const { EFFECTIVE, NOTICE } = useLegal();
   return (
     <div className="page max-w-3xl pb-20 pt-10">
-      <p className="eyebrow">{t('legal.eyebrow')}</p>
       <h1 className="text-3xl font-black tracking-tight">{doc.title}</h1>
       <p className="mt-2 text-sm text-muted">{t('legal.version', { date: EFFECTIVE })}</p>
       {NOTICE && (
@@ -82,7 +81,6 @@ export function DeleteAccountPage() {
   const list = (keys) => <ul className="space-y-1.5">{keys.map((k) => <li key={k}>{t(`deleteAccount.${k}`)}</li>)}</ul>;
   return (
     <div className="page max-w-3xl pb-20 pt-10" data-testid="delete-account">
-      <p className="eyebrow">{t('deleteAccount.eyebrow')}</p>
       <h1 className="text-3xl font-black tracking-tight">{t('deleteAccount.title')}</h1>
       <p className="mt-3 text-muted">{t('deleteAccount.lead')}</p>
       <div className="legal mt-8 space-y-8 text-[15px] leading-relaxed text-ink/90">

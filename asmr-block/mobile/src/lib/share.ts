@@ -15,7 +15,7 @@ export const shareLinks = {
 };
 
 /** 휴대폰 공유 창 (웹 미리보기처럼 공유 창이 없으면 링크 복사) */
-export async function shareLink(title: string, url: string, text = `${title} — ASMR Block`) {
+export async function shareLink(title: string, url: string, text = `${title} · ASMR Block`) {
   try {
     await Share.share(Platform.OS === 'ios' ? { message: text, url } : { message: `${text}\n${url}`, title });
   } catch {
