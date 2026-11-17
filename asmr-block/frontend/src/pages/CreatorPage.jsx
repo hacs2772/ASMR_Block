@@ -1,14 +1,16 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { IoCloudUpload, IoShareSocial } from 'react-icons/io5';
+import { IoCloudUpload, IoEyeOffOutline, IoEyeOutline, IoShareSocial } from 'react-icons/io5';
+import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
-import { catalogApi, errorMessage } from '../api/api';
+import { catalogApi, errorMessage, hiddenApi } from '../api/api';
 import Brick from '../components/brand/Brick';
 import BlockLoader from '../components/brand/BlockLoader';
 import BlockProductCard from '../components/block/BlockProductCard';
 import { useStopPreviewOnLeave } from '../hooks/usePreview';
 import { categoryName, colorOf, iconOf, TRIGGER_COLOR } from '../lib/blocks';
 import { shareLink, shareLinks } from '../lib/share';
+import useHiddenStore from '../store/hiddenStore';
 import useAuthStore from '../store/authStore';
 
 const SORTS = ['latest', 'popular'];
@@ -24,6 +26,9 @@ function CreatorPage() {
   const [params] = useSearchParams();
   const pinnedId = Number(params.get('block')) || null;
   const me = useAuthStore((s) => s.user);
+  const addHidden = useHiddenStore((s) => s.add);
+  const hiddenIds = useHiddenStore((s) => s.ids);
+  const removeHidden = useHiddenStore((s) => s.remove);
   const [creator, setCreator] = useState(null);
   const [error, setError] = useState(null);
   const [pinned, setPinned] = useState(null);
@@ -64,6 +69,29 @@ function CreatorPage() {
   if (!creator) return <BlockLoader className="pt-24" label={t('common.loading')} />;
 
   const mine = me && String(me.id) === String(creator.id);
+  // 이 페이지에서 신고 뒤 숨겼어도 바로 "숨긴 크리에이터"로 (hiddenStore)
+  const hidden = creator.hidden || hiddenIds.includes(creator.id);
+  // 크리에이터 숨기기 (V20): 숨기면 이 사람의 블록·조합이 나에게 안 보임 (이 페이지 블록 목록도 비움), 다시 보기로 되돌림
+  const toggleHidden = async () => {
+    try {
+      if (hidden) {
+        await hiddenApi.unhide(creator.id);
+        removeHidden(creator.id);
+        setCreator({ ...creator, hidden: false });
+        toast.success(t('hide.undone'));
+        load(0).catch(() => {});
+      } else {
+        await hiddenApi.hide(creator.id);
+        addHidden(creator.id);
+        setCreator({ ...creator, hidden: true });
+        setList({ items: [], page: 0, hasNext: false });
+        setPinned(null);
+        toast.success(t('hide.done'));
+      }
+    } catch (e) {
+      toast.error(errorMessage(e, t('hide.failed')));
+    }
+  };
   const items = (list?.items || []).filter((b) => b.id !== pinned?.id);
   const deco = (list?.items || []).slice(0, 3);
 
@@ -96,10 +124,24 @@ function CreatorPage() {
             <IoShareSocial /> {t('share.button')}
           </button>
           {mine && <Link to="/sell" className="btn-pink"><IoCloudUpload /> {t('creator.upload')}</Link>}
+          {me && !mine && !hidden && (
+            <button type="button" className="btn-line" onClick={toggleHidden} aria-label={t('hide.a11y', { nickname: creator.nickname })}
+              data-testid="hide-creator"><IoEyeOffOutline /> {t('hide.button')}</button>
+          )}
         </div>
       </section>
 
-      {pinned && (
+      {hidden && (
+        <div className="card mt-6 flex flex-wrap items-center gap-3 border-pink/40 p-4" data-testid="creator-hidden">
+          <IoEyeOffOutline className="shrink-0 text-pink-text" size={18} aria-hidden="true" />
+          <p className="min-w-0 flex-1 text-sm text-muted">{t('hide.hiddenBanner')}</p>
+          <button type="button" className="btn-line btn-sm" onClick={toggleHidden} data-testid="unhide-creator">
+            <IoEyeOutline /> {t('hide.unhide')}
+          </button>
+        </div>
+      )}
+
+      {pinned && !hidden && (
         <section className="mt-10" data-testid="pinned-block">
           <p className="eyebrow">{t('creator.pinned')}</p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -108,6 +150,7 @@ function CreatorPage() {
         </section>
       )}
 
+      {!hidden && (
       <section className="mt-10">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="mr-auto text-xl font-extrabold">{pinned ? t('creator.others') : t('creator.uploaded')}</h2>
@@ -135,6 +178,7 @@ function CreatorPage() {
           )}
         </div>
       </section>
+      )}
     </div>
   );
 }

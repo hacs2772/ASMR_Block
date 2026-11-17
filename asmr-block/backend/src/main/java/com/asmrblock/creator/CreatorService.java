@@ -3,6 +3,7 @@ package com.asmrblock.creator;
 import com.asmrblock.common.ApiException;
 import com.asmrblock.creator.CreatorDtos.CreatorResponse;
 import com.asmrblock.creator.CreatorDtos.MyStatsResponse;
+import com.asmrblock.hide.HiddenCreatorService;
 import com.asmrblock.i18n.Lang;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,14 +17,15 @@ import java.util.List;
 public class CreatorService {
 
     private final CreatorMapper creatorMapper;
+    private final HiddenCreatorService hiddenCreatorService;
 
     @Transactional(readOnly = true)
-    public CreatorResponse get(Long userId) {
+    public CreatorResponse get(Long userId, Long viewerId) {
         CreatorStats s = creatorMapper.findStats(userId).orElseThrow(() -> ApiException.notFound("크리에이터를 찾을 수 없어요."));
         List<CreatorTrigger> top = creatorMapper.topTriggers(userId);
         return new CreatorResponse(s.getId(), s.getNickname(), s.getBlockCount(), s.getCollectorCount(), s.getPlayCount(),
                 top.stream().map(t -> Lang.pick(t.getName(), t.getNameEn())).toList(), s.getCreatedAt(),
-                top.stream().map(CreatorTrigger::getCode).toList());
+                top.stream().map(CreatorTrigger::getCode).toList(), hiddenCreatorService.isHidden(viewerId, userId));
     }
 
     /** 판매 화면 "내 블록 통계": 합계 + 최근 14일 (올린 블록이 없어도 0으로) */

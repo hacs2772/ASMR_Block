@@ -198,6 +198,20 @@
       "USER": "User"
     }
   },
+  "hide": {
+    "button": "Hide",
+    "unhide": "Unhide",
+    "a11y": "Hide @{{nickname}}",
+    "hiddenBanner": "You've hidden this creator. Their blocks and combos won't show up for you.",
+    "reported": "Report sent. An admin will take a look.",
+    "askAfterReport": "Stop seeing blocks and combos from @{{nickname}}?",
+    "hideOwner": "Hide @{{nickname}}",
+    "done": "Hidden. You won't see their blocks or combos anymore.",
+    "undone": "You'll see this creator again.",
+    "listTitle": "Hidden creators",
+    "listNote": "Blocks and combos from hidden creators don't show up in the shop or picks. Blocks you already have still play.",
+    "failed": "Couldn't change it."
+  },
   "notif": {
     "bell": "Notifications",
     "bellUnread_one": "{{count}} new notification",

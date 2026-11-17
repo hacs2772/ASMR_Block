@@ -18,6 +18,7 @@ public class BlockSearchCondition {
     private Boolean free;            // true: 무료만, false: 유료만, null: 전부
     private BlockStatus status;
     private boolean listedOnly;      // true: 상점에 보이는 블록만 (관리자의 "샘플 숨기기" 등으로 내린 건 빼고)
+    private Long hiddenFor;          // 이 사람이 숨긴 크리에이터의 블록은 빼기 (V20, 보는 사람 id, 비로그인 null)
     private String sort;             // latest | popular
     private int offset;
     private int limit;

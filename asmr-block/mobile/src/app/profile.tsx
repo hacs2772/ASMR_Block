@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { LanguageSwitch } from '@/locales/LanguageSwitch';
 import { WalletCard } from '@/components/coin/WalletCard';
 import { SleepWeek } from '@/components/sleep/SleepWeek';
+import { HiddenCreators } from '@/components/profile/HiddenCreators';
 
 /**
  * 내 정보: 이름(닉네임 바꾸기) → 내 코인 → 최근 7일 잠 기록 → 언어 → 로그아웃 → 맨 아래 작은 "회원 탈퇴".
@@ -57,6 +58,7 @@ export default function ProfileScreen() {
 
       {status === 'signedIn' && <WalletCard />}
       {status === 'signedIn' && <SleepWeek />}
+      {status === 'signedIn' && <HiddenCreators />}
 
       <View style={styles.info} testID="language-card">
         <LanguageSwitch />

@@ -124,7 +124,12 @@ export type Creator = {
   /** triggers와 같은 순서의 트리거 묶음 코드 (영어 화면에서 이름을 사전으로) */
   triggerCodes?: string[];
   since: string;
+  /** 보는 사람이 이 크리에이터를 숨겼는지 (그러면 블록 목록은 비어 있음, V20) */
+  hidden?: boolean;
 };
+
+/** 내가 숨긴 크리에이터 (내 정보에서 다시 보기) */
+export type HiddenCreator = { id: number; nickname: string; hiddenAt: string };
 
 export type Page<T> = {
   content: T[];

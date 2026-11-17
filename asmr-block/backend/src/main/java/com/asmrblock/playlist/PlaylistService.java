@@ -57,19 +57,19 @@ public class PlaylistService {
     @Transactional(readOnly = true)
     public PageResponse<PlaylistSummaryResponse> listPublic(String sort, PageQuery page, Long viewerId) {
         String order = "popular".equals(sort) ? "popular" : "latest";
-        List<Playlist> playlists = playlistMapper.findPublic(order, page.offset(), page.size());
-        return PageResponse.of(summaries(playlists, viewerId), page, playlistMapper.countPublic());
+        List<Playlist> playlists = playlistMapper.findPublic(order, page.offset(), page.size(), viewerId);
+        return PageResponse.of(summaries(playlists, viewerId), page, playlistMapper.countPublic(viewerId));
     }
 
     /** 요즘 뜨는 조합 (최근 days일 재생 수 기준, 공개만) */
     @Transactional(readOnly = true)
     public List<PlaylistSummaryResponse> trending(int days, int size, Long viewerId) {
         int limit = Math.min(Math.max(size, 1), 50);
-        List<Playlist> playlists = new ArrayList<>(playlistMapper.findTrending(Math.min(Math.max(days, 1), 30), limit));
+        List<Playlist> playlists = new ArrayList<>(playlistMapper.findTrending(Math.min(Math.max(days, 1), 30), limit, viewerId));
         // 재생 기록이 모자라면(막 연 사이트) 많이 들은 순 → 새로 올라온 순 공개 조합으로 채움
         if (playlists.size() < limit) {
             Set<Long> shown = playlists.stream().map(Playlist::getId).collect(Collectors.toSet());
-            playlistMapper.findPublic("popular", 0, limit + playlists.size()).stream()
+            playlistMapper.findPublic("popular", 0, limit + playlists.size(), viewerId).stream()
                     .filter(p -> !shown.contains(p.getId()))
                     .limit(limit - playlists.size()).forEach(playlists::add);
         }

@@ -7,6 +7,7 @@ import type {
   CreatorMyStats,
   Earnings,
   GoodCombo,
+  HiddenCreator,
   Purchase,
   Wallet,
   NotificationItem,
@@ -133,6 +134,13 @@ export const sellerApi = {
 export const recommendApi = {
   blocks: (size = 12) => api<BlockRecommendations>('/me/recommendations/blocks' + query({ size })),
   combos: (size = 12) => api<ComboRecommendations>('/me/recommendations/combos' + query({ size })),
+};
+
+/** 크리에이터 숨기기 (사용자 차단, 로그인 필요, 웹 hiddenApi와 같음): 숨긴 사람의 블록·공개 조합은 나에게 목록에서 안 보임 */
+export const hiddenApi = {
+  list: () => api<HiddenCreator[]>('/me/hidden-creators'),
+  hide: (creatorId: number) => api<void>(`/me/hidden-creators/${creatorId}`, { method: 'PUT' }),
+  unhide: (creatorId: number) => api<void>(`/me/hidden-creators/${creatorId}`, { method: 'DELETE' }),
 };
 
 /** 잠 기록 (로그인 필요, 웹 sleepApi와 같음): 어젯밤 물어보기 · 답 남기기(0 = 건너뛰기) · 최근 7일 */

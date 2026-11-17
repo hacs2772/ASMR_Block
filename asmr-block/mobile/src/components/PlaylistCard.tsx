@@ -6,6 +6,7 @@ import { formatMinutes } from '@/lib/format';
 import { colors, radius, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { minutesLabel } from '@/lib/labels';
+import { useHidden } from '@/store/hidden';
 
 type Props = {
   playlist: PlaylistSummary;
@@ -21,6 +22,8 @@ export function PlaylistCard({ playlist, onPress, onEdit, showOwner, footer }: P
   const { t } = useTranslation();
   const bricks = playlist.previewColors.slice(0, 4);
   const source = playlist.collect?.sourceOwner;
+  const hidden = useHidden((s) => s.ids.includes(playlist.owner?.id));
+  if (hidden) return null;
   return (
     <Pressable
       accessibilityRole="button"

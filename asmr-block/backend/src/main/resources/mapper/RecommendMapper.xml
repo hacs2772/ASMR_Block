@@ -95,6 +95,7 @@
         WHERE b.is_active = true AND b.status = 'APPROVED' AND b.is_listed = true
           AND b.uploader_id &lt;&gt; #{userId}
           AND NOT EXISTS (SELECT 1 FROM user_block ub WHERE ub.user_id = #{userId} AND ub.block_id = b.id)
+          AND NOT EXISTS (SELECT 1 FROM user_hidden_creator hc WHERE hc.user_id = #{userId} AND hc.creator_id = b.uploader_id)
           AND (cw.w IS NOT NULL OR gw.w IS NOT NULL)
         ORDER BY score DESC, b.created_at DESC, b.id DESC
         LIMIT #{limit}
@@ -111,6 +112,7 @@
             JOIN block b ON b.id = pb.block_id
             JOIN sound_category c ON c.id = b.category_id
             WHERE p.is_public = true AND p.is_hidden = false AND p.user_id &lt;&gt; #{userId}
+              AND NOT EXISTS (SELECT 1 FROM user_hidden_creator hc WHERE hc.user_id = #{userId} AND hc.creator_id = p.user_id)
               AND NOT EXISTS (SELECT 1 FROM playlist mine WHERE mine.user_id = #{userId} AND mine.source_playlist_id = p.id)
             GROUP BY p.id, b.id, b.category_id, COALESCE(c.parent_id, c.id)
         )

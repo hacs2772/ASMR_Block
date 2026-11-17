@@ -40,6 +40,13 @@ export const recommendApi = {
  * 잠 기록 (로그인 필요): pending → 어젯밤 { night, combos: [{ id, title, minutes }] } 또는 null,
  * rate(night, 0~3) (0 = 건너뛰기), week → { nights: [{ night, rating, minutes, combos }], goodTriggers }
  */
+/** 크리에이터 숨기기 (사용자 차단, 로그인 필요): 숨긴 사람의 블록·공개 조합은 나에게 목록에서 안 보임 */
+export const hiddenApi = {
+  list: () => data(axiosInstance.get('/me/hidden-creators')),
+  hide: (creatorId) => axiosInstance.put(`/me/hidden-creators/${creatorId}`),
+  unhide: (creatorId) => axiosInstance.delete(`/me/hidden-creators/${creatorId}`),
+};
+
 export const sleepApi = {
   pending: () => data(axiosInstance.get('/me/sleep/pending')),
   rate: (night, rating) => data(axiosInstance.put(`/me/sleep/nights/${night}`, { rating })),

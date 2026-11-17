@@ -3,7 +3,9 @@ import { IoClose, IoFlagOutline } from 'react-icons/io5';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
 import { create } from 'zustand';
-import { errorMessage, reportApi } from '../../api/api';
+import { errorMessage, hiddenApi, reportApi } from '../../api/api';
+import useAuthStore from '../../store/authStore';
+import useHiddenStore from '../../store/hiddenStore';
 
 export const REPORT_REASONS = [
   { key: 'COPYRIGHT' }, { key: 'OFFENSIVE' }, { key: 'SPAM' }, { key: 'OTHER' },
@@ -12,7 +14,8 @@ export const REPORT_REASONS = [
 
 /**
  * 신고 창 (어디서든 useReport.getState().open(...)으로 열기).
- * target = { type, id, title }, owner = { id, nickname } 이면 "올린 사람" 신고도 고를 수 있음
+ * target = { type, id, title }, owner = { id, nickname } 이면 "올린 사람" 신고도 고를 수 있음.
+ * 로그인한 사람이 신고하면 보낸 뒤 "이 크리에이터도 숨길까요?" (V20 크리에이터 숨기기)
  */
 export const useReport = create((set) => ({
   target: null,
@@ -28,9 +31,13 @@ export function ReportModal() {
   const [reason, setReason] = useState(null);
   const [detail, setDetail] = useState('');
   const [sending, setSending] = useState(false);
+  const [askHide, setAskHide] = useState(false);
+  const me = useAuthStore((s) => s.user);
+  const addHidden = useHiddenStore((s) => s.add);
 
   useEffect(() => {
     if (!target) return undefined;
+    setAskHide(false);
     setAbout('target');
     setReason(null);
     setDetail('');
@@ -46,9 +53,14 @@ export function ReportModal() {
     const who = about === 'owner' && owner ? { targetType: 'USER', targetId: owner.id } : { targetType: target.type, targetId: target.id };
     setSending(true);
     try {
-      const res = await reportApi.send({ ...who, reason, detail: detail.trim() || null });
-      toast.success(t('report.received'));
-      close();
+      await reportApi.send({ ...who, reason, detail: detail.trim() || null });
+      // 로그인한 사람이 남의 것을 신고했으면 "이 크리에이터도 숨길까요?" (스토어 심사: 사용자 차단)
+      if (owner && me && owner.id !== me.id) {
+        setAskHide(true);
+      } else {
+        toast.success(t('report.received'));
+        close();
+      }
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {
@@ -56,6 +68,34 @@ export function ReportModal() {
     }
     return undefined;
   };
+
+  const hideOwner = async () => {
+    try {
+      await hiddenApi.hide(owner.id);
+      addHidden(owner.id);
+      toast.success(t('hide.done'));
+      close();
+    } catch (err) {
+      toast.error(errorMessage(err, t('hide.failed')));
+    }
+  };
+
+  if (askHide) {
+    return (
+      <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-4 sm:items-center" onClick={close} role="presentation">
+        <div onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="report-done"
+          className="card w-full max-w-md p-5 shadow-2xl" data-testid="report-done">
+          <p id="report-done" className="text-lg font-extrabold">{t('hide.reported')}</p>
+          {/* "@"와 닉네임 사이에서 줄이 바뀌지 않게 (보이지 않는 글자 이음표) */}
+          <p className="mt-2 text-sm leading-relaxed text-muted">{t('hide.askAfterReport', { nickname: `\u2060${owner.nickname}` })}</p>
+          <div className="mt-5 flex flex-wrap justify-end gap-2">
+            <button type="button" className="btn-line" onClick={close} data-testid="report-done-close">{t('common.close')}</button>
+            <button type="button" className="btn-pink" onClick={hideOwner} data-testid="report-hide-owner">{t('hide.hideOwner', { nickname: owner.nickname })}</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 p-4 sm:items-center" onClick={close} role="presentation">

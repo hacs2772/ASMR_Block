@@ -1,8 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { reportApi, type ReportReason, type ReportTargetType } from '@/api/endpoints';
-import { notify } from '@/lib/dialog';
+import { useQueryClient } from '@tanstack/react-query';
+import { hiddenApi, reportApi, type ReportReason, type ReportTargetType } from '@/api/endpoints';
+import { confirm, notify } from '@/lib/dialog';
+import { useAuth } from '@/store/auth';
+import { useHidden } from '@/store/hidden';
 import { colors, radius, space } from '@/theme';
 import { Button, Chip } from './ui';
 import { useTranslation } from 'react-i18next';
@@ -24,13 +27,16 @@ type Props = {
   owner?: { id: number; nickname: string } | null;
 };
 
-/** 신고하기 (블록·공개 조합·올린 사람). 로그인 없이도 보낼 수 있어요 */
+/** 신고하기 (블록·공개 조합·올린 사람). 로그인 없이도 보낼 수 있어요. 로그인했으면 보낸 뒤 그 크리에이터를 숨길지 물어봄 */
 export function ReportSheet({ visible, onClose, target, owner }: Props) {
   const { t } = useTranslation();
   const [about, setAbout] = useState<'target' | 'owner'>('target');
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [detail, setDetail] = useState('');
   const [sending, setSending] = useState(false);
+  const me = useAuth((s) => s.user);
+  const addHidden = useHidden((s) => s.add);
+  const queryClient = useQueryClient();
 
   // 닫을 때 비워 둠 (다음에 열면 처음부터)
   const close = () => {
@@ -50,7 +56,20 @@ export function ReportSheet({ visible, onClose, target, owner }: Props) {
     try {
       await reportApi.send({ ...who, reason, detail: detail.trim() || null });
       close();
-      notify(t('report.received'), t('report.receivedBody'));
+      // 로그인한 사람이 남의 것을 신고했으면 "이 크리에이터도 숨길까요?" (스토어 심사: 사용자 차단, V20)
+      if (owner && me && owner.id !== me.id) {
+        // "@"와 닉네임 사이에서 줄이 바뀌지 않게 (보이지 않는 글자 이음표)
+        const nickname = `\u2060${owner.nickname}`;
+        const yes = await confirm(t('hide.reported'), t('hide.askAfterReport', { nickname }), t('hide.hideOwner', { nickname }));
+        if (yes) {
+          await hiddenApi.hide(owner.id);
+          addHidden(owner.id);
+          void queryClient.invalidateQueries();
+          notify(t('hide.done'));
+        }
+      } else {
+        notify(t('report.received'), t('report.receivedBody'));
+      }
     } catch (e) {
       notify(t('report.sendFailed'), (e as Error).message);
     } finally {

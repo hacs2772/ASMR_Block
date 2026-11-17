@@ -252,6 +252,20 @@
     "detail": "자세히 적어 주시면 더 빨리 확인할 수 있어요 (선택)",
     "reportThis": "{{title}} 신고하기"
   },
+  "hide": {
+    "button": "숨기기",
+    "unhide": "다시 보기",
+    "a11y": "@{{nickname}} 숨기기",
+    "hiddenBanner": "숨긴 크리에이터예요. 이 사람의 블록과 조합이 나에게 보이지 않아요.",
+    "reported": "신고했어요. 관리자가 확인할게요.",
+    "askAfterReport": "@{{nickname}}의 블록과 조합을 앞으로 안 보이게 할까요?",
+    "hideOwner": "@{{nickname}} 숨기기",
+    "done": "숨겼어요. 블록과 조합이 더는 보이지 않아요.",
+    "undone": "다시 보이게 했어요.",
+    "listTitle": "숨긴 크리에이터",
+    "listNote": "숨긴 사람의 블록과 조합은 상점·추천에 나오지 않아요. 이미 담은 블록은 그대로 들을 수 있어요.",
+    "failed": "바꾸지 못했어요."
+  },
   "feedback": {
     "tooShort": "의견을 조금만 더 적어 주세요",
     "sendFailed": "보내지 못했어요",

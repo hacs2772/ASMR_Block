@@ -65,7 +65,7 @@ public class QuickStartService {
         List<String> names = new ArrayList<>();
         for (CategoryTreeResponse group : picked) {
             List<Block> blocks = blockMapper.search(BlockSearchCondition.builder()
-                    .categoryId(group.id()).free(true).status(BlockStatus.APPROVED).listedOnly(true)
+                    .categoryId(group.id()).free(true).status(BlockStatus.APPROVED).listedOnly(true).hiddenFor(userId)
                     .sort("popular").offset(0).limit(PER_TRIGGER).build());
             if (!blocks.isEmpty()) {
                 perTrigger.add(blocks);

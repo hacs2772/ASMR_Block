@@ -207,7 +207,7 @@
 | Method | URL | 인증 | 설명 |
 |------|------|------|------|
 | GET | `/blocks` | - (로그인하면 `owned` 표시) | 목록 (승인된 블록만) |
-| GET | `/creators/{userId}` | - | **크리에이터 페이지 머리**: `{ "id", "nickname", "blockCount", "collectorCount", "playCount", "triggers": ["탭핑·타건", …], "triggerCodes": ["tap", …], "since" }` — 블록 수는 상점에 보이는 승인 블록, `collectorCount` = 내 블록함에 담은 다른 사람 수(본인 빼고), `triggers` = 많이 올린 트리거 묶음 최대 3개(이름), `triggerCodes` = 같은 순서의 코드(화면 언어로 이름을 바꿀 때). 없거나 탈퇴한 사람은 404. 블록 목록은 `GET /blocks?uploaderId={id}` |
+| GET | `/creators/{userId}` | - | **크리에이터 페이지 머리**: `{ "id", "nickname", "blockCount", "collectorCount", "playCount", "triggers": ["탭핑·타건", …], "triggerCodes": ["tap", …], "since", "hidden": false }` — `hidden` = 보는 사람이 이 크리에이터를 숨겼는지(V20, 비로그인 false, 숨겼으면 블록 목록도 비어 있음), 블록 수는 상점에 보이는 승인 블록, `collectorCount` = 내 블록함에 담은 다른 사람 수(본인 빼고), `triggers` = 많이 올린 트리거 묶음 최대 3개(이름), `triggerCodes` = 같은 순서의 코드(화면 언어로 이름을 바꿀 때). 없거나 탈퇴한 사람은 404. 블록 목록은 `GET /blocks?uploaderId={id}` |
 | GET | `/blocks/trending` | - | **요즘 뜨는 소리**: 최근 `days`(기본 7)일 재생 수 순, `size` 기본 10 → `recentPlays` 포함. 재생 기록이 모자라면 많이 들은 순 → 새로 올라온 순으로 채움(`recentPlays` 없음) |
 | GET | `/blocks/upload-policy` | - | **업로드 규칙**: `{ "maxPrice": 100, "maxFileMb": 50, "minSeconds": 10, "maxSeconds": 1200, "extensions": [...], "maxVideoMb": 200, "videoExtensions": [...], "maxImageMb": 10, "imageExtensions": [...], "stickers": ["flagjp", ...], "patterns": ["dots", "lines", "none"] }` |
 | GET | `/blocks/{id}` | - | 상세 (승인 전이면 404) |
@@ -584,6 +584,20 @@
 - `type`: `BLOCK_APPROVED` 승인(→ `BLOCK` 내 크리에이터 페이지의 그 블록) / `BLOCK_REJECTED` 돌려보냄 + `note` 이유(→ `UPLOADS` 내가 올린 블록) — 관리자가 상태를 **바꿀 때만** (신고로 숨겨도 돌려보냄 알림) / `BLOCK_COLLECTED` 상점 "블록 담기"로 새로 담음 / `COMBO_COLLECTED` 공개 조합을 한 번에 담아 감(→ `COMBO`). 본인은 빼고
 - 담김 소식은 **읽기 전까지 한 줄로 묶음**: `"@닉네임님 외 2명이 ‘원목 탭핑’ 블록을 담았어요"`
 - `at` = 마지막으로 바뀐 때, UTC(`…Z`). 90일 지난 알림은 매일 새벽 지움
+
+### 9.6 크리에이터 숨기기 (사용자 차단) - V20, 로그인 필요
+
+애플·구글 심사의 "사용자 콘텐츠 앱은 다른 사용자를 차단할 수 있어야 함"에 맞춘 기능. 숨긴 사람의 블록·공개 조합은 **나에게만** 목록에서 빠져요.
+
+| Method | URL | 설명 |
+|------|------|------|
+| GET | `/me/hidden-creators` | 내가 숨긴 크리에이터 (최근 순) `[ { "id": 5, "nickname": "탭탭", "hiddenAt": "..." } ]` |
+| PUT | `/me/hidden-creators/{creatorId}` | 숨기기 (이미 숨겼으면 그대로) → `"이 크리에이터를 숨겼어요. 블록과 조합이 더는 보이지 않아요."`. 나 자신 400, 없는·탈퇴한 사람 404 |
+| DELETE | `/me/hidden-creators/{creatorId}` | 다시 보기 → `"다시 보이게 했어요."` |
+
+- **빠지는 곳**(로그인한 사람 기준): 블록 상점 `GET /blocks`(검색·`uploaderId` 크리에이터 페이지 포함), 요즘 뜨는 소리 `/blocks/trending`, 공개 조합 `/playlists/public`·요즘 뜨는 조합 `/playlists/trending`, 나에게 맞는 추천 블록·조합, 오늘 밤 조합·첫 조합 바로 만들기가 저절로 담는 무료 블록
+- **그대로인 것**: 이미 담은 블록·산 블록·내 조합(내 것이니까), 링크로 직접 연 조합·블록, 다른 사람에게 보이는 것. 탈퇴하면 숨긴 목록도 지움
+- 화면: 크리에이터 페이지 "숨기기"(숨겼으면 "숨긴 크리에이터예요" + 다시 보기), **신고를 보낸 뒤 "이 크리에이터도 숨길까요?"**(로그인했을 때), 내 정보 "숨긴 크리에이터" 목록에서 다시 보기. 숨기면 지금 보이는 카드도 바로 사라짐(웹 `store/hiddenStore.js` · 앱 `store/hidden.ts`)
 
 ### 9.5 신고 - V13
 

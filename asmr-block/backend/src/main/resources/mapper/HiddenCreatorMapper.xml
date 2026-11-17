@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 크리에이터 숨기기 (V20). 목록에서 거르는 조건은 각 매퍼에 NOT EXISTS (user_hidden_creator)로 -->
+<mapper namespace="com.asmrblock.hide.HiddenCreatorMapper">
+
+    <select id="list" resultType="com.asmrblock.hide.HideDtos$HiddenCreatorResponse">
+        SELECT u.id, u.nickname, h.created_at AS hidden_at
+        FROM user_hidden_creator h
+        JOIN users u ON u.id = h.creator_id
+        WHERE h.user_id = #{userId}
+        ORDER BY h.created_at DESC, u.id DESC
+    </select>
+
+    <select id="isActiveUser" resultType="boolean">
+        SELECT EXISTS (SELECT 1 FROM users WHERE id = #{id} AND is_active = true)
+    </select>
+
+    <select id="exists" resultType="boolean">
+        SELECT EXISTS (SELECT 1 FROM user_hidden_creator WHERE user_id = #{userId} AND creator_id = #{creatorId})
+    </select>
+
+    <insert id="insert">
+        INSERT INTO user_hidden_creator (user_id, creator_id) VALUES (#{userId}, #{creatorId})
+        ON CONFLICT DO NOTHING
+    </insert>
+
+    <delete id="delete">
+        DELETE FROM user_hidden_creator WHERE user_id = #{userId} AND creator_id = #{creatorId}
+    </delete>
+
+    <delete id="deleteAllOf">
+        DELETE FROM user_hidden_creator WHERE user_id = #{userId}
+    </delete>
+
+</mapper>

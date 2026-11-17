@@ -28,7 +28,7 @@
 - 폭력·성적 내용·욕설·약물·도박: 모두 **아니요**
 - **사용자가 만든 콘텐츠를 다른 사람과 나누나요? → 예**
   - 크리에이터가 올린 소리·사진·짧은 영상과 공개 조합을 다른 사람이 볼 수 있어요
-  - 막는 방법(물어보면): 올린 블록은 관리자 확인 뒤에만 공개 · 블록/조합/사람 신고 · 관리자 숨기기·업로드 막기 · 이용약관에 금지 내용
+  - 막는 방법(물어보면): 올린 블록은 관리자 확인 뒤에만 공개 · 블록/조합/사람 신고 · **사용자가 크리에이터 숨기기(차단)** · 관리자 숨기기·업로드 막기 · 이용약관에 금지 내용
 - 사용자끼리 대화(채팅)·위치 공유: **아니요** ("녹음한 곳"은 크리에이터가 직접 적는 글이라 기기 위치가 아님)
 - 디지털 상품 구매 ★: 지금은 **아니요** (코인 충전이 열리면 "예")
 - 예상 등급: 모든 연령~12세 이상 정도 (설문 결과에 따름)
@@ -99,11 +99,12 @@
 Demo account: (위 심사용 계정)
 - Press play on the first combo on Home to listen. Audio keeps playing in the background (sleep sounds).
 - User-generated content: blocks are reviewed by an admin before they appear; users can report any block, combo or creator, and admins can hide content and ban uploads.
+- Blocking: users can hide (block) any creator from the creator page or right after reporting; that creator's blocks and combos disappear for them. Hidden creators can be managed in My account.
 - Account deletion: My account → "Delete account" (also https://asmrblock.com/delete-account).
 - Coins in this build can only be granted by the admin for the beta; there is no real-money purchase yet.
 ```
 - ⚠ **코인으로 유료 블록을 여는 기능**: 애플은 디지털 콘텐츠를 돈으로 팔면 **반드시 인앱결제**여야 해요. 지금처럼 코인을 "받기"만 하는 건 괜찮지만, 심사에서 물어볼 수 있어요. 충전이 열리면 인앱결제로 해야 해요
-- 사용자 콘텐츠 앱 규칙(1.2): 신고 ✓ · 관리자 확인 ✓ · 숨기기·업로드 막기 ✓ · 연락처(help@) ✓. 혹시 "사용자 차단"을 요구하면 "이 크리에이터 숨기기"를 더 만들면 돼요
+- 사용자 콘텐츠 앱 규칙(1.2): 신고 ✓ · 관리자 확인 ✓ · 숨기기·업로드 막기 ✓ · **사용자 차단 ✓**("이 크리에이터 숨기기": 크리에이터 페이지·신고한 뒤, 내 정보에서 되돌리기) · 연락처(help@) ✓
 - 로그인: 이메일만 써서 "Apple로 로그인"은 필요 없어요 (구글·카카오 로그인을 붙이면 같이 넣어야 해요)
 - 암호화 질문: `app.json`에 `usesNonExemptEncryption: false`를 넣어서 빌드마다 묻지 않아요 (https만 써요)
 - 아이패드: `supportsTablet: false` — 아이폰 앱으로만 올려서 **아이패드 화면 사진이 필요 없어요** (아이패드에서도 아이폰 크기로 열려요)

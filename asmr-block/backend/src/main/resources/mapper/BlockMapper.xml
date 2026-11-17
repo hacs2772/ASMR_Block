@@ -53,6 +53,8 @@
                      OR EXISTS (SELECT 1 FROM users ku WHERE ku.id = b.uploader_id AND ku.nickname ILIKE '%' || #{keyword} || '%'))
             </if>
             <if test="uploaderId != null">AND b.uploader_id = #{uploaderId}</if>
+            <!-- 보는 사람이 숨긴 크리에이터의 블록은 빼기 (V20) -->
+            <if test="hiddenFor != null">AND NOT EXISTS (SELECT 1 FROM user_hidden_creator hc WHERE hc.user_id = #{hiddenFor} AND hc.creator_id = b.uploader_id)</if>
             <if test="talkType != null">AND b.talk_type = #{talkType}</if>
             <if test="free != null and free">AND b.price = 0</if>
             <if test="free != null and !free">AND b.price &gt; 0</if>
@@ -106,6 +108,7 @@
         SELECT recent.recent_plays, x.* FROM (
             <include refid="selectBlock"/>
             WHERE b.is_active = true AND b.status = 'APPROVED' AND b.is_listed = true
+            <if test="viewerId != null">AND NOT EXISTS (SELECT 1 FROM user_hidden_creator hc WHERE hc.user_id = #{viewerId} AND hc.creator_id = b.uploader_id)</if>
         ) x
         JOIN (
             SELECT target_id, COUNT(*) AS recent_plays

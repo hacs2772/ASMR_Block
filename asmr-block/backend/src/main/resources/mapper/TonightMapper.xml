@@ -58,7 +58,8 @@
                 LEFT JOIN users u ON u.id = b.uploader_id
                 LEFT JOIN user_block ub ON ub.block_id = b.id AND ub.user_id = #{userId}
                 WHERE b.is_active = true AND b.status = 'APPROVED'
-                  AND (ub.block_id IS NOT NULL OR (b.price = 0 AND b.is_listed = true))
+                  AND (ub.block_id IS NOT NULL OR (b.price = 0 AND b.is_listed = true
+                       AND NOT EXISTS (SELECT 1 FROM user_hidden_creator hc WHERE hc.user_id = #{userId} AND hc.creator_id = b.uploader_id)))
                   AND COALESCE(pc.code, c.code) IN
                   <foreach collection="codes" item="code" open="(" separator="," close=")">#{code}</foreach>
             ) x

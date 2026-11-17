@@ -120,7 +120,7 @@ public class ShareService {
         String site = siteUrl();
         String target = site + "/creator/" + userId;
         try {
-            CreatorResponse c = creatorService.get(userId);
+            CreatorResponse c = creatorService.get(userId, null);
             StringBuilder d = new StringBuilder(Lang.english()
                     ? c.blockCount() + (c.blockCount() == 1 ? " block" : " blocks") : "블록 " + c.blockCount() + "개");
             if (!c.triggers().isEmpty()) {
@@ -136,7 +136,7 @@ public class ShareService {
     }
 
     public byte[] creatorCard(Long userId) {
-        creatorService.get(userId); // 없는 사람이면 404
+        creatorService.get(userId, null); // 없는 사람이면 404
         List<Block> blocks = blockMapper.search(BlockSearchCondition.builder()
                 .uploaderId(userId).status(BlockStatus.APPROVED).listedOnly(true).sort("popular").offset(0).limit(24).build());
         return ShareCardRenderer.renderCreator(blocks);

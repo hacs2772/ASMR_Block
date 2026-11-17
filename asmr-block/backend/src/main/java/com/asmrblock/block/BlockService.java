@@ -44,7 +44,7 @@ public class BlockService {
     public PageResponse<BlockResponse> search(Long categoryId, List<Long> tagIds, String keyword, Boolean free,
                                               TalkType talkType, Long uploaderId, String sort, PageQuery page, Long viewerId) {
         BlockSearchCondition condition = condition(categoryId, tagIds, keyword, free, talkType, BlockStatus.APPROVED, sort, page, true)
-                .toBuilder().uploaderId(uploaderId).build();
+                .toBuilder().uploaderId(uploaderId).hiddenFor(viewerId).build();
         List<Block> blocks = blockMapper.search(condition);
         return PageResponse.of(toResponses(blocks, viewerId, false), page, blockMapper.count(condition));
     }
@@ -64,11 +64,11 @@ public class BlockService {
     @Transactional(readOnly = true)
     public List<BlockResponse> trending(int days, int size, Long viewerId) {
         int limit = Math.min(Math.max(size, 1), 50);
-        List<Block> blocks = new ArrayList<>(blockMapper.findTrending(Math.min(Math.max(days, 1), 30), limit));
+        List<Block> blocks = new ArrayList<>(blockMapper.findTrending(Math.min(Math.max(days, 1), 30), limit, viewerId));
         if (blocks.size() < limit) {
             Set<Long> shown = blocks.stream().map(Block::getId).collect(Collectors.toSet());
             BlockSearchCondition popular = condition(null, null, null, null, null, BlockStatus.APPROVED, "popular",
-                    PageQuery.of(0, limit + blocks.size()), true);
+                    PageQuery.of(0, limit + blocks.size()), true).toBuilder().hiddenFor(viewerId).build();
             blockMapper.search(popular).stream().filter(b -> !shown.contains(b.getId()))
                     .limit(limit - blocks.size()).forEach(blocks::add);
         }

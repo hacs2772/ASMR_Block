@@ -3,6 +3,7 @@ package com.asmrblock.user;
 import com.asmrblock.auth.RefreshTokenService;
 import com.asmrblock.common.ApiException;
 import com.asmrblock.playlist.PlaylistService;
+import com.asmrblock.hide.HiddenCreatorService;
 import com.asmrblock.sleep.SleepService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ public class UserService {
     private final RefreshTokenService refreshTokenService;
     private final PlaylistService playlistService;
     private final SleepService sleepService;
+    private final HiddenCreatorService hiddenCreatorService;
 
     @Transactional(readOnly = true)
     public User getActiveUser(Long userId) {
@@ -48,6 +50,7 @@ public class UserService {
         getActiveUser(userId);
         playlistService.deleteAllOf(userId);
         sleepService.deleteAllOf(userId);
+        hiddenCreatorService.deleteAllOf(userId);
         refreshTokenService.revokeAll(userId);
         userMapper.anonymize(userId);
     }

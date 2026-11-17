@@ -13,6 +13,7 @@ import { useAuth } from '@/store/auth';
 import { categoryFallbackColor, colors, radius, space } from '@/theme';
 import { useTranslation } from 'react-i18next';
 import { groupLabel, talkLabel } from '@/lib/labels';
+import { useHidden } from '@/store/hidden';
 
 type Props = {
   block: Block;
@@ -57,6 +58,8 @@ export function BlockCard({ block, previewing, onPreview, rank, showNote, right,
   const group = groupLabel(block.category) || t('common.other');
   const me = useAuth((s) => s.user);
   const canReport = reportable && block.uploader.id !== me?.id;
+  const hidden = useHidden((s) => s.ids.includes(block.uploader.id));
+  if (hidden) return null;
   return (
     <View style={[styles.card, style]} testID={`block-${block.id}`}>
       <View style={[styles.plate, { backgroundColor: color + '1F' }]}>

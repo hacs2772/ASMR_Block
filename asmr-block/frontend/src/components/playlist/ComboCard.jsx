@@ -7,6 +7,7 @@ import { errorMessage, playlistApi } from '../../api/api';
 import { formatLength, listenLabel } from '../../lib/blocks';
 import useAuthStore from '../../store/authStore';
 import { useBuy } from '../coin/BuyModal';
+import useHiddenStore from '../../store/hiddenStore';
 
 /** 조합 미리보기: 첫째 줄 블록 색을 옆으로 누운 작은 레고로 (레이어드가 있으면 아래 얇은 줄) */
 export function ComboBricks({ colors = [], hasMix, big }) {
@@ -27,6 +28,7 @@ export function ComboBricks({ colors = [], hasMix, big }) {
 /** 조합 카드: 듣기 + (남의 조합이면) 한 번에 담기 */
 function ComboCard({ combo, rank, showOwner = true }) {
   const { t } = useTranslation();
+  const hidden = useHiddenStore((s) => s.ids.includes(combo.owner?.id));
   const meta = [
     t('common.loop', { length: formatLength(combo.totalDuration) }),
     t('common.blocks', { count: combo.blockCount }),
@@ -34,6 +36,7 @@ function ComboCard({ combo, rank, showOwner = true }) {
     combo.listenMinutes > 0 ? t('common.repeat', { time: listenLabel(combo.listenMinutes) }) : null,
   ].filter(Boolean).join(' · ');
 
+  if (hidden) return null;
   return (
     <article className="card flex flex-col gap-3 p-4 transition-colors hover:border-line-strong" data-testid={`combo-${combo.id}`}>
       <div className="flex items-center gap-3">

@@ -120,9 +120,11 @@
         SELECT COUNT(*) FROM playlist WHERE user_id = #{userId}
     </select>
 
+    <!-- 공개 조합 (viewerId가 있으면 그 사람이 숨긴 크리에이터의 조합은 빼기, V20) -->
     <select id="findPublic" resultType="com.asmrblock.playlist.Playlist">
         <include refid="selectPlaylist"/>
         WHERE p.is_public = true AND p.is_hidden = false
+        <if test="viewerId != null">AND NOT EXISTS (SELECT 1 FROM user_hidden_creator hc WHERE hc.user_id = #{viewerId} AND hc.creator_id = p.user_id)</if>
         <choose>
             <when test="sort == 'popular'">ORDER BY p.play_count DESC, p.created_at DESC, p.id DESC</when>
             <otherwise>ORDER BY p.created_at DESC, p.id DESC</otherwise>
@@ -134,6 +136,7 @@
         SELECT recent.recent_plays, x.* FROM (
             <include refid="selectPlaylist"/>
             WHERE p.is_public = true AND p.is_hidden = false
+            <if test="viewerId != null">AND NOT EXISTS (SELECT 1 FROM user_hidden_creator hc WHERE hc.user_id = #{viewerId} AND hc.creator_id = p.user_id)</if>
         ) x
         JOIN (
             SELECT target_id, COUNT(*) AS recent_plays
@@ -159,7 +162,8 @@
     </select>
 
     <select id="countPublic" resultType="long">
-        SELECT COUNT(*) FROM playlist WHERE is_public = true AND is_hidden = false
+        SELECT COUNT(*) FROM playlist p WHERE p.is_public = true AND p.is_hidden = false
+        <if test="viewerId != null">AND NOT EXISTS (SELECT 1 FROM user_hidden_creator hc WHERE hc.user_id = #{viewerId} AND hc.creator_id = p.user_id)</if>
     </select>
 
     <insert id="insertLayer" useGeneratedKeys="true" keyProperty="id">

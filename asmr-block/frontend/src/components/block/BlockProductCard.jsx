@@ -11,6 +11,7 @@ import useAuthStore from '../../store/authStore';
 import Brick from '../brand/Brick';
 import { useVideoModal } from './VideoModal';
 import { ReportButton } from '../common/Report';
+import useHiddenStore from '../../store/hiddenStore';
 import { useBuy } from '../coin/BuyModal';
 
 /** 상점 블록 폭: 소리 길이에 비례 (너무 짧거나 길어도 카드 안에 들어가게) */
@@ -33,6 +34,8 @@ function BlockProductCard({ block, rank, onCollected, preview = false, hideCreat
   const openVideo = useVideoModal((s) => s.open);
   const me = useAuthStore((s) => s.user);
   const canReport = !preview && block.uploader?.id !== me?.id;
+  const hidden = useHiddenStore((s) => !preview && s.ids.includes(block.uploader?.id));
+  if (hidden) return null;
 
   return (
     <article className="card flex flex-col overflow-hidden transition-colors hover:border-line-strong" data-testid={`block-${block.id}`}>
